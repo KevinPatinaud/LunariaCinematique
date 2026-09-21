@@ -1,0 +1,25 @@
+{
+  "executed": true,
+  "kind": "Real Node filesystem publication, actual supplied artwork/audio; no Godot/Electron playback",
+  "project": "lunaria_atelier_presentation",
+  "first": {
+    "films": 1,
+    "assets": 34,
+    "steps": 2,
+    "levels": 1,
+    "warnings": [],
+    "path": "/tmp/lunaria-real-workshop-39Rl2L/content/design/game_content.json"
+  },
+  "second": {
+    "films": 1,
+    "assets": 34,
+    "steps": 2,
+    "levels": 1,
+    "warnings": [],
+    "path": "/tmp/lunaria-real-workshop-39Rl2L/content/design/game_content.json"
+  },
+  "assets": 34,
+  "uniquePlannedPaths": 35,
+  "plannedFiles": 35,
+  "nativeExecuted": false
+}

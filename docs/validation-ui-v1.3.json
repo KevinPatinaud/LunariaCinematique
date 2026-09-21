@@ -1,0 +1,146 @@
+{
+  "version": "0.1.3",
+  "date": "2026-09-18",
+  "renderer": "React 19.1.1 / Chromium 144.0.7559.96",
+  "bridge": "simulated; Node file tests separate",
+  "passed": 34,
+  "tests": [
+    {
+      "name": "Initialisation React 19.1.1 sans erreur",
+      "pass_": true
+    },
+    {
+      "name": "Chargement des trois plans de démonstration et des images",
+      "pass_": true
+    },
+    {
+      "name": "Favoris : ajouter, filtrer, retirer, revenir à tous les assets",
+      "pass_": true
+    },
+    {
+      "name": "Récents : ajout après utilisation réelle d’un décor",
+      "pass_": true
+    },
+    {
+      "name": "Insertion de trois objets et synchronisation du panneau Calques",
+      "pass_": true
+    },
+    {
+      "name": "Sélection multiple par Maj + clic dans les calques",
+      "pass_": true
+    },
+    {
+      "name": "Déplacement clavier groupé, troisième objet inchangé et annulation unique",
+      "pass_": true
+    },
+    {
+      "name": "Alignement de la sélection sur les bords inférieurs",
+      "pass_": true
+    },
+    {
+      "name": "Dupliquer et supprimer un groupe avec annulations atomiques",
+      "pass_": true
+    },
+    {
+      "name": "Verrouillage : propriétés et suppression bloquées, déverrouillage accessible",
+      "pass_": true
+    },
+    {
+      "name": "Masquage d’édition non destructif pour le JSON",
+      "pass_": true
+    },
+    {
+      "name": "Ordre des calques modifié puis annulé sans perte de référence",
+      "pass_": true
+    },
+    {
+      "name": "Création d’une bulle liée et proposition de placement automatique",
+      "pass_": true
+    },
+    {
+      "name": "Continuer le plan préserve la composition sans rejouer les dialogues ni les entrées",
+      "pass_": true
+    },
+    {
+      "name": "Modèle Dialogue à deux et remappage des personnages",
+      "pass_": true
+    },
+    {
+      "name": "Duplication intelligente avec les trois options désactivées",
+      "pass_": true
+    },
+    {
+      "name": "Fenêtre de modèles : les raccourcis n’altèrent pas le plan derrière",
+      "pass_": true
+    },
+    {
+      "name": "Création d’un repère nommé dans l’historique local",
+      "pass_": true
+    },
+    {
+      "name": "Restauration : brouillon remplacé, original conservé, retour arrière et rétablissement",
+      "pass_": true
+    },
+    {
+      "name": "Ouverture des diagnostics structurés et retour à la scène",
+      "pass_": true
+    },
+    {
+      "name": "Mise en page sans débordement horizontal à 1024, 1200 et 1920 pixels",
+      "pass_": true
+    },
+    {
+      "name": "Lecture interactive toujours fonctionnelle après les changements UX",
+      "pass_": true
+    },
+    {
+      "name": "Aucune exception JavaScript pendant les parcours",
+      "pass_": true
+    },
+    {
+      "name": "Glissement réel de deux objets : offsets conservés et Alt désactive les aimants",
+      "pass_": true
+    },
+    {
+      "name": "Échap annule un glissement en cours sans modifier le document",
+      "pass_": true
+    },
+    {
+      "name": "Poignées individuelles toujours proportionnelles après le multi-déplacement",
+      "pass_": true
+    },
+    {
+      "name": "Sélection rectangulaire des deux personnages sans la bulle",
+      "pass_": true
+    },
+    {
+      "name": "Dépôt d’asset dans le canvas et ajout à la sélection",
+      "pass_": true
+    },
+    {
+      "name": "L’œil d’édition ne masque pas l’objet pendant la lecture joueur",
+      "pass_": true
+    },
+    {
+      "name": "Diagnostics : corrections ciblées d’un objet et d’une bulle hors cadre",
+      "pass_": true
+    },
+    {
+      "name": "Asset absent : la lecture ouvre le diagnostic au lieu de planter",
+      "pass_": true
+    },
+    {
+      "name": "Le modèle Dialogue à deux refuse une scène sans personnages",
+      "pass_": true
+    },
+    {
+      "name": "Historique : restauration désactivée sans sélection et fermeture avec Échap",
+      "pass_": true
+    },
+    {
+      "name": "Aucune erreur JavaScript dans les parcours complémentaires",
+      "pass_": true
+    }
+  ],
+  "consoleErrors": []
+}

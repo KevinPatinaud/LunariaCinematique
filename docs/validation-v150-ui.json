@@ -1,0 +1,166 @@
+{
+  "checks": [
+    {
+      "test": "Ouverture du fichier exemple v3 et affichage des cinq plans",
+      "passed": true
+    },
+    {
+      "test": "Préréglages du texte accessibles dans le panneau de la bulle",
+      "passed": true
+    },
+    {
+      "test": "Écriture progressive vide au temps zéro",
+      "passed": true
+    },
+    {
+      "test": "Écriture progressive partielle à 250 ms",
+      "passed": true
+    },
+    {
+      "test": "Texte intégral après le temps de révélation",
+      "passed": true
+    },
+    {
+      "test": "La hauteur de bulle reste fixe pendant la révélation",
+      "passed": true
+    },
+    {
+      "test": "Retour arbitraire dans le temps déterministe",
+      "passed": true
+    },
+    {
+      "test": "L’aperçu ne modifie pas la cinématique enregistrée",
+      "passed": true
+    },
+    {
+      "test": "Saisie réelle d’une vitesse avec virgule",
+      "passed": true
+    },
+    {
+      "test": "Délai saisi dans l’inspecteur sauvegardé",
+      "passed": true
+    },
+    {
+      "test": "Le délai édité masque effectivement le texte avant son début",
+      "passed": true
+    },
+    {
+      "test": "Préréglage mot par mot enregistré",
+      "passed": true
+    },
+    {
+      "test": "Premier groupe de lecture révélé en une fois",
+      "passed": true
+    },
+    {
+      "test": "Préréglage Cri configure instantané + explosion",
+      "passed": true
+    },
+    {
+      "test": "Le cri transforme réellement la première lettre",
+      "passed": true
+    },
+    {
+      "test": "Le cri revient à une position lisible stable",
+      "passed": true
+    },
+    {
+      "test": "Désactivation visuelle du texte sans abaisser le schéma",
+      "passed": true
+    },
+    {
+      "test": "Annuler restaure le préréglage précédent",
+      "passed": true
+    },
+    {
+      "test": "Rétablir restaure la désactivation",
+      "passed": true
+    },
+    {
+      "test": "La lecture propose de compléter le texte avant de continuer",
+      "passed": true
+    },
+    {
+      "test": "Premier clic complète sans sauter la réplique",
+      "passed": true
+    },
+    {
+      "test": "Deuxième clic passe à la réplique suivante",
+      "passed": true
+    },
+    {
+      "test": "La seconde réplique recommence sa révélation",
+      "passed": true
+    },
+    {
+      "test": "Pause fige l’écriture et désactive la progression",
+      "passed": true
+    },
+    {
+      "test": "Échap retourne à l’édition",
+      "passed": true
+    },
+    {
+      "test": "Sortie disponible pour character",
+      "passed": true
+    },
+    {
+      "test": "La disparition reste effective pour character",
+      "passed": true
+    },
+    {
+      "test": "Le rebond d’entrée est visible pour character",
+      "passed": true
+    },
+    {
+      "test": "Sortie disponible pour enemy",
+      "passed": true
+    },
+    {
+      "test": "La disparition reste effective pour enemy",
+      "passed": true
+    },
+    {
+      "test": "Le rebond d’entrée est visible pour enemy",
+      "passed": true
+    },
+    {
+      "test": "Sortie disponible pour prop",
+      "passed": true
+    },
+    {
+      "test": "La disparition reste effective pour prop",
+      "passed": true
+    },
+    {
+      "test": "Le rebond d’entrée est visible pour prop",
+      "passed": true
+    },
+    {
+      "test": "Sauvegarde des animations des trois rôles en v3",
+      "passed": true
+    },
+    {
+      "test": "Réouverture conserve les sorties et les rôles",
+      "passed": true
+    },
+    {
+      "test": "Le mode automatique attend la révélation avant le temps de lecture",
+      "passed": true
+    },
+    {
+      "test": "Le clic de complétion lance ensuite le temps de lecture automatique",
+      "passed": true
+    },
+    {
+      "test": "Capture du cri à son point d’expansion",
+      "passed": true
+    },
+    {
+      "test": "Aucune exception JavaScript pendant les scénarios",
+      "passed": true
+    }
+  ],
+  "pageErrors": [],
+  "runtime": "React 18.2 / Chromium / native bridge simulated / about:blank HTML injection (navigation policy)"
+}

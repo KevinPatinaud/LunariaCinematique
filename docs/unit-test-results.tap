@@ -1,0 +1,352 @@
+TAP version 13
+# Subtest: sibling prefix is not inside selected root
+ok 1 - sibling prefix is not inside selected root
+  ---
+  duration_ms: 2.152059
+  type: 'test'
+  ...
+# Subtest: resolve a Unicode asset path relative to root
+ok 2 - resolve a Unicode asset path relative to root
+  ---
+  duration_ms: 11.75615
+  type: 'test'
+  ...
+# Subtest: reject path traversal before filesystem access
+ok 3 - reject path traversal before filesystem access
+  ---
+  duration_ms: 2.342936
+  type: 'test'
+  ...
+# Subtest: reject symlink escaping selected root
+ok 4 - reject symlink escaping selected root
+  ---
+  duration_ms: 10.685125
+  type: 'test'
+  ...
+# Subtest: atomic save produces a readable JSON and previous .bak
+ok 5 - atomic save produces a readable JSON and previous .bak
+  ---
+  duration_ms: 14.499316
+  type: 'test'
+  ...
+# Subtest: JSON reader accepts a UTF-8 BOM
+ok 6 - JSON reader accepts a UTF-8 BOM
+  ---
+  duration_ms: 2.527239
+  type: 'test'
+  ...
+# Subtest: JSON reader applies size limit
+ok 7 - JSON reader applies size limit
+  ---
+  duration_ms: 2.201735
+  type: 'test'
+  ...
+# Subtest: scanner walks continents and places but ignores non-assets
+ok 8 - scanner walks continents and places but ignores non-assets
+  ---
+  duration_ms: 5.491307
+  type: 'test'
+  ...
+# Subtest: scanner never renames or modifies source files
+ok 9 - scanner never renames or modifies source files
+  ---
+  duration_ms: 2.781496
+  type: 'test'
+  ...
+# Subtest: asset classification distinguishes characters, UI and audio
+ok 10 - asset classification distinguishes characters, UI and audio
+  ---
+  duration_ms: 0.390637
+  type: 'test'
+  ...
+# Subtest: protocol URLs encode filenames without changing the model paths
+ok 11 - protocol URLs encode filenames without changing the model paths
+  ---
+  duration_ms: 0.192408
+  type: 'test'
+  ...
+# Subtest: empty project follows the shared schema
+ok 12 - empty project follows the shared schema
+  ---
+  duration_ms: 4.245903
+  type: 'test'
+  ...
+# Subtest: example with textured bubble is valid
+ok 13 - example with textured bubble is valid
+  ---
+  duration_ms: 1.506312
+  type: 'test'
+  ...
+# Subtest: assets are unique references, not embedded image data
+ok 14 - assets are unique references, not embedded image data
+  ---
+  duration_ms: 0.402948
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library:///etc/passwd"
+ok 15 - reject unsafe reference "library:///etc/passwd"
+  ---
+  duration_ms: 0.107906
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://../private.png"
+ok 16 - reject unsafe reference "library://../private.png"
+  ---
+  duration_ms: 0.12749
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a/../../private.png"
+ok 17 - reject unsafe reference "library://a/../../private.png"
+  ---
+  duration_ms: 0.059688
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a/./image.png"
+ok 18 - reject unsafe reference "library://a/./image.png"
+  ---
+  duration_ms: 0.052433
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a//b.png"
+ok 19 - reject unsafe reference "library://a//b.png"
+  ---
+  duration_ms: 0.053921
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "file:///a.png"
+ok 20 - reject unsafe reference "file:///a.png"
+  ---
+  duration_ms: 0.263473
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "https://a.png"
+ok 21 - reject unsafe reference "https://a.png"
+  ---
+  duration_ms: 0.258156
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://C:/a.png"
+ok 22 - reject unsafe reference "library://C:/a.png"
+  ---
+  duration_ms: 0.098189
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a\\\\b.png"
+ok 23 - reject unsafe reference "library://a\\\\b.png"
+  ---
+  duration_ms: 0.049225
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a\\u0000b.png"
+ok 24 - reject unsafe reference "library://a\\u0000b.png"
+  ---
+  duration_ms: 0.03637
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a.png?x=1"
+ok 25 - reject unsafe reference "library://a.png?x=1"
+  ---
+  duration_ms: 0.032674
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a.png\#x"
+ok 26 - reject unsafe reference "library://a.png\#x"
+  ---
+  duration_ms: 0.030511
+  type: 'test'
+  ...
+# Subtest: references preserve Unicode, spaces and case
+ok 27 - references preserve Unicode, spaces and case
+  ---
+  duration_ms: 1.011946
+  type: 'test'
+  ...
+# Subtest: literal percent signs are allowed, URL encoding is handled separately
+ok 28 - literal percent signs are allowed, URL encoding is handled separately
+  ---
+  duration_ms: 0.136301
+  type: 'test'
+  ...
+# Subtest: future schema versions are refused
+ok 29 - future schema versions are refused
+  ---
+  duration_ms: 0.262559
+  type: 'test'
+  ...
+# Subtest: unknown keys cannot silently disappear
+ok 30 - unknown keys cannot silently disappear
+  ---
+  duration_ms: 0.107878
+  type: 'test'
+  ...
+# Subtest: NaN cannot enter a saved project
+ok 31 - NaN cannot enter a saved project
+  ---
+  duration_ms: 0.081962
+  type: 'test'
+  ...
+# Subtest: duplicate IDs are rejected
+ok 32 - duplicate IDs are rejected
+  ---
+  duration_ms: 0.196478
+  type: 'test'
+  ...
+# Subtest: null texture on a textured style is rejected
+ok 33 - null texture on a textured style is rejected
+  ---
+  duration_ms: 0.127249
+  type: 'test'
+  ...
+# Subtest: duplicate a shot remaps actors and their bubbles consistently
+ok 34 - duplicate a shot remaps actors and their bubbles consistently
+  ---
+  duration_ms: 0.736261
+  type: 'test'
+  ...
+# Subtest: deleting a speaker converts its tail to a free point
+ok 35 - deleting a speaker converts its tail to a free point
+  ---
+  duration_ms: 0.549541
+  type: 'test'
+  ...
+# Subtest: manual width resize can be accompanied by automatic text height
+ok 36 - manual width resize can be accompanied by automatic text height
+  ---
+  duration_ms: 0.579433
+  type: 'test'
+  ...
+# Subtest: word wrapping handles hard line breaks and unbroken words
+ok 37 - word wrapping handles hard line breaks and unbroken words
+  ---
+  duration_ms: 0.933077
+  type: 'test'
+  ...
+# Subtest: export generates explicit line breaks without modifying live state
+ok 38 - export generates explicit line breaks without modifying live state
+  ---
+  duration_ms: 0.572937
+  type: 'test'
+  ...
+# Subtest: text overflow is reported without corrupting the JSON
+ok 39 - text overflow is reported without corrupting the JSON
+  ---
+  duration_ms: 0.842403
+  type: 'test'
+  ...
+# Subtest: camera presets keep cover backgrounds inside the frame
+ok 40 - camera presets keep cover backgrounds inside the frame
+  ---
+  duration_ms: 0.463
+  type: 'test'
+  ...
+# Subtest: actor entrance begins off-screen and ends at its authored position
+ok 41 - actor entrance begins off-screen and ends at its authored position
+  ---
+  duration_ms: 0.534065
+  type: 'test'
+  ...
+# Subtest: tail follows speaker camera transform
+ok 42 - tail follows speaker camera transform
+  ---
+  duration_ms: 0.306247
+  type: 'test'
+  ...
+# Subtest: tail is hidden when the point is inside the bubble
+ok 43 - tail is hidden when the point is inside the bubble
+  ---
+  duration_ms: 0.258427
+  type: 'test'
+  ...
+# Subtest: tail produces three vertices outside the box
+ok 44 - tail produces three vertices outside the box
+  ---
+  duration_ms: 0.107593
+  type: 'test'
+  ...
+# Subtest: original frames use nine bounded source patches
+ok 45 - original frames use nine bounded source patches
+  ---
+  duration_ms: 0.598465
+  type: 'test'
+  ...
+# Subtest: click does not skip a dialogue before its start
+ok 46 - click does not skip a dialogue before its start
+  ---
+  duration_ms: 0.253741
+  type: 'test'
+  ...
+# Subtest: click-gated bubble keeps the shot alive beyond its nominal duration
+ok 47 - click-gated bubble keeps the shot alive beyond its nominal duration
+  ---
+  duration_ms: 0.330631
+  type: 'test'
+  ...
+# Subtest: auto bubble advances without interaction
+ok 48 - auto bubble advances without interaction
+  ---
+  duration_ms: 0.217432
+  type: 'test'
+  ...
+# Subtest: ending dialogue early still respects shot minimum duration
+ok 49 - ending dialogue early still respects shot minimum duration
+  ---
+  duration_ms: 0.119576
+  type: 'test'
+  ...
+# Subtest: pause freezes both camera clock and dialogue clock
+ok 50 - pause freezes both camera clock and dialogue clock
+  ---
+  duration_ms: 0.196282
+  type: 'test'
+  ...
+# Subtest: oversized RAF delta is bounded
+ok 51 - oversized RAF delta is bounded
+  ---
+  duration_ms: 0.103833
+  type: 'test'
+  ...
+# Subtest: undo/redo restores a previous state without mutating it
+ok 52 - undo/redo restores a previous state without mutating it
+  ---
+  duration_ms: 0.292153
+  type: 'test'
+  ...
+# Subtest: typing coalesces into one undo step
+ok 53 - typing coalesces into one undo step
+  ---
+  duration_ms: 0.093643
+  type: 'test'
+  ...
+# Subtest: a new edit clears redo history
+ok 54 - a new edit clears redo history
+  ---
+  duration_ms: 0.066322
+  type: 'test'
+  ...
+# Subtest: prototype property __proto__ is rejected as an unknown JSON field
+ok 55 - prototype property __proto__ is rejected as an unknown JSON field
+  ---
+  duration_ms: 0.264776
+  type: 'test'
+  ...
+# Subtest: prototype property constructor is rejected as an unknown JSON field
+ok 56 - prototype property constructor is rejected as an unknown JSON field
+  ---
+  duration_ms: 0.071635
+  type: 'test'
+  ...
+# Subtest: prototype property toString is rejected as an unknown JSON field
+ok 57 - prototype property toString is rejected as an unknown JSON field
+  ---
+  duration_ms: 0.085144
+  type: 'test'
+  ...
+1..57
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 125.915775

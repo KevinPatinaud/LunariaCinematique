@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 3,
+  "id": "CIN_ANIMATIONS_DEMO",
+  "title": "Animations · de la douceur au cri",
+  "stage": {
+    "width": 1600,
+    "height": 900
+  },
+  "shots": [
+    {
+      "id": "shot-0",
+      "name": "01 — Une voix dans la serre",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "cut",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "bubble-0",
+          "kind": "speech",
+          "style": "simple",
+          "frameAsset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "speakerId": null,
+          "text": "Radis… écoute. Quelque chose bouge derrière les feuilles.",
+          "x": 0.28,
+          "y": 0.3,
+          "width": 0.48,
+          "height": 0.20053333333333334,
+          "fontSize": 32,
+          "autoHeight": true,
+          "tail": {
+            "mode": "manual",
+            "x": 0.67,
+            "y": 0.72
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 2
+          },
+          "textAnimation": {
+            "reveal": "typewriter",
+            "effect": "none",
+            "speed": 32,
+            "delay": 0,
+            "duration": 0.6,
+            "intensity": 0.35,
+            "loop": false
+          },
+          "lines": [
+            "Radis… écoute. Quelque chose bouge",
+            "derrière les feuilles."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "shot-1",
+      "name": "02 — Un cri soudain",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "cut",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "bubble-1",
+          "kind": "speech",
+          "style": "simple",
+          "frameAsset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "speakerId": null,
+          "text": "ATTENTION !",
+          "x": 0.28,
+          "y": 0.3,
+          "width": 0.48,
+          "height": 0.1829333333333333,
+          "fontSize": 52,
+          "autoHeight": true,
+          "tail": {
+            "mode": "manual",
+            "x": 0.67,
+            "y": 0.72
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 2
+          },
+          "textAnimation": {
+            "reveal": "instant",
+            "effect": "shout",
+            "speed": 32,
+            "delay": 0,
+            "duration": 0.65,
+            "intensity": 0.7,
+            "loop": false
+          },
+          "lines": [
+            "ATTENTION !"
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "shot-2",
+      "name": "03 — Les mots prennent vie",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "cut",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "bubble-2",
+          "kind": "speech",
+          "style": "simple",
+          "frameAsset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "speakerId": null,
+          "text": "La forêt se réveille. Nous ne sommes plus seuls.",
+          "x": 0.28,
+          "y": 0.3,
+          "width": 0.48,
+          "height": 0.20053333333333334,
+          "fontSize": 32,
+          "autoHeight": true,
+          "tail": {
+            "mode": "manual",
+            "x": 0.67,
+            "y": 0.72
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 2
+          },
+          "textAnimation": {
+            "reveal": "words",
+            "effect": "wave",
+            "speed": 3,
+            "delay": 0,
+            "duration": 1.5,
+            "intensity": 0.35,
+            "loop": true
+          },
+          "lines": [
+            "La forêt se réveille. Nous ne sommes plus",
+            "seuls."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "shot-3",
+      "name": "04 — Une hésitation",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "cut",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "bubble-3",
+          "kind": "speech",
+          "style": "simple",
+          "frameAsset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "speakerId": null,
+          "text": "Je… je ne suis pas sûr de vouloir y aller.",
+          "x": 0.28,
+          "y": 0.3,
+          "width": 0.48,
+          "height": 0.17333333333333334,
+          "fontSize": 32,
+          "autoHeight": true,
+          "tail": {
+            "mode": "manual",
+            "x": 0.67,
+            "y": 0.72
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 2
+          },
+          "textAnimation": {
+            "reveal": "typewriter",
+            "effect": "shake",
+            "speed": 32,
+            "delay": 0,
+            "duration": 1.5,
+            "intensity": 0.35,
+            "loop": true
+          },
+          "lines": [
+            "Je… je ne suis pas sûr de vouloir y aller."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "shot-actors",
+      "name": "05 — Animations communes aux trois rôles",
+      "duration": 8,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "cut",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "actor-character",
+          "name": "Personnage · support de test",
+          "asset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "x": 0.1,
+          "y": 0.6,
+          "width": 0.2,
+          "height": 0.22,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "pop",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "exit": {
+            "preset": "fade",
+            "start": 6,
+            "duration": 1
+          },
+          "motion": {
+            "preset": "nod",
+            "intensity": 0.65,
+            "period": 1.5,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          }
+        },
+        {
+          "role": "enemy",
+          "id": "actor-enemy",
+          "name": "Ennemi · support de test",
+          "asset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "x": 0.4,
+          "y": 0.6,
+          "width": 0.2,
+          "height": 0.22,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "pop",
+            "duration": 0.8,
+            "delay": 0.2
+          },
+          "exit": {
+            "preset": "fade",
+            "start": 6,
+            "duration": 1
+          },
+          "motion": {
+            "preset": "recoil",
+            "intensity": 0.65,
+            "period": 1.5,
+            "delay": 0,
+            "loop": false,
+            "reverse": false
+          }
+        },
+        {
+          "role": "prop",
+          "id": "actor-prop",
+          "name": "Objet · support de test",
+          "asset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "x": 0.7,
+          "y": 0.6,
+          "width": 0.2,
+          "height": 0.22,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "pop",
+            "duration": 0.8,
+            "delay": 0.4
+          },
+          "exit": {
+            "preset": "fade",
+            "start": 6,
+            "duration": 1
+          },
+          "motion": {
+            "preset": "flutter",
+            "intensity": 0.65,
+            "period": 1.5,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          }
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "bubble-actors",
+          "kind": "narration",
+          "style": "parchment",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Ces cadres sont des supports de démonstration. Remplace-les par tes propres personnages, ennemis et objets.",
+          "x": 0.3,
+          "y": 0.12,
+          "width": 0.38,
+          "height": 0.21315555555555557,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 3.5
+          },
+          "textAnimation": {
+            "reveal": "fade",
+            "effect": "none",
+            "speed": 32,
+            "delay": 0,
+            "duration": 0.6,
+            "intensity": 0.35,
+            "loop": false
+          },
+          "lines": [
+            "Ces cadres sont des supports de",
+            "démonstration. Remplace-les par tes",
+            "propres personnages, ennemis et",
+            "objets."
+          ]
+        }
+      ],
+      "dialogueStart": 0.8,
+      "audio": null
+    }
+  ]
+}

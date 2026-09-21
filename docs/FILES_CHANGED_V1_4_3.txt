@@ -1,0 +1,30 @@
+CHANGES FROM V1.4.2 TO V1.4.3
+
+LIRE_AVANT_DEMARRAGE.txt
+README.md
+docs/ARCHITECTURE.md
+docs/PROJETS_RECENTS_V1_4_3.md
+docs/TEST_REPORT_V1_4_3.md
+docs/projets-recents-v1-4-3.png
+docs/toolbar-v1-4-3.png
+docs/validation-v143-transpile.json
+docs/validation-v143-typecheck.txt
+docs/validation-v143-ui.json
+docs/validation-v143-unit.tap
+package.json
+src/main/index.ts
+src/main/projectHistory.ts
+src/main/recentProjects.ts
+src/preload/index.cts
+src/renderer/App.tsx
+src/renderer/browserBridge.ts
+src/renderer/components/Icon.tsx
+src/renderer/components/RecentProjectsDialog.tsx
+src/renderer/styles.css
+src/shared/model.ts
+src/shared/recentProjects.ts
+tests/e2e/studio.spec.ts
+tests/recent-projects.test.ts
+docs/FILES_CHANGED_V1_4_3.txt
+
+No runtime Godot/schema/asset changes. No dependencies added.

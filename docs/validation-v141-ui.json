@@ -1,0 +1,86 @@
+{
+  "runtime": {
+    "react": "18.2.0",
+    "reactDom": "18.2.0-next-9e3b772b8-20220608"
+  },
+  "environment": "Chromium / about:blank, modules et images injectés localement ; pont Electron et stockage simulés ; aucun accès réseau",
+  "tests": [
+    {
+      "name": "Deux actions de lecture visibles dans la barre supérieure",
+      "passed": true
+    },
+    {
+      "name": "Numéro et nom du plan de départ mis à jour après sélection",
+      "passed": true
+    },
+    {
+      "name": "Le nouveau bouton démarre au plan choisi sans passer par le premier",
+      "passed": true
+    },
+    {
+      "name": "Échap revient au plan sélectionné dans l’éditeur",
+      "passed": true
+    },
+    {
+      "name": "Tout lire démarre au premier plan malgré une sélection différente",
+      "passed": true
+    },
+    {
+      "name": "Le raccourci du storyboard conserve le même comportement",
+      "passed": true
+    },
+    {
+      "name": "Maj+Espace fonctionne après un clic sur une vignette ayant le focus",
+      "passed": true
+    },
+    {
+      "name": "Maj+Espace ne lance pas la lecture pendant la saisie d’un texte",
+      "passed": true
+    },
+    {
+      "name": "Réordonner un plan conserve sa sélection et met à jour le point de départ",
+      "passed": true
+    },
+    {
+      "name": "La lecture enchaîne les plans suivants à partir de la sélection",
+      "passed": true
+    },
+    {
+      "name": "Rejouer conserve le plan de départ de l’aperçu, pas le premier ni le dernier",
+      "passed": true
+    },
+    {
+      "name": "Un asset absent dans un plan antérieur n’empêche pas l’aperçu des plans suivants",
+      "passed": true
+    },
+    {
+      "name": "Tout lire conserve le diagnostic des assets manquants ; raccourci inactif dans la modale",
+      "passed": true
+    },
+    {
+      "name": "Lancer/quitter l’aperçu ne modifie pas le contenu JSON de la cinématique",
+      "passed": true
+    },
+    {
+      "name": "Barre lisible sans chevauchement ni débordement à 1648 × 920",
+      "passed": true
+    },
+    {
+      "name": "Barre lisible sans chevauchement ni débordement à 1366 × 768",
+      "passed": true
+    },
+    {
+      "name": "Barre lisible sans chevauchement ni débordement à 1150 × 740",
+      "passed": true
+    },
+    {
+      "name": "Barre lisible sans chevauchement ni débordement à 1000 × 740",
+      "passed": true
+    },
+    {
+      "name": "Aucune erreur JavaScript non gérée pendant les essais",
+      "passed": true
+    }
+  ],
+  "pageErrors": []
+}

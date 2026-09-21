@@ -1,0 +1,86 @@
+[
+  {
+    "test": "Default sidebar: wider, 4 columns, at least 20 complete thumbnails",
+    "status": "passed",
+    "details": {
+      "visible": 20,
+      "width": 368
+    }
+  },
+  {
+    "test": "Search and double-click use an actual linked environment",
+    "status": "passed"
+  },
+  {
+    "test": "Drag-resize sidebar: 488px and 5 columns",
+    "status": "passed"
+  },
+  {
+    "test": "Accessible separator: arrows, Home, End, double-click reset",
+    "status": "passed"
+  },
+  {
+    "test": "Compact list with paths and disabled irrelevant thumbnail sizes",
+    "status": "passed"
+  },
+  {
+    "test": "Preferences serialized and restored on a fresh mount (storage simulated)",
+    "status": "passed"
+  },
+  {
+    "test": "Three thumbnail sizes without changing document data",
+    "status": "passed"
+  },
+  {
+    "test": "Folder menu is an overlay, closes on selection, filters by continent",
+    "status": "passed"
+  },
+  {
+    "test": "Nested place breadcrumbs, per-category folders, external category switch clears search",
+    "status": "passed"
+  },
+  {
+    "test": "Empty search feedback and one-click reset",
+    "status": "passed"
+  },
+  {
+    "test": "Folder search finds a nested place without manually expanding ancestors",
+    "status": "passed"
+  },
+  {
+    "test": "Continuous scrolling reaches every one of 226 environment assets",
+    "status": "passed"
+  },
+  {
+    "test": "Compact selection strip; Space on a resource never starts the cinematic",
+    "status": "passed"
+  },
+  {
+    "test": "Expanded native dialog, 7+ columns, Escape and focus restoration",
+    "status": "passed"
+  },
+  {
+    "test": "Expanded preview and double-click insertion return to scene with search retained",
+    "status": "passed"
+  },
+  {
+    "test": "One-click plus inserts a character into the scene (neutral fixture PNG)",
+    "status": "passed"
+  },
+  {
+    "test": "Existing drag-and-drop contract preserved",
+    "status": "passed"
+  },
+  {
+    "test": "Saved JSON remains schema V1 with references only, no UI preferences or images",
+    "status": "passed"
+  },
+  {
+    "test": "1160×740, 1280×800 and 1920×1080: usable gallery and no global horizontal overflow",
+    "status": "passed"
+  },
+  {
+    "test": "No unhandled JavaScript exceptions during all interactions",
+    "status": "passed"
+  }
+]

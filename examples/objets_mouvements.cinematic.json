@@ -1,0 +1,471 @@
+{
+  "schemaVersion": 2,
+  "id": "CIN_DEMO_OBJETS_MOUVEMENTS",
+  "title": "Démo · Objets et mouvements",
+  "stage": {
+    "width": 1600,
+    "height": 900
+  },
+  "shots": [
+    {
+      "id": "9e54286c-bacd-42db-8a44-2ee698d0d7e7",
+      "name": "Flottement",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "fe79c4c8-4822-44cd-b764-a60443aa6c3c",
+          "name": "Panneau de démonstration · cadre UI réutilisé",
+          "asset": "library://06_ui/dialogues/tooltip_ornate_v01.png",
+          "x": 0.18,
+          "y": 0.36,
+          "width": 0.3,
+          "height": 0.35555555555555557,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "role": "prop",
+          "motion": {
+            "preset": "float",
+            "intensity": 0.35,
+            "period": 3,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          },
+          "pivot": "center",
+          "movement": {
+            "enabled": true,
+            "dx": 0.32,
+            "dy": 0,
+            "duration": 4,
+            "delay": 0,
+            "easing": "smooth",
+            "repeat": "once"
+          }
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "5a669495-82ad-4eff-97c8-07c8a7dfb88d",
+          "kind": "narration",
+          "style": "plain",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Flottement + trajet A → B. Un PNG indépendant se déplace doucement dans le décor.",
+          "x": 0.1,
+          "y": 0.06,
+          "width": 0.8,
+          "height": 0.10888888888888888,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 6
+          },
+          "lines": [
+            "Flottement + trajet A → B. Un PNG indépendant se déplace doucement dans le décor."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "68ca382a-9eba-4cd3-8c67-f977a58e547f",
+      "name": "Balancement",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "1e70044c-de3e-42f4-9d58-b89493e671ce",
+          "name": "Panneau de démonstration · cadre UI réutilisé",
+          "asset": "library://06_ui/dialogues/tooltip_ornate_v01.png",
+          "x": 0.18,
+          "y": 0.36,
+          "width": 0.3,
+          "height": 0.35555555555555557,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "role": "prop",
+          "motion": {
+            "preset": "sway",
+            "intensity": 0.35,
+            "period": 3,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          },
+          "pivot": "top"
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "18c76519-a087-4da7-b2a1-cdda30582360",
+          "kind": "narration",
+          "style": "plain",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Balancement autour du haut du cadre. Le point d’appui peut aussi être au centre ou au sol.",
+          "x": 0.1,
+          "y": 0.06,
+          "width": 0.8,
+          "height": 0.13102222222222223,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 6
+          },
+          "lines": [
+            "Balancement autour du haut du cadre. Le point d’appui peut aussi être au centre ou au",
+            "sol."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "996a0a87-0fc1-49d7-8d56-52f7224c80c4",
+      "name": "Respiration",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "69db757e-3f7b-4dd6-9d13-fc38569643ce",
+          "name": "Panneau de démonstration · cadre UI réutilisé",
+          "asset": "library://06_ui/dialogues/tooltip_ornate_v01.png",
+          "x": 0.18,
+          "y": 0.36,
+          "width": 0.3,
+          "height": 0.35555555555555557,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "role": "prop",
+          "motion": {
+            "preset": "pulse",
+            "intensity": 0.35,
+            "period": 3,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          },
+          "pivot": "bottom"
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "2e2f93dc-5578-43f5-9ba4-c26d471b9af1",
+          "kind": "narration",
+          "style": "plain",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Respiration : légère variation de taille. Le bas reste fixé au sol.",
+          "x": 0.1,
+          "y": 0.06,
+          "width": 0.8,
+          "height": 0.10888888888888888,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 6
+          },
+          "lines": [
+            "Respiration : légère variation de taille. Le bas reste fixé au sol."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "44b8a58f-f09c-43b5-88b6-d2ede6e8d89b",
+      "name": "Rotation continue",
+      "duration": 8,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "d7a164a0-8c20-4d9e-8be9-bafbf1a5959d",
+          "name": "Panneau de démonstration · cadre UI réutilisé",
+          "asset": "library://06_ui/dialogues/tooltip_ornate_v01.png",
+          "x": 0.18,
+          "y": 0.36,
+          "width": 0.3,
+          "height": 0.35555555555555557,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "role": "prop",
+          "motion": {
+            "preset": "spin",
+            "intensity": 0.35,
+            "period": 8,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          },
+          "pivot": "center"
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "32360059-238e-454e-b5b1-efe9ca7bc5ef",
+          "kind": "narration",
+          "style": "plain",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Rotation continue autour du centre. Le sens et la durée du tour sont réglables.",
+          "x": 0.1,
+          "y": 0.06,
+          "width": 0.8,
+          "height": 0.10888888888888888,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 8
+          },
+          "lines": [
+            "Rotation continue autour du centre. Le sens et la durée du tour sont réglables."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "98318f7b-b64a-4caa-befa-743bdeb188c4",
+      "name": "Tremblement",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "251d4231-6f0f-45d1-9408-7b770d408bd3",
+          "name": "Panneau de démonstration · cadre UI réutilisé",
+          "asset": "library://06_ui/dialogues/tooltip_ornate_v01.png",
+          "x": 0.18,
+          "y": 0.36,
+          "width": 0.3,
+          "height": 0.35555555555555557,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "role": "prop",
+          "motion": {
+            "preset": "shake",
+            "intensity": 0.35,
+            "period": 1,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          },
+          "pivot": "center"
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "a45b29e4-e5f0-4018-91db-5de6e63d9826",
+          "kind": "narration",
+          "style": "plain",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Tremblement régulier, sans hasard : le même instant donne toujours la même pose.",
+          "x": 0.1,
+          "y": 0.06,
+          "width": 0.8,
+          "height": 0.10888888888888888,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 6
+          },
+          "lines": [
+            "Tremblement régulier, sans hasard : le même instant donne toujours la même pose."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    },
+    {
+      "id": "2779429e-6bbf-43c5-a360-0275e82d152f",
+      "name": "Petit bond",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "79c4fd0e-8d99-4ff1-a297-1adf2bdac608",
+          "name": "Panneau de démonstration · cadre UI réutilisé",
+          "asset": "library://06_ui/dialogues/tooltip_ornate_v01.png",
+          "x": 0.18,
+          "y": 0.36,
+          "width": 0.3,
+          "height": 0.35555555555555557,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "role": "prop",
+          "motion": {
+            "preset": "bounce",
+            "intensity": 0.35,
+            "period": 1.8,
+            "delay": 0,
+            "loop": true,
+            "reverse": false
+          },
+          "pivot": "center"
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "a6071f18-ec7c-4830-95b2-40390dbb2d29",
+          "kind": "narration",
+          "style": "plain",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Petit bond : le calque monte puis revient à sa position de repos.",
+          "x": 0.1,
+          "y": 0.06,
+          "width": 0.8,
+          "height": 0.10888888888888888,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 6
+          },
+          "lines": [
+            "Petit bond : le calque monte puis revient à sa position de repos."
+          ]
+        }
+      ],
+      "dialogueStart": 0,
+      "audio": null
+    }
+  ]
+}

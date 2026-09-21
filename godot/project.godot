@@ -1,0 +1,6 @@
+; Minimal local validation harness. Do not replace your game's project.godot.
+config_version=5
+[application]
+config/name="Lunaria Cinematic Motion Validation"
+[rendering]
+renderer/rendering_method="gl_compatibility"

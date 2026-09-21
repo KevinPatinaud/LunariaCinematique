@@ -1,0 +1,37 @@
+V1.4.2 — fichiers modifiés par rapport à l’archive complète V1.4.1
+
+MODIFIÉS
+LIRE_AVANT_DEMARRAGE.txt
+README.md
+docs/FORMAT.md
+docs/INTEGRATION_GODOT.md
+docs/cinematic.schema.json
+godot/README.md
+godot/addons/lunaria_cinematics/CinematicPlayer.gd
+godot/addons/lunaria_cinematics/CinematicValidator.gd
+godot/addons/lunaria_cinematics/cinematic.schema.json
+package.json
+src/renderer/App.tsx
+src/renderer/components/Icon.tsx
+src/renderer/components/Inspector.tsx
+src/renderer/components/Layers.tsx
+src/renderer/components/Library.tsx
+src/renderer/components/PlanDialogs.tsx
+src/renderer/components/Scene.tsx
+src/renderer/styles.css
+src/shared/assets.ts
+src/shared/libraryBrowser.ts
+src/shared/model.ts
+src/shared/schema.ts
+tests/e2e/studio.spec.ts
+
+AJOUTÉS
+docs/ENNEMIS_V1_4_2.md
+docs/FILES_CHANGED_V1_4_2.txt
+docs/TEST_REPORT_V1_4_2.md
+docs/validation-v142-transpile.json
+docs/validation-v142-ui.json
+docs/validation-v142-unit.tap
+tests/enemies.test.ts
+
+Aucun fichier antérieur supprimé. Images exemples inchangées.

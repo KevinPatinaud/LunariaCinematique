@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 4,
+  "id": "CIN_ATELIER_PRESENTATION",
+  "title": "Les gestes viennent du Studio",
+  "stage": {
+    "width": 1600,
+    "height": 900
+  },
+  "shots": [
+    {
+      "id": "plan_gestes",
+      "name": "Même capacité, gestes différents",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "actor_radish_attack_0",
+          "name": "Radis",
+          "asset": "library://combat/animation/animation_radish.png",
+          "x": 0.16,
+          "y": 0.43,
+          "width": 0.26,
+          "height": 0.46,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0.6
+          },
+          "animation": {
+            "mode": "species",
+            "animationId": "",
+            "speciesId": "radish",
+            "slot": "attack",
+            "speed": 1
+          }
+        },
+        {
+          "id": "actor_bramble_attack_0",
+          "name": "Ronce",
+          "asset": "library://combat/illustrations/plants/bramble.png",
+          "x": 0.6,
+          "y": 0.43,
+          "width": 0.26,
+          "height": 0.46,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 1.2
+          },
+          "animation": {
+            "mode": "species",
+            "animationId": "",
+            "speciesId": "bramble",
+            "slot": "attack",
+            "speed": 1
+          }
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "bulle_radis",
+          "kind": "speech",
+          "style": "parchment",
+          "frameAsset": null,
+          "speakerId": "actor_radish_attack_0",
+          "text": "La même capacité. Deux gestes différents !",
+          "x": 0.3,
+          "y": 0.12,
+          "width": 0.38,
+          "height": 0.16,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "auto",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 4
+          },
+          "textAnimation": {
+            "reveal": "typewriter",
+            "effect": "none",
+            "speed": 38,
+            "delay": 0,
+            "duration": 0.6,
+            "intensity": 0.3,
+            "loop": false
+          }
+        }
+      ],
+      "dialogueStart": 0.8,
+      "audio": null
+    },
+    {
+      "id": "plan_ennemi",
+      "name": "Déplacement et points d’attache",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "role": "enemy",
+          "id": "actor_litterer_move_1",
+          "name": "Jeteur de déchets",
+          "asset": "library://combat/enemies/polluters_atlas.png",
+          "x": 0.72,
+          "y": 0.46,
+          "width": 0.26,
+          "height": 0.46,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "animation": {
+            "mode": "species",
+            "animationId": "",
+            "speciesId": "litterer",
+            "slot": "move",
+            "speed": 1
+          },
+          "movement": {
+            "enabled": true,
+            "dx": -0.42,
+            "dy": 0,
+            "delay": 0,
+            "duration": 4,
+            "easing": "smooth",
+            "repeat": "once"
+          }
+        }
+      ],
+      "bubbles": [
+        {
+          "id": "bulle_ennemi",
+          "kind": "speech",
+          "style": "parchment",
+          "frameAsset": null,
+          "speakerId": "actor_litterer_move_1",
+          "text": "Les bulles suivent aussi les acteurs animés !",
+          "x": 0.3,
+          "y": 0.12,
+          "width": 0.38,
+          "height": 0.16,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "auto",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "auto",
+            "seconds": 4.5
+          },
+          "textAnimation": {
+            "reveal": "typewriter",
+            "effect": "shout",
+            "speed": 38,
+            "delay": 0,
+            "duration": 0.6,
+            "intensity": 0.3,
+            "loop": false
+          }
+        }
+      ],
+      "dialogueStart": 0.5,
+      "audio": null
+    },
+    {
+      "id": "plan_partage",
+      "name": "Référence directe et animation procédurale",
+      "duration": 5,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "fixed",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [
+        {
+          "id": "actor_radish_attack_2",
+          "name": "Radis",
+          "asset": "library://combat/animation/animation_radish.png",
+          "x": 0.18,
+          "y": 0.43,
+          "width": 0.26,
+          "height": 0.46,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "animation": {
+            "mode": "animation",
+            "animationId": "radish_throw",
+            "speciesId": "radish",
+            "slot": "attack",
+            "speed": 1
+          }
+        },
+        {
+          "id": "actor_bramble_idle_2",
+          "name": "Ronce",
+          "asset": "library://combat/illustrations/plants/bramble.png",
+          "x": 0.59,
+          "y": 0.43,
+          "width": 0.26,
+          "height": 0.46,
+          "flipX": false,
+          "opacity": 1,
+          "entry": {
+            "preset": "none",
+            "duration": 0.8,
+            "delay": 0
+          },
+          "animation": {
+            "mode": "species",
+            "animationId": "",
+            "speciesId": "bramble",
+            "slot": "idle",
+            "speed": 1
+          }
+        }
+      ],
+      "bubbles": [],
+      "dialogueStart": 0.8,
+      "audio": null
+    }
+  ],
+  "presentationCatalog": {
+    "projectId": "lunaria_atelier_presentation",
+    "file": "content/design/game_content.json"
+  }
+}

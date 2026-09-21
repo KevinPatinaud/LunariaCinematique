@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { atomicJson, isWithin, readJson, resolveAsset } from '../src/main/files.js';
+import { assetUrl, classifyAsset, scanLibrary } from '../src/main/library.js';
+async function workspace(fn:(root:string)=>Promise<void>) { const root=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-test-')); try { await fn(root); } finally { await fs.rm(root,{recursive:true,force:true}); } }
+test('sibling prefix is not inside selected root', ()=>{const base=path.resolve('/tmp/library');assert.equal(isWithin(base,base+'-private/a.png'),false);assert.equal(isWithin(base,path.join(base,'europe/a.png')),true);});
+test('resolve a Unicode asset path relative to root',()=>workspace(async root=>{await fs.mkdir(path.join(root,'Forêt'));await fs.writeFile(path.join(root,'Forêt','été.png'),'png');assert.equal(await resolveAsset(root,'library://Forêt/été.png'),await fs.realpath(path.join(root,'Forêt','été.png')));}));
+test('reject path traversal before filesystem access',()=>workspace(async root=>{await assert.rejects(resolveAsset(root,'library://../other.png'));}));
+test('reject symlink escaping selected root',()=>workspace(async root=>{const safe=path.join(root,'library'),privateFile=path.join(root,'secret.png');await fs.mkdir(safe);await fs.writeFile(privateFile,'secret');try{await fs.symlink(privateFile,path.join(safe,'linked.png'));}catch(error){if((error as NodeJS.ErrnoException).code==='EPERM')return;throw error;}await assert.rejects(resolveAsset(safe,'library://linked.png'));}));
+test('atomic save produces a readable JSON and previous .bak',()=>workspace(async root=>{const file=path.join(root,'cinematic.json');await atomicJson(file,{version:1});await atomicJson(file,{version:2},true);assert.deepEqual(await readJson(file),{version:2});assert.deepEqual(await readJson(file+'.bak'),{version:1});assert.equal((await fs.readdir(root)).filter(n=>n.endsWith('.tmp')).length,0);}));
+test('JSON reader accepts a UTF-8 BOM',()=>workspace(async root=>{const file=path.join(root,'data.json');await fs.writeFile(file,'\uFEFF{"valid":true}');assert.deepEqual(await readJson(file),{valid:true});}));
+test('JSON reader applies size limit',()=>workspace(async root=>{const file=path.join(root,'data.json');await fs.writeFile(file,'{"text":"0123456789"}');await assert.rejects(readJson(file,5));}));
+test('scanner walks continents and places but ignores non-assets',()=>workspace(async root=>{await fs.mkdir(path.join(root,'01_europe','foret'),{recursive:true});await fs.writeFile(path.join(root,'01_europe','foret','été.png'),'png');await fs.writeFile(path.join(root,'readme.md'),'text');await fs.mkdir(path.join(root,'.git'));await fs.writeFile(path.join(root,'.git','hidden.png'),'png');const result=await scanLibrary(root);assert.equal(result.assets.length,1);assert.equal(result.assets[0].ref,'library://01_europe/foret/été.png');assert.equal(result.assets[0].folder,'01_europe/foret');}));
+test('scanner never renames or modifies source files',()=>workspace(async root=>{const file=path.join(root,'test.png');await fs.writeFile(file,'unchanged');const before=await fs.stat(file);await scanLibrary(root);const after=await fs.stat(file);assert.equal(after.mtimeMs,before.mtimeMs);assert.equal(await fs.readFile(file,'utf8'),'unchanged');}));
+test('asset classification distinguishes characters, UI and audio',()=>{assert.equal(classifyAsset('05_characters/rose/stage_01/rose.png'),'character');assert.equal(classifyAsset('06_ui/dialogues/dialogue.png'),'ui');assert.equal(classifyAsset('07_audio/wind.ogg'),'audio');});
+test('protocol URLs encode filenames without changing the model paths',()=>{const url=assetUrl('library://Forêt/50% #.png',12,true);assert.ok(url.includes('For%C3%AAt/50%25%20%23.png'));assert.ok(url.endsWith('&thumb=1'));});

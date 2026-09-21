@@ -1,0 +1,6534 @@
+{
+  "schemaVersion": 4,
+  "kind": "lunaria-game-project",
+  "id": "atelier_logique",
+  "title": "Atelier — IA, phases et événements",
+  "balance": {
+    "plants": [
+      {
+        "id": "radish",
+        "name": "Radis",
+        "role": "Attaque régulière",
+        "description": "Un tir fiable dans son allée, à un coût accessible.",
+        "ability": "Graines vaillantes",
+        "personality": "Obstiné et curieux. Il garde la dernière graine du tilleul.",
+        "cost": 100,
+        "cooldown": 3,
+        "max_hp": 165,
+        "rate": 1.4,
+        "damage": 38,
+        "range": 9,
+        "behavior": "projectile",
+        "effect_radius": 0,
+        "effect_strength": 1,
+        "color": "#f28b9c",
+        "chapter": 0,
+        "unlock": 0,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_radish"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_radish",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/animation/animation_radish.png",
+            "region": {
+              "x": 9,
+              "y": 11,
+              "width": 629,
+              "height": 558
+            },
+            "anchor": {
+              "x": 0.5286168521462639,
+              "y": 0.992831541218638
+            }
+          },
+          "width": 96,
+          "height": 82,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Quatre poses et ancrages de pieds repris de radish_art.gd. La libération est désormais au marqueur release."
+        }
+      },
+      {
+        "id": "bramble",
+        "name": "Ronce",
+        "role": "Entrave défensive",
+        "description": "Ses épines accrochent les pollueurs proches et freinent leur avancée.",
+        "ability": "Étreinte épineuse",
+        "personality": "Protectrice, méfiante. Elle apprend à partager le poids des autres.",
+        "cost": 90,
+        "cooldown": 5,
+        "max_hp": 400,
+        "rate": 1.8,
+        "damage": 25,
+        "range": 2.25,
+        "behavior": "snare",
+        "effect_radius": 0.45,
+        "effect_strength": 1,
+        "color": "#8fb16b",
+        "chapter": 0,
+        "unlock": 0,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_bramble"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_bramble",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/bramble.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 238,
+              "height": 243
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "hazel",
+        "name": "Noisetier",
+        "role": "Rempart régénérant",
+        "description": "Un rempart abordable qui reprend des forces au fil du combat.",
+        "ability": "Écorce obstinée",
+        "personality": "Bourru, prudent. Ses noisettes sont un inventaire très personnel.",
+        "cost": 80,
+        "cooldown": 5.5,
+        "max_hp": 680,
+        "rate": 2,
+        "damage": 9,
+        "range": 1,
+        "behavior": "guard",
+        "effect_radius": 0,
+        "effect_strength": 1,
+        "color": "#c39b65",
+        "chapter": 0,
+        "unlock": 1,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_hazel",
+          "ab_hazel_regeneration"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_hazel",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/hazel.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 191,
+              "height": 246
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "fern",
+        "name": "Fougère",
+        "role": "Ralentissement",
+        "description": "Ralentit les pollueurs et fragilise leur protection.",
+        "ability": "Frondes humides",
+        "personality": "Discrète et attentive. L'eau lui indique des chemins insoupçonnés.",
+        "cost": 125,
+        "cooldown": 4.5,
+        "max_hp": 180,
+        "rate": 2,
+        "damage": 24,
+        "range": 8,
+        "behavior": "slow",
+        "effect_radius": 0.35,
+        "effect_strength": 1,
+        "color": "#73d5b5",
+        "chapter": 0,
+        "unlock": 2,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_fern"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_fern",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/fern.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 195,
+              "height": 268
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "dandelion",
+        "name": "Pissenlit",
+        "role": "Tir lointain",
+        "description": "Ses aigrettes atteignent les menaces lointaines avec précision.",
+        "ability": "Aigrettes éclaireuses",
+        "personality": "Rêveur et bavard. Il connaît toujours le début du chemin.",
+        "cost": 140,
+        "cooldown": 4.5,
+        "max_hp": 130,
+        "rate": 2.1,
+        "damage": 61,
+        "range": 10,
+        "behavior": "sniper",
+        "effect_radius": 0,
+        "effect_strength": 1,
+        "color": "#f5d268",
+        "chapter": 0,
+        "unlock": 3,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_dandelion"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_dandelion",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/dandelion.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 195,
+              "height": 207
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "ivy",
+        "name": "Lierre",
+        "role": "Immobilisation",
+        "description": "Accroche une cible à moyenne portée pour laisser les attaquants agir.",
+        "ability": "Prise de la verrière",
+        "personality": "Acrobate et prétentieux. Il construit enfin des passages pour tous.",
+        "cost": 120,
+        "cooldown": 5,
+        "max_hp": 250,
+        "rate": 2.8,
+        "damage": 18,
+        "range": 4,
+        "behavior": "snare",
+        "effect_radius": 0.5,
+        "effect_strength": 1.5,
+        "color": "#5daa71",
+        "chapter": 0,
+        "unlock": 4,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_ivy"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_ivy",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/ivy.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 209,
+              "height": 224
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "nettle",
+        "name": "Ortie",
+        "role": "Riposte de contact",
+        "description": "Punit les pollueurs qui s'approchent de ses protégés.",
+        "ability": "Garde urticante",
+        "personality": "Franche et susceptible. Elle ne laisse aucune jeune pousse derrière.",
+        "cost": 100,
+        "cooldown": 4,
+        "max_hp": 350,
+        "rate": 1.2,
+        "damage": 32,
+        "range": 1.6,
+        "behavior": "thorns",
+        "effect_radius": 0.5,
+        "effect_strength": 1,
+        "color": "#9bb954",
+        "chapter": 0,
+        "unlock": 5,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_nettle"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_nettle",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/nettle.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 184,
+              "height": 243
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "acacia",
+        "name": "Acacia",
+        "role": "Épines perforantes",
+        "description": "Ses longues épines sont utiles contre les pollueurs protégés.",
+        "ability": "Haie des pépinières",
+        "personality": "Exigeante, drôle et attentionnée. Les conseils attendront après les travaux.",
+        "cost": 145,
+        "cooldown": 5,
+        "max_hp": 310,
+        "rate": 2,
+        "damage": 46,
+        "range": 5,
+        "behavior": "pierce",
+        "effect_radius": 0,
+        "effect_strength": 0.75,
+        "color": "#a6ba66",
+        "chapter": 1,
+        "unlock": 8,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_acacia"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_acacia",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/acacia.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 217,
+              "height": 222
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "baobab",
+        "name": "Baobab",
+        "role": "Grand protecteur",
+        "description": "Un rempart coûteux, très solide, pour tenir une allée exposée.",
+        "ability": "Tronc refuge",
+        "personality": "Jeune arbre chaleureux. Il allonge ses histoires jusqu'à l'arrivée des secours.",
+        "cost": 180,
+        "cooldown": 9,
+        "max_hp": 1250,
+        "rate": 2.6,
+        "damage": 13,
+        "range": 1.1,
+        "behavior": "guard",
+        "effect_radius": 1,
+        "effect_strength": 1.3,
+        "color": "#b58b60",
+        "chapter": 1,
+        "unlock": 10,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_baobab",
+          "ab_baobab_protection",
+          "ab_baobab_regeneration"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_baobab",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/baobab.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 180,
+              "height": 234
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "aloe",
+        "name": "Aloès",
+        "role": "Soins rapprochés",
+        "description": "Restaure régulièrement la vitalité des compagnons autour d'elle.",
+        "ability": "Gel réparateur",
+        "personality": "Douce dans ses gestes, intraitable lorsqu'on cache une blessure.",
+        "cost": 130,
+        "cooldown": 6,
+        "max_hp": 220,
+        "rate": 3,
+        "damage": 0,
+        "range": 1.5,
+        "behavior": "healer",
+        "effect_radius": 1.5,
+        "effect_strength": 1.25,
+        "color": "#9dc992",
+        "chapter": 1,
+        "unlock": 11,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_aloe"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_aloe",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/aloe.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 173,
+              "height": 222
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "papyrus",
+        "name": "Papyrus",
+        "role": "Réparation",
+        "description": "Aide les plantes proches et soutient la protection du terrain.",
+        "ability": "Réseau de rigoles",
+        "personality": "Méthodique et inventif. Chaque trou mérite une correction sur ses plans.",
+        "cost": 130,
+        "cooldown": 6.5,
+        "max_hp": 235,
+        "rate": 4,
+        "damage": 0,
+        "range": 2,
+        "behavior": "repair",
+        "effect_radius": 2,
+        "effect_strength": 1,
+        "color": "#b5cc75",
+        "chapter": 1,
+        "unlock": 9,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_papyrus"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_papyrus",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/papyrus.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 165,
+              "height": 270
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "hibiscus",
+        "name": "Hibiscus",
+        "role": "Soutien collectif",
+        "description": "Renforce les attaques des plantes voisines.",
+        "ability": "Appel du jardin",
+        "personality": "Sociable et fier de ses fleurs. Il connaît le prénom de chaque voisin.",
+        "cost": 145,
+        "cooldown": 6,
+        "max_hp": 190,
+        "rate": 2.5,
+        "damage": 14,
+        "range": 5,
+        "behavior": "buffer",
+        "effect_radius": 1.5,
+        "effect_strength": 1,
+        "color": "#ee837c",
+        "chapter": 1,
+        "unlock": 12,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_hibiscus",
+          "ab_hibiscus_aura"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_hibiscus",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/hibiscus.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 168,
+              "height": 254
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "lavender",
+        "name": "Lavande",
+        "role": "Nuage de zone",
+        "description": "Son nuage floral touche les pollueurs proches dans plusieurs allées.",
+        "ability": "Brume parfumée",
+        "personality": "Théâtrale et bavarde. Elle tient à ce qu'on distingue son parfum des fumées.",
+        "cost": 175,
+        "cooldown": 6,
+        "max_hp": 170,
+        "rate": 2.1,
+        "damage": 33,
+        "range": 6,
+        "behavior": "splash",
+        "effect_radius": 1.1,
+        "effect_strength": 1,
+        "color": "#b49bf2",
+        "chapter": 2,
+        "unlock": 16,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_lavender"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_lavender",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/lavender.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 138,
+              "height": 252
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "bamboo",
+        "name": "Bambou",
+        "role": "Ligne perforante",
+        "description": "Traverse les protections avec des attaques rapides dans son allée.",
+        "ability": "Lance souple",
+        "personality": "Discipliné et fier. Il apprend à ménager un chemin de repli.",
+        "cost": 155,
+        "cooldown": 5,
+        "max_hp": 240,
+        "rate": 1.5,
+        "damage": 36,
+        "range": 7,
+        "behavior": "pierce",
+        "effect_radius": 0,
+        "effect_strength": 0.65,
+        "color": "#a9cc70",
+        "chapter": 2,
+        "unlock": 17,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_bamboo"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_bamboo",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/bamboo.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 193,
+              "height": 274
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "lotus",
+        "name": "Lotus",
+        "role": "Soins étendus",
+        "description": "Prend soin des compagnons dans un large voisinage, plus lentement qu'Aloès.",
+        "ability": "Calme du bassin",
+        "personality": "Paisible et tenace. Elle ne quitte pas un bassin tant qu'on y attend de l'aide.",
+        "cost": 160,
+        "cooldown": 6,
+        "max_hp": 190,
+        "rate": 4,
+        "damage": 0,
+        "range": 2.25,
+        "behavior": "healer",
+        "effect_radius": 2.25,
+        "effect_strength": 1,
+        "color": "#ecc0d6",
+        "chapter": 2,
+        "unlock": 18,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_lotus"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_lotus",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/lotus.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 190,
+              "height": 245
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "ginger",
+        "name": "Gingembre",
+        "role": "Explosion rapprochée",
+        "description": "Frappe fort un groupe compact, mais doit être placé près du front.",
+        "ability": "Racine explosive",
+        "personality": "Impulsif et enthousiaste. Il apprend à attendre le signal commun.",
+        "cost": 150,
+        "cooldown": 4.5,
+        "max_hp": 215,
+        "rate": 2.2,
+        "damage": 52,
+        "range": 3.5,
+        "behavior": "splash",
+        "effect_radius": 0.7,
+        "effect_strength": 1,
+        "color": "#dfa463",
+        "chapter": 2,
+        "unlock": 19,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_ginger"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_ginger",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/ginger.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 171,
+              "height": 292
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "chrysanthemum",
+        "name": "Chrysanthème",
+        "role": "Affaiblissement",
+        "description": "Désigne les cibles dont les défenses doivent céder sous les tirs alliés.",
+        "ability": "Signal des terrasses",
+        "personality": "Minutieuse, inquiète, dotée d'un humour sec et d'excellents plans.",
+        "cost": 135,
+        "cooldown": 5,
+        "max_hp": 175,
+        "rate": 2,
+        "damage": 19,
+        "range": 8,
+        "behavior": "weaken",
+        "effect_radius": 0.5,
+        "effect_strength": 1.25,
+        "color": "#eedc89",
+        "chapter": 2,
+        "unlock": 21,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_chrysanthemum"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_chrysanthemum",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/chrysanthemum.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 166,
+              "height": 236
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "mangrove",
+        "name": "Palétuvier",
+        "role": "Ancrage résistant",
+        "description": "Ses racines forment un rempart durable et récupèrent leurs forces.",
+        "ability": "Racines de berge",
+        "personality": "Patient et tenace. Il a besoin de savoir ce que deviennent ceux qui restent.",
+        "cost": 125,
+        "cooldown": 7,
+        "max_hp": 820,
+        "rate": 2.3,
+        "damage": 13,
+        "range": 1.3,
+        "behavior": "guard",
+        "effect_radius": 1,
+        "effect_strength": 1.1,
+        "color": "#739c7e",
+        "chapter": 3,
+        "unlock": 24,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_mangrove",
+          "ab_mangrove_protection",
+          "ab_mangrove_regeneration"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_mangrove",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/mangrove.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 92,
+              "height": 159
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "coconut",
+        "name": "Cocotier",
+        "role": "Tir lourd lointain",
+        "description": "Lance de lourdes noix à longue portée ; chaque tir demande du temps.",
+        "ability": "Noix de vigie",
+        "personality": "Enthousiaste. Il découvre les questions auxquelles un navigateur ne sait pas répondre.",
+        "cost": 195,
+        "cooldown": 6.5,
+        "max_hp": 260,
+        "rate": 3,
+        "damage": 100,
+        "range": 10,
+        "behavior": "sniper",
+        "effect_radius": 0,
+        "effect_strength": 1.3,
+        "color": "#88bd70",
+        "chapter": 3,
+        "unlock": 26,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_coconut"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_coconut",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/coconut.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 132,
+              "height": 191
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "pandanus",
+        "name": "Pandanus",
+        "role": "Réparation renforcée",
+        "description": "Répare à proximité et consolide le terrain depuis une position protégée.",
+        "ability": "Attaches tressées",
+        "personality": "Pratique et inventive. Les discours n'ont jamais retenu une plateforme.",
+        "cost": 170,
+        "cooldown": 7,
+        "max_hp": 330,
+        "rate": 4,
+        "damage": 0,
+        "range": 1.5,
+        "behavior": "repair",
+        "effect_radius": 1.5,
+        "effect_strength": 1.4,
+        "color": "#8fae69",
+        "chapter": 3,
+        "unlock": 25,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_pandanus",
+          "ab_pandanus_protection"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_pandanus",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/pandanus.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 110,
+              "height": 184
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "eucalyptus",
+        "name": "Eucalyptus",
+        "role": "Dispersion de groupe",
+        "description": "Répand ses feuilles dans une large zone autour de la cible.",
+        "ability": "Souffle argenté",
+        "personality": "Réservé et fier. Il apprend qu'accepter un secours prépare mieux le retour.",
+        "cost": 185,
+        "cooldown": 6,
+        "max_hp": 220,
+        "rate": 2.5,
+        "damage": 34,
+        "range": 7,
+        "behavior": "splash",
+        "effect_radius": 1.5,
+        "effect_strength": 0.9,
+        "color": "#a4c5b9",
+        "chapter": 3,
+        "unlock": 27,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_eucalyptus"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_eucalyptus",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/eucalyptus.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 118,
+              "height": 195
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "banksia",
+        "name": "Banksia",
+        "role": "Recyclage ciblé",
+        "description": "Marque ses cibles pour améliorer les graines récupérées à leur élimination.",
+        "ability": "Réserve de demain",
+        "personality": "Prévoyante et curieuse. Elle garde des graines, et les raisons de les replanter.",
+        "cost": 120,
+        "cooldown": 5,
+        "max_hp": 210,
+        "rate": 2.4,
+        "damage": 25,
+        "range": 6,
+        "behavior": "recycler",
+        "effect_radius": 0,
+        "effect_strength": 1,
+        "color": "#d8aa61",
+        "chapter": 3,
+        "unlock": 28,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_banksia"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_banksia",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/banksia.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 108,
+              "height": 175
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "mushroom",
+        "name": "Mycélium",
+        "role": "Spores et recyclage",
+        "description": "Son réseau de spores attaque à courte portée et aide au recyclage des cibles.",
+        "ability": "Réseau vivant",
+        "personality": "Un champignon collectif, attentif aux passages que personne ne voit.",
+        "cost": 125,
+        "cooldown": 5,
+        "max_hp": 220,
+        "rate": 2.6,
+        "damage": 35,
+        "range": 2.8,
+        "behavior": "spores",
+        "effect_radius": 1,
+        "effect_strength": 1,
+        "color": "#edb87a",
+        "chapter": 3,
+        "unlock": 30,
+        "damage_type": "toxic",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_mushroom"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_mushroom",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/mushroom.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 99,
+              "height": 137
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "sequoia",
+        "name": "Séquoia",
+        "role": "Pilier de défense",
+        "description": "Un jeune arbre très résistant qui tient durablement les passages exposés.",
+        "ability": "Promesse de géant",
+        "personality": "Timide. Il cesse peu à peu de se mesurer aux arbres de son enfance.",
+        "cost": 200,
+        "cooldown": 9,
+        "max_hp": 1380,
+        "rate": 3,
+        "damage": 16,
+        "range": 1.2,
+        "behavior": "guard",
+        "effect_radius": 1,
+        "effect_strength": 0.9,
+        "color": "#b57663",
+        "chapter": 4,
+        "unlock": 32,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_sequoia",
+          "ab_sequoia_protection",
+          "ab_sequoia_regeneration"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_sequoia",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/sequoia.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 128,
+              "height": 245
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "cactus",
+        "name": "Cactus",
+        "role": "Rempart offensif",
+        "description": "Ses épines infligent de lourds dégâts aux pollueurs proches.",
+        "ability": "Mauvaise étreinte",
+        "personality": "Solitaire et sarcastique. Sa générosité s'exprime sans commentaire.",
+        "cost": 155,
+        "cooldown": 5.5,
+        "max_hp": 590,
+        "rate": 1.5,
+        "damage": 45,
+        "range": 1.9,
+        "behavior": "thorns",
+        "effect_radius": 0.8,
+        "effect_strength": 1.5,
+        "color": "#7ab18c",
+        "chapter": 4,
+        "unlock": 33,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_cactus"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_cactus",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/cactus.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 161,
+              "height": 178
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "agave",
+        "name": "Agave",
+        "role": "Brise-blindage",
+        "description": "Ses attaques puissantes sont particulièrement utiles face aux protections épaisses.",
+        "ability": "Pointe de brèche",
+        "personality": "Résolue, peu bavarde. Elle prépare chaque effort avec précision.",
+        "cost": 185,
+        "cooldown": 6,
+        "max_hp": 290,
+        "rate": 2.5,
+        "damage": 72,
+        "range": 5,
+        "behavior": "pierce",
+        "effect_radius": 0,
+        "effect_strength": 1,
+        "color": "#8cafab",
+        "chapter": 4,
+        "unlock": 34,
+        "damage_type": "piercing",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_agave"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_agave",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/agave.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 174,
+              "height": 217
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "dahlia",
+        "name": "Dahlia",
+        "role": "Soutien étendu",
+        "description": "Soutient les attaquants dans une zone plus large, depuis l'arrière.",
+        "ability": "Accord des jardins",
+        "personality": "Créative et expressive. Elle écoute les objections avant de dessiner les plans.",
+        "cost": 180,
+        "cooldown": 6.5,
+        "max_hp": 205,
+        "rate": 3,
+        "damage": 19,
+        "range": 6,
+        "behavior": "buffer",
+        "effect_radius": 2.2,
+        "effect_strength": 0.8,
+        "color": "#df8ec5",
+        "chapter": 4,
+        "unlock": 35,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_dahlia",
+          "ab_dahlia_aura"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_dahlia",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/dahlia.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 147,
+              "height": 199
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      },
+      {
+        "id": "passionflower",
+        "name": "Passiflore",
+        "role": "Entrave à distance",
+        "description": "Ses vrilles saisissent les pollueurs loin de la première ligne.",
+        "ability": "Passage secret",
+        "personality": "Audacieuse et curieuse. Elle vérifie toujours s'il existe une autre entrée.",
+        "cost": 155,
+        "cooldown": 5.5,
+        "max_hp": 210,
+        "rate": 2.8,
+        "damage": 27,
+        "range": 6.5,
+        "behavior": "snare",
+        "effect_radius": 0.7,
+        "effect_strength": 1.2,
+        "color": "#aa91d7",
+        "chapter": 4,
+        "unlock": 36,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "ability_ids": [
+          "ab_passionflower"
+        ],
+        "behaviorId": "ai_defender",
+        "animationProfileId": "profile_passionflower",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/plants/passionflower.png",
+            "region": {
+              "x": 0,
+              "y": 0,
+              "width": 176,
+              "height": 213
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 88,
+          "height": 80,
+          "baseline": 32,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+        }
+      }
+    ],
+    "enemies": [
+      {
+        "id": "litterer",
+        "name": "Jeteur de déchets",
+        "hp": 105,
+        "speed": 0.205,
+        "attack": 19,
+        "leak": 12,
+        "reward": 35,
+        "reach": 0.69,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_ground",
+        "animationProfileId": "profile_litterer",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/enemies/polluters_atlas.png",
+            "region": {
+              "x": 59,
+              "y": 128,
+              "width": 442,
+              "height": 439
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 64,
+          "height": 78,
+          "baseline": 34,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "runner",
+        "name": "Canette pressée",
+        "hp": 66,
+        "speed": 0.34,
+        "attack": 14,
+        "leak": 10,
+        "reward": 30,
+        "reach": 0.62,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_ground",
+        "animationProfileId": "profile_runner",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/enemies/polluters_atlas.png",
+            "region": {
+              "x": 59,
+              "y": 128,
+              "width": 442,
+              "height": 439
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 57,
+          "height": 69,
+          "baseline": 34,
+          "mirror": false,
+          "tint": "#ffd68f",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "sprayer",
+        "name": "Pulvérisateur",
+        "hp": 175,
+        "speed": 0.17,
+        "attack": 22,
+        "leak": 18,
+        "reward": 50,
+        "reach": 1.05,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_ground",
+        "animationProfileId": "profile_sprayer",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/enemies/polluters_atlas.png",
+            "region": {
+              "x": 678,
+              "y": 103,
+              "width": 538,
+              "height": 398
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 76,
+          "height": 68,
+          "baseline": 34,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "truck",
+        "name": "Camion pollueur",
+        "hp": 365,
+        "speed": 0.135,
+        "attack": 40,
+        "leak": 26,
+        "reward": 90,
+        "reach": 0.77,
+        "damage_type": "physical",
+        "armor": 0.5,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_ground",
+        "animationProfileId": "profile_truck",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/enemies/polluters_atlas.png",
+            "region": {
+              "x": 22,
+              "y": 642,
+              "width": 594,
+              "height": 538
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 82,
+          "height": 74,
+          "baseline": 34,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "jammer",
+        "name": "Drone brouilleur",
+        "hp": 185,
+        "speed": 0.185,
+        "attack": 17,
+        "leak": 18,
+        "reward": 65,
+        "reach": 1.05,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact",
+          "ab_jammer_pulse"
+        ],
+        "behaviorId": "ai_ground",
+        "animationProfileId": "profile_jammer",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/enemies/polluters_atlas.png",
+            "region": {
+              "x": 678,
+              "y": 103,
+              "width": 538,
+              "height": 398
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 76,
+          "height": 68,
+          "baseline": 34,
+          "mirror": false,
+          "tint": "#e7bdff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "tanker",
+        "name": "Citerne blindée",
+        "hp": 490,
+        "speed": 0.115,
+        "attack": 43,
+        "leak": 30,
+        "reward": 110,
+        "reach": 0.8,
+        "damage_type": "physical",
+        "armor": 0.5,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_ground",
+        "animationProfileId": "profile_tanker",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/enemies/polluters_atlas.png",
+            "region": {
+              "x": 22,
+              "y": 642,
+              "width": 594,
+              "height": 538
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 94,
+          "height": 84,
+          "baseline": 34,
+          "mirror": false,
+          "tint": "#b0ffed",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "collector",
+        "name": "Le Ramasseur",
+        "hp": 1100,
+        "speed": 0.065,
+        "attack": 40,
+        "leak": 42,
+        "reward": 240,
+        "reach": 0.85,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 95,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_collector",
+        "animationProfileId": "profile_collector",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 41,
+              "y": 60,
+              "width": 442,
+              "height": 392
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "pump",
+        "name": "L’Assoiffeur",
+        "hp": 1450,
+        "speed": 0.06,
+        "attack": 42,
+        "leak": 42,
+        "reward": 260,
+        "reach": 0.85,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 22,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_pump",
+        "animationProfileId": "profile_pump",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 543,
+              "y": 42,
+              "width": 457,
+              "height": 419
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "factory",
+        "name": "Mille-Gueules",
+        "hp": 1650,
+        "speed": 0.055,
+        "attack": 44,
+        "leak": 42,
+        "reward": 280,
+        "reach": 0.9,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 32,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_factory",
+        "animationProfileId": "profile_factory",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 1051,
+              "y": 37,
+              "width": 464,
+              "height": 427
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "devourer",
+        "name": "L’Avaleur",
+        "hp": 1900,
+        "speed": 0.05,
+        "attack": 48,
+        "leak": 46,
+        "reward": 300,
+        "reach": 1,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 32,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_devourer",
+        "animationProfileId": "profile_devourer",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 33,
+              "y": 582,
+              "width": 464,
+              "height": 380
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "corrupted_bramble",
+        "name": "Ronce contaminée",
+        "hp": 1400,
+        "speed": 0.035,
+        "attack": 42,
+        "leak": 46,
+        "reward": 300,
+        "reach": 1.1,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 25,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_corrupted_bramble",
+        "animationProfileId": "profile_corrupted_bramble",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 551,
+              "y": 537,
+              "width": 447,
+              "height": 451
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "furnace",
+        "name": "La Fournaise",
+        "hp": 2400,
+        "speed": 0.038,
+        "attack": 48,
+        "leak": 50,
+        "reward": 400,
+        "reach": 1,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 95,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_furnace",
+        "animationProfileId": "profile_furnace",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 1055,
+              "y": 524,
+              "width": 460,
+              "height": 459
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "thorn_knot",
+        "name": "Excroissance contaminée",
+        "hp": 230,
+        "speed": 0,
+        "attack": 12,
+        "leak": 0,
+        "reward": 50,
+        "reach": 1,
+        "damage_type": "physical",
+        "armor": 0,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_fixed",
+        "animationProfileId": "profile_thorn_knot",
+        "visual": {
+          "sprite": {
+            "asset": "library://combat/illustrations/bosses_final.png",
+            "region": {
+              "x": 551,
+              "y": 537,
+              "width": 447,
+              "height": 451
+            },
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 153.4,
+          "height": 143,
+          "baseline": 50.7,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      }
+    ]
+  },
+  "levels": [
+    {
+      "id": "mission_01",
+      "title": "Le gardien et les renforts",
+      "subtitle": "Deux phases, un message et une cinématique de renforts",
+      "act": 0,
+      "location": "La jardinerie Lunaria",
+      "startingEnergy": 700,
+      "allowedPlants": [
+        "radish",
+        "hazel",
+        "fern",
+        "aloe",
+        "bramble"
+      ],
+      "objective": {
+        "type": "defend",
+        "target": 0
+      },
+      "objectiveText": "Protégez le dernier jardin pendant trois vagues.",
+      "tip": "Les renforts arrivent après 12 secondes. Le collecteur accélère sous 50 % de PV.",
+      "waves": [
+        {
+          "id": "wave_logic_1",
+          "groups": [
+            {
+              "id": "spawn_logic_1",
+              "enemyId": "litterer",
+              "count": 3,
+              "lane": 2,
+              "start": 1,
+              "interval": 2
+            }
+          ]
+        },
+        {
+          "id": "wave_logic_2",
+          "groups": [
+            {
+              "id": "spawn_logic_boss",
+              "enemyId": "collector",
+              "count": 1,
+              "lane": 2,
+              "start": 0,
+              "interval": 1
+            }
+          ]
+        }
+      ],
+      "briefing": [],
+      "outro": [],
+      "midDialogue": [],
+      "midWave": 0,
+      "optionalGoals": [
+        {
+          "id": "healthy",
+          "title": "Terminer avec au moins 80 % de vitalité",
+          "target": 80
+        },
+        {
+          "id": "full_garden",
+          "title": "Garder 5 végétaux sur le terrain",
+          "target": 5
+        }
+      ],
+      "restoration": "L'assaut est repoussé, mais les eaux contaminées ont déjà atteint les racines du tilleul.",
+      "events": [
+        {
+          "id": "event_intro",
+          "name": "Conseil de départ",
+          "enabled": true,
+          "trigger": {
+            "kind": "level_start",
+            "value": 0,
+            "ref": ""
+          },
+          "conditions": [],
+          "actions": [
+            {
+              "type": "message",
+              "delay": 0,
+              "text": "Place ton équipe : des renforts arrivent dans douze secondes."
+            }
+          ],
+          "once": true,
+          "cooldown": 1,
+          "maxExecutions": 1
+        },
+        {
+          "id": "event_reinforcement",
+          "name": "Renforts annoncés",
+          "enabled": true,
+          "trigger": {
+            "kind": "time",
+            "value": 12,
+            "ref": ""
+          },
+          "conditions": [],
+          "actions": [
+            {
+              "type": "set_variable",
+              "delay": 0,
+              "variableId": "var_alert",
+              "value": 1
+            },
+            {
+              "type": "cinematic",
+              "delay": 0,
+              "cinematicId": "film_alert",
+              "skippable": true
+            },
+            {
+              "type": "spawn",
+              "delay": 1,
+              "enemyId": "litterer",
+              "count": 3,
+              "lane": -1,
+              "interval": 1
+            }
+          ],
+          "once": true,
+          "cooldown": 1,
+          "maxExecutions": 1
+        },
+        {
+          "id": "event_boss_count",
+          "name": "Gardien repoussé",
+          "enabled": true,
+          "trigger": {
+            "kind": "death",
+            "value": 0,
+            "ref": "collector"
+          },
+          "conditions": [],
+          "actions": [
+            {
+              "type": "add_variable",
+              "delay": 0,
+              "variableId": "var_bosses",
+              "value": 1
+            },
+            {
+              "type": "message",
+              "delay": 0,
+              "text": "Le gardien est repoussé !"
+            }
+          ],
+          "once": true,
+          "cooldown": 1,
+          "maxExecutions": 1
+        }
+      ]
+    }
+  ],
+  "combat": {
+    "abilities": [
+      {
+        "id": "ab_radish",
+        "name": "Graines vaillantes",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_bramble",
+        "name": "Étreinte épineuse",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_root"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_hazel",
+        "name": "Écorce obstinée",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_hazel_regeneration",
+        "name": "Régénération de Noisetier",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "self",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_regen"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_fern",
+        "name": "Frondes humides",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_armor_break",
+          "fx_attack",
+          "fx_slow"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_dandelion",
+        "name": "Aigrettes éclaireuses",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_ivy",
+        "name": "Prise de la verrière",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_root"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_nettle",
+        "name": "Garde urticante",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_poison_light"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_acacia",
+        "name": "Haie des pépinières",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_piercing",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_baobab",
+        "name": "Tronc refuge",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_baobab_protection",
+        "name": "Protection de Baobab",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 1.6,
+        "rowRadius": 1,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_protect"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_baobab_regeneration",
+        "name": "Régénération de Baobab",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "self",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_regen"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_aloe",
+        "name": "Gel réparateur",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "wounded",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 1,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_heal",
+          "fx_cleanse"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_papyrus",
+        "name": "Réseau de rigoles",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "wounded",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 2,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_repair",
+          "fx_cleanse"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_hibiscus",
+        "name": "Appel du jardin",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 1,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_hibiscus_aura",
+        "name": "Aura de Hibiscus",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 1.5,
+        "rowRadius": 1,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_boost"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_lavender",
+        "name": "Brume parfumée",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_splash",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 1,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_bamboo",
+        "name": "Lance souple",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_piercing",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_lotus",
+        "name": "Calme du bassin",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "wounded",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 2,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_heal",
+          "fx_cleanse"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_ginger",
+        "name": "Racine explosive",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_splash",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_chrysanthemum",
+        "name": "Signal des terrasses",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_armor_break",
+          "fx_attack",
+          "fx_weaken"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_mangrove",
+        "name": "Racines de berge",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_mangrove_protection",
+        "name": "Protection de Palétuvier",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 1.6,
+        "rowRadius": 1,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_protect"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_mangrove_regeneration",
+        "name": "Régénération de Palétuvier",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "self",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_regen"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_coconut",
+        "name": "Noix de vigie",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_root"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_pandanus",
+        "name": "Attaches tressées",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "wounded",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 1,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_repair",
+          "fx_cleanse"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_pandanus_protection",
+        "name": "Protection de Pandanus",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 1.6,
+        "rowRadius": 1,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_protect"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_eucalyptus",
+        "name": "Souffle argenté",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_splash",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 1,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_weaken"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_banksia",
+        "name": "Réserve de demain",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_reward",
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_mushroom",
+        "name": "Réseau vivant",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 1,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_poison"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_sequoia",
+        "name": "Promesse de géant",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_sequoia_protection",
+        "name": "Protection de Séquoia",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 1.6,
+        "rowRadius": 1,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_protect_strong"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_sequoia_regeneration",
+        "name": "Régénération de Séquoia",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "self",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_regen"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_cactus",
+        "name": "Mauvaise étreinte",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_agave",
+        "name": "Pointe de brèche",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_piercing",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_armor_break",
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_dahlia",
+        "name": "Accord des jardins",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 2,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_dahlia_aura",
+        "name": "Aura de Dahlia",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "ally",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 2.2,
+        "rowRadius": 2,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_boost"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_passionflower",
+        "name": "Passage secret",
+        "description": "",
+        "delivery": "projectile",
+        "projectileId": "proj_seed",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "species",
+        "cooldown": 1,
+        "initialDelay": 0.35,
+        "effects": [
+          "fx_attack",
+          "fx_root",
+          "fx_weaken"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_enemy_contact",
+        "name": "Attaque de contact",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 1,
+        "initialDelay": 0,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_jammer_pulse",
+        "name": "Impulsion du brouilleur",
+        "description": "",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "species",
+        "range": 5,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 6,
+        "initialDelay": 3,
+        "effects": [
+          "fx_stun"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_collector_special",
+        "name": "Le Ramasseur — onde spéciale",
+        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "one",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 12,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 12,
+        "initialDelay": 6,
+        "effects": [
+          "fx_collector_special",
+          "fx_collector_special_stun"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_pump_special",
+        "name": "L’Assoiffeur — onde spéciale",
+        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 12,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 12,
+        "initialDelay": 6,
+        "effects": [
+          "fx_pump_special",
+          "fx_pump_special_stun"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_factory_special",
+        "name": "Mille-Gueules — onde spéciale",
+        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 12,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 12,
+        "initialDelay": 6,
+        "effects": [
+          "fx_factory_special"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_devourer_special",
+        "name": "L’Avaleur — onde spéciale",
+        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 12,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 12,
+        "initialDelay": 6,
+        "effects": [
+          "fx_devourer_special"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_corrupted_bramble_special",
+        "name": "Ronce contaminée — onde spéciale",
+        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 12,
+        "rowRadius": 1,
+        "cooldownSource": "fixed",
+        "cooldown": 12,
+        "initialDelay": 6,
+        "effects": [
+          "fx_corrupted_bramble_special",
+          "fx_corrupted_bramble_special_stun"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "ab_furnace_special",
+        "name": "La Fournaise — onde spéciale",
+        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "delivery": "instant",
+        "projectileId": "",
+        "target": "opponent",
+        "selection": "all",
+        "priority": "nearest",
+        "rangeSource": "fixed",
+        "range": 12,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 12,
+        "initialDelay": 6,
+        "effects": [
+          "fx_furnace_special"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      }
+    ],
+    "effects": [
+      {
+        "id": "fx_attack",
+        "name": "Dégâts de l’espèce",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "attack",
+        "amount": 1,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_slow",
+        "name": "Ralentissement de 45 %",
+        "description": "",
+        "kind": "slow",
+        "valueSource": "fixed",
+        "amount": 0.45,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_root",
+        "name": "Immobilisation",
+        "description": "",
+        "kind": "root",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 1,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_weaken",
+        "name": "Attaque réduite de 35 %",
+        "description": "",
+        "kind": "weaken",
+        "valueSource": "fixed",
+        "amount": 0.35,
+        "damageType": "inherit",
+        "duration": 4,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_armor_break",
+        "name": "Armure neutralisée",
+        "description": "",
+        "kind": "armor_break",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 4,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_poison",
+        "name": "Poison (7 PV par seconde × puissance)",
+        "description": "",
+        "kind": "poison",
+        "valueSource": "strength",
+        "amount": 7,
+        "damageType": "toxic",
+        "duration": 3.5,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_poison_light",
+        "name": "Poison (4 PV par seconde × puissance)",
+        "description": "",
+        "kind": "poison",
+        "valueSource": "strength",
+        "amount": 4,
+        "damageType": "toxic",
+        "duration": 3.5,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_heal",
+        "name": "Soin (22 PV × puissance)",
+        "description": "",
+        "kind": "heal",
+        "valueSource": "strength",
+        "amount": 22,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_repair",
+        "name": "Réparation (12 PV × puissance)",
+        "description": "",
+        "kind": "heal",
+        "valueSource": "strength",
+        "amount": 12,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_cleanse",
+        "name": "Purification des altérations",
+        "description": "",
+        "kind": "cleanse",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_regen",
+        "name": "Régénération (4 PV par seconde × puissance)",
+        "description": "",
+        "kind": "regeneration",
+        "valueSource": "strength",
+        "amount": 4,
+        "damageType": "inherit",
+        "duration": 1.5,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_boost",
+        "name": "Soutien +18 %",
+        "description": "",
+        "kind": "damage_boost",
+        "valueSource": "fixed",
+        "amount": 0.18,
+        "damageType": "inherit",
+        "duration": 1.5,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_protect",
+        "name": "Protection de 15 %",
+        "description": "",
+        "kind": "protection",
+        "valueSource": "fixed",
+        "amount": 0.15,
+        "damageType": "inherit",
+        "duration": 1.5,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_protect_strong",
+        "name": "Protection de 25 %",
+        "description": "",
+        "kind": "protection",
+        "valueSource": "fixed",
+        "amount": 0.25,
+        "damageType": "inherit",
+        "duration": 1.5,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_reward",
+        "name": "Recyclage : +12 graines",
+        "description": "",
+        "kind": "reward_mark",
+        "valueSource": "fixed",
+        "amount": 12,
+        "damageType": "inherit",
+        "duration": 8,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_stun",
+        "name": "Étourdissement de 2 s",
+        "description": "",
+        "kind": "stun",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 2,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_collector_special",
+        "name": "Le Ramasseur — impact",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "fixed",
+        "amount": 95,
+        "damageType": "physical",
+        "duration": 1,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_collector_special_stun",
+        "name": "Le Ramasseur — étourdissement",
+        "description": "",
+        "kind": "stun",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 2,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_pump_special",
+        "name": "L’Assoiffeur — impact",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "fixed",
+        "amount": 22,
+        "damageType": "physical",
+        "duration": 1,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_pump_special_stun",
+        "name": "L’Assoiffeur — étourdissement",
+        "description": "",
+        "kind": "stun",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_factory_special",
+        "name": "Mille-Gueules — impact",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "fixed",
+        "amount": 32,
+        "damageType": "physical",
+        "duration": 1,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_devourer_special",
+        "name": "L’Avaleur — impact",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "fixed",
+        "amount": 32,
+        "damageType": "physical",
+        "duration": 1,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_corrupted_bramble_special",
+        "name": "Ronce contaminée — impact",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "fixed",
+        "amount": 25,
+        "damageType": "physical",
+        "duration": 1,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_corrupted_bramble_special_stun",
+        "name": "Ronce contaminée — étourdissement",
+        "description": "",
+        "kind": "stun",
+        "valueSource": "fixed",
+        "amount": 0,
+        "damageType": "inherit",
+        "duration": 2,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_furnace_special",
+        "name": "La Fournaise — impact",
+        "description": "",
+        "kind": "damage",
+        "valueSource": "fixed",
+        "amount": 95,
+        "damageType": "physical",
+        "duration": 1,
+        "tickInterval": 1
+      }
+    ],
+    "projectiles": [
+      {
+        "id": "proj_seed",
+        "name": "Projectile simple",
+        "description": "",
+        "speed": 4.8,
+        "lifetime": 3,
+        "maxHits": 1,
+        "hitRadius": 0.18,
+        "splashRadius": 0,
+        "rowRadius": 0,
+        "color": "#d4b88a",
+        "size": 0.09,
+        "presentation": {
+          "asset": "",
+          "animationId": "",
+          "trailVfxId": "",
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "proj_piercing",
+        "name": "Projectile traversant",
+        "description": "",
+        "speed": 4.8,
+        "lifetime": 3,
+        "maxHits": 3,
+        "hitRadius": 0.18,
+        "splashRadius": 0,
+        "rowRadius": 0,
+        "color": "#a0cd70",
+        "size": 0.09,
+        "presentation": {
+          "asset": "",
+          "animationId": "",
+          "trailVfxId": "",
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "proj_splash",
+        "name": "Projectile de zone",
+        "description": "",
+        "speed": 4.8,
+        "lifetime": 3,
+        "maxHits": 1,
+        "hitRadius": 0.18,
+        "splashRadius": 0.95,
+        "rowRadius": 1,
+        "color": "#ebcc74",
+        "size": 0.13,
+        "presentation": {
+          "asset": "",
+          "animationId": "",
+          "trailVfxId": "",
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      }
+    ]
+  },
+  "logic": {
+    "behaviors": [
+      {
+        "id": "ai_defender",
+        "name": "Défenseur immobile",
+        "description": "",
+        "team": "plants",
+        "mode": "automatic",
+        "fallback": "hold",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_defender_normal",
+            "name": "Normal",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [],
+            "onEnter": []
+          }
+        ]
+      },
+      {
+        "id": "ai_ground",
+        "name": "Ennemi terrestre",
+        "description": "",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_ground_normal",
+            "name": "Normal",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [],
+            "onEnter": []
+          }
+        ]
+      },
+      {
+        "id": "ai_fixed",
+        "name": "Ennemi immobile",
+        "description": "",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "hold",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_fixed_normal",
+            "name": "Normal",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [],
+            "onEnter": []
+          }
+        ]
+      },
+      {
+        "id": "ai_collector",
+        "name": "Le Ramasseur — phases",
+        "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_collector_p1",
+            "name": "Approche",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_collector_special"
+            ],
+            "onEnter": []
+          },
+          {
+            "id": "ai_collector_p2",
+            "name": "Colère",
+            "healthBelow": 50,
+            "speedFactor": 1.25,
+            "attackFactor": 1.35,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_collector_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "Vous ne passerez pas !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 6,
+                "duration": 0.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ai_pump",
+        "name": "L’Assoiffeur — phases",
+        "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_pump_p1",
+            "name": "Approche",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_pump_special"
+            ],
+            "onEnter": []
+          },
+          {
+            "id": "ai_pump_p2",
+            "name": "Colère",
+            "healthBelow": 66,
+            "speedFactor": 1,
+            "attackFactor": 1.1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_pump_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "L’Assoiffeur change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          },
+          {
+            "id": "ai_pump_p3",
+            "name": "Dernière offensive",
+            "healthBelow": 33,
+            "speedFactor": 1,
+            "attackFactor": 1.2,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_pump_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "L’Assoiffeur change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ai_factory",
+        "name": "Mille-Gueules — phases",
+        "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_factory_p1",
+            "name": "Approche",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_factory_special"
+            ],
+            "onEnter": []
+          },
+          {
+            "id": "ai_factory_p2",
+            "name": "Colère",
+            "healthBelow": 66,
+            "speedFactor": 1,
+            "attackFactor": 1.1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_factory_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "Mille-Gueules change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          },
+          {
+            "id": "ai_factory_p3",
+            "name": "Dernière offensive",
+            "healthBelow": 33,
+            "speedFactor": 1,
+            "attackFactor": 1.2,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_factory_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "Mille-Gueules change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ai_devourer",
+        "name": "L’Avaleur — phases",
+        "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_devourer_p1",
+            "name": "Approche",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_devourer_special"
+            ],
+            "onEnter": []
+          },
+          {
+            "id": "ai_devourer_p2",
+            "name": "Colère",
+            "healthBelow": 66,
+            "speedFactor": 1,
+            "attackFactor": 1.1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_devourer_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "L’Avaleur change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          },
+          {
+            "id": "ai_devourer_p3",
+            "name": "Dernière offensive",
+            "healthBelow": 33,
+            "speedFactor": 1,
+            "attackFactor": 1.2,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_devourer_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "L’Avaleur change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ai_corrupted_bramble",
+        "name": "Ronce contaminée — phases",
+        "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_corrupted_bramble_p1",
+            "name": "Approche",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_corrupted_bramble_special"
+            ],
+            "onEnter": []
+          },
+          {
+            "id": "ai_corrupted_bramble_p2",
+            "name": "Colère",
+            "healthBelow": 66,
+            "speedFactor": 1,
+            "attackFactor": 1.1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_corrupted_bramble_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "Ronce contaminée change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          },
+          {
+            "id": "ai_corrupted_bramble_p3",
+            "name": "Dernière offensive",
+            "healthBelow": 33,
+            "speedFactor": 1,
+            "attackFactor": 1.2,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_corrupted_bramble_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "Ronce contaminée change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ai_furnace",
+        "name": "La Fournaise — phases",
+        "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
+        "team": "enemies",
+        "mode": "automatic",
+        "fallback": "advance",
+        "stopToAttack": true,
+        "rules": [],
+        "phases": [
+          {
+            "id": "ai_furnace_p1",
+            "name": "Approche",
+            "healthBelow": 100,
+            "speedFactor": 1,
+            "attackFactor": 1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_furnace_special"
+            ],
+            "onEnter": []
+          },
+          {
+            "id": "ai_furnace_p2",
+            "name": "Colère",
+            "healthBelow": 66,
+            "speedFactor": 1,
+            "attackFactor": 1.1,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_furnace_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "La Fournaise change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          },
+          {
+            "id": "ai_furnace_p3",
+            "name": "Dernière offensive",
+            "healthBelow": 33,
+            "speedFactor": 1,
+            "attackFactor": 1.2,
+            "inheritAbilities": true,
+            "abilityIds": [
+              "ab_furnace_special"
+            ],
+            "onEnter": [
+              {
+                "type": "message",
+                "delay": 0,
+                "text": "La Fournaise change de tactique !"
+              },
+              {
+                "type": "shake",
+                "delay": 0,
+                "amount": 4,
+                "duration": 0.35
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "variables": [
+      {
+        "id": "var_alert",
+        "name": "Alerte donnée",
+        "description": "Indicateur de niveau ; remis à zéro à chaque tentative.",
+        "scope": "level",
+        "type": "boolean",
+        "initial": 0,
+        "minimum": 0,
+        "maximum": 1
+      },
+      {
+        "id": "var_bosses",
+        "name": "Gardiens repoussés",
+        "description": "Validé seulement en gagnant l’étape courante de la campagne.",
+        "scope": "campaign",
+        "type": "number",
+        "initial": 0,
+        "minimum": 0,
+        "maximum": 100
+      }
+    ]
+  },
+  "campaign": {
+    "steps": [
+      {
+        "id": "step_logic",
+        "kind": "level",
+        "levelId": "mission_01"
+      }
+    ],
+    "cinematics": [
+      {
+        "id": "film_alert",
+        "title": "Animations · de la douceur au cri",
+        "documentId": "CIN_ANIMATIONS_DEMO",
+        "file": "animations_texte.cinematic.json"
+      }
+    ]
+  },
+  "presentation": {
+    "version": 1,
+    "defaultProfileId": "default_profile",
+    "animations": [
+      {
+        "id": "default_idle",
+        "name": "Respiration légère",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 2.4,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "breath",
+          "amplitude": 1,
+          "period": 2.4
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "default_move",
+        "name": "Balancement de déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 1,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 1
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "default_attack",
+        "name": "Attaque simple",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.35,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "recoil",
+          "amplitude": 1,
+          "period": 0.35
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": [
+          {
+            "id": "release",
+            "type": "release",
+            "at": 0.1,
+            "ref": "",
+            "attach": "launch"
+          }
+        ]
+      },
+      {
+        "id": "default_hit",
+        "name": "Réaction à un impact",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.18,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "shake",
+          "amplitude": 1,
+          "period": 0.18
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "default_death",
+        "name": "Disparition",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.6,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "fade_out",
+          "amplitude": 1,
+          "period": 0.6
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "default_spawn",
+        "name": "Apparition",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.3,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "fade_in",
+          "amplitude": 1,
+          "period": 0.3
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "default_victory",
+        "name": "Victoire",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.6,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "bounce",
+          "amplitude": 1,
+          "period": 0.6
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "default_phase",
+        "name": "Transition de phase",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.5,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "pulse",
+          "amplitude": 1,
+          "period": 0.5
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "radish_throw",
+        "name": "Radis — jet de caillou (4 poses conservées)",
+        "kind": "combined",
+        "frames": [
+          {
+            "asset": "library://combat/animation/animation_radish.png",
+            "region": {
+              "x": 9,
+              "y": 11,
+              "width": 629,
+              "height": 558
+            },
+            "anchor": {
+              "x": 0.5286168521462639,
+              "y": 0.992831541218638
+            },
+            "duration": 0.035
+          },
+          {
+            "asset": "library://combat/animation/animation_radish.png",
+            "region": {
+              "x": 659,
+              "y": 19,
+              "width": 641,
+              "height": 551
+            },
+            "anchor": {
+              "x": 0.48517940717628705,
+              "y": 0.9927404718693285
+            },
+            "duration": 0.147
+          },
+          {
+            "asset": "library://combat/animation/animation_radish.png",
+            "region": {
+              "x": 10,
+              "y": 596,
+              "width": 651,
+              "height": 566
+            },
+            "anchor": {
+              "x": 0.4915514592933948,
+              "y": 0.9929328621908127
+            },
+            "duration": 0.084
+          },
+          {
+            "asset": "library://combat/animation/animation_radish.png",
+            "region": {
+              "x": 671,
+              "y": 600,
+              "width": 632,
+              "height": 560
+            },
+            "anchor": {
+              "x": 0.5039556962025317,
+              "y": 0.9928571428571429
+            },
+            "duration": 0.084
+          }
+        ],
+        "duration": 0.35,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 1,
+          "period": 0.35
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": [
+          {
+            "id": "release",
+            "type": "release",
+            "at": 0.182,
+            "ref": "",
+            "attach": "launch"
+          }
+        ]
+      },
+      {
+        "id": "move_litterer",
+        "name": "Jeteur de déchets — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_runner",
+        "name": "Canette pressée — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.628,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.628
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_sprayer",
+        "name": "Pulvérisateur — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": -8,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "bounce",
+          "amplitude": 0.4,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_truck",
+        "name": "Camion pollueur — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_jammer",
+        "name": "Drone brouilleur — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": -8,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "bounce",
+          "amplitude": 0.4,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_tanker",
+        "name": "Citerne blindée — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_collector",
+        "name": "Le Ramasseur — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_pump",
+        "name": "L’Assoiffeur — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_factory",
+        "name": "Mille-Gueules — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_devourer",
+        "name": "L’Avaleur — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_corrupted_bramble",
+        "name": "Ronce contaminée — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_furnace",
+        "name": "La Fournaise — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "move_thorn_knot",
+        "name": "Excroissance contaminée — déplacement",
+        "kind": "procedural",
+        "frames": [],
+        "duration": 0.982,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "sway",
+          "amplitude": 1,
+          "period": 0.982
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.15
+          },
+          {
+            "id": "launch",
+            "x": 0.82,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      }
+    ],
+    "profiles": [
+      {
+        "id": "default_profile",
+        "name": "Valeurs par défaut explicites",
+        "slots": [
+          {
+            "slot": "idle",
+            "animationId": "default_idle"
+          },
+          {
+            "slot": "move",
+            "animationId": "default_move"
+          },
+          {
+            "slot": "attack",
+            "animationId": "default_attack"
+          },
+          {
+            "slot": "hit",
+            "animationId": "default_hit"
+          },
+          {
+            "slot": "death",
+            "animationId": "default_death"
+          },
+          {
+            "slot": "spawn",
+            "animationId": "default_spawn"
+          },
+          {
+            "slot": "victory",
+            "animationId": "default_victory"
+          },
+          {
+            "slot": "phase_transition",
+            "animationId": "default_phase"
+          }
+        ],
+        "events": [
+          {
+            "event": "release",
+            "soundId": "sound_shoot",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          {
+            "event": "impact",
+            "soundId": "sound_impact",
+            "vfxId": "vfx_impact",
+            "attach": "center"
+          },
+          {
+            "event": "spawn",
+            "soundId": "sound_plant",
+            "vfxId": "",
+            "attach": "feet"
+          }
+        ]
+      },
+      {
+        "id": "profile_radish",
+        "name": "Profil radish",
+        "slots": [
+          {
+            "slot": "attack",
+            "animationId": "radish_throw"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_bramble",
+        "name": "Profil bramble",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_hazel",
+        "name": "Profil hazel",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_fern",
+        "name": "Profil fern",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_dandelion",
+        "name": "Profil dandelion",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_ivy",
+        "name": "Profil ivy",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_nettle",
+        "name": "Profil nettle",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_acacia",
+        "name": "Profil acacia",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_baobab",
+        "name": "Profil baobab",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_aloe",
+        "name": "Profil aloe",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_papyrus",
+        "name": "Profil papyrus",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_hibiscus",
+        "name": "Profil hibiscus",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_lavender",
+        "name": "Profil lavender",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_bamboo",
+        "name": "Profil bamboo",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_lotus",
+        "name": "Profil lotus",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_ginger",
+        "name": "Profil ginger",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_chrysanthemum",
+        "name": "Profil chrysanthemum",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_mangrove",
+        "name": "Profil mangrove",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_coconut",
+        "name": "Profil coconut",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_pandanus",
+        "name": "Profil pandanus",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_eucalyptus",
+        "name": "Profil eucalyptus",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_banksia",
+        "name": "Profil banksia",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_mushroom",
+        "name": "Profil mushroom",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_sequoia",
+        "name": "Profil sequoia",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_cactus",
+        "name": "Profil cactus",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_agave",
+        "name": "Profil agave",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_dahlia",
+        "name": "Profil dahlia",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_passionflower",
+        "name": "Profil passionflower",
+        "slots": [],
+        "events": []
+      },
+      {
+        "id": "profile_litterer",
+        "name": "Profil Jeteur de déchets",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_litterer"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_runner",
+        "name": "Profil Canette pressée",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_runner"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_sprayer",
+        "name": "Profil Pulvérisateur",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_sprayer"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_truck",
+        "name": "Profil Camion pollueur",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_truck"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_jammer",
+        "name": "Profil Drone brouilleur",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_jammer"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_tanker",
+        "name": "Profil Citerne blindée",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_tanker"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_collector",
+        "name": "Profil Le Ramasseur",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_collector"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_pump",
+        "name": "Profil L’Assoiffeur",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_pump"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_factory",
+        "name": "Profil Mille-Gueules",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_factory"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_devourer",
+        "name": "Profil L’Avaleur",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_devourer"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_corrupted_bramble",
+        "name": "Profil Ronce contaminée",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_corrupted_bramble"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_furnace",
+        "name": "Profil La Fournaise",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_furnace"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_thorn_knot",
+        "name": "Profil Excroissance contaminée",
+        "slots": [
+          {
+            "slot": "move",
+            "animationId": "move_thorn_knot"
+          }
+        ],
+        "events": []
+      }
+    ],
+    "audio": [
+      {
+        "id": "sound_shoot",
+        "name": "Lancement existant",
+        "asset": "library://combat/audio/shoot_0.wav",
+        "bus": "sfx",
+        "volume": 0.14,
+        "loop": false,
+        "pitchVariation": 0.03,
+        "maxInstances": 4
+      },
+      {
+        "id": "sound_impact",
+        "name": "Impact existant",
+        "asset": "library://combat/audio/impact_0.wav",
+        "bus": "sfx",
+        "volume": 0.2,
+        "loop": false,
+        "pitchVariation": 0.03,
+        "maxInstances": 4
+      },
+      {
+        "id": "sound_plant",
+        "name": "Plantation existante",
+        "asset": "library://combat/audio/plant_0.wav",
+        "bus": "sfx",
+        "volume": 0.32,
+        "loop": false,
+        "pitchVariation": 0.03,
+        "maxInstances": 4
+      }
+    ],
+    "vfx": [
+      {
+        "id": "vfx_impact",
+        "name": "Éclat végétal",
+        "preset": "leaves",
+        "duration": 0.35,
+        "size": 26,
+        "color": "#9ee8bd",
+        "intensity": 0.8,
+        "quantity": 7,
+        "asset": "",
+        "attach": "center",
+        "maxInstances": 24
+      },
+      {
+        "id": "vfx_trail",
+        "name": "Traînée douce",
+        "preset": "trail",
+        "duration": 0.3,
+        "size": 12,
+        "color": "#d4b88a",
+        "intensity": 0.4,
+        "quantity": 5,
+        "asset": "",
+        "attach": "center",
+        "maxInstances": 32
+      }
+    ]
+  }
+}

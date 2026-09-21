@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "CIN_CAMPAGNE_01_REVEIL",
+  "title": "Le réveil de Lunaria",
+  "stage": {
+    "width": 1600,
+    "height": 900
+  },
+  "shots": [
+    {
+      "id": "shot_01_reveil",
+      "name": "Le réveil de Lunaria",
+      "duration": 5,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "zoom_in",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "bubble_01_reveil",
+          "kind": "narration",
+          "style": "simple",
+          "frameAsset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "speakerId": null,
+          "text": "La serre reprend vie. Une première défense se prépare.",
+          "x": 0.24,
+          "y": 0.12,
+          "width": 0.52,
+          "height": 0.18880000000000002,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 3.5
+          }
+        }
+      ],
+      "dialogueStart": 0.8,
+      "audio": null
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Enregistrement JSON avec références",
+    "status": "passed"
+  },
+  {
+    "name": "Saisie vide et décimale française",
+    "status": "passed"
+  },
+  {
+    "name": "Insertion asynchrone préserve les modifications",
+    "status": "passed"
+  },
+  {
+    "name": "Insertion retardée vise le plan initial",
+    "status": "passed"
+  },
+  {
+    "name": "Insertion retardée annulée après nouveau projet",
+    "status": "passed"
+  },
+  {
+    "name": "Image corrompue ne ferme pas la galerie",
+    "status": "passed"
+  },
+  {
+    "name": "Redimensionnement vertical et miroir",
+    "status": "passed"
+  },
+  {
+    "name": "Échap annule le glissement",
+    "status": "passed"
+  },
+  {
+    "name": "Annuler et rétablir un déplacement",
+    "status": "passed"
+  },
+  {
+    "name": "Bulle liée, queue manuelle et hauteur stable",
+    "status": "passed"
+  },
+  {
+    "name": "Queue accessible même à l’intérieur",
+    "status": "passed"
+  },
+  {
+    "name": "1500 caractères sans perte ni blocage sauvegarde",
+    "status": "passed"
+  },
+  {
+    "name": "Sélection et recentrage hors cadre",
+    "status": "passed"
+  },
+  {
+    "name": "Duplication et ordre des calques",
+    "status": "passed"
+  },
+  {
+    "name": "Copie du plan remappe ses liens",
+    "status": "passed"
+  },
+  {
+    "name": "Annulation de suppression du plan",
+    "status": "passed"
+  },
+  {
+    "name": "Réorganisation des plans",
+    "status": "passed"
+  },
+  {
+    "name": "Dépôt aux coordonnées du pointeur",
+    "status": "passed"
+  },
+  {
+    "name": "Nouveau projet annulé après refus de sauvegarde",
+    "status": "passed"
+  },
+  {
+    "name": "Enregistrer avant de remplacer",
+    "status": "passed"
+  },
+  {
+    "name": "Fermeture sauvegarde le dernier caractère",
+    "status": "passed"
+  },
+  {
+    "name": "Annuler fermeture laisse ouvert",
+    "status": "passed"
+  },
+  {
+    "name": "Actualisation dossier disparu",
+    "status": "passed"
+  },
+  {
+    "name": "Recherche et vue grille/liste",
+    "status": "passed"
+  },
+  {
+    "name": "Largeur et double-clic de réinitialisation",
+    "status": "passed"
+  },
+  {
+    "name": "Lecture clic droit ignoré, pause, fin",
+    "status": "passed"
+  },
+  {
+    "name": "Audio une lecture, pause, reprise et arrêt",
+    "status": "passed"
+  },
+  {
+    "name": "Raccourcis ne traversent pas les modales",
+    "status": "passed"
+  },
+  {
+    "name": "Exemple fourni affiché",
+    "status": "passed"
+  },
+  {
+    "name": "Refus de récupération persistant",
+    "status": "passed"
+  },
+  {
+    "name": "Reprise de récupération",
+    "status": "passed"
+  },
+  {
+    "name": "Petit écran 1024×768",
+    "status": "passed"
+  },
+  {
+    "name": "Fenêtre minimale 1000×680",
+    "status": "passed"
+  },
+  {
+    "name": "Nombre en cours de saisie sauvegardé par Ctrl+S",
+    "status": "passed"
+  },
+  {
+    "name": "Nombre en cours de saisie récupéré à la fermeture",
+    "status": "passed"
+  }
+]

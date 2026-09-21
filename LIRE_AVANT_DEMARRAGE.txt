@@ -1,0 +1,6 @@
+LUNARIA STUDIO V1.10 — SOURCES
+
+Lire README.md puis docs/GUIDE_V1_10.md.
+Relier la bibliothèque du jeu : game/LunariaArtLibrary.
+Le build Electron et l’exécution Godot restent à valider. Voir docs/TEST_REPORT_V1_10.md.
+Aucun EXE/APK ni dépendance npm installé n’est inclus.

@@ -1,0 +1,63 @@
+{
+  "name": "lunaria-cinematic-studio",
+  "version": "1.10.0",
+  "private": true,
+  "description": "Lunaria Studio : cinématiques, niveaux et présentation de combat pilotée par les données.",
+  "author": "Lunaria",
+  "type": "module",
+  "main": "dist/main/index.js",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "vite --host 127.0.0.1",
+    "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.main.json --noEmit",
+    "build": "npm run typecheck && tsc -p tsconfig.main.json && vite build",
+    "start": "electron .",
+    "test": "tsc -p tsconfig.tests.json && node scripts/test.mjs",
+    "schema": "tsc -p tsconfig.tests.json && node scripts/schema.mjs",
+    "dist:win": "npm run build && electron-builder --win nsis portable",
+    "dist:dir": "npm run build && electron-builder --dir",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:built": "playwright test"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "electron": "^44.4.2",
+    "electron-builder": "^26.0.12",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.0",
+    "@playwright/test": "^1.56.1"
+  },
+  "build": {
+    "appId": "com.lunaria.cinematicstudio",
+    "productName": "Lunaria Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "Lunaria-Studio-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Lunaria-Studio-Setup-${version}.${ext}"
+    }
+  }
+}

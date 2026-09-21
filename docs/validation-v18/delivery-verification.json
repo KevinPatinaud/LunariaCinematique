@@ -1,0 +1,14 @@
+{
+  "studioNode": 735,
+  "gameContractAndSources": 119,
+  "cinematicPublisherNode": 49,
+  "uiControls": 32,
+  "reactHarness": "18.2.0",
+  "godotExecuted": false,
+  "electronExecuted": false,
+  "fullTypecheck": "not completed: vite/client missing",
+  "levelsPreserved": 40,
+  "plantsPreserved": 28,
+  "enemiesPreserved": 13,
+  "assetAndCinematicRuntimeFilesUnchanged": 133
+}

@@ -1,0 +1,12 @@
+import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'vite';
+import electron from 'electron';
+const compile = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.main.json'], { stdio: 'inherit' });
+if (compile.status !== 0) process.exit(compile.status || 1);
+const server = await createServer();
+await server.listen();
+const child = spawn(electron, ['.'], { stdio: 'inherit', env: { ...process.env, LUNARIA_DEV_URL: 'http://127.0.0.1:5173' } });
+const stop = async () => { child.kill(); await server.close(); };
+process.on('SIGINT', stop);
+child.on('exit', async code => { await server.close(); process.exit(code || 0); });
+child.on('error', async error => { console.error(error); await server.close(); process.exit(1); });

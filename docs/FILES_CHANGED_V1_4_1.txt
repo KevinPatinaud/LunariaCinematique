@@ -1,0 +1,15 @@
+V1.4.1 — fichiers ajoutés ou remplacés par rapport à l’archive complète V1.4
+
+LIRE_AVANT_DEMARRAGE.txt
+README.md
+docs/LECTURE_V1_4_1.md
+docs/TEST_REPORT_V1_4_1.md
+docs/apercu-v1-4-1.png
+docs/validation-v141-ui.json
+docs/validation-v141-unit.tap
+package.json
+src/renderer/App.tsx
+src/renderer/styles.css
+src/shared/playback.ts
+tests/e2e/studio.spec.ts
+tests/playback-start.test.ts

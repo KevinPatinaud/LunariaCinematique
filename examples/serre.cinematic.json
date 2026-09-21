@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "CIN_EXEMPLE_SERRE",
+  "title": "Le murmure de la serre",
+  "stage": {
+    "width": 1600,
+    "height": 900
+  },
+  "shots": [
+    {
+      "id": "90e520f5-17d5-4f84-9a6f-58cfc7a37e3a",
+      "name": "La serre endormie",
+      "duration": 7,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "zoom_in",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "a1aff227-6354-4652-8874-69ade0b9ca8b",
+          "kind": "narration",
+          "style": "simple",
+          "frameAsset": "library://06_ui/dialogues/dialogue_panel_simple_v01.png",
+          "speakerId": null,
+          "text": "Sous la verrière, le jour se glissait entre les feuilles.",
+          "x": 0.24,
+          "y": 0.12,
+          "width": 0.52,
+          "height": 0.18880000000000002,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "none",
+            "x": 0.55,
+            "y": 0.52
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 3.5
+          },
+          "lines": [
+            "Sous la verrière, le jour se glissait entre les",
+            "feuilles."
+          ]
+        }
+      ],
+      "dialogueStart": 0.8,
+      "audio": null
+    },
+    {
+      "id": "c514300a-d1c7-4ca4-9b46-4648d9558324",
+      "name": "Un bruit dans les feuilles",
+      "duration": 6,
+      "background": {
+        "asset": "library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "pan_right",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [
+        {
+          "id": "a91df34f-d7e1-4859-ab55-2b23967d447b",
+          "kind": "speech",
+          "style": "parchment",
+          "frameAsset": null,
+          "speakerId": null,
+          "text": "Tu as entendu ?",
+          "x": 0.48,
+          "y": 0.22,
+          "width": 0.33,
+          "height": 0.10888888888888888,
+          "fontSize": 28,
+          "autoHeight": true,
+          "tail": {
+            "mode": "manual",
+            "x": 0.34,
+            "y": 0.7
+          },
+          "advance": {
+            "mode": "click",
+            "seconds": 3.5
+          },
+          "lines": [
+            "Tu as entendu ?"
+          ]
+        }
+      ],
+      "dialogueStart": 0.8,
+      "audio": null
+    },
+    {
+      "id": "e0fe56c3-2a93-4dd8-baa2-8d9582d16b89",
+      "name": "Dehors, un autre monde",
+      "duration": 5,
+      "background": {
+        "asset": "library://01_europe/lunaria/exterieur_et_entree/aube_sur_la_boutique_lunaria_v01.png",
+        "fit": "cover"
+      },
+      "camera": {
+        "preset": "zoom_out",
+        "intensity": 0.35
+      },
+      "transition": {
+        "type": "fade",
+        "duration": 0.6
+      },
+      "actors": [],
+      "bubbles": [],
+      "dialogueStart": 0.8,
+      "audio": null
+    }
+  ]
+}

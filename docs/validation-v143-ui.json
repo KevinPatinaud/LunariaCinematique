@@ -1,0 +1,109 @@
+{
+  "version": "1.4.3",
+  "kind": "React UI with real Node storage via test RPC, not native Electron",
+  "scenarios": 22,
+  "passed": 22,
+  "pageErrors": [],
+  "results": [
+    {
+      "test": "header, shortcut, initial focus and return focus",
+      "passed": true
+    },
+    {
+      "test": "accent-insensitive search and empty results",
+      "passed": true
+    },
+    {
+      "test": "opening recent loads cinematic and library",
+      "passed": true
+    },
+    {
+      "test": "return to current project preserves draft and token",
+      "passed": true
+    },
+    {
+      "test": "save refreshes metadata without duplicate",
+      "passed": true
+    },
+    {
+      "test": "save as keeps original and copy",
+      "passed": true
+    },
+    {
+      "test": "pin and unpin survive service restart",
+      "passed": true
+    },
+    {
+      "test": "forget entry never deletes file",
+      "passed": true
+    },
+    {
+      "test": "clear confirmation preserves pins and files",
+      "passed": true
+    },
+    {
+      "test": "missing file retained and locate action visible",
+      "passed": true
+    },
+    {
+      "test": "cancel locate preserves current draft",
+      "passed": true
+    },
+    {
+      "test": "relocate validates and reconnects file under same ID",
+      "passed": true
+    },
+    {
+      "test": "dirty cancellation preserves draft",
+      "passed": true
+    },
+    {
+      "test": "cancel Save prevents project switch",
+      "passed": true
+    },
+    {
+      "test": "Save before switching preserves edited source",
+      "passed": true
+    },
+    {
+      "test": "invalid recent shows error without loss",
+      "passed": true
+    },
+    {
+      "test": "file disappearing after list check handled safely",
+      "passed": true
+    },
+    {
+      "test": "Open another file populates MRU",
+      "passed": true
+    },
+    {
+      "test": "first launch empty state explains how to populate",
+      "passed": true
+    },
+    {
+      "test": "recovery takes precedence without losing recents",
+      "passed": true
+    },
+    {
+      "test": "1000x680 layout and accessible actions",
+      "passed": true
+    },
+    {
+      "test": "browser mode honest fallback",
+      "passed": true
+    },
+    {
+      "test": "final screenshots of running application",
+      "passed": true
+    }
+  ],
+  "environment": {
+    "chromium": "system /usr/bin/chromium",
+    "react": "18.2.0 (local JupyterLab bundle)",
+    "reactDOM": "18.2.0-next-9e3b772b8-20220608",
+    "storage": "real DocumentFiles, RecentProjects, ProjectHistory using temporary files",
+    "dialogs": "controlled test responses",
+    "nativeElectron": false
+  }
+}

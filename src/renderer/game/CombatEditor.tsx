@@ -1,0 +1,67 @@
+import type { Asset } from '../../shared/model.js';
+import { AbilityPresentationFields,ProjectilePresentationFields } from '../presentation/PresentationFields.js';
+import { CombatProbe } from './CombatProbe.js';
+import React, { useState } from 'react';
+import type { GameProject } from '../../shared/game/types.js';
+import { DAMAGE_LABELS, DAMAGE_TYPES, newId } from '../../shared/game/types.js';
+import { BENEFICIAL, EFFECT_KINDS, EFFECT_LABELS, FRACTION, INSTANT, PERIODIC, combatReferences, deleteCombatItem, newAbility, newEffect, newProjectile, type AbilityDefinition, type CombatSection, type EffectDefinition, type ProjectileDefinition } from '../../shared/game/combat.js';
+import { Num } from './BalanceEditor.js';
+import { api } from '../browserBridge.js';
+const TITLES={abilities:'Capacités',effects:'Effets & statuts',projectiles:'Projectiles'};
+interface Props {assets:Asset[];project:GameProject;section:CombatSection;id:string;select:(id:string)=>void;change:(edit:(p:GameProject)=>void,key:string,label:string)=>void;report:(s:string)=>void;run:(fn:()=>Promise<void>)=>Promise<void>;navigate:(section:CombatSection,id:string)=>void}
+function Choice({label,value,options,onChange}:{label:string;value:string;options:[string,string][];onChange:(s:string)=>void}){return <label className="gd-field"><span>{label}</span><select aria-label={label} value={value} onChange={e=>onChange(e.target.value)}>{options.map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>;}
+export function CombatEditor({assets,project,section,id,select,change,report,run,navigate}:Props){
+ const [query,setQuery]=useState('');const catalog=project.combat!,list=catalog[section],item=list.find(x=>x.id===id)??list[0];
+ const refs=combatReferences(project,section,item.id);
+ const patch=(data:Record<string,unknown>,key='')=>change(p=>Object.assign(p.combat![section].find(x=>x.id===item.id)!,data),key?item.id+':'+key:'','Modifier '+TITLES[section].toLowerCase());
+ const set=(key:string,value:unknown)=>patch({[key]:value},key);
+ function add(){let created:AbilityDefinition|EffectDefinition|ProjectileDefinition;
+  if(section==='abilities'){const effect=catalog.effects.find(e=>!BENEFICIAL.includes(e.kind))??catalog.effects[0];created=newAbility(effect.id);if(BENEFICIAL.includes(effect.kind)){created.target='ally';created.priority='wounded';}}
+  else if(section==='effects')created=newEffect();else created=newProjectile();
+  change(p=>{if(section==='abilities')p.combat!.abilities.push(created as AbilityDefinition);else if(section==='effects')p.combat!.effects.push(created as EffectDefinition);else p.combat!.projectiles.push(created as ProjectileDefinition);},'','Créer '+TITLES[section]);select(created.id);
+ }
+ function duplicate(){const created=structuredClone(item);created.id=newId(section==='abilities'?'ab':section==='effects'?'fx':'proj');created.name=(created.name+' — copie').slice(0,120);change(p=>(p.combat![section] as typeof list).push(created as never),'','Dupliquer');select(created.id);}
+ async function remove(){await run(async()=>{if(await api.confirmDelete(item.name)){try{change(p=>deleteCombatItem(p,section,item.id),'','Supprimer '+item.name);}catch(e){report(String(e));}}});}
+ const number=(key:string,label:string,max:number,min=0,integer=false)=><Num key={key} label={label} value={Number((item as unknown as Record<string,unknown>)[key])} max={max} min={min} integer={integer} change={v=>set(key,v)}/>;
+ const a=item as AbilityDefinition,e=item as EffectDefinition,p=item as ProjectileDefinition;
+ const limit=section==='projectiles'?128:256;
+ return <div className="gd-balance gd-combat">
+  <aside className="gd-catalog gd-combat-catalog"><input aria-label="Rechercher dans le catalogue" placeholder="Rechercher…" value={query} onChange={x=>setQuery(x.target.value)}/><button className="gd-primary" onClick={add} disabled={list.length>=limit}>+ {section==='abilities'?'Créer une capacité':section==='effects'?'Créer un effet':'Créer un projectile'}</button><div className="gd-combat-items">{list.filter(x=>(x.name+' '+x.id).normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase().includes(query.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase())).map(x=><button key={x.id} className={x.id===item.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{x.id}</small></button>)}</div><small>{list.length} / {limit} définitions globales</small></aside>
+  <section className="gd-scroll gd-balance-form" key={item.id}>
+   <div className="gd-section-heading"><div><div className="gd-kicker">MOTEUR DE RÈGLES · CATALOGUE GLOBAL</div><h1>{item.name}</h1></div><div className="gd-inline"><button onClick={duplicate} disabled={list.length>=limit}>Dupliquer</button><button onClick={()=>void remove()} disabled={refs.length>0||list.length<=1} title={refs.length?'Retire d’abord ses références.':''}>Supprimer</button></div></div>
+   <p className="gd-callout">{section==='abilities'?'Une capacité choisit ses cibles et applique des effets, immédiatement ou via un projectile.':section==='effects'?'Un effet décrit le résultat : dégâts, soin ou statut temporaire. Réutilise-le dans plusieurs capacités.':'Un projectile définit son déplacement et sa zone de contact. Les effets proviennent de la capacité qui le lance.'} Les modifications sont communes à tout le jeu.</p>
+   <label className="gd-field"><span>Nom</span><input aria-label="Nom de la définition" maxLength={120} value={item.name} onChange={x=>set('name',x.target.value)}/></label>
+   <label className="gd-field"><span>Description</span><textarea aria-label="Description de la définition" rows={2} maxLength={1000} value={item.description} onChange={x=>set('description',x.target.value)}/></label>
+   {section==='abilities'&&<>
+    <h2>Déclenchement automatique</h2><div className="gd-form-grid">
+     <Choice label="Cadence" value={a.cooldownSource} options={[["species","Utiliser la cadence de l’espèce"],["fixed","Durée propre à cette capacité"]]} onChange={v=>set('cooldownSource',v)}/>
+     {a.cooldownSource==='fixed'&&number('cooldown','Intervalle entre utilisations (s)',120,.1)}{number('initialDelay','Délai initial en combat (s)',120)}
+    </div><p className="gd-note">La capacité attend une cible valide ; aucune utilisation n’est consommée dans le vide. Pour un ennemi, la cadence d’espèce vaut 1 seconde. Le cooldown est suspendu entre les vagues.</p>
+    <h2>Ciblage</h2><div className="gd-form-grid">
+     <Choice label="Camp ciblé" value={a.target} options={[["opponent","Adversaires"],["ally","Alliés (porteur compris)"],["self","Porteur uniquement"]]} onChange={v=>patch({target:v,...(v!=='opponent'?{delivery:'instant',projectileId:''}:{}),...(v==='self'?{selection:'one',rowRadius:0}:{}),priority:v==='opponent'?'nearest':a.priority})}/>
+     {a.target!=='self'&&<><Choice label="Nombre de cibles" value={a.selection} options={[["one","Une cible"],["all","Toutes les cibles à portée"]]} onChange={v=>patch({selection:v,...(v==='all'?{delivery:'instant',projectileId:''}:{})})}/><Choice label="Priorité" value={a.priority} options={[["nearest","La plus proche"],["strongest","Le plus de PV maximum"],...(a.target==='ally'?[["wounded","Le plus faible ratio de PV"]] as [string,string][]:[])]} onChange={v=>set('priority',v)}/><Choice label="Portée" value={a.rangeSource} options={[["species","Utiliser la portée de l’espèce"],["fixed","Portée propre à cette capacité"]]} onChange={v=>set('rangeSource',v)}/>{a.rangeSource==='fixed'&&number('range','Distance maximale (cases)',12)}{number('rowRadius','Allées adjacentes (0 = même allée)',4,0,true)}</>}
+    </div>
+    <h2>Application</h2><div className="gd-form-grid"><Choice label="Mode d’application" value={a.delivery} options={[["instant","Immédiatement"],...(a.target==='opponent'&&a.selection==='one'?[["projectile","Lancer un projectile"]] as [string,string][]:[])]} onChange={v=>patch({delivery:v,projectileId:v==='projectile'?catalog.projectiles[0].id:''})}/>{a.delivery==='projectile'&&<Choice label="Projectile" value={a.projectileId} options={catalog.projectiles.map(x=>[x.id,x.name])} onChange={v=>set('projectileId',v)}/>}</div>
+    {a.delivery==='projectile'&&<button onClick={()=>navigate('projectiles',a.projectileId)}>Éditer ce projectile →</button>}
+    <h2>Effets appliqués dans cet ordre</h2><p>Par exemple : briser l’armure, infliger les dégâts, appliquer le poison. Maximum huit effets distincts.</p>
+    <div className="gd-effect-chain">{a.effects.map((id,i)=>{const fx=catalog.effects.find(x=>x.id===id);return <div key={id}><b>{i+1}</b><button onClick={()=>navigate('effects',id)}>{fx?.name??'Effet introuvable : '+id}</button><button aria-label={'Monter effet '+(i+1)} disabled={i===0} onClick={()=>{const effects=[...a.effects];[effects[i-1],effects[i]]=[effects[i],effects[i-1]];set('effects',effects);}}>↑</button><button aria-label={'Retirer effet '+(i+1)} onClick={()=>set('effects',a.effects.filter(x=>x!==id))}>×</button></div>;})}</div>
+    <Choice label="Ajouter un effet" value="" options={[["","Choisir un effet…"],...catalog.effects.filter(f=>!a.effects.includes(f.id)&&BENEFICIAL.includes(f.kind)===(a.target!=='opponent')).map(f=>[f.id,f.name] as [string,string])]} onChange={id=>{if(id&&a.effects.length<8)set('effects',[...a.effects,id]);}}/>
+    <p className="gd-note">Changer de camp ne supprime pas tes effets : les incompatibilités sont signalées dans « Vérifications » et bloquent la publication.</p>
+   </>}
+   {section==='effects'&&<>
+    <div className="gd-form-grid"><Choice label="Type d’effet" value={e.kind} options={EFFECT_KINDS.map(k=>[k,EFFECT_LABELS[k]])} onChange={kind=>{const next=newEffect(kind as typeof e.kind);patch({...next,id:e.id,name:e.name,description:e.description});}}/>
+     {['damage','heal','poison','regeneration'].includes(e.kind)&&<Choice label="Calcul de la valeur" value={e.valueSource} options={[["fixed","Valeur fixe"],["attack","Multiplicateur de l’attaque du porteur"],["strength","Multiplicateur de la puissance d’effet du porteur"]]} onChange={v=>patch({valueSource:v,amount:v==='attack'?Math.min(e.amount,10):e.amount})}/>}
+     {!['root','stun','armor_break','cleanse'].includes(e.kind)&&(FRACTION.includes(e.kind)?<Num label="Intensité (%)" value={e.amount*100} max={e.kind==='damage_boost'?300:95} change={v=>set('amount',v/100)}/>:number('amount',PERIODIC.includes(e.kind)?'Valeur par déclenchement':e.valueSource==='fixed'?'Valeur':'Multiplicateur',e.valueSource==='attack'?10:e.kind==='reward_mark'?400:10000,0,e.kind==='reward_mark'))}
+     {['damage','poison'].includes(e.kind)&&<Choice label="Type de dégâts de l’effet" value={e.damageType} options={[["inherit","Type de dégâts du porteur"],...DAMAGE_TYPES.map(k=>[k,DAMAGE_LABELS[k]] as [string,string])]} onChange={v=>set('damageType',v)}/>}
+     {!INSTANT.includes(e.kind)&&number('duration','Durée du statut (s)',120,.05)}{PERIODIC.includes(e.kind)&&number('tickInterval','Intervalle périodique (s)',30,.05)}
+    </div><p className="gd-callout">{PERIODIC.includes(e.kind)?`Le premier déclenchement se produit après l’intervalle, puis se répète jusqu’à la fin de la durée (${Math.floor((e.duration+1e-8)/e.tickInterval)} déclenchements par application). `:''}Un même effet ne s’empile pas : une nouvelle application remplace sa valeur et renouvelle sa durée, sans repousser le prochain déclenchement périodique. Les pourcentages de même nature utilisent le plus fort, sans multiplication illimitée.</p>
+    {e.kind==='cleanse'&&<p>Retire poison, ralentissement, immobilisation, étourdissement, affaiblissement et brise-armure. Ne retire pas les bonus alliés.</p>}
+   </>}
+   {section==='projectiles'&&<><div className="gd-form-grid">{number('speed','Vitesse (cases/s)',20,.1)}{number('lifetime','Durée de vie maximale (s)',30,.1)}{number('maxHits','Nombre maximal de contacts',16,1,true)}{number('hitRadius','Rayon de contact (case)',.5,.01)}{number('splashRadius','Rayon de zone autour de l’impact (cases)',4)}{number('rowRadius','Allées adjacentes de la zone',4,0,true)}{number('size','Taille visuelle (case)',.3,.02)}<label className="gd-field"><span>Couleur</span><input type="color" aria-label="Couleur du projectile" value={p.color} onChange={x=>set('color',x.target.value)}/></label></div><div className="gd-projectile-sample" aria-label="Aperçu du projectile"><span style={{background:p.color,width:Math.max(6,p.size*100),height:Math.max(6,p.size*100)}}/><small>Trajectoire droite, {p.maxHits} contact{p.maxHits>1?'s':''} maximum · portée théorique {(p.speed*p.lifetime).toFixed(1)} cases</small></div><p className="gd-note">Le contact est testé sur tout le déplacement, même à haute vitesse. Un projectile ne touche pas deux fois la même entité. Aucun script ni image supplémentaire n’est nécessaire.</p></>}
+   {section==='abilities'&&<AbilityPresentationFields project={project} value={a.presentation} change={presentation=>set('presentation',presentation)}/>}
+   {section==='projectiles'&&<ProjectilePresentationFields project={project} value={p.presentation} assets={assets} change={presentation=>set('presentation',presentation)}/>}
+   {section==='abilities'&&<CombatProbe project={project} ability={a}/>}
+   <h2>Utilisé par ({refs.length})</h2><p>{refs.length?refs.join(' · '):'Aucune référence pour le moment. Cette définition ne s’exécute pas tant qu’elle n’est pas attribuée.'}</p><code className="gd-movie-path">{item.id}</code>
+  </section>
+ </div>;
+}

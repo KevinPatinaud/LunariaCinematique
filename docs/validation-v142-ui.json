@@ -1,0 +1,99 @@
+{
+  "environment": {
+    "react": "18.2.0",
+    "reactDOM": "18.2.0-next-9e3b772b8-20220608",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/144.0.0.0 Safari/537.36"
+  },
+  "note": "Chromium about:blank avec pont Electron et localStorage simulés. Vrais composants transpilés avec le TypeScript local. Fixtures graphiques temporaires : rectangles RGBA de test et décor existant. React local distinct des dépendances déclarées.",
+  "checks": [
+    {
+      "name": "Six catégories et bouton Ennemi visibles",
+      "passed": true
+    },
+    {
+      "name": "Raccourci vers Ennemis ; stages et expressions présents",
+      "passed": true
+    },
+    {
+      "name": "Aucun ennemi mélangé aux personnages ou aux décors",
+      "passed": true
+    },
+    {
+      "name": "Recherche française et recherche dans les sous-dossiers",
+      "passed": true
+    },
+    {
+      "name": "Navigation Canette et retour vers Tous les ennemis",
+      "passed": true
+    },
+    {
+      "name": "Favoris disponibles dans Ennemis",
+      "passed": true
+    },
+    {
+      "name": "Double-clic : ennemi créé et sauvegardé en JSON sans image embarquée",
+      "passed": true
+    },
+    {
+      "name": "Calque Ennemi avec icône et intitulé dédié",
+      "passed": true
+    },
+    {
+      "name": "Annuler/rétablir une insertion avec son rôle",
+      "passed": true
+    },
+    {
+      "name": "Conversion du rôle annulable sans changer le chemin source",
+      "passed": true
+    },
+    {
+      "name": "Ennemi : tremblement, A→B et retournement",
+      "passed": true
+    },
+    {
+      "name": "Bulle liée à l’ennemi avec queue automatique",
+      "passed": true
+    },
+    {
+      "name": "Lecture depuis le plan courant : ennemi animé sans mutation du document",
+      "passed": true
+    },
+    {
+      "name": "Glisser-déposer réel au pointeur depuis Ennemis",
+      "passed": true
+    },
+    {
+      "name": "Ajouter comme ennemi une image d’Objets depuis la grande galerie",
+      "passed": true
+    },
+    {
+      "name": "Récents séparés par catégorie sans reclasser le fichier source",
+      "passed": true
+    },
+    {
+      "name": "Réouverture : rôle, mouvement, bulles et références conservés",
+      "passed": true
+    },
+    {
+      "name": "Continuer ce plan conserve les ennemis à leur arrivée",
+      "passed": true
+    },
+    {
+      "name": "Les boutons de lecture V1.4.1 restent disponibles au plan 02",
+      "passed": true
+    },
+    {
+      "name": "Six catégories lisibles et sans débordement à 1648, 1366, 1150 et 1000 px",
+      "passed": true
+    },
+    {
+      "name": "Grande galerie : six catégories sans chevauchement de libellés",
+      "passed": true
+    },
+    {
+      "name": "Aucune exception renderer pendant ces parcours",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

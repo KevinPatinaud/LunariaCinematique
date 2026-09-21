@@ -1,0 +1,3 @@
+Source values checked against V1.7: 40 levels, campaign order and all original species base fields preserved.
+133 game assets/cinematic-runtime files unchanged.
+Archives exclude node_modules, caches, compiled test output, private harness and all font binaries.

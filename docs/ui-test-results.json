@@ -1,0 +1,23 @@
+{
+  "passed": 17,
+  "checks": [
+    "Accueil rendu sans erreur",
+    "Exemple : 3 plans, bibliothèque locale, images originales",
+    "Texte + cadre orné + export de lignes, sans images embarquées",
+    "Ajout et nommage d’un PNG personnage",
+    "Déplacement direct du personnage dans le SVG",
+    "Redimensionnement avec conservation des proportions",
+    "Retournement + annuler/rétablir",
+    "Bulle de BD automatiquement liée au personnage sélectionné",
+    "Queue repositionnée à la souris",
+    "Duplication du plan avec nouveaux IDs et liens cohérents",
+    "Réordonnancement des plans par glisser-déposer",
+    "Round-trip ouverture / sauvegarde du JSON",
+    "Lecture : une seule bulle visible, attente du clic au-delà de la durée",
+    "Pause, deux répliques séquentielles, changement de plan et fin",
+    "Référence manquante : aperçu bloqué, brouillon enregistrable",
+    "Fenêtre minimale 1160×740 sans débordement horizontal global",
+    "Aucune exception JavaScript non gérée pendant les interactions"
+  ],
+  "errors": []
+}

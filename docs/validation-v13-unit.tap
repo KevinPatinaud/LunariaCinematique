@@ -1,0 +1,1382 @@
+
+> lunaria-cinematic-studio@0.1.3 test
+> tsc -p tsconfig.tests.json && node scripts/test.mjs
+
+TAP version 13
+# Subtest: sibling prefix is not inside selected root
+ok 1 - sibling prefix is not inside selected root
+  ---
+  duration_ms: 1.284151
+  type: 'test'
+  ...
+# Subtest: resolve a Unicode asset path relative to root
+ok 2 - resolve a Unicode asset path relative to root
+  ---
+  duration_ms: 7.762017
+  type: 'test'
+  ...
+# Subtest: reject path traversal before filesystem access
+ok 3 - reject path traversal before filesystem access
+  ---
+  duration_ms: 1.125187
+  type: 'test'
+  ...
+# Subtest: reject symlink escaping selected root
+ok 4 - reject symlink escaping selected root
+  ---
+  duration_ms: 3.446244
+  type: 'test'
+  ...
+# Subtest: atomic save produces a readable JSON and previous .bak
+ok 5 - atomic save produces a readable JSON and previous .bak
+  ---
+  duration_ms: 8.560222
+  type: 'test'
+  ...
+# Subtest: JSON reader accepts a UTF-8 BOM
+ok 6 - JSON reader accepts a UTF-8 BOM
+  ---
+  duration_ms: 2.942853
+  type: 'test'
+  ...
+# Subtest: JSON reader applies size limit
+ok 7 - JSON reader applies size limit
+  ---
+  duration_ms: 1.749245
+  type: 'test'
+  ...
+# Subtest: scanner walks continents and places but ignores non-assets
+ok 8 - scanner walks continents and places but ignores non-assets
+  ---
+  duration_ms: 15.574038
+  type: 'test'
+  ...
+# Subtest: scanner never renames or modifies source files
+ok 9 - scanner never renames or modifies source files
+  ---
+  duration_ms: 5.556691
+  type: 'test'
+  ...
+# Subtest: asset classification distinguishes characters, UI and audio
+ok 10 - asset classification distinguishes characters, UI and audio
+  ---
+  duration_ms: 0.40779
+  type: 'test'
+  ...
+# Subtest: protocol URLs encode filenames without changing the model paths
+ok 11 - protocol URLs encode filenames without changing the model paths
+  ---
+  duration_ms: 0.30543
+  type: 'test'
+  ...
+# Subtest: image cache deduplicates requests for the same file
+ok 12 - image cache deduplicates requests for the same file
+  ---
+  duration_ms: 2.596573
+  type: 'test'
+  ...
+# Subtest: broken image can be retried without restarting
+ok 13 - broken image can be retried without restarting
+  ---
+  duration_ms: 0.697927
+  type: 'test'
+  ...
+# Subtest: failure of an obsolete request does not evict a new library request
+ok 14 - failure of an obsolete request does not evict a new library request
+  ---
+  duration_ms: 0.295685
+  type: 'test'
+  ...
+# Subtest: late success after cache reset does not replace a newer request
+ok 15 - late success after cache reset does not replace a newer request
+  ---
+  duration_ms: 0.656597
+  type: 'test'
+  ...
+# Subtest: invalid dimensions reject and release the image
+ok 16 - invalid dimensions reject and release the image
+  ---
+  duration_ms: 0.651639
+  type: 'test'
+  ...
+# Subtest: oversized images are rejected before retaining the decoded image
+ok 17 - oversized images are rejected before retaining the decoded image
+  ---
+  duration_ms: 0.384316
+  type: 'test'
+  ...
+# Subtest: exactly 64 megapixels are accepted
+ok 18 - exactly 64 megapixels are accepted
+  ---
+  duration_ms: 0.270959
+  type: 'test'
+  ...
+# Subtest: cache entry count is bounded without breaking pending requests
+ok 19 - cache entry count is bounded without breaking pending requests
+  ---
+  duration_ms: 0.382933
+  type: 'test'
+  ...
+# Subtest: search removes accents, separators and letter case
+ok 20 - search removes accents, separators and letter case
+  ---
+  duration_ms: 1.350989
+  type: 'test'
+  ...
+# Subtest: folder labels preserve character stages
+ok 21 - folder labels preserve character stages
+  ---
+  duration_ms: 0.315645
+  type: 'test'
+  ...
+# Subtest: filter accepts multiple terms in any order across path and French labels
+ok 22 - filter accepts multiple terms in any order across path and French labels
+  ---
+  duration_ms: 0.572523
+  type: 'test'
+  ...
+# Subtest: French continent names work even when folders use English
+ok 23 - French continent names work even when folders use English
+  ---
+  duration_ms: 0.347452
+  type: 'test'
+  ...
+# Subtest: search ignores accents and whitespace
+ok 24 - search ignores accents and whitespace
+  ---
+  duration_ms: 0.229638
+  type: 'test'
+  ...
+# Subtest: empty search returns everything inside selected subtree
+ok 25 - empty search returns everything inside selected subtree
+  ---
+  duration_ms: 0.151503
+  type: 'test'
+  ...
+# Subtest: folder prefix does not leak into sibling with a similar name
+ok 26 - folder prefix does not leak into sibling with a similar name
+  ---
+  duration_ms: 0.260513
+  type: 'test'
+  ...
+# Subtest: root-level assets remain visible with the all folder filter
+ok 27 - root-level assets remain visible with the all folder filter
+  ---
+  duration_ms: 0.15626
+  type: 'test'
+  ...
+# Subtest: unknown asset kind is still shown with environments
+ok 28 - unknown asset kind is still shown with environments
+  ---
+  duration_ms: 0.473487
+  type: 'test'
+  ...
+# Subtest: type filtering never mixes characters, audio, and bubble frames
+ok 29 - type filtering never mixes characters, audio, and bubble frames
+  ---
+  duration_ms: 0.480077
+  type: 'test'
+  ...
+# Subtest: folder tree counts every asset once per ancestor
+ok 30 - folder tree counts every asset once per ancestor
+  ---
+  duration_ms: 10.007173
+  type: 'test'
+  ...
+# Subtest: folder tree sorts numbers naturally and leaves input untouched
+ok 31 - folder tree sorts numbers naturally and leaves input untouched
+  ---
+  duration_ms: 1.090055
+  type: 'test'
+  ...
+# Subtest: breadcrumbs have relative complete paths
+ok 32 - breadcrumbs have relative complete paths
+  ---
+  duration_ms: 0.216789
+  type: 'test'
+  ...
+# Subtest: root breadcrumb has no empty node
+ok 33 - root breadcrumb has no empty node
+  ---
+  duration_ms: 0.123502
+  type: 'test'
+  ...
+# Subtest: invalid stored preferences recover safe defaults
+ok 34 - invalid stored preferences recover safe defaults
+  ---
+  duration_ms: 0.352108
+  type: 'test'
+  ...
+# Subtest: preference enum values are validated individually
+ok 35 - preference enum values are validated individually
+  ---
+  duration_ms: 0.204481
+  type: 'test'
+  ...
+# Subtest: out-of-range and wrong-type stored width cannot break layout
+ok 36 - out-of-range and wrong-type stored width cannot break layout
+  ---
+  duration_ms: 1.058989
+  type: 'test'
+  ...
+# Subtest: sidebar stays in bounds and reserves room for the scene
+ok 37 - sidebar stays in bounds and reserves room for the scene
+  ---
+  duration_ms: 0.290107
+  type: 'test'
+  ...
+# Subtest: preferences serialization cannot introduce cinematic fields
+ok 38 - preferences serialization cannot introduce cinematic fields
+  ---
+  duration_ms: 0.15613
+  type: 'test'
+  ...
+# Subtest: empty project follows the shared schema
+ok 39 - empty project follows the shared schema
+  ---
+  duration_ms: 4.100737
+  type: 'test'
+  ...
+# Subtest: example with textured bubble is valid
+ok 40 - example with textured bubble is valid
+  ---
+  duration_ms: 2.459291
+  type: 'test'
+  ...
+# Subtest: assets are unique references, not embedded image data
+ok 41 - assets are unique references, not embedded image data
+  ---
+  duration_ms: 0.497212
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library:///etc/passwd"
+ok 42 - reject unsafe reference "library:///etc/passwd"
+  ---
+  duration_ms: 0.16305
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://../private.png"
+ok 43 - reject unsafe reference "library://../private.png"
+  ---
+  duration_ms: 0.205613
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a/../../private.png"
+ok 44 - reject unsafe reference "library://a/../../private.png"
+  ---
+  duration_ms: 0.161909
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a/./image.png"
+ok 45 - reject unsafe reference "library://a/./image.png"
+  ---
+  duration_ms: 0.124604
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a//b.png"
+ok 46 - reject unsafe reference "library://a//b.png"
+  ---
+  duration_ms: 0.128299
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "file:///a.png"
+ok 47 - reject unsafe reference "file:///a.png"
+  ---
+  duration_ms: 0.40748
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "https://a.png"
+ok 48 - reject unsafe reference "https://a.png"
+  ---
+  duration_ms: 0.483162
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://C:/a.png"
+ok 49 - reject unsafe reference "library://C:/a.png"
+  ---
+  duration_ms: 0.193795
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a\\\\b.png"
+ok 50 - reject unsafe reference "library://a\\\\b.png"
+  ---
+  duration_ms: 0.930029
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a\\u0000b.png"
+ok 51 - reject unsafe reference "library://a\\u0000b.png"
+  ---
+  duration_ms: 0.099316
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a.png?x=1"
+ok 52 - reject unsafe reference "library://a.png?x=1"
+  ---
+  duration_ms: 0.11597
+  type: 'test'
+  ...
+# Subtest: reject unsafe reference "library://a.png\#x"
+ok 53 - reject unsafe reference "library://a.png\#x"
+  ---
+  duration_ms: 0.072587
+  type: 'test'
+  ...
+# Subtest: references preserve Unicode, spaces and case
+ok 54 - references preserve Unicode, spaces and case
+  ---
+  duration_ms: 0.095681
+  type: 'test'
+  ...
+# Subtest: literal percent signs are allowed, URL encoding is handled separately
+ok 55 - literal percent signs are allowed, URL encoding is handled separately
+  ---
+  duration_ms: 0.069032
+  type: 'test'
+  ...
+# Subtest: future schema versions are refused
+ok 56 - future schema versions are refused
+  ---
+  duration_ms: 0.329495
+  type: 'test'
+  ...
+# Subtest: unknown keys cannot silently disappear
+ok 57 - unknown keys cannot silently disappear
+  ---
+  duration_ms: 0.190741
+  type: 'test'
+  ...
+# Subtest: NaN cannot enter a saved project
+ok 58 - NaN cannot enter a saved project
+  ---
+  duration_ms: 0.21061
+  type: 'test'
+  ...
+# Subtest: duplicate IDs are rejected
+ok 59 - duplicate IDs are rejected
+  ---
+  duration_ms: 0.305299
+  type: 'test'
+  ...
+# Subtest: null texture on a textured style is rejected
+ok 60 - null texture on a textured style is rejected
+  ---
+  duration_ms: 0.268085
+  type: 'test'
+  ...
+# Subtest: duplicate a shot remaps actors and their bubbles consistently
+ok 61 - duplicate a shot remaps actors and their bubbles consistently
+  ---
+  duration_ms: 0.474789
+  type: 'test'
+  ...
+# Subtest: deleting a speaker converts its tail to a free point
+ok 62 - deleting a speaker converts its tail to a free point
+  ---
+  duration_ms: 0.166365
+  type: 'test'
+  ...
+# Subtest: manual width resize can be accompanied by automatic text height
+ok 63 - manual width resize can be accompanied by automatic text height
+  ---
+  duration_ms: 0.547967
+  type: 'test'
+  ...
+# Subtest: word wrapping handles hard line breaks and unbroken words
+ok 64 - word wrapping handles hard line breaks and unbroken words
+  ---
+  duration_ms: 0.239182
+  type: 'test'
+  ...
+# Subtest: export generates explicit line breaks without modifying live state
+ok 65 - export generates explicit line breaks without modifying live state
+  ---
+  duration_ms: 0.544161
+  type: 'test'
+  ...
+# Subtest: text overflow is reported without corrupting the JSON
+ok 66 - text overflow is reported without corrupting the JSON
+  ---
+  duration_ms: 0.81513
+  type: 'test'
+  ...
+# Subtest: camera presets keep cover backgrounds inside the frame
+ok 67 - camera presets keep cover backgrounds inside the frame
+  ---
+  duration_ms: 0.51656
+  type: 'test'
+  ...
+# Subtest: actor entrance begins off-screen and ends at its authored position
+ok 68 - actor entrance begins off-screen and ends at its authored position
+  ---
+  duration_ms: 0.287513
+  type: 'test'
+  ...
+# Subtest: tail follows speaker camera transform
+ok 69 - tail follows speaker camera transform
+  ---
+  duration_ms: 0.304608
+  type: 'test'
+  ...
+# Subtest: tail is hidden when the point is inside the bubble
+ok 70 - tail is hidden when the point is inside the bubble
+  ---
+  duration_ms: 0.242697
+  type: 'test'
+  ...
+# Subtest: tail produces three vertices outside the box
+ok 71 - tail produces three vertices outside the box
+  ---
+  duration_ms: 0.100688
+  type: 'test'
+  ...
+# Subtest: original frames use nine bounded source patches
+ok 72 - original frames use nine bounded source patches
+  ---
+  duration_ms: 0.281154
+  type: 'test'
+  ...
+# Subtest: click does not skip a dialogue before its start
+ok 73 - click does not skip a dialogue before its start
+  ---
+  duration_ms: 0.182528
+  type: 'test'
+  ...
+# Subtest: click-gated bubble keeps the shot alive beyond its nominal duration
+ok 74 - click-gated bubble keeps the shot alive beyond its nominal duration
+  ---
+  duration_ms: 0.274825
+  type: 'test'
+  ...
+# Subtest: auto bubble advances without interaction
+ok 75 - auto bubble advances without interaction
+  ---
+  duration_ms: 0.114258
+  type: 'test'
+  ...
+# Subtest: ending dialogue early still respects shot minimum duration
+ok 76 - ending dialogue early still respects shot minimum duration
+  ---
+  duration_ms: 0.080639
+  type: 'test'
+  ...
+# Subtest: pause freezes both camera clock and dialogue clock
+ok 77 - pause freezes both camera clock and dialogue clock
+  ---
+  duration_ms: 0.072767
+  type: 'test'
+  ...
+# Subtest: slow frames keep elapsed time instead of slowing the film
+ok 78 - slow frames keep elapsed time instead of slowing the film
+  ---
+  duration_ms: 0.057384
+  type: 'test'
+  ...
+# Subtest: undo/redo restores a previous state without mutating it
+ok 79 - undo/redo restores a previous state without mutating it
+  ---
+  duration_ms: 0.290838
+  type: 'test'
+  ...
+# Subtest: typing coalesces into one undo step
+ok 80 - typing coalesces into one undo step
+  ---
+  duration_ms: 0.096542
+  type: 'test'
+  ...
+# Subtest: a new edit clears redo history
+ok 81 - a new edit clears redo history
+  ---
+  duration_ms: 0.091915
+  type: 'test'
+  ...
+# Subtest: prototype property __proto__ is rejected as an unknown JSON field
+ok 82 - prototype property __proto__ is rejected as an unknown JSON field
+  ---
+  duration_ms: 0.166875
+  type: 'test'
+  ...
+# Subtest: prototype property constructor is rejected as an unknown JSON field
+ok 83 - prototype property constructor is rejected as an unknown JSON field
+  ---
+  duration_ms: 0.081791
+  type: 'test'
+  ...
+# Subtest: prototype property toString is rejected as an unknown JSON field
+ok 84 - prototype property toString is rejected as an unknown JSON field
+  ---
+  duration_ms: 0.072907
+  type: 'test'
+  ...
+# Subtest: actor insertion preserves aspect ratio 0.03
+ok 85 - actor insertion preserves aspect ratio 0.03
+  ---
+  duration_ms: 4.82272
+  type: 'test'
+  ...
+# Subtest: actor insertion preserves aspect ratio 0.2
+ok 86 - actor insertion preserves aspect ratio 0.2
+  ---
+  duration_ms: 0.127617
+  type: 'test'
+  ...
+# Subtest: actor insertion preserves aspect ratio 1
+ok 87 - actor insertion preserves aspect ratio 1
+  ---
+  duration_ms: 0.110863
+  type: 'test'
+  ...
+# Subtest: actor insertion preserves aspect ratio 4
+ok 88 - actor insertion preserves aspect ratio 4
+  ---
+  duration_ms: 0.072597
+  type: 'test'
+  ...
+# Subtest: actor insertion preserves aspect ratio 20
+ok 89 - actor insertion preserves aspect ratio 20
+  ---
+  duration_ms: 0.070745
+  type: 'test'
+  ...
+# Subtest: actor insertion preserves aspect ratio 90
+ok 90 - actor insertion preserves aspect ratio 90
+  ---
+  duration_ms: 0.112206
+  type: 'test'
+  ...
+# Subtest: invalid or unrepresentable image ratio NaN is refused
+ok 91 - invalid or unrepresentable image ratio NaN is refused
+  ---
+  duration_ms: 0.203189
+  type: 'test'
+  ...
+# Subtest: invalid or unrepresentable image ratio Infinity is refused
+ok 92 - invalid or unrepresentable image ratio Infinity is refused
+  ---
+  duration_ms: 0.063273
+  type: 'test'
+  ...
+# Subtest: invalid or unrepresentable image ratio 0 is refused
+ok 93 - invalid or unrepresentable image ratio 0 is refused
+  ---
+  duration_ms: 0.274614
+  type: 'test'
+  ...
+# Subtest: invalid or unrepresentable image ratio -1 is refused
+ok 94 - invalid or unrepresentable image ratio -1 is refused
+  ---
+  duration_ms: 0.401842
+  type: 'test'
+  ...
+# Subtest: invalid or unrepresentable image ratio 10000 is refused
+ok 95 - invalid or unrepresentable image ratio 10000 is refused
+  ---
+  duration_ms: 0.180346
+  type: 'test'
+  ...
+# Subtest: invalid or unrepresentable image ratio 0.00001 is refused
+ok 96 - invalid or unrepresentable image ratio 0.00001 is refused
+  ---
+  duration_ms: 0.095441
+  type: 'test'
+  ...
+# Subtest: proportional resizing limits both axes without distortion
+ok 97 - proportional resizing limits both axes without distortion
+  ---
+  duration_ms: 0.170832
+  type: 'test'
+  ...
+# Subtest: actor corner nw respects opposite anchor and ratio
+ok 98 - actor corner nw respects opposite anchor and ratio
+  ---
+  duration_ms: 0.155129
+  type: 'test'
+  ...
+# Subtest: actor corner ne respects opposite anchor and ratio
+ok 99 - actor corner ne respects opposite anchor and ratio
+  ---
+  duration_ms: 0.085065
+  type: 'test'
+  ...
+# Subtest: actor corner sw respects opposite anchor and ratio
+ok 100 - actor corner sw respects opposite anchor and ratio
+  ---
+  duration_ms: 0.046528
+  type: 'test'
+  ...
+# Subtest: actor corner se respects opposite anchor and ratio
+ok 101 - actor corner se respects opposite anchor and ratio
+  ---
+  duration_ms: 0.039137
+  type: 'test'
+  ...
+# Subtest: vertical-only drag now resizes a character
+ok 102 - vertical-only drag now resizes a character
+  ---
+  duration_ms: 0.084264
+  type: 'test'
+  ...
+# Subtest: bubble resize remains independent of aspect ratio
+ok 103 - bubble resize remains independent of aspect ratio
+  ---
+  duration_ms: 0.070844
+  type: 'test'
+  ...
+# Subtest: off-screen objects can be recentered without changing dimensions
+ok 104 - off-screen objects can be recentered without changing dimensions
+  ---
+  duration_ms: 0.558322
+  type: 'test'
+  ...
+# Subtest: numeric edit "1,5" commits safely
+ok 105 - numeric edit "1,5" commits safely
+  ---
+  duration_ms: 0.200525
+  type: 'test'
+  ...
+# Subtest: numeric edit ".75" commits safely
+ok 106 - numeric edit ".75" commits safely
+  ---
+  duration_ms: 0.087699
+  type: 'test'
+  ...
+# Subtest: numeric edit " 2 " commits safely
+ok 107 - numeric edit " 2 " commits safely
+  ---
+  duration_ms: 0.045667
+  type: 'test'
+  ...
+# Subtest: numeric edit "-12" commits safely
+ok 108 - numeric edit "-12" commits safely
+  ---
+  duration_ms: 0.039718
+  type: 'test'
+  ...
+# Subtest: numeric edit "1000" commits safely
+ok 109 - numeric edit "1000" commits safely
+  ---
+  duration_ms: 0.035092
+  type: 'test'
+  ...
+# Subtest: numeric edit "1e4" commits safely
+ok 110 - numeric edit "1e4" commits safely
+  ---
+  duration_ms: 0.034461
+  type: 'test'
+  ...
+# Subtest: numeric edit "" commits safely
+ok 111 - numeric edit "" commits safely
+  ---
+  duration_ms: 0.03433
+  type: 'test'
+  ...
+# Subtest: numeric edit "-" commits safely
+ok 112 - numeric edit "-" commits safely
+  ---
+  duration_ms: 0.03379
+  type: 'test'
+  ...
+# Subtest: numeric edit "." commits safely
+ok 113 - numeric edit "." commits safely
+  ---
+  duration_ms: 0.036133
+  type: 'test'
+  ...
+# Subtest: numeric edit "Infinity" commits safely
+ok 114 - numeric edit "Infinity" commits safely
+  ---
+  duration_ms: 0.087178
+  type: 'test'
+  ...
+# Subtest: numeric edit "NaN" commits safely
+ok 115 - numeric edit "NaN" commits safely
+  ---
+  duration_ms: 0.04776
+  type: 'test'
+  ...
+# Subtest: numeric edit "1,2,3" commits safely
+ok 116 - numeric edit "1,2,3" commits safely
+  ---
+  duration_ms: 0.039728
+  type: 'test'
+  ...
+# Subtest: maximal narrow dialogue can still be saved, no text removed
+ok 117 - maximal narrow dialogue can still be saved, no text removed
+  ---
+  duration_ms: 3.720488
+  type: 'test'
+  ...
+# Subtest: actor deletion preserves the current tail anchor
+ok 118 - actor deletion preserves the current tail anchor
+  ---
+  duration_ms: 0.307953
+  type: 'test'
+  ...
+# Subtest: duplicating a maximum-length plan cannot create an invalid document
+ok 119 - duplicating a maximum-length plan cannot create an invalid document
+  ---
+  duration_ms: 0.24457
+  type: 'test'
+  ...
+# Subtest: consistent library classification: 01_characters/Rose/stage_02/rose.png
+ok 120 - consistent library classification: 01_characters/Rose/stage_02/rose.png
+  ---
+  duration_ms: 0.387721
+  type: 'test'
+  ...
+# Subtest: consistent library classification: Personnages/Radis/stage_03/Radis.png
+ok 121 - consistent library classification: Personnages/Radis/stage_03/Radis.png
+  ---
+  duration_ms: 0.212022
+  type: 'test'
+  ...
+# Subtest: consistent library classification: 06_ui/bulles/encadre.png
+ok 122 - consistent library classification: 06_ui/bulles/encadre.png
+  ---
+  duration_ms: 0.091685
+  type: 'test'
+  ...
+# Subtest: consistent library classification: 01_europe/foret/ambiance.OGG
+ok 123 - consistent library classification: 01_europe/foret/ambiance.OGG
+  ---
+  duration_ms: 0.053168
+  type: 'test'
+  ...
+# Subtest: consistent library classification: décors/Europe/forêt/image.png
+ok 124 - consistent library classification: décors/Europe/forêt/image.png
+  ---
+  duration_ms: 0.3188
+  type: 'test'
+  ...
+# Subtest: wrong resource type refused for background
+ok 125 - wrong resource type refused for background
+  ---
+  duration_ms: 0.294363
+  type: 'test'
+  ...
+# Subtest: wrong resource type refused for actor
+ok 126 - wrong resource type refused for actor
+  ---
+  duration_ms: 0.240524
+  type: 'test'
+  ...
+# Subtest: wrong resource type refused for frame
+ok 127 - wrong resource type refused for frame
+  ---
+  duration_ms: 0.176339
+  type: 'test'
+  ...
+# Subtest: wrong resource type refused for audio
+ok 128 - wrong resource type refused for audio
+  ---
+  duration_ms: 0.160786
+  type: 'test'
+  ...
+# Subtest: object outside visible area generates a warning rather than disappearing unnoticed
+ok 129 - object outside visible area generates a warning rather than disappearing unnoticed
+  ---
+  duration_ms: 0.386189
+  type: 'test'
+  ...
+# Subtest: undo boundaries keep identical edit keys on different selections separate
+ok 130 - undo boundaries keep identical edit keys on different selections separate
+  ---
+  duration_ms: 0.434139
+  type: 'test'
+  ...
+# Subtest: invalid playback delta NaN never corrupts clock
+ok 131 - invalid playback delta NaN never corrupts clock
+  ---
+  duration_ms: 0.252221
+  type: 'test'
+  ...
+# Subtest: invalid playback delta Infinity never corrupts clock
+ok 132 - invalid playback delta Infinity never corrupts clock
+  ---
+  duration_ms: 0.100868
+  type: 'test'
+  ...
+# Subtest: invalid playback delta -Infinity never corrupts clock
+ok 133 - invalid playback delta -Infinity never corrupts clock
+  ---
+  duration_ms: 0.079117
+  type: 'test'
+  ...
+# Subtest: invalid playback delta -1 never corrupts clock
+ok 134 - invalid playback delta -1 never corrupts clock
+  ---
+  duration_ms: 0.087829
+  type: 'test'
+  ...
+# Subtest: invalid playback delta 0 never corrupts clock
+ok 135 - invalid playback delta 0 never corrupts clock
+  ---
+  duration_ms: 0.075661
+  type: 'test'
+  ...
+# Subtest: elapsed time crosses shot boundaries without loss
+ok 136 - elapsed time crosses shot boundaries without loss
+  ---
+  duration_ms: 0.214295
+  type: 'test'
+  ...
+# Subtest: multiple automatic dialogues preserve fractional overflow
+ok 137 - multiple automatic dialogues preserve fractional overflow
+  ---
+  duration_ms: 0.181667
+  type: 'test'
+  ...
+# Subtest: a click-gated dialogue is not consumed by a long dropped frame
+ok 138 - a click-gated dialogue is not consumed by a long dropped frame
+  ---
+  duration_ms: 0.247294
+  type: 'test'
+  ...
+# Subtest: different frame rates produce the same playback state
+ok 139 - different frame rates produce the same playback state
+  ---
+  duration_ms: 0.303887
+  type: 'test'
+  ...
+# Subtest: a huge delta eventually finishes a finite automatic sequence
+ok 140 - a huge delta eventually finishes a finite automatic sequence
+  ---
+  duration_ms: 0.934125
+  type: 'test'
+  ...
+# Subtest: readJsonSource validates and fingerprints exactly one read, preserving BOM
+ok 141 - readJsonSource validates and fingerprints exactly one read, preserving BOM
+  ---
+  duration_ms: 45.940454
+  type: 'test'
+  ...
+# Subtest: asset resolver refuses a directory with an image suffix
+ok 142 - asset resolver refuses a directory with an image suffix
+  ---
+  duration_ms: 2.127302
+  type: 'test'
+  ...
+# Subtest: failed scans reject rather than returning a silently empty library
+ok 143 - failed scans reject rather than returning a silently empty library
+  ---
+  duration_ms: 1.298762
+  type: 'test'
+  ...
+# Subtest: scanner skips zero-byte and unsafe-name files but keeps good images
+ok 144 - scanner skips zero-byte and unsafe-name files but keeps good images
+  ---
+  duration_ms: 15.354555
+  type: 'test'
+  ...
+# Subtest: library URL identity changes even when relative filenames match
+ok 145 - library URL identity changes even when relative filenames match
+  ---
+  duration_ms: 0.348903
+  type: 'test'
+  ...
+# Subtest: new document resets save destination and rejects writes from old session
+ok 146 - new document resets save destination and rejects writes from old session
+  ---
+  duration_ms: 16.869265
+  type: 'test'
+  ...
+# Subtest: stale queued autosave cannot revive a closed project
+ok 147 - stale queued autosave cannot revive a closed project
+  ---
+  duration_ms: 9.903409
+  type: 'test'
+  ...
+# Subtest: open failure retains previous project and recovery
+ok 148 - open failure retains previous project and recovery
+  ---
+  duration_ms: 13.566343
+  type: 'test'
+  ...
+# Subtest: successful open rotates token and removes obsolete recovery
+ok 149 - successful open rotates token and removes obsolete recovery
+  ---
+  duration_ms: 5.059469
+  type: 'test'
+  ...
+# Subtest: external modification is detected before the next save
+ok 150 - external modification is detected before the next save
+  ---
+  duration_ms: 4.37418
+  type: 'test'
+  ...
+# Subtest: externally removed file is not silently recreated
+ok 151 - externally removed file is not silently recreated
+  ---
+  duration_ms: 5.095572
+  type: 'test'
+  ...
+# Subtest: save to another file preserves the externally edited original
+ok 152 - save to another file preserves the externally edited original
+  ---
+  duration_ms: 16.899449
+  type: 'test'
+  ...
+# Subtest: save queues serialize complete documents and preserve previous .bak
+ok 153 - save queues serialize complete documents and preserve previous .bak
+  ---
+  duration_ms: 17.664386
+  type: 'test'
+  ...
+# Subtest: save clears earlier queued recovery snapshots
+ok 154 - save clears earlier queued recovery snapshots
+  ---
+  duration_ms: 11.196333
+  type: 'test'
+  ...
+# Subtest: recovery preserves library information and exact authored data
+ok 155 - recovery preserves library information and exact authored data
+  ---
+  duration_ms: 4.893975
+  type: 'test'
+  ...
+# Subtest: legacy V1 recovery is still readable
+ok 156 - legacy V1 recovery is still readable
+  ---
+  duration_ms: 3.997775
+  type: 'test'
+  ...
+# Subtest: discarding recovery is explicit and persistent
+ok 157 - discarding recovery is explicit and persistent
+  ---
+  duration_ms: 3.832972
+  type: 'test'
+  ...
+# Subtest: corrupt recovery never prevents starting the application
+ok 158 - corrupt recovery never prevents starting the application
+  ---
+  duration_ms: 2.408236
+  type: 'test'
+  ...
+# Subtest: a rejected write does not poison later file operations
+ok 159 - a rejected write does not poison later file operations
+  ---
+  duration_ms: 5.700111
+  type: 'test'
+  ...
+# Subtest: in-memory mutation after autosave request cannot change queued data
+ok 160 - in-memory mutation after autosave request cannot change queued data
+  ---
+  duration_ms: 6.796351
+  type: 'test'
+  ...
+# Subtest: backup symlink is replaced rather than followed
+ok 161 - backup symlink is replaced rather than followed
+  ---
+  duration_ms: 6.214974
+  type: 'test'
+  ...
+# Subtest: too-large saves cannot replace a valid original with an unreadable JSON
+ok 162 - too-large saves cannot replace a valid original with an unreadable JSON
+  ---
+  duration_ms: 25.854073
+  type: 'test'
+  ...
+# Subtest: command execute, undo and redo are immutable and named
+ok 163 - command execute, undo and redo are immutable and named
+  ---
+  duration_ms: 1.016576
+  type: 'test'
+  ...
+# Subtest: a composite edit is exactly one undo step
+ok 164 - a composite edit is exactly one undo step
+  ---
+  duration_ms: 2.414905
+  type: 'test'
+  ...
+# Subtest: an async stale command is refused instead of overwriting changes
+ok 165 - an async stale command is refused instead of overwriting changes
+  ---
+  duration_ms: 0.409232
+  type: 'test'
+  ...
+# Subtest: coalesced commands undo back to the beginning of a gesture
+ok 166 - coalesced commands undo back to the beginning of a gesture
+  ---
+  duration_ms: 0.132054
+  type: 'test'
+  ...
+# Subtest: command boundaries and bounded histories retain the existing contract
+ok 167 - command boundaries and bounded histories retain the existing contract
+  ---
+  duration_ms: 1.913317
+  type: 'test'
+  ...
+# Subtest: group movement preserves relative positions and the source
+ok 168 - group movement preserves relative positions and the source
+  ---
+  duration_ms: 0.955307
+  type: 'test'
+  ...
+# Subtest: movement clamps the group together, not each object separately
+ok 169 - movement clamps the group together, not each object separately
+  ---
+  duration_ms: 0.235847
+  type: 'test'
+  ...
+# Subtest: nonfinite moves do not corrupt a document
+ok 170 - nonfinite moves do not corrupt a document
+  ---
+  duration_ms: 0.139215
+  type: 'test'
+  ...
+# Subtest: bounding boxes use the actual automatic bubble height
+ok 171 - bounding boxes use the actual automatic bubble height
+  ---
+  duration_ms: 1.604952
+  type: 'test'
+  ...
+# Subtest: align selected objects: left
+ok 172 - align selected objects: left
+  ---
+  duration_ms: 0.859526
+  type: 'test'
+  ...
+# Subtest: align selected objects: right
+ok 173 - align selected objects: right
+  ---
+  duration_ms: 0.328433
+  type: 'test'
+  ...
+# Subtest: align selected objects: center-x
+ok 174 - align selected objects: center-x
+  ---
+  duration_ms: 0.173135
+  type: 'test'
+  ...
+# Subtest: align selected objects: top
+ok 175 - align selected objects: top
+  ---
+  duration_ms: 0.161018
+  type: 'test'
+  ...
+# Subtest: align selected objects: bottom
+ok 176 - align selected objects: bottom
+  ---
+  duration_ms: 0.212293
+  type: 'test'
+  ...
+# Subtest: align selected objects: center-y
+ok 177 - align selected objects: center-y
+  ---
+  duration_ms: 0.090944
+  type: 'test'
+  ...
+# Subtest: distribution keeps extreme objects and creates equal gaps
+ok 178 - distribution keeps extreme objects and creates equal gaps
+  ---
+  duration_ms: 0.186164
+  type: 'test'
+  ...
+# Subtest: two objects are not enough to distribute
+ok 179 - two objects are not enough to distribute
+  ---
+  duration_ms: 0.110974
+  type: 'test'
+  ...
+# Subtest: snap aligns group center to the stage center
+ok 180 - snap aligns group center to the stage center
+  ---
+  duration_ms: 0.287043
+  type: 'test'
+  ...
+# Subtest: snap leaves a distant gesture untouched
+ok 181 - snap leaves a distant gesture untouched
+  ---
+  duration_ms: 0.112135
+  type: 'test'
+  ...
+# Subtest: duplicate a character and its bubble remaps the speaker to the copy
+ok 182 - duplicate a character and its bubble remaps the speaker to the copy
+  ---
+  duration_ms: 1.289498
+  type: 'test'
+  ...
+# Subtest: duplicating a bubble alone keeps its original speaker
+ok 183 - duplicating a bubble alone keeps its original speaker
+  ---
+  duration_ms: 0.139906
+  type: 'test'
+  ...
+# Subtest: group deletion safely detaches any remaining bubble
+ok 184 - group deletion safely detaches any remaining bubble
+  ---
+  duration_ms: 0.779628
+  type: 'test'
+  ...
+# Subtest: deleting a group including its own bubble leaves no dangling references
+ok 185 - deleting a group including its own bubble leaves no dangling references
+  ---
+  duration_ms: 0.273293
+  type: 'test'
+  ...
+# Subtest: duplicate refuses excessive object counts atomically
+ok 186 - duplicate refuses excessive object counts atomically
+  ---
+  duration_ms: 1.966696
+  type: 'test'
+  ...
+# Subtest: layer reorder changes only its own type and ignores foreign IDs
+ok 187 - layer reorder changes only its own type and ignores foreign IDs
+  ---
+  duration_ms: 0.412077
+  type: 'test'
+  ...
+# Subtest: smart duplication can discard dialogues, entrances and audio
+ok 188 - smart duplication can discard dialogues, entrances and audio
+  ---
+  duration_ms: 0.24451
+  type: 'test'
+  ...
+# Subtest: template blank is a valid distinct shot
+ok 189 - template blank is a valid distinct shot
+  ---
+  duration_ms: 0.720491
+  type: 'test'
+  ...
+# Subtest: template continue is a valid distinct shot
+ok 190 - template continue is a valid distinct shot
+  ---
+  duration_ms: 0.641294
+  type: 'test'
+  ...
+# Subtest: template dialogue is a valid distinct shot
+ok 191 - template dialogue is a valid distinct shot
+  ---
+  duration_ms: 4.929978
+  type: 'test'
+  ...
+# Subtest: template establishing is a valid distinct shot
+ok 192 - template establishing is a valid distinct shot
+  ---
+  duration_ms: 0.377696
+  type: 'test'
+  ...
+# Subtest: template entrance is a valid distinct shot
+ok 193 - template entrance is a valid distinct shot
+  ---
+  duration_ms: 0.302926
+  type: 'test'
+  ...
+# Subtest: template narration is a valid distinct shot
+ok 194 - template narration is a valid distinct shot
+  ---
+  duration_ms: 0.700802
+  type: 'test'
+  ...
+# Subtest: dialogue templates refuse the same or missing speakers
+ok 195 - dialogue templates refuse the same or missing speakers
+  ---
+  duration_ms: 0.249547
+  type: 'test'
+  ...
+# Subtest: bubble auto placement fits normal text inside the stage
+ok 196 - bubble auto placement fits normal text inside the stage
+  ---
+  duration_ms: 2.89314
+  type: 'test'
+  ...
+# Subtest: placing a bubble never truncates text and does not mutate the input
+ok 197 - placing a bubble never truncates text and does not mutate the input
+  ---
+  duration_ms: 20.799882
+  type: 'test'
+  ...
+# Subtest: placement is deterministic
+ok 198 - placement is deterministic
+  ---
+  duration_ms: 15.028856
+  type: 'test'
+  ...
+# Subtest: diagnostics classify missing references as errors when a library is connected
+ok 199 - diagnostics classify missing references as errors when a library is connected
+  ---
+  duration_ms: 4.069412
+  type: 'test'
+  ...
+# Subtest: without a library missing references remain unverified warnings
+ok 200 - without a library missing references remain unverified warnings
+  ---
+  duration_ms: 0.396303
+  type: 'test'
+  ...
+# Subtest: diagnostics point to out-of-frame actors with a non-destructive fix
+ok 201 - diagnostics point to out-of-frame actors with a non-destructive fix
+  ---
+  duration_ms: 0.760689
+  type: 'test'
+  ...
+# Subtest: overlapping sequential bubbles are informational, not playback errors
+ok 202 - overlapping sequential bubbles are informational, not playback errors
+  ---
+  duration_ms: 0.671779
+  type: 'test'
+  ...
+# Subtest: overflow warning retains an actionable bubble ID
+ok 203 - overflow warning retains an actionable bubble ID
+  ---
+  duration_ms: 0.595967
+  type: 'test'
+  ...
+# Subtest: corrupt collection storage is normalized without unsafe paths
+ok 204 - corrupt collection storage is normalized without unsafe paths
+  ---
+  duration_ms: 0.167667
+  type: 'test'
+  ...
+# Subtest: favorite toggles do not mutate the previous collection
+ok 205 - favorite toggles do not mutate the previous collection
+  ---
+  duration_ms: 0.121258
+  type: 'test'
+  ...
+# Subtest: recents are MRU ordered, deduplicated and bounded at forty
+ok 206 - recents are MRU ordered, deduplicated and bounded at forty
+  ---
+  duration_ms: 0.249347
+  type: 'test'
+  ...
+# Subtest: versions store complete JSON and library reference, never copy source assets
+ok 207 - versions store complete JSON and library reference, never copy source assets
+  ---
+  duration_ms: 13.539954
+  type: 'test'
+  ...
+# Subtest: versions retain the twenty most recent checkpoints in descending time order
+ok 208 - versions retain the twenty most recent checkpoints in descending time order
+  ---
+  duration_ms: 293.610724
+  type: 'test'
+  ...
+# Subtest: automatic checkpoints are deduplicated and limited to one per thirty seconds
+ok 209 - automatic checkpoints are deduplicated and limited to one per thirty seconds
+  ---
+  duration_ms: 6.927879
+  type: 'test'
+  ...
+# Subtest: changing only the library is retained in a later automatic checkpoint
+ok 210 - changing only the library is retained in a later automatic checkpoint
+  ---
+  duration_ms: 5.227587
+  type: 'test'
+  ...
+# Subtest: manual checkpoint is not throttled and stores its label
+ok 211 - manual checkpoint is not throttled and stores its label
+  ---
+  duration_ms: 5.45445
+  type: 'test'
+  ...
+# Subtest: checkpoint captures input at invocation, not at eventual disk write
+ok 212 - checkpoint captures input at invocation, not at eventual disk write
+  ---
+  duration_ms: 1.834581
+  type: 'test'
+  ...
+# Subtest: concurrent manual checkpoints serialize without dropping versions
+ok 213 - concurrent manual checkpoints serialize without dropping versions
+  ---
+  duration_ms: 97.398382
+  type: 'test'
+  ...
+# Subtest: histories belonging to different documents are isolated
+ok 214 - histories belonging to different documents are isolated
+  ---
+  duration_ms: 2.357761
+  type: 'test'
+  ...
+# Subtest: unsafe scope and checkpoint paths are rejected
+ok 215 - unsafe scope and checkpoint paths are rejected
+  ---
+  duration_ms: 1.04596
+  type: 'test'
+  ...
+# Subtest: one corrupted checkpoint does not hide healthy versions
+ok 216 - one corrupted checkpoint does not hide healthy versions
+  ---
+  duration_ms: 7.826172
+  type: 'test'
+  ...
+# Subtest: invalid cinematic data cannot be captured as a version
+ok 217 - invalid cinematic data cannot be captured as a version
+  ---
+  duration_ms: 0.813047
+  type: 'test'
+  ...
+# Subtest: symbolic checkpoint files are not read
+ok 218 - symbolic checkpoint files are not read
+  ---
+  duration_ms: 1.840229
+  type: 'test'
+  ...
+# Subtest: symbolic scope directories are refused on read and write
+ok 219 - symbolic scope directories are refused on read and write
+  ---
+  duration_ms: 1.566597
+  type: 'test'
+  ...
+# Subtest: Save As forks rather than deletes the original history
+ok 220 - Save As forks rather than deletes the original history
+  ---
+  duration_ms: 16.955987
+  type: 'test'
+  ...
+# Subtest: file history keys are deterministic and distinguish paths
+ok 221 - file history keys are deterministic and distinguish paths
+  ---
+  duration_ms: 0.656987
+  type: 'test'
+  ...
+# Subtest: document autosave writes recovery and snapshot, not the open source JSON
+ok 222 - document autosave writes recovery and snapshot, not the open source JSON
+  ---
+  duration_ms: 6.658873
+  type: 'test'
+  ...
+# Subtest: history resumes after saving and reopening the same JSON
+ok 223 - history resumes after saving and reopening the same JSON
+  ---
+  duration_ms: 11.842335
+  type: 'test'
+  ...
+# Subtest: new document does not inherit the previous file history
+ok 224 - new document does not inherit the previous file history
+  ---
+  duration_ms: 1.944482
+  type: 'test'
+  ...
+# Subtest: document version APIs reject stale tokens
+ok 225 - document version APIs reject stale tokens
+  ---
+  duration_ms: 3.929365
+  type: 'test'
+  ...
+# Subtest: startup recovery resumes the version scope of the recovered draft
+ok 226 - startup recovery resumes the version scope of the recovered draft
+  ---
+  duration_ms: 8.284886
+  type: 'test'
+  ...
+# Subtest: discarding startup recovery keeps the abandoned history separate
+ok 227 - discarding startup recovery keeps the abandoned history separate
+  ---
+  duration_ms: 2.602801
+  type: 'test'
+  ...
+# Subtest: loading a version is read-only for the original file and current destination
+ok 228 - loading a version is read-only for the original file and current destination
+  ---
+  duration_ms: 12.682431
+  type: 'test'
+  ...
+1..228
+# tests 228
+# suites 0
+# pass 228
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 770.422444
