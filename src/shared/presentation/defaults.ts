@@ -992,7 +992,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
     },
     {
       "id": "move_corrupted_bramble",
-      "name": "Ronce contaminée — déplacement",
+      "name": "Rose contaminée — déplacement",
       "kind": "procedural",
       "frames": [],
       "duration": 0.982,
@@ -1479,7 +1479,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
     },
     {
       "id": "profile_corrupted_bramble",
-      "name": "Profil Ronce contaminée",
+      "name": "Profil Rose contaminée",
       "slots": [
         {
           "slot": "move",
@@ -1596,24 +1596,24 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
   },
   "bramble": {
     "sprite": {
-      "asset": "library://combat/illustrations/plants/bramble.png",
+      "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
       "region": {
         "x": 0,
         "y": 0,
-        "width": 238,
-        "height": 243
+        "width": 1024,
+        "height": 1536
       },
       "anchor": {
         "x": 0.5,
         "y": 1
       }
     },
-    "width": 88,
-    "height": 80,
+    "width": 104,
+    "height": 112,
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+    "note": "Design officiel de Rose détouré sur transparence pour l’accueil, les cartes et le combat."
   },
   "hazel": {
     "sprite": {

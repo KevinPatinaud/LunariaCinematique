@@ -49,7 +49,7 @@
         },
         {
           "id": "actor_bramble_attack_0",
-          "name": "Ronce",
+          "name": "Rose",
           "asset": "library://combat/illustrations/plants/bramble.png",
           "x": 0.6,
           "y": 0.43,
@@ -238,7 +238,7 @@
         },
         {
           "id": "actor_bramble_idle_2",
-          "name": "Ronce",
+          "name": "Rose",
           "asset": "library://combat/illustrations/plants/bramble.png",
           "x": 0.59,
           "y": 0.43,

@@ -43,6 +43,8 @@ contextBridge.exposeInMainWorld('lunariaGame', {
   openRecent:(path:string)=>ipcRenderer.invoke('game:recent',path),
   save:(project:unknown,token:string,saveAs:boolean)=>ipcRenderer.invoke('game:save',project,token,saveAs),
   recover:(project:unknown)=>ipcRenderer.invoke('game:recover',project),clearRecovery:()=>ipcRenderer.invoke('game:clear-recovery'),
+  playLevel:(project:unknown,levelId:string)=>ipcRenderer.invoke('game:play-level',project,levelId),
+  build:(project:unknown,target:'windows'|'android')=>ipcRenderer.invoke('game:build',project,target),
   publish:(project:unknown)=>ipcRenderer.invoke('game:publish',project),
   campaignFolder:()=>ipcRenderer.invoke('campaign:folder'),
   chooseCampaignFolder:()=>ipcRenderer.invoke('campaign:choose-folder'),

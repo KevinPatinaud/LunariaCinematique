@@ -55,6 +55,43 @@ test('effectif de vague et roster sont enregistrés sans recopier les statistiqu
  const data=await save();expect(data.levels[0].waves[0].groups[0].count).toBe(7);expect(data.levels[0].allowedPlants).toContain('fern');
  expect(Object.hasOwn(data.levels[0],'damage')).toBe(false);
 });
+test('interface simplifiée sans récit ni objectifs bonus',async()=>{
+ await expect(page.getByRole('button',{name:'Récit & objectifs bonus',exact:true})).toHaveCount(0);
+ await expect(page.getByText(/Objectifs bonus/)).toHaveCount(0);
+ await page.getByRole('button',{name:'Événements & dialogue',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Dialogue pendant la mission'})).toBeVisible();
+ const data=await save();expect(Object.hasOwn(data.levels[0],'optionalGoals')).toBe(false);
+});
+test('le niveau sélectionné est publié et lancé avec un profil de test isolé',async()=>{
+ const game=path.join(temp,'preview-game'),godot=path.join(temp,'fake-godot.exe');
+ for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});
+ for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,...marker.split('/')),'marker');
+ await fs.writeFile(path.join(game,'content/design/game_content.json'),'{}');await fs.writeFile(godot,'fake');
+ await app.evaluate(({dialog},{game,godot})=>{dialog.showOpenDialog=async(...args:any[])=>{const options=args.at(-1);return{canceled:false,filePaths:[options.title?.includes('Godot pour lancer')?godot:game]};};},{game,godot});
+ const title=(await page.locator('.gd-section-heading h1').first().textContent())?.trim()??'';
+ expect(title).not.toBe('');
+ await page.getByRole('button',{name:/Jouer ce niveau/}).click();
+ await expect(page.locator('.gd-message')).toContainText(`Lunaria lancé sur « ${title} »`);
+ const published=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));
+ expect(published.levels.some((level:any)=>level.title===title)).toBe(true);
+ const settings=JSON.parse(await fs.readFile(path.join(profile,'game-preview.json'),'utf8'));
+ expect(settings.gameRoot).toBe(await fs.realpath(game));expect(typeof settings.godotPath).toBe('string');
+});
+test('les builds PC et Android synchronisent le projet et produisent leurs artefacts',async()=>{
+ const repository=path.join(temp,'build-repository'),game=path.join(repository,'game');
+ for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});
+ for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,...marker.split('/')),'marker');
+ await fs.writeFile(path.join(game,'content/design/game_content.json'),'{}');
+ await app.evaluate(({dialog},game)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[game]});},game);
+ await page.getByRole('button',{name:'Build PC',exact:true}).click();
+ await expect(page.locator('.gd-message')).toContainText('Build PC terminé');
+ await expect.poll(()=>fs.stat(path.join(repository,'build/windows/Lunaria.exe')).then(s=>s.size)).toBeGreaterThan(0);
+ await page.getByRole('button',{name:'Build Android',exact:true}).click();
+ await expect(page.locator('.gd-message')).toContainText('Build Android terminé');
+ await expect.poll(()=>fs.stat(path.join(repository,'build/android/Lunaria.apk')).then(s=>s.size)).toBeGreaterThan(0);
+ const published=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));
+ expect(published.title).toBe(seedProject().title);
+});
 test('publication native choisit le projet Godot et ne modifie que le contenu de jeu',async()=>{
  const game=path.join(temp,'game');await fs.mkdir(path.join(game,'content/design'),{recursive:true});
  await fs.mkdir(path.join(game,'domain/logic'),{recursive:true});await fs.mkdir(path.join(game,'domain/presentation'),{recursive:true});await fs.writeFile(path.join(game,'domain/logic/event_runtime.gd'),'extends RefCounted');

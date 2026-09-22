@@ -10,28 +10,33 @@ test.beforeEach(async()=>{
  page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
  await app.evaluate(({dialog},target)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:target});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},target);
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
- await page.getByRole('navigation',{name:'Sections du mode Niveaux'}).getByRole('button',{name:'Capacités',exact:true}).click();
+ const navigation=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
+ await expect(navigation.getByRole('button',{name:/^Attaque/})).toBeVisible();
+ await expect(navigation.getByRole('button',{name:'Capacités',exact:true})).toHaveCount(0);
+ await expect(navigation.getByRole('button',{name:'Effets',exact:true})).toHaveCount(0);
+ await expect(navigation.getByRole('button',{name:'Projectiles',exact:true})).toHaveCount(0);
+ await navigation.getByRole('button',{name:/^Attaque/}).click();
 });
 test.afterEach(async({},info)=>{if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('combat',{body:await page.screenshot(),contentType:'image/png'});await app?.close();await fs.rm(dir,{recursive:true,force:true});});
 async function save(){await page.locator('.gd-toolbar').getByRole('button',{name:'Enregistrer',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');return JSON.parse(await fs.readFile(target,'utf8'));}
 test('catalogs persist with v4 and global references',async()=>{
- await expect(page.getByLabel('Nom de la définition')).toHaveValue('Graines vaillantes');
+ await expect(page.getByLabel('Nom de l’attaque')).toHaveValue('Tir simple');
  await page.getByLabel('Cadence',{exact:true}).selectOption('fixed');
  await page.getByLabel('Intervalle entre utilisations (s)',{exact:true}).fill('2,5');await page.getByLabel('Intervalle entre utilisations (s)',{exact:true}).press('Tab');
- const doc=await save();expect(doc.schemaVersion).toBe(4);expect(doc.combat.abilities[0].cooldown).toBe(2.5);expect(doc.balance.plants[0].ability_ids).toContain('ab_radish');
+ const doc=await save();expect(doc.schemaVersion).toBe(4);expect(doc.combat.abilities[0].cooldown).toBe(2.5);expect(doc.balance.plants[0].ability_ids).toContain('ab_basic_shot');
 });
 test('incompatible targets block publishing and referenced definitions are protected',async()=>{
  await expect(page.getByRole('button',{name:'Supprimer',exact:true})).toBeDisabled();
- await page.getByLabel('Camp ciblé').selectOption('ally');await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
- await page.getByLabel('Camp ciblé').selectOption('opponent');await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeEnabled();
+ await page.getByLabel('Cible',{exact:true}).selectOption('ally');await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
+ await page.getByLabel('Cible',{exact:true}).selectOption('opponent');await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeEnabled();
 });
 test('empty effect chain remains recoverable as a draft',async()=>{
- await page.getByRole('button',{name:'Retirer effet 1',exact:true}).click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Retirer résultat 1',exact:true}).click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
  await expect.poll(async()=>{try{const p=JSON.parse(await fs.readFile(path.join(dir,'profile/game-recovery.json'),'utf8'));return p.combat.abilities[0].effects.length;}catch{return -1;}}).toBe(0);
- await page.getByLabel('Ajouter un effet',{exact:true}).selectOption('fx_attack');expect((await save()).combat.abilities[0].effects).toEqual(['fx_attack']);
+ await page.getByLabel('Ajouter un résultat existant',{exact:true}).selectOption('fx_attack');expect((await save()).combat.abilities[0].effects).toEqual(['fx_attack']);
 });
 test('same ability can be assigned to an enemy without copying its definition',async()=>{
  await page.getByRole('navigation',{name:'Sections du mode Niveaux'}).getByRole('button',{name:/^Ennemis/}).click();
- await page.getByLabel('Ajouter une capacité à l’espèce').selectOption('ab_radish');
- const doc=await save();expect(doc.balance.enemies[0].ability_ids).toContain('ab_radish');expect(doc.combat.abilities.filter((a:{id:string})=>a.id==='ab_radish')).toHaveLength(1);
+ await page.getByLabel('Type d’attaque principal').selectOption('ab_basic_shot');
+ const doc=await save();expect(doc.balance.enemies[0].ability_ids[0]).toBe('ab_basic_shot');expect(doc.combat.abilities.filter((a:{id:string})=>a.id==='ab_basic_shot')).toHaveLength(1);
 });

@@ -35,13 +35,13 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_radish"
+          "ab_basic_shot"
         ],
         "behaviorId": "ai_defender"
       },
       {
         "id": "bramble",
-        "name": "Ronce",
+        "name": "Rose",
         "role": "Entrave défensive",
         "description": "Ses épines accrochent les pollueurs proches et freinent leur avancée.",
         "ability": "Étreinte épineuse",
@@ -66,7 +66,7 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_bramble"
+          "ab_root_shot"
         ],
         "behaviorId": "ai_defender"
       },
@@ -97,8 +97,8 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_hazel",
-          "ab_hazel_regeneration"
+          "ab_basic_shot",
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender"
       },
@@ -191,7 +191,7 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_ivy"
+          "ab_root_shot"
         ],
         "behaviorId": "ai_defender"
       },
@@ -253,7 +253,7 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_acacia"
+          "ab_piercing_shot"
         ],
         "behaviorId": "ai_defender"
       },
@@ -284,9 +284,9 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_baobab",
-          "ab_baobab_protection",
-          "ab_baobab_regeneration"
+          "ab_basic_shot",
+          "ab_ally_protection",
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender"
       },
@@ -442,7 +442,7 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_bamboo"
+          "ab_piercing_shot"
         ],
         "behaviorId": "ai_defender"
       },
@@ -566,9 +566,9 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_mangrove",
-          "ab_mangrove_protection",
-          "ab_mangrove_regeneration"
+          "ab_basic_shot",
+          "ab_ally_protection",
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender"
       },
@@ -631,7 +631,7 @@ export const GAME_SEED:GameProject={
         },
         "ability_ids": [
           "ab_pandanus",
-          "ab_pandanus_protection"
+          "ab_ally_protection"
         ],
         "behaviorId": "ai_defender"
       },
@@ -755,9 +755,9 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_sequoia",
+          "ab_basic_shot",
           "ab_sequoia_protection",
-          "ab_sequoia_regeneration"
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender"
       },
@@ -1111,7 +1111,7 @@ export const GAME_SEED:GameProject={
       },
       {
         "id": "corrupted_bramble",
-        "name": "Ronce contaminée",
+        "name": "Rose contaminée",
         "hp": 1400,
         "speed": 0.035,
         "attack": 42,
@@ -1181,7 +1181,7 @@ export const GAME_SEED:GameProject={
     {
       "id": "mission_01",
       "title": "Derrière la vitre",
-      "subtitle": "La jardinerie Lunaria · Radis et Ronce",
+      "subtitle": "La jardinerie Lunaria · Radis et Rose",
       "act": 0,
       "location": "La jardinerie Lunaria",
       "startingEnergy": 520,
@@ -1194,7 +1194,7 @@ export const GAME_SEED:GameProject={
         "target": 0
       },
       "objectiveText": "Protégez le dernier jardin pendant trois vagues.",
-      "tip": "Plantez Radis dans les allées annoncées et Ronce devant lui. Les graines proviennent des pollueurs arrêtés.",
+      "tip": "Plantez Radis dans les allées annoncées et Rose devant lui. Les graines proviennent des pollueurs arrêtés.",
       "waves": [
         {
           "id": "mission_01_wave_1",
@@ -1363,7 +1363,7 @@ export const GAME_SEED:GameProject={
           "text": "L'assaut est repoussé, mais les eaux contaminées ont déjà atteint les racines du tilleul."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "La porte a tenu. Je peux encore dégager tes racines. Il doit y avoir quelque chose à faire !"
         },
         {
@@ -1375,28 +1375,16 @@ export const GAME_SEED:GameProject={
           "text": "Celle-ci reviendra ici. Je la garderai dans mes feuilles."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Alors il faudra qu'on revienne aussi."
         },
         {
           "speaker": "Narration",
-          "text": "Les survivants sont confiés aux jardins voisins. Radis et Ronce franchissent la porte avec les graines du tilleul."
+          "text": "Les survivants sont confiés aux jardins voisins. Radis et Rose franchissent la porte avec les graines du tilleul."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "full_garden",
-          "title": "Garder 5 végétaux sur le terrain",
-          "target": 5
-        }
-      ],
       "restoration": "L'assaut est repoussé, mais les eaux contaminées ont déjà atteint les racines du tilleul.",
       "events": []
     },
@@ -1593,7 +1581,7 @@ export const GAME_SEED:GameProject={
           "text": "En commençant par ne pas perdre la dernière noisette."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Nous tenons le passage pendant que les racines desserrent la clôture. Il pourra se battre à nos côtés."
         },
         {
@@ -1619,24 +1607,12 @@ export const GAME_SEED:GameProject={
           "text": "Il faut bien quelqu'un pour compter correctement."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Donne-m'en deux. Tu porteras le reste."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir les 3 compagnons sur le terrain",
-          "target": 3
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 2 végétaux",
-          "target": 2
-        }
-      ],
       "restoration": "Toutes retrouvées. Nous prenons simplement la même direction.",
       "events": []
     },
@@ -1858,7 +1834,7 @@ export const GAME_SEED:GameProject={
           "text": "Une source coule dans un parc, au-delà de la gare. Mais je ne vais jamais aussi loin."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Aide-nous à rouvrir ce passage. Nous avancerons ensemble."
         },
         {
@@ -1886,18 +1862,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir les 4 compagnons sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 6 végétaux",
-          "target": 6
-        }
-      ],
       "restoration": "Un filet d'eau rejoint la galerie. Des racines oubliées se redressent contre les pierres.",
       "events": []
     },
@@ -2124,7 +2088,7 @@ export const GAME_SEED:GameProject={
           "text": "Il ne regarde jamais de ce côté. Je connais les rondes. Emmenez-moi et je vous montrerai le chemin."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Tu le connais entièrement ?"
         },
         {
@@ -2152,18 +2116,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Tous les quais sont calmes. C'est la première fois que je vois l'horloge d'en bas.",
       "events": []
     },
@@ -2383,7 +2335,7 @@ export const GAME_SEED:GameProject={
           "text": "Le passage s'arrête devant un vide que seul Lierre peut franchir."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Et Noisetier, tu comptes le faire voler ?"
         },
         {
@@ -2419,18 +2371,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "Les attaches tiennent. Même Noisetier traverse sans abandonner une noisette.",
       "events": []
     },
@@ -2679,7 +2619,7 @@ export const GAME_SEED:GameProject={
           "text": "Les petits dont le Ramasseur a arraché le jardin. Je ne pars pas sans eux."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Alors nous tenons les portes avec toi. Ensuite nous préparons leur traversée."
         },
         {
@@ -2707,18 +2647,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Les jeunes plantes sortent de sous les sièges. Ortie les appelle une à une pour vérifier que toutes sont là.",
       "events": []
     },
@@ -2963,7 +2891,7 @@ export const GAME_SEED:GameProject={
           "text": "Les plus petites par les passages bas. Les autres suivent les attaches de Lierre."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je retiens les wagons. Continuez tant que les rails sont libres."
         },
         {
@@ -2981,7 +2909,7 @@ export const GAME_SEED:GameProject={
           "text": "La dernière pousse rejoint le parc. Derrière elle, le wagon se soulève grâce à toutes les racines réunies."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Vous auriez dû continuer."
         },
         {
@@ -3000,10 +2928,10 @@ export const GAME_SEED:GameProject={
       "midDialogue": [
         {
           "speaker": "Narration",
-          "text": "Le Ramasseur heurte un wagon. Ronce retient le métal, mais une roue emprisonne ses tiges."
+          "text": "Le Ramasseur heurte un wagon. Rose retient le métal, mais une roue emprisonne ses tiges."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Continuez ! Il va revenir !"
         },
         {
@@ -3012,18 +2940,6 @@ export const GAME_SEED:GameProject={
         }
       ],
       "midWave": 2,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "La dernière pousse rejoint le parc. Derrière elle, le wagon se soulève grâce à toutes les racines réunies.",
       "events": []
     },
@@ -3401,7 +3317,7 @@ export const GAME_SEED:GameProject={
           "text": "Un bras de grue dépasse de la grille. Le Ramasseur a suivi les traces jusqu'au parc."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Il devra traverser toutes nos racines avant de toucher ce jardin."
         },
         {
@@ -3431,7 +3347,7 @@ export const GAME_SEED:GameProject={
           "text": "Une hirondelle arrive d'Afrique. Un fleuve n'atteint plus ses berges."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Nous venons juste de trouver un endroit sûr."
         },
         {
@@ -3445,18 +3361,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Le noyau s'éteint. Le Ramasseur s'affaisse loin de la source, dans un long souffle de vapeur.",
       "events": []
     },
@@ -3710,7 +3614,7 @@ export const GAME_SEED:GameProject={
           "text": "Commencez par cette fuite. Mes élèves garderont le puits ; je vous accompagne au chantier."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Enfin un plan qui tient en une phrase."
         }
       ],
@@ -3734,18 +3638,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "La digue retient de nouveau l'eau. Acacia attend que les jeunes pousses aient bu avant d'y tremper ses racines.",
       "events": []
     },
@@ -4024,18 +3916,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Un filet d'eau traverse les nouvelles rigoles et remplit un bassin longtemps resté vide.",
       "events": []
     },
@@ -4295,7 +4175,7 @@ export const GAME_SEED:GameProject={
           "text": "Alors je marche avec vous. Mais la dernière passe avant moi."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je prendrai l'autre côté. Tu n'auras pas à tout retenir seul."
         }
       ],
@@ -4313,7 +4193,7 @@ export const GAME_SEED:GameProject={
           "text": "Tu pourrais en raconter une autre ce soir ?"
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "D'abord, tout le monde boit."
         },
         {
@@ -4323,18 +4203,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "Les voyageurs rejoignent la pépinière. Baobab s'assied seulement quand la dernière pousse est à l'ombre.",
       "events": []
     },
@@ -4600,10 +4468,10 @@ export const GAME_SEED:GameProject={
       "briefing": [
         {
           "speaker": "Aloès",
-          "text": "Les nouvelles pousses ici. Les blessés près du bassin. Et toi, Ronce : tu boites."
+          "text": "Les nouvelles pousses ici. Les blessés près du bassin. Et toi, Rose : tu boites."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je marche comme ça."
         },
         {
@@ -4622,7 +4490,7 @@ export const GAME_SEED:GameProject={
       "outro": [
         {
           "speaker": "Narration",
-          "text": "Le dispensaire tient. Aloès finit par examiner les racines de Ronce."
+          "text": "Le dispensaire tient. Aloès finit par examiner les racines de Rose."
         },
         {
           "speaker": "Aloès",
@@ -4633,29 +4501,17 @@ export const GAME_SEED:GameProject={
           "text": "Radis s'est endormi. Je vais veiller sur lui."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "D'accord."
         },
         {
           "speaker": "Narration",
-          "text": "Soulagée, Ronce reste pourtant un peu à l'écart. Elle ne sait pas encore partager sa peur."
+          "text": "Soulagée, Rose reste pourtant un peu à l'écart. Elle ne sait pas encore partager sa peur."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
-      "restoration": "Le dispensaire tient. Aloès finit par examiner les racines de Ronce.",
+      "restoration": "Le dispensaire tient. Aloès finit par examiner les racines de Rose.",
       "events": []
     },
     {
@@ -4954,24 +4810,12 @@ export const GAME_SEED:GameProject={
           "text": "Les messages circulent. Personne n'attendra un signal qui n'arrive pas."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Nous devons regarder ses réserves avant l'assaut."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "Les jardins décident de tenir les pépinières pendant qu'une équipe remontera vers la station.",
       "events": []
     },
@@ -5241,7 +5085,7 @@ export const GAME_SEED:GameProject={
           "text": "Une poudre claire couvre le bord d'un bassin. Un pollueur la touche, se contracte et tombe."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Vous avez vu ? Il suffirait d'en mettre dans leurs réserves."
         },
         {
@@ -5267,7 +5111,7 @@ export const GAME_SEED:GameProject={
           "text": "Les cuves sont isolées. Les équipes locales les surveilleront pendant l'assaut."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Nous aurions pu les arrêter ici."
         },
         {
@@ -5276,23 +5120,11 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Narration",
-          "text": "Ronce replie une feuille contenant un peu de poudre. Elle la range sans rien dire."
+          "text": "Rose replie une feuille contenant un peu de poudre. Elle la range sans rien dire."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Les cuves sont isolées. Les équipes locales les surveilleront pendant l'assaut.",
       "events": []
     },
@@ -5591,10 +5423,10 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Baobab",
-          "text": "Je peux tenir le canal avec Ronce."
+          "text": "Je peux tenir le canal avec Rose."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Bien. Cette fois, on ne les laissera pas approcher des pousses."
         },
         {
@@ -5622,18 +5454,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "L'eau revient dans les premiers bassins. Au loin, la station entière se met à bouger.",
       "events": []
     },
@@ -6056,7 +5876,7 @@ export const GAME_SEED:GameProject={
           "text": "Gardez vos positions jusqu'au dernier signal."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Noisetier, reste près de moi. La rive bouge."
         }
       ],
@@ -6067,10 +5887,10 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Aloès",
-          "text": "Ronce, cette racine est déchirée. Cette fois, tu te reposes."
+          "text": "Rose, cette racine est déchirée. Cette fois, tu te reposes."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "La prochaine fois, je veux qu'ils tombent avant de nous atteindre."
         },
         {
@@ -6087,13 +5907,13 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Narration",
-          "text": "Les compagnons préparent leur traversée. Ronce range soigneusement sa feuille de cendre blanche."
+          "text": "Les compagnons préparent leur traversée. Rose range soigneusement sa feuille de cendre blanche."
         }
       ],
       "midDialogue": [
         {
           "speaker": "Narration",
-          "text": "Une berge cède. Ronce rattrape Noisetier, mais l'effort déchire une racine. Baobab s'ancre derrière eux."
+          "text": "Une berge cède. Rose rattrape Noisetier, mais l'effort déchire une racine. Baobab s'ancre derrière eux."
         },
         {
           "speaker": "Papyrus",
@@ -6105,18 +5925,6 @@ export const GAME_SEED:GameProject={
         }
       ],
       "midWave": 3,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Les canaux ouverts déséquilibrent la station. Son noyau cède ; l'eau reprend le chemin des pépinières.",
       "events": []
     },
@@ -6536,18 +6344,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "Le passage est sûr. Nous accueillons les petites plantes à l'intérieur.",
       "events": []
     },
@@ -6968,18 +6764,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Les habitants ferment l'ancienne conduite et sécurisent le nouveau passage. Bambou regarde les ratures sur son plan.",
       "events": []
     },
@@ -7373,7 +7157,7 @@ export const GAME_SEED:GameProject={
           "text": "Je vous aiderai. Je connais les endroits où l'eau arrive avant les secours."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Reste près des défenses. Personne ne te demandera de tenir seule."
         }
       ],
@@ -7397,18 +7181,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "La conduite sale est isolée. Les dernières pousses sont installées dans des bacs propres.",
       "events": []
     },
@@ -7835,7 +7607,7 @@ export const GAME_SEED:GameProject={
           "text": "D'accord, cette partie n'était pas prévue. Je prends ma place avec vous."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Enfin quelqu'un qui veut les atteindre avant qu'ils attaquent."
         },
         {
@@ -7857,33 +7629,21 @@ export const GAME_SEED:GameProject={
           "text": "Alors il faut interrompre les arrivées et les conduites, pas courir d'une porte à l'autre."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Pendant qu'on prépare, les toits continuent de s'étouffer."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Les patrouilles sont contenues. Gingembre accepte enfin les soins d'Aloès.",
       "events": []
     },
     {
       "id": "mission_21",
       "title": "La passerelle blanche",
-      "subtitle": "Le choix de Ronce",
+      "subtitle": "Le choix de Rose",
       "act": 2,
-      "location": "Le choix de Ronce",
+      "location": "Le choix de Rose",
       "startingEnergy": 760,
       "allowedPlants": [
         "radish",
@@ -7908,7 +7668,7 @@ export const GAME_SEED:GameProject={
         "target": 65
       },
       "objectiveText": "Tenez le refuge pendant que la fumée coupe les passages.",
-      "tip": "Protégez le jardin pendant l'évacuation, suivie dans la jauge. Pour cette mission, les épines de Ronce sont renforcées.",
+      "tip": "Protégez le jardin pendant l'évacuation, suivie dans la jauge. Pour cette mission, les épines de Rose sont renforcées.",
       "waves": [
         {
           "id": "mission_21_wave_1",
@@ -8294,10 +8054,10 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Aloès",
-          "text": "Ronce, tu n'as pas reposé ta racine."
+          "text": "Rose, tu n'as pas reposé ta racine."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je me reposerai quand ils seront passés."
         },
         {
@@ -8308,7 +8068,7 @@ export const GAME_SEED:GameProject={
       "outro": [
         {
           "speaker": "Narration",
-          "text": "Les habitants sont sauvés. Radis acclame Ronce ; Gingembre voudrait déjà repartir derrière elle."
+          "text": "Les habitants sont sauvés. Radis acclame Rose ; Gingembre voudrait déjà repartir derrière elle."
         },
         {
           "speaker": "Lavande",
@@ -8320,10 +8080,10 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Radis",
-          "text": "Ronce, il faut retirer ce qui reste de poudre."
+          "text": "Rose, il faut retirer ce qui reste de poudre."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Et quand ils reviendront ?"
         },
         {
@@ -8331,7 +8091,7 @@ export const GAME_SEED:GameProject={
           "text": "On trouvera autre chose."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Comme pour le tilleul ? Je tenais la porte. J'ai tout fait, et il est mort quand même."
         },
         {
@@ -8339,21 +8099,21 @@ export const GAME_SEED:GameProject={
           "text": "Moi aussi, j'étais là."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Vous pouvez continuer à planter derrière eux. Moi, je vais les arrêter."
         },
         {
           "speaker": "Narration",
-          "text": "Ronce disparaît avant l'aube. La cendre blanche a donné de la puissance à ses épines et laissé une blessure dans le groupe."
+          "text": "Rose disparaît avant l'aube. La cendre blanche a donné de la puissance à ses épines et laissé une blessure dans le groupe."
         }
       ],
       "midDialogue": [
         {
           "speaker": "Narration",
-          "text": "Mille-Gueules épaissit brutalement la fumée. Ronce entend Mei derrière la porte, mais ne voit plus Radis."
+          "text": "Mille-Gueules épaissit brutalement la fumée. Rose entend Mei derrière la porte, mais ne voit plus Radis."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Écartez-vous !"
         },
         {
@@ -8366,19 +8126,7 @@ export const GAME_SEED:GameProject={
         }
       ],
       "midWave": 2,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
-      "restoration": "Les habitants sont sauvés. Radis acclame Ronce ; Gingembre voudrait déjà repartir derrière elle.",
+      "restoration": "Les habitants sont sauvés. Radis acclame Rose ; Gingembre voudrait déjà repartir derrière elle.",
       "events": []
     },
     {
@@ -8411,7 +8159,7 @@ export const GAME_SEED:GameProject={
         "target": 0
       },
       "objectiveText": "Protégez les relais entre les jardins et les abris.",
-      "tip": "Ronce est partie. Composez une nouvelle équipe ; Chrysanthème affaiblit les protections ennemies.",
+      "tip": "Rose est partie. Composez une nouvelle équipe ; Chrysanthème affaiblit les protections ennemies.",
       "waves": [
         {
           "id": "mission_22_wave_1",
@@ -8773,7 +8521,7 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Ortie",
-          "text": "Ronce n'est pas juste une place vide à remplir."
+          "text": "Rose n'est pas juste une place vide à remplir."
         },
         {
           "speaker": "Radis",
@@ -8808,18 +8556,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Les derniers jardins isolés reçoivent le signal. Les habitants rejoignent les passages sécurisés.",
       "events": []
     },
@@ -9265,23 +9001,11 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Radis",
-          "text": "Une dernière attaque. Ensuite nous suivrons la trace de Ronce."
+          "text": "Une dernière attaque. Ensuite nous suivrons la trace de Rose."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "Les premières cheminées s'éteignent. Les ateliers restants concentrent leur activité autour du noyau central.",
       "events": []
     },
@@ -9740,18 +9464,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Le noyau se sépare de ses conduites. Les dernières cheminées ralentissent, puis s'éteignent.",
       "events": []
     },
@@ -10175,18 +9887,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "Les habitants dégagent les premiers débris et renforcent le refuge après la bataille.",
       "events": []
     },
@@ -10643,18 +10343,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Le jardin flottant accueille ses premières plantes déplacées. Les habitants préparent leur retour dans des lieux adaptés.",
       "events": []
     },
@@ -11116,18 +10804,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "Les embarcations passent la pointe et gagnent une eau plus calme. Cocotier repère une masse sombre à l'horizon.",
       "events": []
     },
@@ -11582,18 +11258,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Eucalyptus arrive au refuge avec la dernière pousse. Il se retourne longtemps vers son ancien terrain.",
       "events": []
     },
@@ -12053,27 +11717,15 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "La réserve est sécurisée. Banksia répartit les graines entre plusieurs refuges avant de rejoindre la troupe.",
       "events": []
     },
     {
       "id": "mission_30",
       "title": "La trace blanche",
-      "subtitle": "L'île traversée par Ronce",
+      "subtitle": "L'île traversée par Rose",
       "act": 3,
-      "location": "L'île traversée par Ronce",
+      "location": "L'île traversée par Rose",
       "startingEnergy": 840,
       "allowedPlants": [
         "radish",
@@ -12513,7 +12165,7 @@ export const GAME_SEED:GameProject={
       "briefing": [
         {
           "speaker": "Narration",
-          "text": "Des carcasses gisent sur le rivage. Leurs plaques portent les marques des épines de Ronce."
+          "text": "Des carcasses gisent sur le rivage. Leurs plaques portent les marques des épines de Rose."
         },
         {
           "speaker": "Jeune arbuste",
@@ -12535,7 +12187,7 @@ export const GAME_SEED:GameProject={
       "outro": [
         {
           "speaker": "Narration",
-          "text": "Les résidus sont contenus avant la marée. Les habitants indiquent la direction prise par Ronce."
+          "text": "Les résidus sont contenus avant la marée. Les habitants indiquent la direction prise par Rose."
         },
         {
           "speaker": "Radis",
@@ -12560,19 +12212,7 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
-      "restoration": "Les résidus sont contenus avant la marée. Les habitants indiquent la direction prise par Ronce.",
+      "restoration": "Les résidus sont contenus avant la marée. Les habitants indiquent la direction prise par Rose.",
       "events": []
     },
     {
@@ -13068,18 +12708,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "Les accès sont fixés. Mycélium révèle un passage vers le noyau, entre les matières encore vivantes.",
       "events": []
     },
@@ -13563,7 +13191,7 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Fougère",
-          "text": "Ces réservoirs ont été arrachés. Les marques… C'est Ronce."
+          "text": "Ces réservoirs ont été arrachés. Les marques… C'est Rose."
         },
         {
           "speaker": "Lotus",
@@ -13580,18 +13208,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Le noyau tombe. Les épaves se séparent en amas retenus par les embarcations, loin du refuge.",
       "events": []
     },
@@ -14048,23 +13664,11 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Pissenlit",
-          "text": "La piste de Ronce continue vers des terres plus sèches. Un cactus l'aurait vue passer."
+          "text": "La piste de Rose continue vers des terres plus sèches. Un cactus l'aurait vue passer."
         }
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "Le passage est sécurisé. Les jeunes arbres retrouvent leurs proches derrière la lisière.",
       "events": []
     },
@@ -14488,7 +14092,7 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Aloès",
-          "text": "Nous cherchons une ronce blessée."
+          "text": "Nous cherchons Rose. Elle est blessée."
         },
         {
           "speaker": "Cactus",
@@ -14535,18 +14139,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Le groupe atteint un abri. Cactus distribue de l'eau en prétendant déplacer les récipients qui l'encombrent.",
       "events": []
     },
@@ -15042,18 +14634,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "Les convois sont immobilisés dans les zones prévues. Les premières arrivées de déchets cessent.",
       "events": []
     },
@@ -15554,18 +15134,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "Les relais fonctionnent. Les habitants corrigent plusieurs dérivations pour protéger les quartiers en contrebas.",
       "events": []
     },
@@ -16067,18 +15635,6 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 80 % de vitalité",
-          "target": 80
-        },
-        {
-          "id": "low_losses",
-          "title": "Perdre au plus 3 végétaux",
-          "target": 3
-        }
-      ],
       "restoration": "Les attaches sont installées. Passiflore atteint une conduite oubliée qui rejoint les installations centrales.",
       "events": []
     },
@@ -16567,7 +16123,7 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Radis",
-          "text": "Alors on va chercher Ronce."
+          "text": "Alors on va chercher Rose."
         },
         {
           "speaker": "Aloès",
@@ -16576,27 +16132,15 @@ export const GAME_SEED:GameProject={
       ],
       "midDialogue": [],
       "midWave": 0,
-      "optionalGoals": [
-        {
-          "id": "diversity",
-          "title": "Réunir 4 espèces sur le terrain",
-          "target": 4
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 8 végétaux",
-          "target": 8
-        }
-      ],
       "restoration": "Les dérivations protègent enfin les zones habitées. Au-dessus du site, une branche épineuse traverse une cheminée.",
       "events": []
     },
     {
       "id": "mission_39",
       "title": "Je n'arrive plus à tout arrêter",
-      "subtitle": "Le sauvetage de Ronce",
+      "subtitle": "Le sauvetage de Rose",
       "act": 4,
-      "location": "Le sauvetage de Ronce",
+      "location": "Le sauvetage de Rose",
       "startingEnergy": 980,
       "allowedPlants": [
         "radish",
@@ -16631,8 +16175,8 @@ export const GAME_SEED:GameProject={
         "type": "rescue",
         "target": 3
       },
-      "objectiveText": "Brisez les trois excroissances contaminées et arrêtez les noyaux qui emprisonnent Ronce.",
-      "tip": "Protégez l'opération de sauvetage et frappez les parties contaminées. Ronce ne rejoint pas encore l'équipe de combat.",
+      "objectiveText": "Brisez les trois excroissances contaminées et arrêtez les noyaux qui emprisonnent Rose.",
+      "tip": "Protégez l'opération de sauvetage et frappez les parties contaminées. Rose ne rejoint pas encore l'équipe de combat.",
       "waves": [
         {
           "id": "mission_39_wave_1",
@@ -17066,10 +16610,10 @@ export const GAME_SEED:GameProject={
       "briefing": [
         {
           "speaker": "Narration",
-          "text": "Ronce est suspendue au-dessus des conduites. Des plaques et des câbles emprisonnent ses tiges ; elle retient des cuves de cendre blanche."
+          "text": "Rose est suspendue au-dessus des conduites. Des plaques et des câbles emprisonnent ses tiges ; elle retient des cuves de cendre blanche."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "N'approchez pas ! Si je détruis le cœur, ils ne pourront plus recommencer."
         },
         {
@@ -17082,10 +16626,10 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Narration",
-          "text": "Une branche frappe malgré Ronce. Sous la plaque qui l'entoure, un noyau sombre s'est installé."
+          "text": "Une branche frappe malgré Rose. Sous la plaque qui l'entoure, un noyau sombre s'est installé."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je sais… Je n'arrive plus à tout arrêter."
         },
         {
@@ -17099,7 +16643,7 @@ export const GAME_SEED:GameProject={
           "text": "Les dernières excroissances cèdent. Radis atteint une petite poche de feuilles encore vertes."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je voulais qu'on soit assez forts."
         },
         {
@@ -17107,7 +16651,7 @@ export const GAME_SEED:GameProject={
           "text": "Moi aussi. Sur la passerelle, je n'ai pas regardé ce que cela te coûtait."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Si je lâche les cuves, je ne pourrai plus les retenir."
         },
         {
@@ -17116,10 +16660,10 @@ export const GAME_SEED:GameProject={
         },
         {
           "speaker": "Narration",
-          "text": "Ronce desserre ses tiges. Les équipes descendent les cuves fermées dans les bassins isolés. Aloès et Cactus la dégagent des carcasses."
+          "text": "Rose desserre ses tiges. Les équipes descendent les cuves fermées dans les bassins isolés. Aloès et Cactus la dégagent des carcasses."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Tu vois… Tu avais encore besoin qu'on te surveille."
         },
         {
@@ -17133,7 +16677,7 @@ export const GAME_SEED:GameProject={
           "text": "La sève circule encore sous cette plaque. Suivez nos filaments jusqu'aux racines saines."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je peux retenir cette branche… Quelques secondes. Passez !"
         },
         {
@@ -17142,18 +16686,6 @@ export const GAME_SEED:GameProject={
         }
       ],
       "midWave": 3,
-      "optionalGoals": [
-        {
-          "id": "no_refuge",
-          "title": "Conserver les 5 refuges",
-          "target": 5
-        },
-        {
-          "id": "healthy",
-          "title": "Terminer avec au moins 85 % de vitalité",
-          "target": 85
-        }
-      ],
       "restoration": "Les dernières excroissances cèdent. Radis atteint une petite poche de feuilles encore vertes.",
       "events": []
     },
@@ -17800,7 +17332,7 @@ export const GAME_SEED:GameProject={
           "text": "Trois réserves alimentent encore le cœur. Les équipes extérieures sont prêtes ; il faut protéger les postes jusqu'à leur fermeture."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Je peux me lever…"
         },
         {
@@ -17808,7 +17340,7 @@ export const GAME_SEED:GameProject={
           "text": "Tu n'as plus rien à prouver aujourd'hui."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Alors j'aiderai à tenir cette conduite. Cactus, l'autre appui."
         },
         {
@@ -17834,7 +17366,7 @@ export const GAME_SEED:GameProject={
           "text": "Le noyau exposé cède sous les attaques. Les bras mécaniques s'arrêtent. Le battement de la Fournaise s'interrompt."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "C'est fini ?"
         },
         {
@@ -17842,7 +17374,7 @@ export const GAME_SEED:GameProject={
           "text": "Elle s'est arrêtée."
         },
         {
-          "speaker": "Ronce",
+          "speaker": "Rose",
           "text": "Bien. Parce que je commence à avoir une crampe absolument historique."
         },
         {
@@ -17865,18 +17397,6 @@ export const GAME_SEED:GameProject={
         }
       ],
       "midWave": 3,
-      "optionalGoals": [
-        {
-          "id": "full_garden",
-          "title": "Garder 10 végétaux sur le terrain",
-          "target": 10
-        },
-        {
-          "id": "plantings",
-          "title": "Planter 9 végétaux",
-          "target": 9
-        }
-      ],
       "restoration": "La dernière vanne résiste. Radis plante ses racines dans ses rayons. Le métal ne bouge pas.",
       "events": []
     }
@@ -17884,9 +17404,9 @@ export const GAME_SEED:GameProject={
   "combat": {
     "abilities": [
       {
-        "id": "ab_radish",
-        "name": "Graines vaillantes",
-        "description": "",
+        "id": "ab_basic_shot",
+        "name": "Tir simple",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "projectile",
         "projectileId": "proj_seed",
         "target": "opponent",
@@ -17903,9 +17423,9 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_bramble",
-        "name": "Étreinte épineuse",
-        "description": "",
+        "id": "ab_root_shot",
+        "name": "Tir enracinant",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "projectile",
         "projectileId": "proj_seed",
         "target": "opponent",
@@ -17923,28 +17443,9 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_hazel",
-        "name": "Écorce obstinée",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ]
-      },
-      {
-        "id": "ab_hazel_regeneration",
-        "name": "Régénération de Noisetier",
-        "description": "",
+        "id": "ab_personal_regeneration",
+        "name": "Régénération personnelle",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "instant",
         "projectileId": "",
         "target": "self",
@@ -18001,26 +17502,6 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_ivy",
-        "name": "Prise de la verrière",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack",
-          "fx_root"
-        ]
-      },
-      {
         "id": "ab_nettle",
         "name": "Garde urticante",
         "description": "",
@@ -18041,9 +17522,9 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_acacia",
-        "name": "Haie des pépinières",
-        "description": "",
+        "id": "ab_piercing_shot",
+        "name": "Tir traversant",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "projectile",
         "projectileId": "proj_piercing",
         "target": "opponent",
@@ -18060,28 +17541,9 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_baobab",
-        "name": "Tronc refuge",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ]
-      },
-      {
-        "id": "ab_baobab_protection",
-        "name": "Protection de Baobab",
-        "description": "",
+        "id": "ab_ally_protection",
+        "name": "Protection alliée",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "instant",
         "projectileId": "",
         "target": "ally",
@@ -18095,25 +17557,6 @@ export const GAME_SEED:GameProject={
         "initialDelay": 0,
         "effects": [
           "fx_protect"
-        ]
-      },
-      {
-        "id": "ab_baobab_regeneration",
-        "name": "Régénération de Baobab",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "self",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_regen"
         ]
       },
       {
@@ -18214,25 +17657,6 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_bamboo",
-        "name": "Lance souple",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_piercing",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ]
-      },
-      {
         "id": "ab_lotus",
         "name": "Calme du bassin",
         "description": "",
@@ -18293,63 +17717,6 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_mangrove",
-        "name": "Racines de berge",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ]
-      },
-      {
-        "id": "ab_mangrove_protection",
-        "name": "Protection de Palétuvier",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "ally",
-        "selection": "all",
-        "priority": "nearest",
-        "rangeSource": "fixed",
-        "range": 1.6,
-        "rowRadius": 1,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_protect"
-        ]
-      },
-      {
-        "id": "ab_mangrove_regeneration",
-        "name": "Régénération de Palétuvier",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "self",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_regen"
-        ]
-      },
-      {
         "id": "ab_coconut",
         "name": "Noix de vigie",
         "description": "",
@@ -18387,25 +17754,6 @@ export const GAME_SEED:GameProject={
         "effects": [
           "fx_repair",
           "fx_cleanse"
-        ]
-      },
-      {
-        "id": "ab_pandanus_protection",
-        "name": "Protection de Pandanus",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "ally",
-        "selection": "all",
-        "priority": "nearest",
-        "rangeSource": "fixed",
-        "range": 1.6,
-        "rowRadius": 1,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_protect"
         ]
       },
       {
@@ -18469,25 +17817,6 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_sequoia",
-        "name": "Promesse de géant",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ]
-      },
-      {
         "id": "ab_sequoia_protection",
         "name": "Protection de Séquoia",
         "description": "",
@@ -18504,25 +17833,6 @@ export const GAME_SEED:GameProject={
         "initialDelay": 0,
         "effects": [
           "fx_protect_strong"
-        ]
-      },
-      {
-        "id": "ab_sequoia_regeneration",
-        "name": "Régénération de Séquoia",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "self",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_regen"
         ]
       },
       {
@@ -18702,9 +18012,9 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_factory_special",
-        "name": "Mille-Gueules — onde spéciale",
-        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "id": "ab_boss_wave",
+        "name": "Onde offensive",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "instant",
         "projectileId": "",
         "target": "opponent",
@@ -18717,31 +18027,12 @@ export const GAME_SEED:GameProject={
         "cooldown": 12,
         "initialDelay": 6,
         "effects": [
-          "fx_factory_special"
-        ]
-      },
-      {
-        "id": "ab_devourer_special",
-        "name": "L’Avaleur — onde spéciale",
-        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "opponent",
-        "selection": "all",
-        "priority": "nearest",
-        "rangeSource": "fixed",
-        "range": 12,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 12,
-        "initialDelay": 6,
-        "effects": [
-          "fx_devourer_special"
+          "fx_boss_wave"
         ]
       },
       {
         "id": "ab_corrupted_bramble_special",
-        "name": "Ronce contaminée — onde spéciale",
+        "name": "Rose contaminée — onde spéciale",
         "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
         "delivery": "instant",
         "projectileId": "",
@@ -19001,20 +18292,9 @@ export const GAME_SEED:GameProject={
         "tickInterval": 1
       },
       {
-        "id": "fx_factory_special",
-        "name": "Mille-Gueules — impact",
-        "description": "",
-        "kind": "damage",
-        "valueSource": "fixed",
-        "amount": 32,
-        "damageType": "physical",
-        "duration": 1,
-        "tickInterval": 1
-      },
-      {
-        "id": "fx_devourer_special",
-        "name": "L’Avaleur — impact",
-        "description": "",
+        "id": "fx_boss_wave",
+        "name": "Onde offensive — impact",
+        "description": "Résultat partagé par les boss utilisant la même onde offensive.",
         "kind": "damage",
         "valueSource": "fixed",
         "amount": 32,
@@ -19024,7 +18304,7 @@ export const GAME_SEED:GameProject={
       },
       {
         "id": "fx_corrupted_bramble_special",
-        "name": "Ronce contaminée — impact",
+        "name": "Rose contaminée — impact",
         "description": "",
         "kind": "damage",
         "valueSource": "fixed",
@@ -19035,7 +18315,7 @@ export const GAME_SEED:GameProject={
       },
       {
         "id": "fx_corrupted_bramble_special_stun",
-        "name": "Ronce contaminée — étourdissement",
+        "name": "Rose contaminée — étourdissement",
         "description": "",
         "kind": "stun",
         "valueSource": "fixed",
@@ -19328,7 +18608,7 @@ export const GAME_SEED:GameProject={
             "attackFactor": 1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_factory_special"
+              "ab_boss_wave"
             ],
             "onEnter": []
           },
@@ -19340,7 +18620,7 @@ export const GAME_SEED:GameProject={
             "attackFactor": 1.1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_factory_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -19364,7 +18644,7 @@ export const GAME_SEED:GameProject={
             "attackFactor": 1.2,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_factory_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -19400,7 +18680,7 @@ export const GAME_SEED:GameProject={
             "attackFactor": 1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_devourer_special"
+              "ab_boss_wave"
             ],
             "onEnter": []
           },
@@ -19412,7 +18692,7 @@ export const GAME_SEED:GameProject={
             "attackFactor": 1.1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_devourer_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -19436,7 +18716,7 @@ export const GAME_SEED:GameProject={
             "attackFactor": 1.2,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_devourer_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -19456,7 +18736,7 @@ export const GAME_SEED:GameProject={
       },
       {
         "id": "ai_corrupted_bramble",
-        "name": "Ronce contaminée — phases",
+        "name": "Rose contaminée — phases",
         "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
         "team": "enemies",
         "mode": "automatic",
@@ -19490,7 +18770,7 @@ export const GAME_SEED:GameProject={
               {
                 "type": "message",
                 "delay": 0,
-                "text": "Ronce contaminée change de tactique !"
+                "text": "Rose contaminée change de tactique !"
               },
               {
                 "type": "shake",
@@ -19514,7 +18794,7 @@ export const GAME_SEED:GameProject={
               {
                 "type": "message",
                 "delay": 0,
-                "text": "Ronce contaminée change de tactique !"
+                "text": "Rose contaminée change de tactique !"
               },
               {
                 "type": "shake",

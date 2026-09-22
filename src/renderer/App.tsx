@@ -244,7 +244,7 @@ export default function App() {
   });
   async function prepareCampaignPublish():Promise<boolean> {
     if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
-    return canReplace('Enregistrer la cinématique ouverte avant publication ? La campagne utilise les fichiers enregistrés, pas les brouillons.');
+    return canReplace('Enregistrer la cinématique ouverte avant de synchroniser le jeu ? La publication, le test et les builds utilisent les fichiers enregistrés, pas les brouillons.');
   }
   async function recover(accept: boolean) {
     await operation(async () => {

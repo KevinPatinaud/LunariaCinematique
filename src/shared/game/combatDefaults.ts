@@ -4,9 +4,9 @@ import type { CombatCatalog } from './combat.js';
 export const DEFAULT_COMBAT:CombatCatalog={
   "abilities": [
     {
-      "id": "ab_radish",
-      "name": "Graines vaillantes",
-      "description": "",
+      "id": "ab_basic_shot",
+      "name": "Tir simple",
+      "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
       "delivery": "projectile",
       "projectileId": "proj_seed",
       "target": "opponent",
@@ -23,9 +23,9 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_bramble",
-      "name": "Étreinte épineuse",
-      "description": "",
+      "id": "ab_root_shot",
+      "name": "Tir enracinant",
+      "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
       "delivery": "projectile",
       "projectileId": "proj_seed",
       "target": "opponent",
@@ -43,28 +43,9 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_hazel",
-      "name": "Écorce obstinée",
-      "description": "",
-      "delivery": "projectile",
-      "projectileId": "proj_seed",
-      "target": "opponent",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "species",
-      "cooldown": 1,
-      "initialDelay": 0.35,
-      "effects": [
-        "fx_attack"
-      ]
-    },
-    {
-      "id": "ab_hazel_regeneration",
-      "name": "Régénération de Noisetier",
-      "description": "",
+      "id": "ab_personal_regeneration",
+      "name": "Régénération personnelle",
+      "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
       "delivery": "instant",
       "projectileId": "",
       "target": "self",
@@ -121,26 +102,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_ivy",
-      "name": "Prise de la verrière",
-      "description": "",
-      "delivery": "projectile",
-      "projectileId": "proj_seed",
-      "target": "opponent",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "species",
-      "cooldown": 1,
-      "initialDelay": 0.35,
-      "effects": [
-        "fx_attack",
-        "fx_root"
-      ]
-    },
-    {
       "id": "ab_nettle",
       "name": "Garde urticante",
       "description": "",
@@ -161,9 +122,9 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_acacia",
-      "name": "Haie des pépinières",
-      "description": "",
+      "id": "ab_piercing_shot",
+      "name": "Tir traversant",
+      "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
       "delivery": "projectile",
       "projectileId": "proj_piercing",
       "target": "opponent",
@@ -180,28 +141,9 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_baobab",
-      "name": "Tronc refuge",
-      "description": "",
-      "delivery": "projectile",
-      "projectileId": "proj_seed",
-      "target": "opponent",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "species",
-      "cooldown": 1,
-      "initialDelay": 0.35,
-      "effects": [
-        "fx_attack"
-      ]
-    },
-    {
-      "id": "ab_baobab_protection",
-      "name": "Protection de Baobab",
-      "description": "",
+      "id": "ab_ally_protection",
+      "name": "Protection alliée",
+      "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
       "delivery": "instant",
       "projectileId": "",
       "target": "ally",
@@ -215,25 +157,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "initialDelay": 0,
       "effects": [
         "fx_protect"
-      ]
-    },
-    {
-      "id": "ab_baobab_regeneration",
-      "name": "Régénération de Baobab",
-      "description": "",
-      "delivery": "instant",
-      "projectileId": "",
-      "target": "self",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "fixed",
-      "cooldown": 1,
-      "initialDelay": 0,
-      "effects": [
-        "fx_regen"
       ]
     },
     {
@@ -334,25 +257,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_bamboo",
-      "name": "Lance souple",
-      "description": "",
-      "delivery": "projectile",
-      "projectileId": "proj_piercing",
-      "target": "opponent",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "species",
-      "cooldown": 1,
-      "initialDelay": 0.35,
-      "effects": [
-        "fx_attack"
-      ]
-    },
-    {
       "id": "ab_lotus",
       "name": "Calme du bassin",
       "description": "",
@@ -413,63 +317,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_mangrove",
-      "name": "Racines de berge",
-      "description": "",
-      "delivery": "projectile",
-      "projectileId": "proj_seed",
-      "target": "opponent",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "species",
-      "cooldown": 1,
-      "initialDelay": 0.35,
-      "effects": [
-        "fx_attack"
-      ]
-    },
-    {
-      "id": "ab_mangrove_protection",
-      "name": "Protection de Palétuvier",
-      "description": "",
-      "delivery": "instant",
-      "projectileId": "",
-      "target": "ally",
-      "selection": "all",
-      "priority": "nearest",
-      "rangeSource": "fixed",
-      "range": 1.6,
-      "rowRadius": 1,
-      "cooldownSource": "fixed",
-      "cooldown": 1,
-      "initialDelay": 0,
-      "effects": [
-        "fx_protect"
-      ]
-    },
-    {
-      "id": "ab_mangrove_regeneration",
-      "name": "Régénération de Palétuvier",
-      "description": "",
-      "delivery": "instant",
-      "projectileId": "",
-      "target": "self",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "fixed",
-      "cooldown": 1,
-      "initialDelay": 0,
-      "effects": [
-        "fx_regen"
-      ]
-    },
-    {
       "id": "ab_coconut",
       "name": "Noix de vigie",
       "description": "",
@@ -507,25 +354,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "effects": [
         "fx_repair",
         "fx_cleanse"
-      ]
-    },
-    {
-      "id": "ab_pandanus_protection",
-      "name": "Protection de Pandanus",
-      "description": "",
-      "delivery": "instant",
-      "projectileId": "",
-      "target": "ally",
-      "selection": "all",
-      "priority": "nearest",
-      "rangeSource": "fixed",
-      "range": 1.6,
-      "rowRadius": 1,
-      "cooldownSource": "fixed",
-      "cooldown": 1,
-      "initialDelay": 0,
-      "effects": [
-        "fx_protect"
       ]
     },
     {
@@ -589,25 +417,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_sequoia",
-      "name": "Promesse de géant",
-      "description": "",
-      "delivery": "projectile",
-      "projectileId": "proj_seed",
-      "target": "opponent",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "species",
-      "cooldown": 1,
-      "initialDelay": 0.35,
-      "effects": [
-        "fx_attack"
-      ]
-    },
-    {
       "id": "ab_sequoia_protection",
       "name": "Protection de Séquoia",
       "description": "",
@@ -624,25 +433,6 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "initialDelay": 0,
       "effects": [
         "fx_protect_strong"
-      ]
-    },
-    {
-      "id": "ab_sequoia_regeneration",
-      "name": "Régénération de Séquoia",
-      "description": "",
-      "delivery": "instant",
-      "projectileId": "",
-      "target": "self",
-      "selection": "one",
-      "priority": "nearest",
-      "rangeSource": "species",
-      "range": 5,
-      "rowRadius": 0,
-      "cooldownSource": "fixed",
-      "cooldown": 1,
-      "initialDelay": 0,
-      "effects": [
-        "fx_regen"
       ]
     },
     {
@@ -1004,14 +794,14 @@ export const DEFAULT_COMBAT:CombatCatalog={
 };
 const assignments:Record<string,string[]>={
   "radish": [
-    "ab_radish"
+    "ab_basic_shot"
   ],
   "bramble": [
-    "ab_bramble"
+    "ab_root_shot"
   ],
   "hazel": [
-    "ab_hazel",
-    "ab_hazel_regeneration"
+    "ab_basic_shot",
+    "ab_personal_regeneration"
   ],
   "fern": [
     "ab_fern"
@@ -1020,18 +810,18 @@ const assignments:Record<string,string[]>={
     "ab_dandelion"
   ],
   "ivy": [
-    "ab_ivy"
+    "ab_root_shot"
   ],
   "nettle": [
     "ab_nettle"
   ],
   "acacia": [
-    "ab_acacia"
+    "ab_piercing_shot"
   ],
   "baobab": [
-    "ab_baobab",
-    "ab_baobab_protection",
-    "ab_baobab_regeneration"
+    "ab_basic_shot",
+    "ab_ally_protection",
+    "ab_personal_regeneration"
   ],
   "aloe": [
     "ab_aloe"
@@ -1047,7 +837,7 @@ const assignments:Record<string,string[]>={
     "ab_lavender"
   ],
   "bamboo": [
-    "ab_bamboo"
+    "ab_piercing_shot"
   ],
   "lotus": [
     "ab_lotus"
@@ -1059,16 +849,16 @@ const assignments:Record<string,string[]>={
     "ab_chrysanthemum"
   ],
   "mangrove": [
-    "ab_mangrove",
-    "ab_mangrove_protection",
-    "ab_mangrove_regeneration"
+    "ab_basic_shot",
+    "ab_ally_protection",
+    "ab_personal_regeneration"
   ],
   "coconut": [
     "ab_coconut"
   ],
   "pandanus": [
     "ab_pandanus",
-    "ab_pandanus_protection"
+    "ab_ally_protection"
   ],
   "eucalyptus": [
     "ab_eucalyptus"
@@ -1080,9 +870,9 @@ const assignments:Record<string,string[]>={
     "ab_mushroom"
   ],
   "sequoia": [
-    "ab_sequoia",
+    "ab_basic_shot",
     "ab_sequoia_protection",
-    "ab_sequoia_regeneration"
+    "ab_personal_regeneration"
   ],
   "cactus": [
     "ab_cactus"

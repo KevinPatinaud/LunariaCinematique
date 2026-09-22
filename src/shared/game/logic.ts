@@ -5,25 +5,25 @@ export type Team = 'plants'|'enemies';
 export type Compare = 'eq'|'ne'|'lt'|'lte'|'gt'|'gte';
 export type ConditionKind = 'always'|'health'|'target'|'ready'|'time'|'wave'|'enemies'|'energy'|'variable';
 export interface Condition {kind:ConditionKind;op:Compare;value:number;ref:string}
-export const CONDITION_LABELS:Record<ConditionKind,string>={always:'Toujours',health:'PV du porteur (%)',target:'Cible à portée',ready:'Capacité prête',time:'Temps de combat (s)',wave:'Numéro de vague',enemies:'Ennemis vivants',energy:'Graines',variable:'Variable'};
+export const CONDITION_LABELS:Record<ConditionKind,string>={always:'Toujours',health:'PV du porteur (%)',target:'Cible à portée',ready:'Attaque prête',time:'Temps de combat (s)',wave:'Numéro de vague',enemies:'Ennemis vivants',energy:'Graines',variable:'Variable'};
 export const COMPARISONS:Record<Compare,string>={eq:'=',ne:'≠',lt:'<',lte:'≤',gt:'>',gte:'≥'};
 export type Movement = 'advance'|'hold'|'retreat';
 export const MOVEMENTS:Record<Movement,string>={advance:'Avancer vers le jardin',hold:'Rester immobile',retreat:'Reculer (sans sortir du plateau)'};
 export interface VariableDefinition {id:string;name:string;description:string;scope:'level'|'campaign';type:'number'|'boolean';initial:number;minimum:number;maximum:number}
-export const ACTION_LABELS={message:'Afficher un message',cinematic:'Jouer une cinématique',sound:'Jouer un son',shake:'Secouer la caméra',spawn:'Faire apparaître des ennemis',set_variable:'Définir une variable',add_variable:'Ajouter à une variable',use_ability:'Demander une capacité',set_ability:'Activer / désactiver une capacité',apply_effect:'Appliquer un effet',movement:'Modifier déplacement / cadence',start_wave:'Lancer la prochaine vague',finish:'Terminer le niveau'} as const;
+export const ACTION_LABELS={message:'Afficher un message',cinematic:'Jouer une cinématique',sound:'Jouer un son',shake:'Secouer la caméra',spawn:'Faire apparaître des ennemis',set_variable:'Définir une variable',add_variable:'Ajouter à une variable',use_ability:'Demander une attaque',set_ability:'Activer / désactiver une attaque',apply_effect:'Appliquer un résultat d’attaque',movement:'Modifier déplacement / cadence',start_wave:'Lancer la prochaine vague',finish:'Terminer le niveau'} as const;
 export type ActionType=keyof typeof ACTION_LABELS;
 export interface LogicAction {type:ActionType;delay:number;text?:string;cinematicId?:string;skippable?:boolean;sound?:string;amount?:number;duration?:number;enemyId?:string;count?:number;lane?:number;interval?:number;variableId?:string;value?:number;target?:'self'|Team;speciesId?:string;abilityId?:string;enabled?:boolean;effectId?:string;speedFactor?:number;attackFactor?:number;outcome?:'won'|'lost'}
 export interface BehaviorRule {id:string;name:string;conditions:Condition[];action:'ability'|Movement;abilityId:string}
 export interface BehaviorPhase {id:string;name:string;healthBelow:number;speedFactor:number;attackFactor:number;inheritAbilities:boolean;abilityIds:string[];onEnter:LogicAction[]}
 export interface BehaviorDefinition {id:string;name:string;description:string;team:Team;mode:'automatic'|'priority';fallback:Movement;stopToAttack:boolean;rules:BehaviorRule[];phases:BehaviorPhase[]}
-export const TRIGGER_LABELS={level_start:'Début du combat',time:'Après un délai',interval:'À intervalle régulier',wave_start:'Début de vague',wave_end:'Fin de vague',spawn:'Apparition d’une entité',death:'Mort d’une entité',health:'PV d’un ennemi sous un seuil',ability_used:'Capacité utilisée',variable:'Condition sur une variable',enemies:'Ennemis restants'} as const;
+export const TRIGGER_LABELS={level_start:'Début du combat',time:'Après un délai',interval:'À intervalle régulier',wave_start:'Début de vague',wave_end:'Fin de vague',spawn:'Apparition d’une entité',death:'Mort d’une entité',health:'PV d’un ennemi sous un seuil',ability_used:'Attaque utilisée',variable:'Condition sur une variable',enemies:'Ennemis restants'} as const;
 export interface Trigger {kind:keyof typeof TRIGGER_LABELS;value:number;ref:string}
 export interface LevelEvent {id:string;name:string;enabled:boolean;trigger:Trigger;conditions:Condition[];actions:LogicAction[];once:boolean;cooldown:number;maxExecutions:number}
 export interface LogicCatalog {behaviors:BehaviorDefinition[];variables:VariableDefinition[]}
 export const BUILTIN_SOUNDS=['plant','shoot','recycle','wave','rain','rescue','victory','defeat','uproot','click'] as const;
 export function newCondition(kind:ConditionKind='always'):Condition{return {kind,op:kind==='health'?'lte':'gte',value:kind==='health'?30:kind==='always'?0:1,ref:''};}
 export function newVariable():VariableDefinition{return {id:newId('var'),name:'Nouvelle variable',description:'',scope:'level',type:'number',initial:0,minimum:0,maximum:100};}
-export function newRule():BehaviorRule{return {id:newId('rule'),name:'Utiliser une capacité disponible',conditions:[],action:'ability',abilityId:''};}
+export function newRule():BehaviorRule{return {id:newId('rule'),name:'Utiliser une attaque disponible',conditions:[],action:'ability',abilityId:''};}
 export function newPhase(index=0):BehaviorPhase{return {id:newId('phase'),name:'Phase '+(index+1),healthBelow:index===0?100:Math.max(0,100-index*33),speedFactor:1,attackFactor:1,inheritAbilities:true,abilityIds:[],onEnter:[]};}
 export function newBehavior(team:Team='enemies'):BehaviorDefinition{return {id:newId('ai'),name:team==='plants'?'Défenseur immobile':'Nouveau comportement',description:'',team,mode:'automatic',fallback:team==='plants'?'hold':'advance',stopToAttack:true,rules:[],phases:[newPhase()]};}
 export function newEvent():LevelEvent{return {id:newId('event'),name:'Nouvel événement',enabled:true,trigger:{kind:'time',value:10,ref:''},conditions:[],actions:[{type:'message',delay:0,text:'Les renforts arrivent !'}],once:true,cooldown:1,maxExecutions:10};}

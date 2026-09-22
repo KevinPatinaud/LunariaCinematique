@@ -22,11 +22,10 @@ export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'
 export interface SpawnGroup {id:string;enemyId:string;count:number;lane:number;start:number;interval:number}
 export interface WaveDefinition {id:string;groups:SpawnGroup[]}
 export interface StoryLine {speaker:string;text:string}
-export interface OptionalGoal {id:string;title:string;target:number}
 export interface LevelDefinition {
  events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;startingEnergy:number;allowedPlants:string[];
  objective:{type:typeof OBJECTIVES[number];target:number};objectiveText:string;tip:string;waves:WaveDefinition[];
- briefing:StoryLine[];outro:StoryLine[];midDialogue:StoryLine[];midWave:number;optionalGoals:OptionalGoal[];restoration:string;
+ briefing:StoryLine[];outro:StoryLine[];midDialogue:StoryLine[];midWave:number;restoration:string;
 }
 export interface CampaignFilm {id:string;title:string;file:string;documentId:string}
 export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean};
@@ -36,11 +35,16 @@ export interface GameProject {schemaVersion:1|2|3|4;presentation?:PresentationCa
 export interface GameFile {project:GameProject;path:string;token:string}
 export interface GameRecent {path:string;title:string;updatedAt:string}
 export interface GameBootstrap {recovery:GameProject|null;recent:GameRecent[]}
+export interface GamePreviewResult {path:string;levelId:string;title:string;gameRoot:string;executable:string;simulated:boolean}
+export type GameBuildTarget='windows'|'android';
+export interface GameBuildResult {target:GameBuildTarget;artifact:string;logPath:string;sha256:string;bytes:number;durationMs:number;simulated:boolean}
 export interface GameAPI {
  bootstrap():Promise<GameBootstrap>;
  open():Promise<GameFile|null>;openRecent(path:string):Promise<GameFile>;save(project:GameProject,token:string,saveAs:boolean):Promise<GameFile|null>;
  recover(project:GameProject):Promise<void>;clearRecovery():Promise<void>;
  publish(project:GameProject):Promise<{path:string;films?:number;assets?:number;steps?:number}|null>;
+ playLevel(project:GameProject,levelId:string):Promise<GamePreviewResult|null>;
+ build(project:GameProject,target:GameBuildTarget):Promise<GameBuildResult|null>;
  campaignFolder():Promise<string>;
  chooseCampaignFolder():Promise<string|null>;
  addCampaignFilm():Promise<CampaignFilm|null>;
@@ -52,7 +56,7 @@ export const newId = (prefix:string) => `${prefix}_${globalThis.crypto.randomUUI
 export function newLevel(plants:string[], enemyId:string):LevelDefinition {
  return {events:[],id:newId('level'),title:'Nouveau niveau',subtitle:'',act:0,location:'',startingEnergy:520,allowedPlants:plants.slice(0,2),
  objective:{type:'defend',target:0},objectiveText:'Repousser les vagues.',tip:'',waves:[{id:newId('wave'),groups:[{id:newId('group'),enemyId,count:5,lane:-1,start:.25,interval:3.5}]}],
- briefing:[],outro:[],midDialogue:[],midWave:0,optionalGoals:[],restoration:''};
+ briefing:[],outro:[],midDialogue:[],midWave:0,restoration:''};
 }
 export function cloneLevel(level:LevelDefinition):LevelDefinition {
  const copy=structuredClone(level);copy.id=newId('level');copy.title=(copy.title+' — copie').slice(0,160);

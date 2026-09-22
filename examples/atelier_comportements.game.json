@@ -32,7 +32,7 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_radish"
+          "ab_basic_shot"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_radish",
@@ -60,7 +60,7 @@
       },
       {
         "id": "bramble",
-        "name": "Ronce",
+        "name": "Rose",
         "role": "Entrave défensive",
         "description": "Ses épines accrochent les pollueurs proches et freinent leur avancée.",
         "ability": "Étreinte épineuse",
@@ -85,30 +85,30 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_bramble"
+          "ab_root_shot"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_bramble",
         "visual": {
           "sprite": {
-            "asset": "library://combat/illustrations/plants/bramble.png",
+            "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
             "region": {
               "x": 0,
               "y": 0,
-              "width": 238,
-              "height": 243
+              "width": 1024,
+              "height": 1536
             },
             "anchor": {
               "x": 0.5,
               "y": 1
             }
           },
-          "width": 88,
-          "height": 80,
+          "width": 104,
+          "height": 112,
           "baseline": 32,
           "mirror": false,
           "tint": "#ffffff",
-          "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+          "note": "Design officiel de Rose détouré sur transparence pour l’accueil, les cartes et le combat."
         }
       },
       {
@@ -138,8 +138,8 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_hazel",
-          "ab_hazel_regeneration"
+          "ab_basic_shot",
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_hazel",
@@ -298,7 +298,7 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_ivy"
+          "ab_root_shot"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_ivy",
@@ -404,7 +404,7 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_acacia"
+          "ab_piercing_shot"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_acacia",
@@ -457,9 +457,9 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_baobab",
-          "ab_baobab_protection",
-          "ab_baobab_regeneration"
+          "ab_basic_shot",
+          "ab_ally_protection",
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_baobab",
@@ -725,7 +725,7 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_bamboo"
+          "ab_piercing_shot"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_bamboo",
@@ -937,9 +937,9 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_mangrove",
-          "ab_mangrove_protection",
-          "ab_mangrove_regeneration"
+          "ab_basic_shot",
+          "ab_ally_protection",
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_mangrove",
@@ -1046,7 +1046,7 @@
         },
         "ability_ids": [
           "ab_pandanus",
-          "ab_pandanus_protection"
+          "ab_ally_protection"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_pandanus",
@@ -1258,9 +1258,9 @@
           "toxic": 0
         },
         "ability_ids": [
-          "ab_sequoia",
+          "ab_basic_shot",
           "ab_sequoia_protection",
-          "ab_sequoia_regeneration"
+          "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender",
         "animationProfileId": "profile_sequoia",
@@ -1944,7 +1944,7 @@
       },
       {
         "id": "corrupted_bramble",
-        "name": "Ronce contaminée",
+        "name": "Rose contaminée",
         "hp": 1400,
         "speed": 0.035,
         "attack": 42,
@@ -2233,9 +2233,9 @@
   "combat": {
     "abilities": [
       {
-        "id": "ab_radish",
-        "name": "Graines vaillantes",
-        "description": "",
+        "id": "ab_basic_shot",
+        "name": "Tir simple",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "projectile",
         "projectileId": "proj_seed",
         "target": "opponent",
@@ -2273,9 +2273,9 @@
         }
       },
       {
-        "id": "ab_bramble",
-        "name": "Étreinte épineuse",
-        "description": "",
+        "id": "ab_root_shot",
+        "name": "Tir enracinant",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "projectile",
         "projectileId": "proj_seed",
         "target": "opponent",
@@ -2314,49 +2314,9 @@
         }
       },
       {
-        "id": "ab_hazel",
-        "name": "Écorce obstinée",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_hazel_regeneration",
-        "name": "Régénération de Noisetier",
-        "description": "",
+        "id": "ab_personal_regeneration",
+        "name": "Régénération personnelle",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "instant",
         "projectileId": "",
         "target": "self",
@@ -2476,47 +2436,6 @@
         }
       },
       {
-        "id": "ab_ivy",
-        "name": "Prise de la verrière",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack",
-          "fx_root"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
         "id": "ab_nettle",
         "name": "Garde urticante",
         "description": "",
@@ -2558,9 +2477,9 @@
         }
       },
       {
-        "id": "ab_acacia",
-        "name": "Haie des pépinières",
-        "description": "",
+        "id": "ab_piercing_shot",
+        "name": "Tir traversant",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "projectile",
         "projectileId": "proj_piercing",
         "target": "opponent",
@@ -2598,49 +2517,9 @@
         }
       },
       {
-        "id": "ab_baobab",
-        "name": "Tronc refuge",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_baobab_protection",
-        "name": "Protection de Baobab",
-        "description": "",
+        "id": "ab_ally_protection",
+        "name": "Protection alliée",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "instant",
         "projectileId": "",
         "target": "ally",
@@ -2654,46 +2533,6 @@
         "initialDelay": 0,
         "effects": [
           "fx_protect"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_baobab_regeneration",
-        "name": "Régénération de Baobab",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "self",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_regen"
         ],
         "presentation": {
           "slot": "attack",
@@ -2920,46 +2759,6 @@
         }
       },
       {
-        "id": "ab_bamboo",
-        "name": "Lance souple",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_piercing",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
         "id": "ab_lotus",
         "name": "Calme du bassin",
         "description": "",
@@ -3083,126 +2882,6 @@
         }
       },
       {
-        "id": "ab_mangrove",
-        "name": "Racines de berge",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_mangrove_protection",
-        "name": "Protection de Palétuvier",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "ally",
-        "selection": "all",
-        "priority": "nearest",
-        "rangeSource": "fixed",
-        "range": 1.6,
-        "rowRadius": 1,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_protect"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_mangrove_regeneration",
-        "name": "Régénération de Palétuvier",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "self",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_regen"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
         "id": "ab_coconut",
         "name": "Noix de vigie",
         "description": "",
@@ -3261,46 +2940,6 @@
         "effects": [
           "fx_repair",
           "fx_cleanse"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_pandanus_protection",
-        "name": "Protection de Pandanus",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "ally",
-        "selection": "all",
-        "priority": "nearest",
-        "rangeSource": "fixed",
-        "range": 1.6,
-        "rowRadius": 1,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_protect"
         ],
         "presentation": {
           "slot": "attack",
@@ -3448,46 +3087,6 @@
         }
       },
       {
-        "id": "ab_sequoia",
-        "name": "Promesse de géant",
-        "description": "",
-        "delivery": "projectile",
-        "projectileId": "proj_seed",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
         "id": "ab_sequoia_protection",
         "name": "Protection de Séquoia",
         "description": "",
@@ -3504,46 +3103,6 @@
         "initialDelay": 0,
         "effects": [
           "fx_protect_strong"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_sequoia_regeneration",
-        "name": "Régénération de Séquoia",
-        "description": "",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "self",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 1,
-        "initialDelay": 0,
-        "effects": [
-          "fx_regen"
         ],
         "presentation": {
           "slot": "attack",
@@ -3933,9 +3492,9 @@
         }
       },
       {
-        "id": "ab_factory_special",
-        "name": "Mille-Gueules — onde spéciale",
-        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
+        "id": "ab_boss_wave",
+        "name": "Onde offensive",
+        "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
         "delivery": "instant",
         "projectileId": "",
         "target": "opponent",
@@ -3948,47 +3507,7 @@
         "cooldown": 12,
         "initialDelay": 6,
         "effects": [
-          "fx_factory_special"
-        ],
-        "presentation": {
-          "slot": "attack",
-          "release": "marker",
-          "delay": 0,
-          "fitCadence": true,
-          "start": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "releaseCue": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "launch"
-          },
-          "impact": {
-            "soundId": "",
-            "vfxId": "",
-            "attach": "center"
-          }
-        }
-      },
-      {
-        "id": "ab_devourer_special",
-        "name": "L’Avaleur — onde spéciale",
-        "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
-        "delivery": "instant",
-        "projectileId": "",
-        "target": "opponent",
-        "selection": "all",
-        "priority": "nearest",
-        "rangeSource": "fixed",
-        "range": 12,
-        "rowRadius": 0,
-        "cooldownSource": "fixed",
-        "cooldown": 12,
-        "initialDelay": 6,
-        "effects": [
-          "fx_devourer_special"
+          "fx_boss_wave"
         ],
         "presentation": {
           "slot": "attack",
@@ -4014,7 +3533,7 @@
       },
       {
         "id": "ab_corrupted_bramble_special",
-        "name": "Ronce contaminée — onde spéciale",
+        "name": "Rose contaminée — onde spéciale",
         "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
         "delivery": "instant",
         "projectileId": "",
@@ -4316,20 +3835,9 @@
         "tickInterval": 1
       },
       {
-        "id": "fx_factory_special",
-        "name": "Mille-Gueules — impact",
-        "description": "",
-        "kind": "damage",
-        "valueSource": "fixed",
-        "amount": 32,
-        "damageType": "physical",
-        "duration": 1,
-        "tickInterval": 1
-      },
-      {
-        "id": "fx_devourer_special",
-        "name": "L’Avaleur — impact",
-        "description": "",
+        "id": "fx_boss_wave",
+        "name": "Onde offensive — impact",
+        "description": "Résultat partagé par les boss utilisant la même onde offensive.",
         "kind": "damage",
         "valueSource": "fixed",
         "amount": 32,
@@ -4339,7 +3847,7 @@
       },
       {
         "id": "fx_corrupted_bramble_special",
-        "name": "Ronce contaminée — impact",
+        "name": "Rose contaminée — impact",
         "description": "",
         "kind": "damage",
         "valueSource": "fixed",
@@ -4350,7 +3858,7 @@
       },
       {
         "id": "fx_corrupted_bramble_special_stun",
-        "name": "Ronce contaminée — étourdissement",
+        "name": "Rose contaminée — étourdissement",
         "description": "",
         "kind": "stun",
         "valueSource": "fixed",
@@ -4649,7 +4157,7 @@
             "attackFactor": 1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_factory_special"
+              "ab_boss_wave"
             ],
             "onEnter": []
           },
@@ -4661,7 +4169,7 @@
             "attackFactor": 1.1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_factory_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -4685,7 +4193,7 @@
             "attackFactor": 1.2,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_factory_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -4721,7 +4229,7 @@
             "attackFactor": 1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_devourer_special"
+              "ab_boss_wave"
             ],
             "onEnter": []
           },
@@ -4733,7 +4241,7 @@
             "attackFactor": 1.1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_devourer_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -4757,7 +4265,7 @@
             "attackFactor": 1.2,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_devourer_special"
+              "ab_boss_wave"
             ],
             "onEnter": [
               {
@@ -4777,7 +4285,7 @@
       },
       {
         "id": "ai_corrupted_bramble",
-        "name": "Ronce contaminée — phases",
+        "name": "Rose contaminée — phases",
         "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
         "team": "enemies",
         "mode": "automatic",
@@ -4811,7 +4319,7 @@
               {
                 "type": "message",
                 "delay": 0,
-                "text": "Ronce contaminée change de tactique !"
+                "text": "Rose contaminée change de tactique !"
               },
               {
                 "type": "shake",
@@ -4835,7 +4343,7 @@
               {
                 "type": "message",
                 "delay": 0,
-                "text": "Ronce contaminée change de tactique !"
+                "text": "Rose contaminée change de tactique !"
               },
               {
                 "type": "shake",
@@ -5951,7 +5459,7 @@
       },
       {
         "id": "move_corrupted_bramble",
-        "name": "Ronce contaminée — déplacement",
+        "name": "Rose contaminée — déplacement",
         "kind": "procedural",
         "frames": [],
         "duration": 0.982,
@@ -6438,7 +5946,7 @@
       },
       {
         "id": "profile_corrupted_bramble",
-        "name": "Profil Ronce contaminée",
+        "name": "Profil Rose contaminée",
         "slots": [
           {
             "slot": "move",

@@ -15,6 +15,8 @@ const browser:GameAPI={
  async editCampaignFilm(){throw new Error('L’édition d’un fichier lié nécessite le Studio desktop.');},
  async presentationUsages(project){return {references:{},errors:project.campaign?.cinematics.length?['La lecture des films liés nécessite le Studio Electron.']:[]};},
  async checkCampaign(){throw new Error('La vérification des ressources locales nécessite le Studio desktop.');},
+ async playLevel(){throw new Error('Le lancement d’un niveau nécessite l’application Lunaria Studio pour ordinateur.');},
+ async build(){throw new Error('La construction PC et Android nécessite l’application Lunaria Studio pour ordinateur.');},
  async publish(){throw new Error('La publication groupée (parcours, films et bibliothèque partagée) est disponible dans Electron. Le navigateur permet seulement d’enregistrer le projet du Studio.');}
 };
 export const gameAPI:GameAPI=window.lunariaGame??browser;

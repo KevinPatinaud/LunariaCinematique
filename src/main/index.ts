@@ -8,7 +8,10 @@ import { scanLibrary, libraryKey, IMAGE_EXTENSIONS, AUDIO_EXTENSIONS } from './l
 import { GameDocuments } from './gameDocuments.js';
 import { CampaignSources } from './campaignSources.js';
 import { planCampaign, publishCampaign } from './campaignPublisher.js';
+import { discoverGodot, installedGodotExecutables, launchGodotLevel, loadGamePreviewSettings, saveGamePreviewSettings, validGameRoot, validGodotExecutable, type GamePreviewSettings } from './gamePreview.js';
+import { runGameBuild, simulateGameBuild, type GameBuildTarget } from './gameBuild.js';
 import { parseGameProject, parseGameDraft } from '../shared/game/validation.js';
+import { ensureCampaign } from '../shared/game/campaign.js';
 import { DocumentFiles } from './documents.js';
 import { RecentProjects } from './recentProjects.js';
 import { ProjectHistory } from './projectHistory.js';
@@ -17,7 +20,8 @@ import { parseCinematic } from '../shared/schema.js';
 
 // The opt-in E2E runner uses an isolated profile, never the author's real workspace.
 // Ignored entirely in a packaged application; it does not relax renderer/IPC security.
-if (!app.isPackaged && process.env.LUNARIA_E2E === '1') {
+const e2e = !app.isPackaged && process.env.LUNARIA_E2E === '1';
+if (e2e) {
   const testProfile = process.env.LUNARIA_TEST_USER_DATA;
   if (!testProfile || !path.isAbsolute(testProfile)) throw new Error('Profil E2E absolu requis.');
   app.setPath('userData', testProfile);
@@ -91,6 +95,33 @@ function recentId(value: unknown): string {
   if (typeof value !== 'string' || value.length > 60) throw new Error('Identifiant de projet invalide.');
   return value;
 }
+async function previewSettings():Promise<GamePreviewSettings>{return loadGamePreviewSettings(dataFile('game-preview.json'));}
+async function rememberPreview(patch:GamePreviewSettings):Promise<GamePreviewSettings>{const value={...await previewSettings(),...patch};await saveGamePreviewSettings(dataFile('game-preview.json'),value);return value;}
+async function choosePreviewGameRoot(settings:GamePreviewSettings):Promise<string|null>{
+ const configured=await validGameRoot(settings.gameRoot);if(configured)return configured;
+ if(!e2e&&!app.isPackaged){const sibling=await validGameRoot(path.resolve(appRoot(),'..','Lunaria','game'));if(sibling){await rememberPreview({gameRoot:sibling});return sibling;}}
+ const result=await dialog.showOpenDialog(window!,{title:'Choisir le dossier game du projet Godot Lunaria',properties:['openDirectory']});
+ if(result.canceled||!result.filePaths[0])return null;
+ const selected=await validGameRoot(result.filePaths[0]);if(!selected)throw Error('Choisis le dossier game de Lunaria contenant project.godot.');
+ await rememberPreview({gameRoot:selected});return selected;
+}
+async function chooseGodot(settings:GamePreviewSettings):Promise<string|null>{
+ const programFiles=process.env.ProgramFiles??'C:\\Program Files';
+ const installed=process.platform==='win32'?await installedGodotExecutables(path.join(programFiles,'Godot')):[];
+ const automatic=await discoverGodot([settings.godotPath,process.env.GODOT_BIN,...installed]);
+ if(automatic){if(automatic!==settings.godotPath)await rememberPreview({godotPath:automatic});return automatic;}
+ const result=await dialog.showOpenDialog(window!,{title:'Choisir Godot pour lancer ou construire le jeu',properties:['openFile'],filters:process.platform==='win32'?[{name:'Godot',extensions:['exe']}]:undefined});
+ if(result.canceled||!result.filePaths[0])return null;
+ const selected=await validGodotExecutable(result.filePaths[0]);if(!selected)throw Error('Choisis un exécutable Godot valide.');
+ await rememberPreview({godotPath:selected});return selected;
+}
+function previewProject(value:unknown,levelId:string){
+ const project=parseGameProject(value),level=project.levels.find(item=>item.id===levelId);if(!level)throw Error('Le niveau sélectionné n’existe plus.');
+ const preview=structuredClone(project),campaign=ensureCampaign(preview);
+ if(!campaign.steps.some(step=>step.kind==='level'&&step.levelId===levelId))campaign.steps.push({id:'studio_preview_'+globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12),kind:'level',levelId});
+ return{preview,level};
+}
+
 function setupIpc() {
   handle('game:bootstrap', () => gameDocuments.bootstrap());
   handle('game:open', async () => {
@@ -133,7 +164,24 @@ function setupIpc() {
     if(result.canceled||!result.filePaths[0])return null;
     const sources=await campaignSources.folder(),check=(await planCampaign(project,sources,root)).check;
     const answer=await dialog.showMessageBox(window!,{type:'warning',title:'Publier la campagne',message:`Publier ${check.steps} étapes : ${check.levels} niveaux et ${check.films} films ?`,detail:`${check.assets} ressources uniques seront réutilisées ou copiées dans la bibliothèque commune du jeu. Les images existantes différentes ne seront jamais écrasées. Le contenu actif est remplacé en dernier, avec une copie .bak. Ferme le jeu puis relance-le. ${check.warnings.join(' ')} Une publication modifiée démarre un nouveau profil, sans migration.`,buttons:['Annuler','Publier'],defaultId:0,cancelId:0});
-    return answer.response===1?publishCampaign(project,result.filePaths[0],sources,root):null;
+    if(answer.response!==1)return null;const published=await publishCampaign(project,result.filePaths[0],sources,root);await rememberPreview({gameRoot:await validGameRoot(result.filePaths[0])??undefined});return published;
+  });
+  handle('game:play-level',async(value,rawLevelId)=>{
+    if(typeof rawLevelId!=='string')throw Error('Identifiant de niveau invalide.');
+    const {preview,level}=previewProject(value,rawLevelId),settings=await previewSettings();
+    const gameRoot=await choosePreviewGameRoot(settings);if(!gameRoot)return null;
+    const executable=await chooseGodot(await previewSettings());if(!executable)return null;
+    const sources=await campaignSources.folder(),published=await publishCampaign(preview,gameRoot,sources,root);
+    if(!e2e)await launchGodotLevel(executable,gameRoot,level.id);
+    return{path:published.path,levelId:level.id,title:level.title,gameRoot,executable,simulated:e2e};
+  });
+  handle('game:build',async(value,rawTarget)=>{
+    if(rawTarget!=='windows'&&rawTarget!=='android')throw Error('Cible de build invalide.');
+    const target:GameBuildTarget=rawTarget,project=parseGameProject(value),settings=await previewSettings();
+    const gameRoot=await choosePreviewGameRoot(settings);if(!gameRoot)return null;
+    const executable=await chooseGodot(await previewSettings());if(!executable)return null;
+    const sources=await campaignSources.folder();await publishCampaign(project,gameRoot,sources,root);
+    return e2e?simulateGameBuild(gameRoot,target):runGameBuild(gameRoot,executable,target);
   });
   handle('studio:bootstrap', async () => {
     const recovery = await documents.recovery();

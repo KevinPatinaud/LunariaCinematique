@@ -90,9 +90,14 @@ export function gameIssues(input:unknown):GameIssue[]{
  issues.push(...combatIssues(p),...logicIssues(p),...presentationIssues(p));
  return issues;
 }
+function withoutLegacyBonusGoals(value:unknown):unknown {
+ const copy=structuredClone(value);
+ if(copy&&typeof copy==='object'&&Array.isArray((copy as {levels?:unknown[]}).levels))for(const level of (copy as {levels:unknown[]}).levels)if(level&&typeof level==='object')delete (level as Record<string,unknown>).optionalGoals;
+ return copy;
+}
 export function parseGameProject(value:unknown):GameProject{
- const errors=gameIssues(value).filter(x=>x.severity==='error');if(errors.length)throw new Error(errors.slice(0,12).map(x=>`${x.path} : ${x.message}`).join('\n'));
- const copy=structuredClone(value) as GameProject;ensureCombat(copy);ensureLogic(copy);ensurePresentation(copy);const upgraded=gameIssues(copy).filter(x=>x.severity==='error');if(upgraded.length)throw Error(upgraded.map(x=>x.message).join('\n'));return copy;
+ const normalized=withoutLegacyBonusGoals(value),errors=gameIssues(normalized).filter(x=>x.severity==='error');if(errors.length)throw new Error(errors.slice(0,12).map(x=>`${x.path} : ${x.message}`).join('\n'));
+ const copy=structuredClone(normalized) as GameProject;ensureCombat(copy);ensureLogic(copy);ensurePresentation(copy);const upgraded=gameIssues(copy).filter(x=>x.severity==='error');if(upgraded.length)throw Error(upgraded.map(x=>x.message).join('\n'));return copy;
 }
 
 /** Recovery is allowed to hold an in-progress title or temporarily empty roster.
@@ -110,7 +115,7 @@ function relaxDraftText(rule:Rule):void {
 }
 relaxDraftText(DRAFT_SCHEMA);
 export function parseGameDraft(value:unknown):GameProject {
- const issues:GameIssue[]=[];walkRule(DRAFT_SCHEMA,value,'projet',issues);
+ value=withoutLegacyBonusGoals(value);const issues:GameIssue[]=[];walkRule(DRAFT_SCHEMA,value,'projet',issues);
  if(issues.length)throw new Error('Le brouillon présente une structure invalide. '+issues[0].message);
  const draft=structuredClone(value) as GameProject;
  if(draft.schemaVersion>=2&&(!draft.combat||[...draft.balance.plants,...draft.balance.enemies].some(x=>!Array.isArray(x.ability_ids))))throw Error('Catalogues ou associations absents du brouillon V1.8.');

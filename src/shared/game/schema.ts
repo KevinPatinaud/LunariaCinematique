@@ -404,7 +404,6 @@ export const GAME_SCHEMA:Rule = {
           "outro",
           "midDialogue",
           "midWave",
-          "optionalGoals",
           "restoration"
         ],
         "properties": {
@@ -643,45 +642,6 @@ export const GAME_SCHEMA:Rule = {
             "minimum": 0,
             "maximum": 50,
             "multipleOf": 1
-          },
-          "optionalGoals": {
-            "type": "array",
-            "minItems": 0,
-            "maxItems": 2,
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "id",
-                "title",
-                "target"
-              ],
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "enum": [
-                    "healthy",
-                    "no_refuge",
-                    "diversity",
-                    "plantings",
-                    "low_losses",
-                    "no_rain",
-                    "full_garden"
-                  ]
-                },
-                "title": {
-                  "type": "string",
-                  "maxLength": 160,
-                  "minLength": 1
-                },
-                "target": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 100000,
-                  "multipleOf": 1
-                }
-              }
-            }
           },
           "restoration": {
             "type": "string",

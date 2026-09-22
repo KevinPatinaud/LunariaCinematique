@@ -47,6 +47,14 @@ Dans le Studio, mode **Cinématiques**, choisir comme bibliothèque le dossier *
 
 Les sons déplacés depuis les anciens dossiers restent également utilisés par les effets d’interface et musiques historiques. `docs/ART_TRANSFER_V1_10.json` fournit la correspondance des déplacements.
 
+## Choisir et régler une attaque
+
+Dans **Niveaux**, les anciens catalogues séparés sont réunis dans un seul onglet **Attaque**. Chaque fiche y regroupe le type d’attaque, les cibles, la cadence, les résultats appliqués et, lorsqu’elle existe, la trajectoire du tir. Les fiches **Plantes alliées** et **Ennemis** permettent de choisir directement une attaque principale et d’ajouter des attaques supplémentaires ; chaque option affiche aussi son type en langage clair.
+
+Le bouton **Modifier cette attaque** ouvre sa fiche globale. Une modification s’applique donc à toutes les espèces qui utilisent cette attaque. Pour obtenir une variante indépendante, dupliquer l’attaque avant de l’attribuer à l’espèce concernée.
+
+Le catalogue de départ contient désormais **34 attaques**. Les attaques strictement identiques utilisent six modèles partagés : Tir simple, Régénération personnelle, Protection alliée, Tir enracinant, Tir traversant et Onde offensive. Les variantes dont la portée, la zone ou les résultats diffèrent restent séparées.
+
 ## Modifier l’attaque de Radis
 
 1. Passer en **Niveaux** et ouvrir `game/content/design/game_content.json`, ou `examples/lunaria.game.json` pour travailler sur une copie d’auteur.
@@ -56,11 +64,11 @@ Les sons déplacés depuis les anciens dossiers restent également utilisés par
 5. Enregistrer le projet. Utiliser **Publier la campagne** vers le dossier du jeu fourni. Les erreurs de référence ou de découpe bloquent l’écriture avant la mise à jour du contenu actif.
 6. Relancer le jeu : le catalogue est chargé au démarrage, pas rechargé à chaud au milieu d’un combat. Vérifier visuellement l’attaque et le départ du projectile.
 
-Les aperçus disposent de lecture/pause, reprise, curseur, déplacement frame par frame, retour au début, ancrages, miroir et réduction des mouvements. Les marqueurs son/VFX sont réservés à la lecture ; déplacer manuellement le curseur ne lance aucune capacité. Le bouton « Repos » rembobine la définition à t=0 ; il ne change pas l’animation sélectionnée pour une autre définition `idle`.
+Les aperçus disposent de lecture/pause, reprise, curseur, déplacement frame par frame, retour au début, ancrages, miroir et réduction des mouvements. Les marqueurs son/VFX sont réservés à la lecture ; déplacer manuellement le curseur ne lance aucune attaque. Le bouton « Repos » rembobine la définition à t=0 ; il ne change pas l’animation sélectionnée pour une autre définition `idle`.
 
-## Capacités, profils, audio et VFX
+## Attaques, profils, audio et VFX
 
-La navigation repliable **Présentation** regroupe Animations, Profils d’animation, Audio et VFX. Les capacités disposent d’une section Présentation : slot sémantique, mode/délai de libération et indices de présentation de lancement/impact. Ne pas mettre un identifiant comme `radish_throw` dans une capacité partagée : choisir `attack`.
+La navigation repliable **Présentation** regroupe Animations, Profils d’animation, Audio et VFX. Les attaques disposent d’une section Présentation : slot sémantique, mode/délai de libération et indices de présentation de lancement/impact. Ne pas mettre un identifiant comme `radish_throw` dans une attaque partagée : choisir `attack`.
 
 Un slot absent hérite du profil global. Un slot de base doit toujours être résolu. Une liaison optionnelle vide, telle que `victory`, désactive ce slot. Une plante ne se déplace pas parce qu’elle possède une animation `move`.
 
@@ -82,9 +90,9 @@ Publier de préférence depuis **Publier la campagne**. La publication transform
 
 Ouvrir `examples/Atelier_Presentation_V1_10/atelier.game.json`, choisir `examples/Atelier_Presentation_V1_10` comme dossier des cinématiques liées, et conserver `game/LunariaArtLibrary` comme bibliothèque.
 
-Le film `animations.cinematic.json` et le niveau montrent Radis/Ronce partageant `ab_radish` avec deux gestes différents, le mouvement d’un ennemi, les images d’atlas originales, une respiration procédurale, des marqueurs son/VFX, une référence directe réutilisée dans un film et les valeurs par défaut.
+Le film `animations.cinematic.json` et le niveau montrent Radis/Rose partageant `ab_basic_shot` avec deux gestes différents, le mouvement d’un ennemi, les images d’atlas originales, une respiration procédurale, des marqueurs son/VFX, une référence directe réutilisée dans un film et les valeurs par défaut.
 
-La portée/dégâts de Ronce et les PV/vitesse du Jeteur sont ajustés **uniquement dans cet atelier**. Placer Radis et Ronce dans la voie centrale ; laisser un ennemi approcher pour observer son attaque et ses réactions. Les autres slots peuvent être prévisualisés dans sa fiche. Publier l’atelier sur une nouvelle extraction du jeu : il remplace le parcours actif par le scénario de démonstration.
+La portée/dégâts de Rose et les PV/vitesse du Jeteur sont ajustés **uniquement dans cet atelier**. Placer Radis et Rose dans la voie centrale ; laisser un ennemi approcher pour observer son attaque et ses réactions. Les autres slots peuvent être prévisualisés dans sa fiche. Publier l’atelier sur une nouvelle extraction du jeu : il remplace le parcours actif par le scénario de démonstration.
 
 ## Sauvegardes et limites de validation
 

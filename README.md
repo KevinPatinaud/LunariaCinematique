@@ -7,7 +7,7 @@ Sources complètes actualisées depuis V1.9. Profils par espèce, catalogue comm
 - [Installation et utilisation](docs/GUIDE_V1_10.md)
 - [Architecture et contrats](docs/ARCHITECTURE_V1_10.md)
 - [Rapport de validation](docs/TEST_REPORT_V1_10.md)
-- [Atelier Radis / Ronce](examples/Atelier_Presentation_V1_10/README.md)
+- [Atelier Radis / Rose](examples/Atelier_Presentation_V1_10/README.md)
 
 Extraire les projets dans de nouveaux dossiers et conserver les originaux. Dans le Studio, relier **`game/LunariaArtLibrary`** pour travailler sur la présentation de combat. Le petit exemple autonome `example-library` ne remplace pas cette bibliothèque.
 
