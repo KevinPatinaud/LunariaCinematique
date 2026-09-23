@@ -5,6 +5,7 @@ const api: StudioAPI = {
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
   exampleLibrary: () => ipcRenderer.invoke('library:example'),
   refreshLibrary: () => ipcRenderer.invoke('library:refresh'),
+  importImages: () => ipcRenderer.invoke('library:import-images'),
   openCinematic: () => ipcRenderer.invoke('cinematic:open'),
   listRecentProjects: () => ipcRenderer.invoke('projects:recent-list'),
   openRecentProject: id => ipcRenderer.invoke('projects:recent-open', id),

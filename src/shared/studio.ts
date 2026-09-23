@@ -121,6 +121,7 @@ export function createTemplate(source: Shot, template: ShotTemplate, speakerIds:
   if (template === 'blank') return newShot(source.background.asset);
   if (template === 'establishing') { const s=newShot(source.background.asset); s.name='Vue d’ensemble'; s.camera={preset:'zoom_in',intensity:.3}; return s; }
   const shot = smartDuplicate(source,{dialogues:false,entrances:false,audio:true});
+  shot.endAdvance='auto';
   shot.transition={type:'cut',duration:0}; shot.dialogueStart=.4;
   const sourceIndices = speakerIds.map(id=>source.actors.findIndex(a=>a.id===id)).filter(i=>i>=0);
   const speakers = sourceIndices.length ? sourceIndices.map(i=>shot.actors[i]) : shot.actors.filter(a=>a.role!=='prop').slice(0,2);

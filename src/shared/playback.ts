@@ -10,7 +10,7 @@ const EPS = 1e-9;
 function settle(doc: Cinematic, state: Playback): Playback {
   const shot = doc.shots[state.shotIndex];
   if (!shot) return { ...state, finished: true };
-  if (state.elapsed + EPS >= shot.duration && state.dialogueIndex >= shot.bubbles.length) {
+  if (state.elapsed + EPS >= shot.duration && state.dialogueIndex >= shot.bubbles.length && shot.endAdvance !== 'click') {
     if (state.shotIndex + 1 >= doc.shots.length) return { ...state, finished: true };
     return beginPlayback(state.shotIndex + 1);
   }
@@ -46,7 +46,12 @@ export function tickPlayback(doc: Cinematic, state: Playback, delta: number): Pl
 }
 export function advanceDialogue(doc: Cinematic, state: Playback): Playback {
   const shot = doc.shots[state.shotIndex];
-  if (state.paused || state.finished || !shot || state.elapsed < shot.dialogueStart || state.dialogueIndex >= shot.bubbles.length) return state;
+  if (state.paused || state.finished || !shot) return state;
+  if (state.dialogueIndex >= shot.bubbles.length) {
+    if (shot.endAdvance !== 'click' || state.elapsed + EPS < shot.duration) return state;
+    return state.shotIndex + 1 >= doc.shots.length ? { ...state, finished: true } : beginPlayback(state.shotIndex + 1);
+  }
+  if (state.elapsed < shot.dialogueStart) return state;
   const bubble = shot.bubbles[state.dialogueIndex];
   if (textNeedsCompletion(bubble, state.dialogueElapsed, state.textCompletedAt)) return {...state, textCompletedAt: state.dialogueElapsed};
   const next = {...state, dialogueIndex: state.dialogueIndex + 1, dialogueElapsed: 0};

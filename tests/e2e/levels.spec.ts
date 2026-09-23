@@ -48,6 +48,48 @@ test('catalogue global enregistré une seule fois et conservation entre modes',a
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  const data=await save();expect(data.balance.plants[0].damage).toBe(47);expect(data.levels).toEqual(seedProject().levels);
 });
+test('image du personnage et animations par planche ou fichiers séparés',async()=>{
+ await fs.writeFile(path.join(library,'sheet.png'),Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAADklEQVR4nGP4z8AAQv8BD/kD/YURmXYAAAAASUVORK5CYII=','base64'));
+ await fs.writeFile(path.join(library,'second.png'),PIXEL_PNG);
+ await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await expect(page.getByRole('heading',{name:'Image du personnage'})).toBeVisible();
+ await page.getByRole('region',{name:'Image principale de Radis'}).getByRole('button',{name:'Choisir ou importer une image'}).click();
+ await page.getByRole('button',{name:'Utiliser sheet.png'}).click();
+ await page.getByRole('button',{name:'Animations de Radis',exact:true}).click();
+ await page.getByLabel('Créer une animation pour Radis').selectOption('attack');
+ await page.getByLabel('Style de l’animation').selectOption('frames');
+ await page.getByRole('button',{name:'Une planche de frames'}).click();
+ await page.getByRole('button',{name:'Choisir ou importer une planche'}).click();
+ await page.getByRole('button',{name:'Utiliser sheet.png'}).click();
+ await page.getByLabel('Colonnes',{exact:true}).fill('2');
+ await page.getByLabel('Colonnes',{exact:true}).press('Tab');
+ await page.getByRole('button',{name:'Ajouter les 2 frames'}).click();
+ await expect(page.getByLabel('Images de l’animation').getByRole('button')).toHaveCount(2);
+ expect(await page.getByLabel('Images de l’animation').locator('svg').evaluateAll(elements=>elements.map(element=>element.getAttribute('viewBox')))).toEqual(['0 0 1 1','1 0 1 1']);
+ await page.getByRole('button',{name:'Plusieurs images'}).click();
+ await page.getByRole('button',{name:'Sélectionner ou importer plusieurs images'}).click();
+ await page.getByRole('button',{name:'Sélectionner second.png'}).click();
+ await page.getByRole('button',{name:'Sélectionner pixel.png'}).click();
+ await page.getByRole('button',{name:'Ajouter 2 images'}).click();
+ await expect(page.getByLabel('Images de l’animation').getByRole('button')).toHaveCount(4);
+ const data=await save();
+ expect(data.balance.plants[0].visual.sprite.asset).toBe('library://sheet.png');
+ const animation=data.presentation.animations.find((entry:any)=>entry.ownerSpeciesId==='radish'&&entry.name==='Radis — Attaque');
+ expect(animation).toBeTruthy();
+ expect(animation.frames.map((frame:any)=>frame.asset)).toEqual(['library://sheet.png','library://sheet.png','library://second.png','library://pixel.png']);
+ expect(animation.frames[0].region).toEqual({x:0,y:0,width:1,height:1});
+ expect(animation.frames[1].region).toEqual({x:1,y:0,width:1,height:1});
+});
+test('importer une image externe dans la bibliothèque depuis la fiche du personnage',async()=>{
+ const external=path.join(temp,'new-character.png');await fs.writeFile(external,PIXEL_PNG);
+ await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[selected]});},external);
+ await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await page.getByRole('region',{name:'Image principale de Radis'}).getByRole('button',{name:'Choisir ou importer une image'}).click();
+ await page.getByRole('button',{name:'Importer des fichiers…'}).click();
+ await expect(page.getByRole('region',{name:'Image principale de Radis'})).toContainText('studio_imports/new-character.png');
+ expect(await fs.readFile(path.join(library,'studio_imports','new-character.png'))).toEqual(PIXEL_PNG);
+ const data=await save();expect(data.balance.plants[0].visual.sprite.asset).toBe('library://studio_imports/new-character.png');
+});
 test('effectif de vague et roster sont enregistrés sans recopier les statistiques',async()=>{
  await page.getByLabel('Nombre du groupe 1',{exact:true}).fill('7');await page.getByLabel('Nombre du groupe 1',{exact:true}).press('Tab');
  await page.getByRole('button',{name:'Plantes disponibles',exact:true}).click();

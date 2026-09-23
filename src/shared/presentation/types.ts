@@ -12,6 +12,8 @@ export interface LocalTransform {x:number;y:number;rotation:number;scaleX:number
 export interface AnimationMarker {id:string;at:number;type:'release'|'sound'|'vfx';ref:string;attach:Attachment}
 export interface AnimationDefinition {
  id:string;name:string;kind:'frames'|'procedural'|'combined';frames:AnimationFrame[];duration:number;loop:boolean;
+ /** Empty means explicitly shared; absent keeps older projects classified by their profile links. */
+ ownerSpeciesId?:string;
  anchor:Point;transform:LocalTransform;motion:{preset:typeof MOTIONS[number];amplitude:number;period:number};
  attachments:{id:Attachment;x:number;y:number}[];markers:AnimationMarker[];
 }

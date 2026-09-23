@@ -1,6 +1,6 @@
 import {presentationFilmUsages} from './presentationUsages.js';
 import { app, BrowserWindow, dialog, ipcMain, protocol, net, session, nativeImage, shell, type IpcMainInvokeEvent } from 'electron';
-import { promises as fs, watch, type FSWatcher } from 'node:fs';
+import { promises as fs, constants as fsConstants, watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { atomicJson, readJson, resolveAsset, isWithin } from './files.js';
@@ -16,7 +16,7 @@ import { DocumentFiles } from './documents.js';
 import { RecentProjects } from './recentProjects.js';
 import { ProjectHistory } from './projectHistory.js';
 import { referencedAssets, type Cinematic, type LibrarySnapshot } from '../shared/model.js';
-import { parseCinematic } from '../shared/schema.js';
+import { parseCinematic, isSafeAssetRef } from '../shared/schema.js';
 
 // The opt-in E2E runner uses an isolated profile, never the author's real workspace.
 // Ignored entirely in a packaged application; it does not relax renderer/IPC security.
@@ -213,6 +213,35 @@ function setupIpc() {
   });
   handle('library:example', () => selectRoot(devUrl ? path.join(appRoot(), 'example-library') : rendererRoot()));
   handle('library:refresh', () => refresh());
+  handle('library:import-images', async () => {
+    if (!root || isWithin(appRoot(), root)) throw Error('Choisis une bibliothèque de production avant d’importer des images.');
+    const result = await dialog.showOpenDialog(window!, { title: 'Importer des images dans la bibliothèque Lunaria', properties: ['openFile', 'multiSelections'], filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }] });
+    if (result.canceled || !result.filePaths.length) return null;
+    if (result.filePaths.length > 512) throw Error('Sélectionne au maximum 512 images à la fois.');
+    const base = await fs.realpath(root), folder = path.join(base, 'studio_imports');
+    await fs.mkdir(folder, { recursive: true });
+    if (!isWithin(base, await fs.realpath(folder))) throw Error('Le dossier d’import sort de la bibliothèque.');
+    const imported: string[] = [];
+    for (const selected of result.filePaths) {
+      const source = await fs.realpath(selected), stat = await fs.stat(source), ext = path.extname(source).toLowerCase();
+      if (!stat.isFile() || stat.size < 1 || stat.size > 40 * 1024 * 1024 || !IMAGE_EXTENSIONS.has(ext)) throw Error('Image invalide ou supérieure à 40 Mo : ' + path.basename(selected));
+        const existingRef = 'library://' + path.relative(base, source).split(path.sep).join('/');
+        if (isWithin(base, source) && isSafeAssetRef(existingRef)) { imported.push(existingRef); continue; }
+      const stem = path.basename(source, ext).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 90) || 'image';
+      let destination = '';
+      for (let index = 1; index <= 1000; index++) {
+        const candidate = path.join(folder, `${stem}${index === 1 ? '' : '_' + index}${ext}`);
+        try { await fs.copyFile(source, candidate, fsConstants.COPYFILE_EXCL); destination = candidate; break; }
+        catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
+      }
+      if (!destination) throw Error('Trop de fichiers portent le même nom : ' + stem);
+      imported.push('library://' + path.relative(base, destination).split(path.sep).join('/'));
+    }
+    const updated = await refresh(true);
+      const resolved = imported.map(ref => updated?.assets.find(asset => asset.ref === ref));
+      if (resolved.some(asset => !asset)) throw Error('Certaines images importées ne sont pas visibles dans la bibliothèque.');
+      return resolved.filter((asset): asset is NonNullable<typeof asset> => !!asset);
+  });
   handle('cinematic:open', async () => {
     const result = await dialog.showOpenDialog(window!, { title: 'Ouvrir une cinématique', properties: ['openFile'], filters: [{ name: 'Cinématique Lunaria', extensions: ['json'] }] });
     return result.canceled || !result.filePaths[0] ? null : projectHistory.openPath(result.filePaths[0]);

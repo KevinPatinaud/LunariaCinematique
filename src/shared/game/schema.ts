@@ -73,7 +73,7 @@ export const GAME_SCHEMA:Rule = {
                 "type": "string",
                 "enum": [
                   "radish",
-                  "bramble",
+                  "rose",
                   "hazel",
                   "fern",
                   "dandelion",
@@ -286,7 +286,7 @@ export const GAME_SCHEMA:Rule = {
                   "pump",
                   "factory",
                   "devourer",
-                  "corrupted_bramble",
+                  "corrupted_rose",
                   "furnace",
                   "thorn_knot"
                 ]

@@ -98,6 +98,7 @@ const browser: StudioAPI = {
     return library;
   },
   async refreshLibrary() { return library; },
+  async importImages() { throw new Error('L’import d’images dans la bibliothèque est disponible dans l’application Electron.'); },
   async openCinematic() {
     const files = await pickFiles(); if (!files?.length) return null;
     if (files[0].size > 5 * 1024 * 1024) throw new Error('JSON trop volumineux (maximum 5 Mo).');

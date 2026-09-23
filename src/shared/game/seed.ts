@@ -40,7 +40,7 @@ export const GAME_SEED:GameProject={
         "behaviorId": "ai_defender"
       },
       {
-        "id": "bramble",
+        "id": "rose",
         "name": "Rose",
         "role": "Entrave défensive",
         "description": "Ses épines accrochent les pollueurs proches et freinent leur avancée.",
@@ -1110,7 +1110,7 @@ export const GAME_SEED:GameProject={
         "behaviorId": "ai_devourer"
       },
       {
-        "id": "corrupted_bramble",
+        "id": "corrupted_rose",
         "name": "Rose contaminée",
         "hp": 1400,
         "speed": 0.035,
@@ -1129,7 +1129,7 @@ export const GAME_SEED:GameProject={
         "ability_ids": [
           "ab_enemy_contact"
         ],
-        "behaviorId": "ai_corrupted_bramble"
+        "behaviorId": "ai_corrupted_rose"
       },
       {
         "id": "furnace",
@@ -1187,7 +1187,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 520,
       "allowedPlants": [
         "radish",
-        "bramble"
+        "rose"
       ],
       "objective": {
         "type": "defend",
@@ -1397,7 +1397,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 530,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel"
       ],
       "objective": {
@@ -1625,7 +1625,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 550,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern"
       ],
@@ -1874,7 +1874,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 560,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion"
@@ -2128,7 +2128,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 570,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -2383,7 +2383,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 585,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -2659,7 +2659,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 600,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -2952,7 +2952,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 625,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -3373,7 +3373,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 600,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -3650,7 +3650,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 625,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -3928,7 +3928,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 640,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -4215,7 +4215,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 650,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -4523,7 +4523,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 665,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -4828,7 +4828,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 675,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -5137,7 +5137,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 700,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -5466,7 +5466,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 725,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -5937,7 +5937,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 690,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -6356,7 +6356,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 710,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -6776,7 +6776,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 725,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -7193,7 +7193,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 740,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -7647,7 +7647,7 @@ export const GAME_SEED:GameProject={
       "startingEnergy": 760,
       "allowedPlants": [
         "radish",
-        "bramble",
+        "rose",
         "hazel",
         "fern",
         "dandelion",
@@ -16566,7 +16566,7 @@ export const GAME_SEED:GameProject={
             },
             {
               "id": "mission_39_w4_g14",
-              "enemyId": "corrupted_bramble",
+              "enemyId": "corrupted_rose",
               "count": 1,
               "lane": -1,
               "start": 17.5,
@@ -18031,7 +18031,7 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_corrupted_bramble_special",
+        "id": "ab_corrupted_rose_special",
         "name": "Rose contaminée — onde spéciale",
         "description": "Attaque configurée dans le Studio, sans code propre à ce boss.",
         "delivery": "instant",
@@ -18046,8 +18046,8 @@ export const GAME_SEED:GameProject={
         "cooldown": 12,
         "initialDelay": 6,
         "effects": [
-          "fx_corrupted_bramble_special",
-          "fx_corrupted_bramble_special_stun"
+          "fx_corrupted_rose_special",
+          "fx_corrupted_rose_special_stun"
         ]
       },
       {
@@ -18303,7 +18303,7 @@ export const GAME_SEED:GameProject={
         "tickInterval": 1
       },
       {
-        "id": "fx_corrupted_bramble_special",
+        "id": "fx_corrupted_rose_special",
         "name": "Rose contaminée — impact",
         "description": "",
         "kind": "damage",
@@ -18314,7 +18314,7 @@ export const GAME_SEED:GameProject={
         "tickInterval": 1
       },
       {
-        "id": "fx_corrupted_bramble_special_stun",
+        "id": "fx_corrupted_rose_special_stun",
         "name": "Rose contaminée — étourdissement",
         "description": "",
         "kind": "stun",
@@ -18735,7 +18735,7 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ai_corrupted_bramble",
+        "id": "ai_corrupted_rose",
         "name": "Rose contaminée — phases",
         "description": "Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.",
         "team": "enemies",
@@ -18745,26 +18745,26 @@ export const GAME_SEED:GameProject={
         "rules": [],
         "phases": [
           {
-            "id": "ai_corrupted_bramble_p1",
+            "id": "ai_corrupted_rose_p1",
             "name": "Approche",
             "healthBelow": 100,
             "speedFactor": 1,
             "attackFactor": 1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_corrupted_bramble_special"
+              "ab_corrupted_rose_special"
             ],
             "onEnter": []
           },
           {
-            "id": "ai_corrupted_bramble_p2",
+            "id": "ai_corrupted_rose_p2",
             "name": "Colère",
             "healthBelow": 66,
             "speedFactor": 1,
             "attackFactor": 1.1,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_corrupted_bramble_special"
+              "ab_corrupted_rose_special"
             ],
             "onEnter": [
               {
@@ -18781,14 +18781,14 @@ export const GAME_SEED:GameProject={
             ]
           },
           {
-            "id": "ai_corrupted_bramble_p3",
+            "id": "ai_corrupted_rose_p3",
             "name": "Dernière offensive",
             "healthBelow": 33,
             "speedFactor": 1,
             "attackFactor": 1.2,
             "inheritAbilities": true,
             "abilityIds": [
-              "ab_corrupted_bramble_special"
+              "ab_corrupted_rose_special"
             ],
             "onEnter": [
               {

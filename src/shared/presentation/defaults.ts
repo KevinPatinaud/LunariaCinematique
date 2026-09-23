@@ -398,7 +398,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "radish_throw",
+     "id": "radish_throw",
+      "ownerSpeciesId": "radish",
       "name": "Radis — jet de caillou (4 poses conservées)",
       "kind": "combined",
       "frames": [
@@ -511,7 +512,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       ]
     },
     {
-      "id": "move_litterer",
+     "id": "move_litterer",
+      "ownerSpeciesId": "litterer",
       "name": "Jeteur de déchets — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -559,7 +561,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_runner",
+     "id": "move_runner",
+      "ownerSpeciesId": "runner",
       "name": "Canette pressée — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -607,7 +610,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_sprayer",
+     "id": "move_sprayer",
+      "ownerSpeciesId": "sprayer",
       "name": "Pulvérisateur — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -655,7 +659,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_truck",
+     "id": "move_truck",
+      "ownerSpeciesId": "truck",
       "name": "Camion pollueur — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -703,7 +708,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_jammer",
+     "id": "move_jammer",
+      "ownerSpeciesId": "jammer",
       "name": "Drone brouilleur — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -751,7 +757,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_tanker",
+     "id": "move_tanker",
+      "ownerSpeciesId": "tanker",
       "name": "Citerne blindée — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -799,7 +806,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_collector",
+     "id": "move_collector",
+      "ownerSpeciesId": "collector",
       "name": "Le Ramasseur — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -847,7 +855,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_pump",
+     "id": "move_pump",
+      "ownerSpeciesId": "pump",
       "name": "L’Assoiffeur — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -895,7 +904,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_factory",
+     "id": "move_factory",
+      "ownerSpeciesId": "factory",
       "name": "Mille-Gueules — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -943,7 +953,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_devourer",
+     "id": "move_devourer",
+      "ownerSpeciesId": "devourer",
       "name": "L’Avaleur — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -991,7 +1002,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_corrupted_bramble",
+     "id": "move_corrupted_rose",
+      "ownerSpeciesId": "corrupted_rose",
       "name": "Rose contaminée — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -1039,7 +1051,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_furnace",
+     "id": "move_furnace",
+      "ownerSpeciesId": "furnace",
       "name": "La Fournaise — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -1087,7 +1100,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-      "id": "move_thorn_knot",
+     "id": "move_thorn_knot",
+      "ownerSpeciesId": "thorn_knot",
       "name": "Excroissance contaminée — déplacement",
       "kind": "procedural",
       "frames": [],
@@ -1206,8 +1220,8 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "events": []
     },
     {
-      "id": "profile_bramble",
-      "name": "Profil bramble",
+      "id": "profile_rose",
+      "name": "Profil rose",
       "slots": [],
       "events": []
     },
@@ -1478,12 +1492,12 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "events": []
     },
     {
-      "id": "profile_corrupted_bramble",
+      "id": "profile_corrupted_rose",
       "name": "Profil Rose contaminée",
       "slots": [
         {
           "slot": "move",
-          "animationId": "move_corrupted_bramble"
+          "animationId": "move_corrupted_rose"
         }
       ],
       "events": []
@@ -1594,7 +1608,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "tint": "#ffffff",
     "note": "Quatre poses et ancrages de pieds repris de radish_art.gd. La libération est désormais au marqueur release."
   },
-  "bramble": {
+  "rose": {
     "sprite": {
       "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
       "region": {
@@ -2371,7 +2385,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "tint": "#ffffff",
     "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
   },
-  "corrupted_bramble": {
+  "corrupted_rose": {
     "sprite": {
       "asset": "library://combat/illustrations/bosses_final.png",
       "region": {

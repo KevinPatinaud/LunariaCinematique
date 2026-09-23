@@ -796,7 +796,7 @@ const assignments:Record<string,string[]>={
   "radish": [
     "ab_basic_shot"
   ],
-  "bramble": [
+  "rose": [
     "ab_root_shot"
   ],
   "hazel": [
@@ -918,7 +918,7 @@ const assignments:Record<string,string[]>={
   "devourer": [
     "ab_enemy_contact"
   ],
-  "corrupted_bramble": [
+  "corrupted_rose": [
     "ab_enemy_contact"
   ],
   "furnace": [

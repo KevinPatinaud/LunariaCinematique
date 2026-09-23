@@ -77,6 +77,13 @@
             "minimum": 1,
             "maximum": 300
           },
+          "endAdvance": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "click"
+            ]
+          },
           "background": {
             "type": "object",
             "properties": {

@@ -329,3 +329,4 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .animation-presets button:focus-visible {outline:2px solid #bdd49e;outline-offset:2px;}
 .animation-duration {display:block;margin-top:8px;color:#9cad8c;text-align:center;}
 .text-animation-inspector .field-hint {line-height:1.5;}
+.shot-end-choice{display:grid;gap:8px;margin-bottom:15px}.shot-end-choice button{display:block;width:100%;padding:11px 12px;text-align:left;background:#1d2b1f;border:1px solid #4a6040;border-radius:8px;color:#cbd9bb;white-space:normal}.shot-end-choice button.active{background:#354b2d;border-color:#b5ca91;box-shadow:inset 3px 0 #c9d99c}.shot-end-choice strong,.shot-end-choice small{display:block}.shot-end-choice strong{font-size:11px}.shot-end-choice small{margin-top:4px;color:#a9bd99;font-size:9px;line-height:1.5}

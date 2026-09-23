@@ -214,7 +214,11 @@ func advance() -> void:
 	if not _playing or _paused:
 		return
 	var shot: Dictionary = _current_shot()
-	if _elapsed + EPS < float(shot["dialogueStart"]) or _dialogue_index >= shot["bubbles"].size():
+	if _elapsed + EPS < float(shot["dialogueStart"]):
+		return
+	if _dialogue_index >= shot["bubbles"].size():
+		if str(shot.get("endAdvance", "auto")) == "click" and _elapsed + EPS >= float(shot["duration"]):
+			_finish_current_shot()
 		return
 	var bubble: Dictionary = shot["bubbles"][_dialogue_index]
 	if TextAnimation.needs_completion(bubble, _dialogue_elapsed, _text_completed_at):
@@ -224,7 +228,10 @@ func advance() -> void:
 	_dialogue_index += 1
 	_dialogue_elapsed = 0.0
 	_text_completed_at = -1.0
-	_settle()
+	if str(shot.get("endAdvance", "auto")) == "click" and _dialogue_index >= shot["bubbles"].size() and _elapsed + EPS >= float(shot["duration"]):
+		_finish_current_shot()
+	else:
+		_settle()
 	queue_redraw()
 
 func _failure(message: String) -> bool:
@@ -373,6 +380,11 @@ func _settle() -> void:
 	var shot: Dictionary = _current_shot()
 	if _elapsed + EPS < float(shot["duration"]) or _dialogue_index < shot["bubbles"].size():
 		return
+	if str(shot.get("endAdvance", "auto")) == "click":
+		return
+	_finish_current_shot()
+
+func _finish_current_shot() -> void:
 	if _shot_index + 1 < _document["shots"].size():
 		_enter_shot(_shot_index + 1)
 	else:

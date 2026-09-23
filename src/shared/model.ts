@@ -47,6 +47,8 @@ export interface Bubble extends Box {
 }
 export interface Shot {
   id: string; name: string; duration: number;
+  /** Missing in existing films means automatic passage after duration and dialogues. */
+  endAdvance?: 'auto' | 'click';
   background: { asset: AssetRef | null; fit: 'cover' | 'contain' };
   camera: { preset: CameraPreset; intensity: number };
   transition: { type: 'cut' | 'fade'; duration: number };
@@ -72,6 +74,7 @@ export interface StudioAPI {
   chooseLibrary(): Promise<LibrarySnapshot | null>;
   exampleLibrary(): Promise<LibrarySnapshot>;
   refreshLibrary(): Promise<LibrarySnapshot | null>;
+  importImages(): Promise<Asset[] | null>;
   openCinematic(): Promise<OpenResult | null>;
   listRecentProjects(): Promise<RecentProjectsSnapshot>;
   openRecentProject(id: string): Promise<OpenResult>;
@@ -98,7 +101,7 @@ export const STAGE = { width: 1600, height: 900 } as const;
 export const uid = () => globalThis.crypto.randomUUID();
 export const copy = <T>(value: T): T => structuredClone(value);
 export function newShot(background: AssetRef | null = null): Shot {
-  return { id: uid(), name: 'Nouveau plan', duration: 6, background: { asset: background, fit: 'cover' },
+  return { id: uid(), name: 'Nouveau plan', duration: 6, endAdvance: 'auto', background: { asset: background, fit: 'cover' },
     camera: { preset: 'fixed', intensity: 0.35 }, transition: { type: 'fade', duration: 0.6 },
     actors: [], bubbles: [], dialogueStart: 0.8, audio: null };
 }

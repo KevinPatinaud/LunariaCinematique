@@ -79,7 +79,7 @@
                 "type": "string",
                 "enum": [
                   "radish",
-                  "bramble",
+                  "rose",
                   "hazel",
                   "fern",
                   "dandelion",
@@ -430,7 +430,7 @@
                   "pump",
                   "factory",
                   "devourer",
-                  "corrupted_bramble",
+                  "corrupted_rose",
                   "furnace",
                   "thorn_knot"
                 ]
@@ -2329,6 +2329,12 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 160
+              },
+              "ownerSpeciesId": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 100,
+                "pattern": "^[a-zA-Z0-9_-]*$"
               },
               "kind": {
                 "type": "string",

@@ -45,7 +45,7 @@ test.beforeEach(async()=>{
   delete env.LUNARIA_DEV_URL;
   app=await _electron.launch({args:[ROOT],env:{...env,LUNARIA_E2E:'1',LUNARIA_TEST_USER_DATA:profile}});
   page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
-  await page.waitForURL('app://studio/index.html');await expect(page.getByText('V1.9',{exact:true})).toBeVisible();
+  await page.waitForURL('app://studio/index.html');await expect(page.getByText('V1.10',{exact:true})).toBeVisible();
   await app.evaluate(({dialog},target)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:target});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},target);
 });
 test.afterEach(async({},testInfo)=>{
@@ -68,7 +68,7 @@ test('déplacement, duplication et suppression de plusieurs objets via le vrai p
 });
 test('favoris réellement persistés entre deux chargements du renderer',async()=>{
   await page.locator('.asset-favorite').first().click();await page.getByRole('button',{name:'Favoris',exact:true}).click();await expect(page.locator('.asset-card')).toHaveCount(1);
-  await page.reload();await expect(page.getByText('V1.9',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Favoris',exact:true}).click();await expect(page.locator('.asset-card')).toHaveCount(1);
+  await page.reload();await expect(page.getByText('V1.10',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Favoris',exact:true}).click();await expect(page.locator('.asset-card')).toHaveCount(1);
 });
 test('continuer un plan et générer le modèle dialogue à deux',async()=>{
   const doc=await openFixture();await page.getByRole('button',{name:'Continuer ce plan',exact:true}).click();const continued=await saveCurrent();expect(continued.shots).toHaveLength(2);expect(continued.shots[1].bubbles).toHaveLength(0);expect(continued.shots[1].actors.map(a=>[a.x,a.y])).toEqual(doc.shots[0].actors.map(a=>[a.x,a.y]));
@@ -129,6 +129,20 @@ function playbackFixture(): Cinematic {
   const last = newShot(doc.shots[0].background.asset); last.name = 'Plan suivant'; last.duration = 20;
   doc.shots.push(next, last); return doc;
 }
+test('choix clair du passage au plan suivant, sauvegarde et aperçu par clic',async()=>{
+  const doc=fixture();doc.shots[0].duration=1;doc.shots[0].bubbles=[];
+  const next=newShot(doc.shots[0].background.asset);next.name='Plan cible';next.duration=20;doc.shots.push(next);
+  await openFixture(doc);
+  const choices=page.getByRole('group',{name:'Passage au plan suivant'});
+  await expect(choices.getByRole('button',{name:/Enchaîner automatiquement/})).toHaveAttribute('aria-pressed','true');
+  await choices.getByRole('button',{name:/Attendre un clic/}).click();
+  const saved=await saveCurrent();expect(saved.shots[0].endAdvance).toBe('click');
+  await page.getByRole('button',{name:'Tout lire',exact:true}).click();
+  await expect(page.getByRole('button',{name:/Passer au plan suivant/})).toBeEnabled();
+  await expect(page.locator('.scene-path')).toContainText('Plan de test');
+  await page.getByRole('button',{name:/Passer au plan suivant/}).click();
+  await expect(page.locator('.scene-path')).toContainText('Plan cible');
+});
 test('lecture depuis le plan choisi et retour au même plan, sans modification du JSON', async () => {
   const doc = playbackFixture(); await openFixture(doc);
   await page.getByTestId('shot-card-1').click();
@@ -243,7 +257,7 @@ test('récents : ouverture, enregistrement sous, métadonnées seules et épingl
   expect(saved.cinematic).toBeUndefined(); expect(saved.shots).toBe(1);
   expect(JSON.stringify(index)).not.toContain('data:image');
   await page.keyboard.press('Escape');
-  await page.reload(); await expect(page.getByText('V1.9', {exact:true})).toBeVisible();
+  await page.reload(); await expect(page.getByText('V1.10', {exact:true})).toBeVisible();
   await expect.poll(() => page.getByRole('button', {name:'Projets récents',exact:true}).isEnabled()).toBe(true);
   const again = await openRecentDialog();
   await expect(again.getByRole('button', {name:'Détacher Test Electron', exact:true})).toBeVisible();
