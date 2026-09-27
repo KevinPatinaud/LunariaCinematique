@@ -59,7 +59,7 @@ export function animationUsages(project:GameProject,section:string,id:string):st
 }
 export function presentationAssets(project:GameProject):string[]{
  const refs=new Set<string>();const visit=(v:unknown)=>{if(typeof v==='string'&&v.startsWith('library://'))refs.add(v);else if(v&&typeof v==='object')Object.values(v).forEach(visit);};
- visit(project.presentation);for(const s of [...project.balance.plants,...project.balance.enemies])visit(s.visual);for(const x of project.combat?.projectiles??[])visit(x.presentation);return [...refs];
+ visit(project.presentation);for(const s of [...project.balance.plants,...project.balance.enemies])visit(s.visual);for(const x of project.combat?.projectiles??[])visit(x.presentation);for(const level of project.levels){visit(level.protectedCell?.image);visit(level.terrainImage);}return [...refs];
 }
 export function crossedMarkers(a:AnimationDefinition,from:number,to:number){
  if(to<from||to<0)return [];const d=duration(a),result:{marker:AnimationDefinition['markers'][number];at:number}[]=[];

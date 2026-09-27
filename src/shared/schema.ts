@@ -35,11 +35,11 @@ const bubble = obj({ ...box, id, kind: en('speech', 'narration'), style: en('par
 const audio: Rule = { ...obj({ asset: ref, volume: num(0, 1), loop: bool }), type: ['object', 'null'] };
 const shot = obj({ id, name: str(180), duration: num(1, 300), endAdvance: en('auto', 'click'), background: obj({ asset: nullableRef, fit: en('cover', 'contain') }),
   camera: obj({ preset: en('fixed', 'zoom_in', 'zoom_out', 'pan_left', 'pan_right', 'pan_up', 'pan_down'), intensity: num(0, 1) }),
-  transition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), actors: arr(actor, 50), bubbles: arr(bubble, 100),
-  dialogueStart: num(0, 300), audio }, ['endAdvance']);
+  transition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), exitTransition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), actors: arr(actor, 50), bubbles: arr(bubble, 100),
+  dialogueStart: num(0, 300), audio }, ['endAdvance', 'exitTransition']);
 export const cinematicSchema = { $schema: 'https://json-schema.org/draft/2020-12/schema',
-  title: 'Lunaria Cinematic v1 / v2 / v3', ...obj({ schemaVersion: { type: 'number', enum: [1, 2, 3,4] }, id, title: str(200),presentationCatalog:CATALOG_LINK_SCHEMA as Rule,
-    stage: obj({ width: { const: 1600 }, height: { const: 900 } }), shots: arr(shot, 500, 1) },['presentationCatalog']) };
+  title: 'Lunaria Cinematic v1 / v2 / v3', ...obj({ schemaVersion: { type: 'number', enum: [1, 2, 3,4] }, id, title: str(200),category: str(100),presentationCatalog:CATALOG_LINK_SCHEMA as Rule,
+    stage: obj({ width: { const: 1600 }, height: { const: 900 } }), shots: arr(shot, 500, 1) },['presentationCatalog','category']) };
 export function isSafeAssetRef(value: unknown): value is `library://${string}` {
   if (typeof value !== 'string' || !value.startsWith('library://') || value.length > 1024) return false;
   const relative = value.slice(10);

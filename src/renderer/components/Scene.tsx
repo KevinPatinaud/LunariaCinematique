@@ -15,13 +15,14 @@ import { STAGE } from '../../shared/model.js';
 import { actorPose, bubbleLayout, bubbleTarget, cameraTransform, clamp, framePatches, tailPoints } from '../../shared/geometry.js';
 export type Selection = { kind: 'shot' } | { kind: 'actor' | 'bubble'; id: string };
 interface Props {
+  exporting?: boolean;
   presentationProject?:GameProject;catalogMatches?:boolean;presentationRunning?:boolean;
   selectionIds?: readonly string[]; lockedIds?: ReadonlySet<string>; hiddenIds?: ReadonlySet<string>; snap?: boolean;
   onGroupSelect?: (ids: string[], additive?: boolean) => void; onBatchUpdate?: (changes: ObjectChange[], label: string) => void;
   motionTime?: number; previewBubbleId?: string; dialogueElapsed?: number; textCompleted?: boolean;
   disabled?: boolean; shot: Shot; assets: Asset[]; selection: Selection; onSelect: (s: Selection, additive?: boolean) => void;
   onUpdate: (kind: 'actor' | 'bubble', id: string, patch: Partial<Actor> | Partial<Bubble>) => void;
-  playing: boolean; elapsed: number; activeBubble: number; onAdvance: () => void;
+  playing: boolean; elapsed: number; exitElapsed?: number; activeBubble: number; onAdvance: () => void;
   onDropAsset: (ref: string, as?: LibraryTab, position?: { x: number; y: number }) => void; guides: boolean;
 }
 interface Drag { kind: 'actor' | 'bubble' | 'marquee'; id: string; ids: string[]; mode: string; start: { x: number; y: number }; box: Box; changes: ObjectChange[]; additive?: boolean; moved?: boolean }
@@ -155,7 +156,7 @@ export function Scene(props: Props) {
           </g>;
         })}
       </g>
-      {props.guides && !animated && <g pointerEvents="none" stroke="white" strokeWidth="1" opacity="0.2" strokeDasharray="8 10"><path d="M533 0v900M1067 0v900M0 300h1600M0 600h1600"/><rect x="48" y="36" width="1504" height="828" fill="none"/></g>}
+      {props.guides && !animated && !props.exporting && <g pointerEvents="none" stroke="white" strokeWidth="1" opacity="0.2" strokeDasharray="8 10"><path d="M533 0v900M1067 0v900M0 300h1600M0 600h1600"/><rect x="48" y="36" width="1504" height="828" fill="none"/></g>}
       <g transform={`translate(${camera.x},${camera.y}) scale(${camera.zoom})`}><CinematicCues project={props.catalogMatches===false?undefined:props.presentationProject} shot={shot} assets={assets} elapsed={elapsed} playing={playing} running={props.presentationRunning??playing}/></g>
       {effectiveShot.bubbles.map((b, i) => {
         if (!animated && hidden.has(b.id)) return null;
@@ -181,7 +182,7 @@ export function Scene(props: Props) {
               <AnimatedBubbleText bubble={b} elapsed={playing ? (props.dialogueElapsed ?? Math.max(0, elapsed - shot.dialogueStart)) : props.previewBubbleId === b.id ? props.motionTime : undefined} completed={playing && props.textCompleted}/>
             </svg>
           </g>
-          {!animated && <g pointerEvents="none"><circle cx={x + 12} cy={y - 12} r="15" fill={selection.kind === 'bubble' && selection.id === b.id ? '#b9d5a0' : '#2e4239'}/><text x={x + 12} y={y - 7} textAnchor="middle" fontSize="16" fill="#101b14">{i + 1}</text></g>}
+          {!animated && !props.exporting && <g pointerEvents="none"><circle cx={x + 12} cy={y - 12} r="15" fill={selection.kind === 'bubble' && selection.id === b.id ? '#b9d5a0' : '#2e4239'}/><text x={x + 12} y={y - 7} textAnchor="middle" fontSize="16" fill="#101b14">{i + 1}</text></g>}
 
         </g>;
       })}
@@ -224,6 +225,7 @@ export function Scene(props: Props) {
       {!animated && snapLines && <g pointerEvents="none" stroke="#e3c785" strokeWidth="2" strokeDasharray="6 4">{snapLines.xLine!==null&&<path d={`M${snapLines.xLine*1600} 0v900`}/>} {snapLines.yLine!==null&&<path d={`M0 ${snapLines.yLine*900}h1600`}/>}</g>}
       {!animated && marquee && <rect pointerEvents="none" data-testid="marquee" x={marquee.x*1600} y={marquee.y*900} width={marquee.width*1600} height={marquee.height*900} fill="#b9d5a022" stroke="#c5dea9" strokeWidth="2"/>}
       {playing && shot.transition.type === 'fade' && elapsed < shot.transition.duration && <rect width="1600" height="900" fill="black" opacity={1 - elapsed / Math.max(0.01, shot.transition.duration)} pointerEvents="none"/>}
+      {playing && props.exitElapsed !== undefined && shot.exitTransition?.type === 'fade' && <rect width="1600" height="900" fill="black" opacity={Math.min(1, props.exitElapsed / shot.exitTransition.duration)} pointerEvents="none"/>}
     </g>
   </svg>;
 }

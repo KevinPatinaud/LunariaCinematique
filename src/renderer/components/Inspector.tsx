@@ -20,6 +20,7 @@ interface Props {
   presentationProject:GameProject;setCatalog:(value:CatalogLink)=>void;
   previewMotion: () => void; previewText: (id: string) => void;
   children?: React.ReactNode; multiCount?: number; objectLocked?: boolean; autoPlace?: () => void;
+  copiedKind?: 'actor' | 'bubble'; copiedName?: string; copySelection: () => void; pasteSelection: () => void;
   doc: Cinematic; shot: Shot; selection: Selection; assets: Asset[]; disabled: boolean;
   updateShot: (patch: Partial<Shot>, key?: string) => void;
   updateObject: (kind: 'actor' | 'bubble', id: string, patch: Partial<Actor> | Partial<Bubble>, key?: string) => void;
@@ -62,6 +63,9 @@ export function Inspector(p: Props) {
         <div className="section-label"><Icon name="layers" size={15}/> TRANSITION D’ENTRÉE</div>
         <div className="segmented"><button className={p.shot.transition.type === 'cut' ? 'active' : ''} onClick={() => p.updateShot({ transition: { type: 'cut', duration: 0 } })}>Coupe</button><button className={p.shot.transition.type === 'fade' ? 'active' : ''} onClick={() => p.updateShot({ transition: { type: 'fade', duration: Math.min(0.6, p.shot.duration) } })}>Depuis le noir</button></div>
         {p.shot.transition.type === 'fade' && <Field label="Durée du fondu"><div className="unit-input"><NumberInput min={0.1} max={Math.min(3, p.shot.duration)} value={p.shot.transition.duration} onCommit={duration => p.updateShot({ transition: { type: 'fade', duration } }, 'fade-duration')}/><span>s</span></div></Field>}
+        <div className="section-label"><Icon name="layers" size={15}/> TRANSITION DE SORTIE</div>
+        <div className="segmented"><button className={p.shot.exitTransition?.type !== 'fade' ? 'active' : ''} onClick={() => p.updateShot({ exitTransition: { type: 'cut', duration: 0 } })}>Coupe</button><button className={p.shot.exitTransition?.type === 'fade' ? 'active' : ''} onClick={() => p.updateShot({ exitTransition: { type: 'fade', duration: p.shot.exitTransition?.type === 'fade' ? p.shot.exitTransition.duration : 0.6 } })}>Vers le noir</button></div>
+        {p.shot.exitTransition?.type === 'fade' && <Field label="Durée du fondu de sortie" hint="Le fondu commence après la durée minimale et toutes les répliques. Si le plan attend un clic, ce clic lance le fondu."><div className="unit-input"><NumberInput min={0.1} max={3} value={p.shot.exitTransition.duration} onCommit={duration => p.updateShot({ exitTransition: { type: 'fade', duration } }, 'exit-fade-duration')}/><span>s</span></div></Field>}
         <div className="section-label"><Icon name="image" size={15}/> DÉCOR</div>
         <p className="asset-reference" title={p.shot.background.asset ?? ''}>{p.shot.background.asset?.split('/').pop() ?? 'Aucun décor sélectionné'}</p>
         <Field label="Cadrage"><select value={p.shot.background.fit} onChange={e => p.updateShot({ background: { ...p.shot.background, fit: e.target.value as 'cover' | 'contain' } })}><option value="cover">Remplir le cadre</option><option value="contain">Afficher l’image entière</option></select></Field>
@@ -103,6 +107,11 @@ export function Inspector(p: Props) {
         <details className="advanced"><summary>Réglages du texte</summary><Field label="Taille du texte"><input type="range" min="18" max="72" step="1" value={bubble.fontSize} onChange={e => changeBubble({ fontSize: +e.target.value }, 'font-size')}/><small>{bubble.fontSize} px dans la scène de référence</small></Field></details>
       </>}
     </fieldset>
+    {(actor || bubble || p.copiedKind) && <div className="inspector-clipboard-actions">
+      {actor && <button className="button subtle" disabled={p.disabled} title="Copier ce personnage pour le coller dans un autre plan (Ctrl+C)" onClick={p.copySelection}>Copier le personnage</button>}
+      {bubble && <button className="button subtle" disabled={p.disabled} title="Copier cette bulle pour la coller dans un autre plan (Ctrl+C)" onClick={p.copySelection}>Copier la bulle</button>}
+      {p.copiedKind && <button className="button subtle" disabled={p.disabled} title={p.copiedKind === 'actor' ? `Coller « ${p.copiedName} » ici, à sa position et à sa taille d’origine (Ctrl+V)` : 'Coller la bulle ici, à sa position et à sa taille d’origine (Ctrl+V)'} onClick={p.pasteSelection}>{p.copiedKind === 'bubble' ? 'Coller la bulle' : 'Coller ici'}</button>}
+    </div>}
     <div className="inspector-actions"><button className="button subtle" onClick={p.duplicate} disabled={p.disabled || p.objectLocked}><Icon name="duplicate" size={15}/> Dupliquer</button><button className="icon-button danger" onClick={p.remove} disabled={p.disabled || p.objectLocked || ((p.multiCount??0)<=1 && !actor && !bubble && p.doc.shots.length === 1)} title="Supprimer la sélection" aria-label="Supprimer la sélection"><Icon name="trash"/></button></div>
   </aside>;
 }

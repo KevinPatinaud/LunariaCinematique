@@ -2,7 +2,13 @@
 
 Sources complètes actualisées depuis V1.9. Profils par espèce, catalogue commun d’animations, atlas/séquences/procédural, marqueurs, audio et VFX, publication partagée et réutilisation cinématique.
 
-**Validation native restante : le build Electron et l’exécution Godot ne sont pas validés. Aucun EXE/APK n’est fourni.** Les tests Node du Studio et des outils du jeu ainsi que la publication réelle de l’atelier ont été exécutés. Le rapport distingue les vérifications disponibles des étapes bloquées.
+Le projet d’auteur `lunaria.game.json` contient maintenant les niveaux, le parcours et les documents complets des cinématiques. Le Studio ouvre, modifie et enregistre ce seul fichier. Les images restent référencées dans `LunariaArtLibrary`.
+
+Au lancement de l’application de bureau, le dernier projet ouvert ou enregistré se recharge automatiquement. Si une copie locale non enregistrée existe, le Studio propose de la reprendre après avoir chargé le projet.
+
+Le bouton **Enregistrer le projet**, présent dans la barre commune aux deux modes, écrit les niveaux et toutes les cinématiques dans le même JSON. Au premier enregistrement, il demande un emplacement ; ensuite, il met à jour ce fichier. Pour créer volontairement un second fichier, ouvrir **Récents → Créer une copie du projet…**. Le menu **Publier et exporter**, dans Niveaux, permet de publier la campagne ou d’exporter le jeu pour PC et Android.
+
+Le bouton **Vue du projet** donne accès à la création de niveaux et de cinématiques, au parcours de campagne, à la bibliothèque et aux vérifications. La barre commune indique si le projet est enregistré ou modifié. Les outils **Animations et sons** se déplient à la demande ; une recherche par nom ou rôle permet de retrouver les personnages, même sans saisir les accents.
 
 - [Installation et utilisation](docs/GUIDE_V1_10.md)
 - [Architecture et contrats](docs/ARCHITECTURE_V1_10.md)
@@ -11,4 +17,4 @@ Sources complètes actualisées depuis V1.9. Profils par espèce, catalogue comm
 
 Extraire les projets dans de nouveaux dossiers et conserver les originaux. Dans le Studio, relier **`game/LunariaArtLibrary`** pour travailler sur la présentation de combat. Le petit exemple autonome `example-library` ne remplace pas cette bibliothèque.
 
-Le jeu actif conserve ses 40 niveaux. L’atelier se publie séparément. Contrats actuels : document de jeu 4, cinématique animée 4, sauvegarde joueur 16, sans migration des anciennes sauvegardes joueur. Les anciennes notes V1.x sont historiques ; les documents V1.10 font référence pour cette livraison.
+Le projet initial et le contenu actif du jeu ne contiennent plus de missions par défaut. L’introduction cinématique reste dans le parcours. La carte du jeu crée ses onglets selon les continents qui possèdent des missions ; un continent vide n’apparaît pas. Les anciens projets liés à des fichiers de cinématiques séparés sont importés dans le document unique lors de leur ouverture dans l’application de bureau.

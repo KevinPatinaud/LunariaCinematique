@@ -1,4 +1,5 @@
-export type Rule = {type?:string;const?:unknown;enum?:unknown[];minimum?:number;maximum?:number;multipleOf?:number;minLength?:number;maxLength?:number;pattern?:string;minItems?:number;maxItems?:number;items?:Rule;properties?:Record<string,Rule>;required?:string[];additionalProperties?:boolean;[key:string]:unknown};
+export type Rule = {type?:string|string[];const?:unknown;enum?:unknown[];minimum?:number;maximum?:number;multipleOf?:number;minLength?:number;maxLength?:number;pattern?:string;minItems?:number;maxItems?:number;items?:Rule;properties?:Record<string,Rule>;required?:string[];additionalProperties?:boolean;[key:string]:unknown};
+import { cinematicSchema } from '../schema.js';
 export const GAME_SCHEMA:Rule = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lunaria.local/game-project.schema.json",
@@ -41,7 +42,7 @@ export const GAME_SCHEMA:Rule = {
         "plants": {
           "type": "array",
           "minItems": 28,
-          "maxItems": 28,
+          "maxItems": 29,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -78,6 +79,7 @@ export const GAME_SCHEMA:Rule = {
                   "fern",
                   "dandelion",
                   "ivy",
+                  "scindapsus",
                   "nettle",
                   "acacia",
                   "baobab",
@@ -383,7 +385,7 @@ export const GAME_SCHEMA:Rule = {
     },
     "levels": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "maxItems": 200,
       "items": {
         "type": "object",
@@ -434,6 +436,12 @@ export const GAME_SCHEMA:Rule = {
             "maxLength": 200,
             "minLength": 0
           },
+          "terrainImage": {
+            "type": "string",
+            "minLength": 11,
+            "maxLength": 500,
+            "pattern": "^library://.+[.]([Pp][Nn][Gg]|[Jj][Pp][Ee]?[Gg]|[Ww][Ee][Bb][Pp])$"
+          },
           "startingEnergy": {
             "type": "number",
             "minimum": 0,
@@ -443,7 +451,7 @@ export const GAME_SCHEMA:Rule = {
           "allowedPlants": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 28,
+            "maxItems": 29,
             "items": {
               "type": "string",
               "maxLength": 100,
@@ -462,13 +470,9 @@ export const GAME_SCHEMA:Rule = {
                 "type": "string",
                 "enum": [
                   "defend",
-                  "escort",
-                  "repair",
-                  "water",
-                  "smog",
-                  "tide",
-                  "rescue",
-                  "containment"
+                  "protect_cell",
+                  "operation",
+                  "rescue"
                 ]
               },
               "target": {
@@ -476,6 +480,28 @@ export const GAME_SCHEMA:Rule = {
                 "minimum": 0,
                 "maximum": 3600,
                 "multipleOf": 1
+              }
+            }
+          },
+          "protectedCell": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["row", "col", "image", "maxHp", "armor", "resistances"],
+            "properties": {
+              "row": {"type": "number", "minimum": 0, "maximum": 4, "multipleOf": 1},
+              "col": {"type": "number", "minimum": 0, "maximum": 7, "multipleOf": 1},
+              "image": {"type": "string", "minLength": 11, "maxLength": 500, "pattern": "^library://.+[.]([Pp][Nn][Gg]|[Ww][Ee][Bb][Pp])$"},
+              "maxHp": {"type": "number", "minimum": 1, "maximum": 6000, "multipleOf": 1},
+              "armor": {"type": "number", "minimum": 0, "maximum": 0.95},
+              "resistances": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["physical", "piercing", "toxic"],
+                "properties": {
+                  "physical": {"type": "number", "minimum": 0, "maximum": 0.95},
+                  "piercing": {"type": "number", "minimum": 0, "maximum": 0.95},
+                  "toxic": {"type": "number", "minimum": 0, "maximum": 0.95}
+                }
               }
             }
           },
@@ -506,6 +532,12 @@ export const GAME_SCHEMA:Rule = {
                   "maxLength": 100,
                   "minLength": 1,
                   "pattern": "^[a-zA-Z0-9_-]+$"
+                },
+                "seedReward": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 10000,
+                  "multipleOf": 1
                 },
                 "groups": {
                   "type": "array",
@@ -661,7 +693,7 @@ export const GAME_SCHEMA:Rule = {
       "properties": {
         "steps": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "maxItems": 1000,
           "items": {
             "type": "object",
@@ -752,9 +784,11 @@ const idRule:Rule={...str(100,1),pattern:'^[a-zA-Z0-9_-]+$'};
 const enumeration=(...values:string[]):Rule=>({type:'string',enum:values});
 const ids:Rule={type:'array',minItems:0,maxItems:8,items:idRule};
 const base={id:idRule,name:str(120,1),description:str(1000)};
-const effect=obj({...base,kind:enumeration('damage','heal','poison','regeneration','slow','root','stun','weaken','armor_break','damage_boost','protection','cleanse','reward_mark'),valueSource:enumeration('fixed','attack','strength'),amount:num(0,10000),damageType:enumeration('inherit','physical','piercing','toxic','pure'),duration:num(.05,120),tickInterval:num(.05,30)});
-const projectile=obj({...base,speed:num(.1,20),lifetime:num(.1,30),maxHits:num(1,16,true),hitRadius:num(.01,.5),splashRadius:num(0,4),rowRadius:num(0,4,true),color:{...str(7,7),pattern:'^#[0-9a-fA-F]{6}$'},size:num(.02,.3)});
-const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','strongest','wounded'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
+const effect=obj({...base,kind:enumeration('damage','heal','poison','regeneration','slow','root','stun','weaken','armor_break','damage_boost','attack_speed_boost','protection','cleanse','counter_cooldown','reward_mark'),valueSource:enumeration('fixed','attack','strength'),amount:num(0,10000),damageType:enumeration('inherit','physical','piercing','toxic','pure'),duration:num(.05,120),tickInterval:num(.05,30)});
+const projectile=obj({...base,speed:num(0,20),lifetime:num(.1,30),maxHits:num(1,16,true),hitRadius:num(.01,.5),splashRadius:num(0,4),rowRadius:num(0,4,true),color:{...str(7,7),pattern:'^#[0-9a-fA-F]{6}$'},size:num(.02,.3)});
+const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','strongest','wounded','random'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
+ability.properties!.excludeSelf={type:'boolean'};
+ability.properties!.requiresActiveAttack={type:'boolean'};
 const array=(items:Rule,maxItems:number):Rule=>({type:'array',minItems:1,maxItems,items});
 GAME_SCHEMA.properties!.schemaVersion={type:'number',enum:[1,2],multipleOf:1};
 GAME_SCHEMA.properties!.combat=obj({abilities:array(ability,256),effects:array(effect,256),projectiles:array(projectile,128)});
@@ -766,3 +800,6 @@ extendLogicSchema(GAME_SCHEMA);
 
 import { extendPresentationSchema } from '../presentation/schema.js';
 extendPresentationSchema(GAME_SCHEMA);
+// Authoring films live inside the same JSON as the levels. Publication removes
+// this field and writes the runtime film snapshots addressed by content hash.
+GAME_SCHEMA.properties!.cinematics={type:'array',minItems:0,maxItems:500,items:cinematicSchema as Rule};

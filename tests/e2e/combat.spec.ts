@@ -18,20 +18,20 @@ test.beforeEach(async()=>{
  await navigation.getByRole('button',{name:/^Attaque/}).click();
 });
 test.afterEach(async({},info)=>{if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('combat',{body:await page.screenshot(),contentType:'image/png'});await app?.close();await fs.rm(dir,{recursive:true,force:true});});
-async function save(){await page.locator('.gd-toolbar').getByRole('button',{name:'Enregistrer',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');return JSON.parse(await fs.readFile(target,'utf8'));}
+async function save(){await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');return JSON.parse(await fs.readFile(target,'utf8'));}
 test('catalogs persist with v4 and global references',async()=>{
  await expect(page.getByLabel('Nom de l’attaque')).toHaveValue('Tir simple');
  await page.getByLabel('Cadence',{exact:true}).selectOption('fixed');
  await page.getByLabel('Intervalle entre utilisations (s)',{exact:true}).fill('2,5');await page.getByLabel('Intervalle entre utilisations (s)',{exact:true}).press('Tab');
- const doc=await save();expect(doc.schemaVersion).toBe(4);expect(doc.combat.abilities[0].cooldown).toBe(2.5);expect(doc.balance.plants[0].ability_ids).toContain('ab_basic_shot');
+ const doc=await save();expect(doc.schemaVersion).toBe(4);expect(doc.combat.abilities[0].cooldown).toBe(2.5);expect(doc.balance.plants[0].ability_ids).toContain('ab_radish_ricochet');
 });
 test('incompatible targets block publishing and referenced definitions are protected',async()=>{
  await expect(page.getByRole('button',{name:'Supprimer',exact:true})).toBeDisabled();
- await page.getByLabel('Cible',{exact:true}).selectOption('ally');await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
- await page.getByLabel('Cible',{exact:true}).selectOption('opponent');await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeEnabled();
+ await page.getByLabel('Cible',{exact:true}).selectOption('ally');await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
+ await page.keyboard.press('Escape');await page.getByLabel('Cible',{exact:true}).selectOption('opponent');await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeEnabled();
 });
 test('empty effect chain remains recoverable as a draft',async()=>{
- await page.getByRole('button',{name:'Retirer résultat 1',exact:true}).click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Retirer résultat 1',exact:true}).click();await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
  await expect.poll(async()=>{try{const p=JSON.parse(await fs.readFile(path.join(dir,'profile/game-recovery.json'),'utf8'));return p.combat.abilities[0].effects.length;}catch{return -1;}}).toBe(0);
  await page.getByLabel('Ajouter un résultat existant',{exact:true}).selectOption('fx_attack');expect((await save()).combat.abilities[0].effects).toEqual(['fx_attack']);
 });

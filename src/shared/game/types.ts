@@ -2,6 +2,7 @@ import type { PresentationCatalog, SpeciesVisual } from '../presentation/types.j
 import type { LogicCatalog, LevelEvent } from './logic.js';
 import type { CombatCatalog } from './combat.js';
 import type { OpenResult } from '../model.js';
+import type { Cinematic } from '../model.js';
 /** Game authoring contract. Level records contain references, never combat-stat overrides. */
 export const DAMAGE_TYPES = ['physical','piercing','toxic','pure'] as const;
 export type DamageType = typeof DAMAGE_TYPES[number];
@@ -17,22 +18,25 @@ export interface PlantDefinition {
  damage_type:DamageType;armor:number;resistances:Resistances;
 }
 export interface EnemyDefinition {animationProfileId?:string;visual?:SpeciesVisual;behaviorId?:string;ability_ids?:string[];id:string;name:string;hp:number;speed:number;attack:number;leak:number;reward:number;reach:number;damage_type:DamageType;armor:number;resistances:Resistances;special_damage:number}
-export const OBJECTIVES = ['defend','escort','repair','water','smog','tide','rescue','containment'] as const;
-export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',escort:'Escorte',repair:'Travaux',water:'Remise en eau',smog:'Refuge',tide:'Refuge des marées',rescue:'Sauvetage',containment:'Confinement'};
+export const OBJECTIVES = ['defend','protect_cell','operation','rescue'] as const;
+export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',protect_cell:'Protéger une case',operation:'Opération',rescue:'Sauvetage'};
+export interface ProtectedCell {row:number;col:number;image:`library://${string}`;maxHp:number;armor:number;resistances:Resistances}
 export interface SpawnGroup {id:string;enemyId:string;count:number;lane:number;start:number;interval:number}
-export interface WaveDefinition {id:string;groups:SpawnGroup[]}
+export const DEFAULT_WAVE_SEED_REWARD=50;
+export interface WaveDefinition {id:string;groups:SpawnGroup[];seedReward?:number}
 export interface StoryLine {speaker:string;text:string}
 export interface LevelDefinition {
- events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;startingEnergy:number;allowedPlants:string[];
- objective:{type:typeof OBJECTIVES[number];target:number};objectiveText:string;tip:string;waves:WaveDefinition[];
+ events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;terrainImage?:`library://${string}`;startingEnergy:number;allowedPlants:string[];
+ objective:{type:typeof OBJECTIVES[number];target:number};protectedCell?:ProtectedCell;objectiveText:string;tip:string;waves:WaveDefinition[];
  briefing:StoryLine[];outro:StoryLine[];midDialogue:StoryLine[];midWave:number;restoration:string;
 }
 export interface CampaignFilm {id:string;title:string;file:string;documentId:string}
+export interface ImportedCampaignFilm {film:CampaignFilm;cinematic:Cinematic}
 export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean};
 export interface CampaignSequence {steps:CampaignStep[];cinematics:CampaignFilm[]}
 export interface CampaignCheck {films:number;assets:number;steps:number;levels:number;warnings:string[]}
-export interface GameProject {schemaVersion:1|2|3|4;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];campaign?:CampaignSequence}
-export interface GameFile {project:GameProject;path:string;token:string}
+export interface GameProject {schemaVersion:1|2|3|4;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
+export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean}
 export interface GameRecent {path:string;title:string;updatedAt:string}
 export interface GameBootstrap {recovery:GameProject|null;recent:GameRecent[]}
 export interface GamePreviewResult {path:string;levelId:string;title:string;gameRoot:string;executable:string;simulated:boolean}
@@ -47,7 +51,7 @@ export interface GameAPI {
  build(project:GameProject,target:GameBuildTarget):Promise<GameBuildResult|null>;
  campaignFolder():Promise<string>;
  chooseCampaignFolder():Promise<string|null>;
- addCampaignFilm():Promise<CampaignFilm|null>;
+ addCampaignFilm():Promise<ImportedCampaignFilm|null>;
  editCampaignFilm(file:string,documentId:string):Promise<OpenResult>;
  checkCampaign(project:GameProject):Promise<CampaignCheck>;
  presentationUsages(project:GameProject):Promise<{references:Record<string,string[]>;errors:string[]}>;
@@ -55,7 +59,7 @@ export interface GameAPI {
 export const newId = (prefix:string) => `${prefix}_${globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12)}`;
 export function newLevel(plants:string[], enemyId:string):LevelDefinition {
  return {events:[],id:newId('level'),title:'Nouveau niveau',subtitle:'',act:0,location:'',startingEnergy:520,allowedPlants:plants.slice(0,2),
- objective:{type:'defend',target:0},objectiveText:'Repousser les vagues.',tip:'',waves:[{id:newId('wave'),groups:[{id:newId('group'),enemyId,count:5,lane:-1,start:.25,interval:3.5}]}],
+ objective:{type:'defend',target:0},objectiveText:'Repousser les vagues.',tip:'',waves:[{id:newId('wave'),seedReward:DEFAULT_WAVE_SEED_REWARD,groups:[{id:newId('group'),enemyId,count:5,lane:-1,start:.25,interval:3.5}]}],
  briefing:[],outro:[],midDialogue:[],midWave:0,restoration:''};
 }
 export function cloneLevel(level:LevelDefinition):LevelDefinition {

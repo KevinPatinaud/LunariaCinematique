@@ -52,11 +52,15 @@ export interface Shot {
   background: { asset: AssetRef | null; fit: 'cover' | 'contain' };
   camera: { preset: CameraPreset; intensity: number };
   transition: { type: 'cut' | 'fade'; duration: number };
+  /** Optional so existing projects keep an immediate cut at the end. */
+  exitTransition?: { type: 'cut' | 'fade'; duration: number };
   actors: Actor[]; bubbles: Bubble[]; dialogueStart: number;
   audio: { asset: AssetRef; volume: number; loop: boolean } | null;
 }
 export interface Cinematic {
   schemaVersion: 1 | 2 | 3 | 4; presentationCatalog?:CatalogLink; id: string; title: string;
+  /** Optional Studio category used to browse films in a project. */
+  category?: string;
   stage: { width: 1600; height: 900 };
   shots: Shot[];
 }
@@ -84,6 +88,11 @@ export interface StudioAPI {
   clearRecentProjects(): Promise<void>;
   revealRecentProject(id: string): Promise<void>;
   saveCinematic(cinematic: Cinematic, saveAs: boolean, documentToken: string): Promise<SaveResult | null>;
+  beginJpgExport(title: string, count: number): Promise<{ id: string; path: string } | null>;
+  writeJpgFrame(id: string, index: number, dataUrl: string): Promise<void>;
+  imageDataForJpg(ref: AssetRef): Promise<string>;
+  finishJpgExport(id: string): Promise<string>;
+  cancelJpgExport(id: string): Promise<void>;
   autosave(cinematic: Cinematic, documentToken: string): Promise<void>;
   listVersions(documentToken: string): Promise<VersionSummary[]>;
   createVersion(cinematic: Cinematic, documentToken: string, label: string): Promise<VersionSummary>;
@@ -102,7 +111,7 @@ export const uid = () => globalThis.crypto.randomUUID();
 export const copy = <T>(value: T): T => structuredClone(value);
 export function newShot(background: AssetRef | null = null): Shot {
   return { id: uid(), name: 'Nouveau plan', duration: 6, endAdvance: 'auto', background: { asset: background, fit: 'cover' },
-    camera: { preset: 'fixed', intensity: 0.35 }, transition: { type: 'fade', duration: 0.6 },
+    camera: { preset: 'fixed', intensity: 0.35 }, transition: { type: 'fade', duration: 0.6 }, exitTransition: { type: 'cut', duration: 0 },
     actors: [], bubbles: [], dialogueStart: 0.8, audio: null };
 }
 export function hasV2Features(cinematic: Cinematic): boolean {
@@ -148,6 +157,27 @@ export function duplicateShot(source: Shot): Shot {
   shot.actors.forEach(actor => { const id = uid(); ids.set(actor.id, id); actor.id = id; });
   shot.bubbles.forEach(bubble => { bubble.id = uid(); if (bubble.speakerId) bubble.speakerId = ids.get(bubble.speakerId) ?? null; });
   return shot;
+}
+/** Copy a whole film without sharing editable objects or internal identifiers. */
+export function duplicateCinematic(source: Cinematic, existingTitles: readonly string[] = []): Cinematic {
+  const cinematic = copy(source);
+  cinematic.id = `CIN_${uid().replaceAll('-', '').slice(0, 12)}`;
+  const used = new Set(existingTitles.map(title => title.normalize('NFC').toLocaleLowerCase()));
+  const base = source.title.trim() || 'Cinématique';
+  let number = 1;
+  let suffix = ' — copie';
+  let title = base.slice(0, 200 - suffix.length) + suffix;
+  while (used.has(title.normalize('NFC').toLocaleLowerCase())) {
+    suffix = ` — copie ${++number}`;
+    title = base.slice(0, 200 - suffix.length) + suffix;
+  }
+  cinematic.title = title;
+  cinematic.shots = source.shots.map(shot => {
+    const duplicate = duplicateShot(shot);
+    duplicate.name = shot.name;
+    return duplicate;
+  });
+  return cinematic;
 }
 export function removeActor(shot: Shot, id: string): void {
   const removed = shot.actors.find(actor => actor.id === id);

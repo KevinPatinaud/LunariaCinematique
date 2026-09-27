@@ -6,6 +6,7 @@ import { logicFilmIds } from './logic.js';
 import { combatIssues } from './combatValidation.js';
 import { ensureCombat } from './combatDefaults.js';
 import { safeMoviePath } from './campaign.js';
+import { validationIssues as cinematicIssues } from '../schema.js';
 import { GAME_SCHEMA, type Rule } from './schema.js';
 import { totalEnemies, type GameProject } from './types.js';
 export interface GameIssue {path:string;message:string;levelId?:string;severity:'error'|'warning'}
@@ -14,7 +15,7 @@ export function walkRule(rule:Rule,value:unknown,path:string,issues:GameIssue[])
  const fail=(message:string)=>issues.push({path,message,severity:'error'});
  if(Object.hasOwn(rule,'const')&&value!==rule.const){fail('Valeur incompatible avec ce format.');return;}
  const kind=Array.isArray(value)?'array':value===null?'null':typeof value;
- if(rule.type&&kind!==rule.type){fail(`Type ${rule.type} attendu.`);return;}
+ if(rule.type&&!(Array.isArray(rule.type)?rule.type.includes(kind):kind===rule.type)){fail(`Type ${rule.type} attendu.`);return;}
  if(rule.enum&&!rule.enum.includes(value)){fail('Valeur non reconnue par le jeu.');return;}
  if(typeof value==='number'){
   if(!Number.isFinite(value)||value<(rule.minimum??-Infinity)||value>(rule.maximum??Infinity))fail(`Valeur attendue entre ${rule.minimum} et ${rule.maximum}.`);
@@ -33,9 +34,15 @@ export function walkRule(rule:Rule,value:unknown,path:string,issues:GameIssue[])
 }
 export function gameIssues(input:unknown):GameIssue[]{
  const issues:GameIssue[]=[];walkRule(GAME_SCHEMA,input,'projet',issues);if(issues.length)return issues;
- const p=input as GameProject; const seen=new Set<string>();
+  const p=input as GameProject; const seen=new Set<string>();
  const unique=(id:string,path:string)=>{if(seen.has(id))issues.push({path,message:`Identifiant répété : ${id}`,severity:'error'});seen.add(id);};
- for(const x of p.balance.plants)unique(x.id,'balance.plants');for(const x of p.balance.enemies)unique(x.id,'balance.enemies');
+  for(const x of p.balance.plants)unique(x.id,'balance.plants');for(const x of p.balance.enemies)unique(x.id,'balance.enemies');
+  const embeddedIds=new Set<string>();
+  for(const film of p.cinematics??[]){
+   if(embeddedIds.has(film.id))issues.push({path:'cinematics',message:`Cinématique en double : ${film.id}`,severity:'error'});
+   embeddedIds.add(film.id);
+   for(const message of cinematicIssues(film))issues.push({path:'cinematics.'+film.id,message,severity:'error'});
+  }
  const plants=new Set(p.balance.plants.map(x=>x.id)),enemies=new Set(p.balance.enemies.map(x=>x.id));
  for(const enemy of p.balance.enemies)if(enemy.id!=='thorn_knot'&&enemy.speed<=0)issues.push({path:'balance.enemies.'+enemy.id,message:'La vitesse doit être positive pour entrer sur le plateau.',severity:'error'});
  for(const [i,l] of p.levels.entries()){ 
@@ -44,9 +51,11 @@ export function gameIssues(input:unknown):GameIssue[]{
   if(l.allowedPlants.some(id=>!plants.has(id)))add('Une plante autorisée est absente du catalogue global.');
   if(l.midWave>l.waves.length)add('Le dialogue intermédiaire dépasse le nombre de vagues.');
   if(l.midDialogue.length&&l.midWave===0)add('Choisis une vague pour le dialogue intermédiaire.');
-  if(l.objective.type==='defend'&&l.objective.target!==0)add('Une défense utilise le nombre de vagues : sa cible doit être 0.');
+  if(['defend','protect_cell'].includes(l.objective.type)&&l.objective.target!==0)add('Une défense utilise le nombre de vagues : sa cible doit être 0.');
   if(l.objective.type==='rescue'&&l.objective.target!==3)add('Un sauvetage exige une cible de 3 excroissances.');
-  if(!['defend','rescue'].includes(l.objective.type)&&l.objective.target<1)add('L’objectif de travail exige une cible positive.');
+  if(l.objective.type==='operation'&&l.objective.target<1)add('Une opération exige une cible positive.');
+  if(l.objective.type==='protect_cell'&&!l.protectedCell)add('Choisis la case, l’image et les protections de la cible.');
+  if(l.objective.type==='protect_cell'&&!l.protectedCell?.image)add('Choisis une image PNG ou WebP pour la cible à protéger.');
   if(l.objective.type==='rescue'){
    const n=l.waves.at(-1)!.groups.filter(g=>g.enemyId==='thorn_knot').reduce((n,g)=>n+g.count,0);
    if(n<3)add('Un sauvetage exige au moins 3 excroissances thorn_knot dans la dernière vague.');
@@ -82,7 +91,7 @@ export function gameIssues(input:unknown):GameIssue[]{
     if(Object.keys(step).some(k=>!['id','kind','cinematicId','skippable'].includes(k)))add(path,'Une étape Cinématique ne possède pas de niveau.');
    }
   }
-  if(!used.size)add('campaign.steps','Ajoute au moins un niveau à la campagne.');
+   if(!used.size&&p.levels.length>0)add('campaign.steps','Ajoute au moins un niveau à la campagne.');
   const unused=p.levels.length-used.size;if(unused>0)add('campaign.steps',`${unused} niveau(x) conservé(s) dans le Studio mais non publié(s), car absent(s) du parcours.`,'warning');
   for(const id of logicFilmIds(p))usedFilms.add(id);
   const unusedFilms=cinematics.filter(f=>!usedFilms.has(f.id)).length;if(unusedFilms)add('campaign.cinematics',`${unusedFilms} film(s) du catalogue ne sont pas utilisés et ne seront pas publiés.`,'warning');
@@ -110,6 +119,7 @@ function relaxDraftText(rule:Rule):void {
  if(rule.items)relaxDraftText(rule.items);
  for(const [key,child] of Object.entries(rule.properties??{})){
   if(key==='allowedPlants'||key==='effects'&&child.type==='array')child.minItems=0;
+  if(key==='image'&&child.pattern?.startsWith('^library://')){child.minLength=0;delete child.pattern;}
   relaxDraftText(child);
  }
 }

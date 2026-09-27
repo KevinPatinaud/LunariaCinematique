@@ -6,7 +6,7 @@ export interface FilmUsages {references:Record<string,string[]>;errors:string[]}
 export async function presentationFilmUsages(project:GameProject,sources:CampaignSources):Promise<FilmUsages>{
  const references:Record<string,string[]>={},errors:string[]=[];
  for(const film of project.campaign?.cinematics??[]){
-  try{const {cinematic}=await sources.resolve(film.file,film.documentId);
+  try{const cinematic=project.cinematics?.find(doc=>doc.id===film.documentId)??(await sources.resolve(film.file,film.documentId)).cinematic;
    if(cinematic.presentationCatalog?.projectId!==project.id)continue;
    for(const shot of cinematic.shots)for(const actor of shot.actors){const binding=actor.animation;
     if(binding?.mode==='animation'&&binding.animationId)(references[binding.animationId]??=[]).push(`Film lié : ${film.title} / ${shot.name} / ${actor.name}`);

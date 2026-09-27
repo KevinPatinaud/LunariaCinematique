@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Asset, LibrarySnapshot } from '../../shared/model.js';
 import { assetMatchesTab, buildFolderTree, filterLibraryAssets, folderLabel, normalizeSearch, parentFolders,
   type FolderNode, type LibraryPreferences, type LibraryTab } from '../../shared/libraryBrowser.js';
-import { ASSET_MIME, ASSET_KIND_MIME } from '../../shared/assets.js';
+import { ASSET_MIME, ASSET_KIND_MIME, isImage } from '../../shared/assets.js';
 import { Icon } from './Icon.js';
 import { LibraryResizeHandle } from './LibraryResizeHandle.js';
 export type { LibraryTab } from '../../shared/libraryBrowser.js';
@@ -15,23 +15,29 @@ const tabs = [
 ] as const;
 const allLabels: Record<LibraryTab, string> = { environment: 'Tous les lieux', character: 'Tous les personnages', enemy: 'Tous les ennemis', prop: 'Tous les objets', ui: 'Tous les modèles', audio: 'Tous les sons' };
 const actionLabels: Record<LibraryTab, string> = { environment: 'Utiliser comme décor', character: 'Ajouter le personnage', enemy: 'Ajouter l’ennemi', prop: 'Ajouter l’objet', ui: 'Appliquer à la bulle', audio: 'Ajouter au plan' };
-interface Props {
+export interface LibraryProps {
   library: LibrarySnapshot | null; tab: LibraryTab; setTab: (tab: LibraryTab) => void;
   choose: () => void; refresh: () => void; useAsset: (asset: Asset, as: LibraryTab) => boolean | Promise<boolean>;
   disabled: boolean; busy: boolean;
-  collections: {favorites: readonly string[]; recent: readonly string[]; toggle: (ref: Asset['ref']) => void; clearRecent: () => void};
+  collections: {favorites: readonly string[]; recent: readonly string[]; favoriteFolders: readonly string[];
+    toggle: (ref: Asset['ref']) => void; toggleFolder: (path: string) => void; use: (ref: Asset['ref']) => void; clearRecent: () => void};
   layout: { preferences: LibraryPreferences; width: number; maxWidth: number; update: (patch: Partial<LibraryPreferences>) => void };
+  picker?: { label: string; multiple: boolean; chosen: readonly string[]; toggle: (ref: string) => void;
+    select: (refs: string[]) => void; close: () => void; importFiles: () => void; importing: boolean; error: string };
 }
 
-function FolderTree({ nodes, folder, select, openPaths, toggle, total, allLabel }: {
+function FolderTree({ nodes, folder, select, openPaths, toggle, total, allLabel, favorites, toggleFavorite }: {
   nodes: FolderNode[]; folder: string; select: (folder: string) => void; openPaths: Set<string>;
   toggle: (path: string) => void; total: number; allLabel: string;
+  favorites: readonly string[]; toggleFavorite: (path: string) => void;
 }) {
   const [query, setQuery] = useState('');
   const needle = normalizeSearch(query);
   const matches = (node: FolderNode): boolean => normalizeSearch(node.path + ' ' + node.label).includes(needle) || node.children.some(matches);
   const render = (siblings: FolderNode[], depth: number): React.ReactNode => siblings.filter(n => !needle || matches(n)).map(node => {
     const hasChildren = node.children.length > 0, open = !!needle || openPaths.has(node.path);
+    const favorite = favorites.includes(node.path);
+    const favoriteAction = `${favorite ? 'Retirer' : 'Ajouter'} le dossier ${node.label} ${favorite ? 'des' : 'aux'} favoris`;
     return <li key={node.path}>
       <div className={`folder-row ${folder === node.path ? 'selected' : ''}`} style={{ paddingLeft: 5 + depth * 13 }}>
         {hasChildren ? <button className={`tree-toggle ${open ? 'open' : ''}`} aria-label={`${open ? 'Replier' : 'Déplier'} ${node.label}`}
@@ -39,6 +45,8 @@ function FolderTree({ nodes, folder, select, openPaths, toggle, total, allLabel 
         <button className="folder-name" aria-current={folder === node.path ? 'location' : undefined} onClick={() => select(node.path)} title={node.path}>
           <Icon name="folder" size={14}/><span>{node.label}</span><small>{node.count}</small>
         </button>
+        <button className={`folder-favorite ${favorite ? 'active' : ''}`} title={`${favoriteAction} · ${node.path}`}
+          aria-label={favoriteAction} aria-pressed={favorite} onClick={() => toggleFavorite(node.path)}><Icon name="star" size={13}/></button>
       </div>
       {hasChildren && open && <ul>{render(node.children, depth + 1)}</ul>}
     </li>;
@@ -61,10 +69,11 @@ function AssetThumbnail({ asset }: { asset: Asset }) {
   </div>;
 }
 
-function AssetResults({ assets, selectedRef, onPick, onUse, disabled, view, size, resetKey, expanded, tab, empty, favorites, toggleFavorite }: {
+function AssetResults({ assets, selectedRef, chosenRefs, onPick, onUse, disabled, view, size, resetKey, expanded, tab, empty, favorites, toggleFavorite, actionLabel, picker }: {
   assets: Asset[]; selectedRef: string | null; onPick: (ref: string) => void; onUse: (asset: Asset) => void;
   disabled: boolean; view: LibraryPreferences['view']; size: LibraryPreferences['size']; resetKey: string;
   expanded: boolean; tab: LibraryTab; empty: React.ReactNode; favorites: readonly string[]; toggleFavorite: (ref: Asset['ref']) => void;
+  chosenRefs?: readonly string[]; actionLabel: string; picker: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null), sentinel = useRef<HTMLDivElement>(null);
   const [limit, setLimit] = useState(60);
@@ -81,16 +90,17 @@ function AssetResults({ assets, selectedRef, onPick, onUse, disabled, view, size
   return <div className={`library-results view-${view} size-${size}`} ref={scroller} aria-label="Résultats de la bibliothèque">
     <div className="asset-grid">{assets.slice(0, limit).map(asset => <div className={`asset-tile ${selectedRef === asset.ref ? 'picked' : ''}`} key={asset.ref}>
       <button className={`asset-card ${selectedRef === asset.ref ? 'picked' : ''}`} data-asset-ref={asset.ref}
-        aria-label={asset.name} aria-pressed={selectedRef === asset.ref} disabled={disabled} draggable={!disabled && !expanded}
-        title={`${asset.path}\n${expanded ? 'Double-cliquer pour ajouter au plan et revenir à la scène.' : 'Double-cliquer pour ajouter · Glisser vers la scène.'}`}
+        aria-label={asset.name} aria-pressed={selectedRef === asset.ref} disabled={disabled} draggable={!disabled && !expanded && !picker}
+        title={`${asset.path}\n${picker ? 'Double-cliquer pour choisir cette image.' : expanded ? 'Double-cliquer pour ajouter au plan et revenir à la scène.' : 'Double-cliquer pour ajouter · Glisser vers la scène.'}`}
         onDragStart={e => { onPick(asset.ref); e.dataTransfer.setData(ASSET_MIME, asset.ref); e.dataTransfer.setData(ASSET_KIND_MIME, tab); e.dataTransfer.effectAllowed = 'copy'; }}
         onClick={() => onPick(asset.ref)} onDoubleClick={() => onUse(asset)}
         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onUse(asset); } }}>
         <AssetThumbnail asset={asset}/>
         <span className="asset-copy"><span className="asset-name">{asset.name}</span><span className="asset-folder">{asset.folder.split('/').map(folderLabel).join(' / ') || 'Racine'}</span></span>
+        {chosenRefs?.includes(asset.ref) && <span className="asset-picker-order" aria-label={`Image choisie ${chosenRefs.indexOf(asset.ref) + 1}`}>{chosenRefs.indexOf(asset.ref) + 1}</span>}
       </button>
       <button className={`asset-favorite ${favorites.includes(asset.ref) ? 'active' : ''}`} title={favorites.includes(asset.ref) ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-label={`${favorites.includes(asset.ref) ? 'Retirer des favoris' : 'Ajouter aux favoris'} : ${asset.name}`} aria-pressed={favorites.includes(asset.ref)} disabled={disabled} onClick={()=>toggleFavorite(asset.ref)}><Icon name="star" size={13}/></button>
-      <button className="asset-quick-add" title={actionLabels[tab]} aria-label={`${actionLabels[tab]} : ${asset.name}`} disabled={disabled} onClick={() => onUse(asset)}><Icon name="plus" size={14}/></button>
+      <button className="asset-quick-add" title={actionLabel} aria-label={`${actionLabel} : ${asset.name}`} disabled={disabled} onClick={() => onUse(asset)}><Icon name="plus" size={14}/></button>
     </div>)}</div>
     {!assets.length && empty}
     {!!assets.length && <div ref={sentinel} className="library-scroll-end">
@@ -99,8 +109,9 @@ function AssetResults({ assets, selectedRef, onPick, onUse, disabled, view, size
   </div>;
 }
 
-export function Library(props: Props) {
+export function Library(props: LibraryProps) {
   const { library, tab, setTab, layout } = props;
+  const picker = props.picker;
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<'all'|'favorites'|'recent'>('all');
   const [folders, setFolders] = useState<Record<LibraryTab, string>>({ environment: '', character: '', enemy: '', prop: '', ui: '', audio: '' });
@@ -125,12 +136,12 @@ export function Library(props: Props) {
     document.addEventListener('pointerdown', outside); return () => document.removeEventListener('pointerdown', outside);
   }, [folderOpen]);
   useEffect(() => {
-    if (!large) return;
+    if (!large && !picker) return;
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
-    return () => { if (dialog?.open) dialog.close(); expandButton.current?.focus(); };
-  }, [large]);
-  const tabAssets = useMemo(() => library?.assets.filter(asset => assetMatchesTab(asset, tab)) ?? [], [library, tab]);
+    return () => { if (dialog?.open) dialog.close(); if (!picker) expandButton.current?.focus(); };
+  }, [large, !!picker]);
+  const tabAssets = useMemo(() => library?.assets.filter(asset => assetMatchesTab(asset, tab) && (!picker || isImage(asset.path))) ?? [], [library, tab, !!picker]);
   const nodes = useMemo(() => buildFolderTree(tabAssets), [tabAssets]);
   useEffect(() => {
     if (tab !== 'environment' && nodes.length === 1 && nodes[0].children.length) {
@@ -147,7 +158,16 @@ export function Library(props: Props) {
     if (folder && !tabAssets.some(a => a.folder === folder || a.folder.startsWith(folder + '/'))) setFolders(previous => ({ ...previous, [tab]: '' }));
   }, [tabAssets, folder, tab]);
   const selected = results.find(a => a.ref === picked);
-  const counts = useMemo(() => Object.fromEntries(tabs.map(([key]) => [key, library?.assets.filter(a => assetMatchesTab(a, key)).length ?? 0])), [library]);
+  const counts = useMemo(() => Object.fromEntries(tabs.map(([key]) => [key, library?.assets.filter(a => assetMatchesTab(a, key) && (!picker || isImage(a.path))).length ?? 0])), [library, !!picker]);
+  const folderTabs = useMemo(() => {
+    const available = new Map<string, LibraryTab>();
+    for (const asset of library?.assets ?? []) {
+      if (picker && !isImage(asset.path)) continue;
+      const kind = asset.kind === 'other' ? 'environment' : asset.kind;
+      for (const path of parentFolders(asset.folder)) if (!available.has(path)) available.set(path, kind);
+    }
+    return available;
+  }, [library, !!picker]);
   const selectFolder = (path: string) => { setScope('all');
     setFolders(previous => ({ ...previous, [tab]: path })); setPicked(null); setFolderOpen(false);
     setOpenPaths(previous => new Set([...previous, ...parentFolders(path)]));
@@ -157,13 +177,27 @@ export function Library(props: Props) {
   const changeTab = (value: LibraryTab) => { setTab(value); setQuery(''); setPicked(null); setFolderOpen(false); };
   async function useAsset(asset: Asset, as = tab) {
     if (disabled || insertLock.current) return;
+    if (picker) { if (picker.multiple) picker.toggle(asset.ref); else picker.select([asset.ref]); return; }
     insertLock.current = true; setInserting(true); setInsertError('');
     try { const ok = await props.useAsset(asset, as); if (ok && large) setLarge(false); else if (!ok) setInsertError('La ressource n’a pas été ajoutée. Vérifie son type ou son intégrité.'); }
     catch (error) { setInsertError(error instanceof Error ? error.message : String(error)); }
     finally { insertLock.current = false; setInserting(false); }
   }
-  const folderTree = () => <FolderTree nodes={nodes} folder={folder} select={selectFolder} openPaths={openPaths} toggle={toggleFolder} total={tabAssets.length} allLabel={allLabels[tab]}/>;
-  const tabStrip = () => <div className="library-tabs" role="tablist" aria-label="Types de ressources">{tabs.map(([id, icon, label]) =>
+  const folderTree = () => <FolderTree nodes={nodes} folder={folder} select={selectFolder} openPaths={openPaths} toggle={toggleFolder} total={tabAssets.length} allLabel={allLabels[tab]}
+    favorites={props.collections.favoriteFolders} toggleFavorite={props.collections.toggleFolder}/>;
+  const favoriteTab = (path:string):LibraryTab|undefined => folderTabs.get(path);
+  const openFavoriteFolder = (path:string) => {
+    const target=favoriteTab(path);if(!target)return;
+    setTab(target);setFolders(previous=>({...previous,[target]:path}));setScope('all');setQuery('');setPicked(null);setFolderOpen(false);
+    setOpenPaths(previous=>new Set([...previous,...parentFolders(path)]));
+  };
+  const favoriteFolderLinks = () => props.collections.favoriteFolders.length ? <div className="library-folder-favorites" role="group" aria-label="Dossiers favoris">
+    <span>DOSSIERS FAVORIS</span><div>{props.collections.favoriteFolders.map(path=>{const label=folderLabel(path.split('/').at(-1)!);return <div className="favorite-folder-link" key={path}>
+      <button title={path} disabled={!favoriteTab(path)} onClick={()=>openFavoriteFolder(path)}><Icon name="folder" size={13}/><span>{label}</span></button>
+      <button title={`Retirer le dossier ${label} des favoris`} aria-label={`Retirer le dossier ${label} des favoris`} onClick={()=>props.collections.toggleFolder(path)}><Icon name="close" size={12}/></button>
+    </div>;})}</div>
+  </div> : null;
+  const tabStrip = () => <div className="library-tabs" role="tablist" aria-label="Types de ressources">{tabs.filter(([id]) => !picker || id !== 'audio').map(([id, icon, label]) =>
     <button key={id} data-tab={id} role="tab" disabled={props.busy || inserting} aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => changeTab(id)} title={`${label} (${counts[id]})`}>
       <Icon name={icon} size={15}/><span>{label}</span><small>{counts[id]}</small>
     </button>)}</div>;
@@ -195,11 +229,11 @@ export function Library(props: Props) {
     {(folder || query) && <button className="button subtle" onClick={() => { selectFolder(''); setQuery(''); }}>Tout afficher</button>}
     {!!folder && !!query && <button className="link-button" onClick={() => selectFolder('')}>Rechercher dans toute la catégorie</button>}
   </div>;
-  const assetResults = (expanded: boolean) => <AssetResults assets={results} selectedRef={picked} onPick={setPicked} onUse={asset => void useAsset(asset)} disabled={disabled}
-    view={layout.preferences.view} size={layout.preferences.size} resetKey={`${library?.rootPath}|${tab}|${folder}|${query}|${scope}`} expanded={expanded} tab={tab} empty={empty} favorites={props.collections.favorites} toggleFavorite={props.collections.toggle}/>;
+  const assetResults = (expanded: boolean) => <AssetResults assets={results} selectedRef={picked} chosenRefs={picker?.multiple ? picker.chosen : undefined} onPick={setPicked} onUse={asset => void useAsset(asset)} disabled={disabled}
+    view={layout.preferences.view} size={layout.preferences.size} resetKey={`${library?.rootPath}|${tab}|${folder}|${query}|${scope}`} expanded={expanded} tab={tab} empty={empty} favorites={props.collections.favorites} toggleFavorite={props.collections.toggle} actionLabel={picker ? picker.multiple ? 'Choisir cette image' : 'Utiliser cette image' : actionLabels[tab]} picker={!!picker}/>;
 
   return <>
-    <aside className="library panel" data-library-surface="sidebar" aria-label="Bibliothèque de ressources">
+    {!picker && <aside className="library panel" data-library-surface="sidebar" aria-label="Bibliothèque de ressources">
       <div className="panel-heading"><span>BIBLIOTHÈQUE</span><div className="library-heading-actions">
         <button className="icon-button" title="Actualiser la bibliothèque" aria-label="Actualiser la bibliothèque" onClick={props.refresh} disabled={props.busy || disabled}><Icon name="refresh" size={15}/></button>
         <button ref={expandButton} className="button library-expand" title="Parcourir en grand" aria-label="Agrandir la bibliothèque" onClick={() => { setFolderOpen(false); setLarge(true); }} disabled={disabled}><Icon name="expand" size={14}/><span>Agrandir</span></button>
@@ -214,6 +248,7 @@ export function Library(props: Props) {
           {folderTree()}
         </div>}
       </div>
+      {favoriteFolderLinks()}
       {viewControls()}
       <div className="results-heading"><span>{query ? 'RÉSULTATS' : 'RESSOURCES DISPONIBLES'}</span><strong aria-live="polite">{results.length}</strong></div>
       {assetResults(false)}
@@ -226,27 +261,28 @@ export function Library(props: Props) {
       {!!library?.warnings.length && <details className="library-warnings"><summary>{library.warnings.length} avertissement(s) bibliothèque</summary>{library.warnings.map((w,i) => <p key={i}>{w}</p>)}</details>}
       <div className="library-note"><span className="status-dot"/> Double-clic pour ajouter · Glisser vers la scène</div>
       <LibraryResizeHandle width={layout.width} maxWidth={layout.maxWidth} resize={width => layout.update({ width })}/>
-    </aside>
-    {large && createPortal(<dialog ref={dialogRef} className="asset-browser-dialog" aria-label="Bibliothèque agrandie" data-library-surface="expanded"
-      onCancel={e => { e.preventDefault(); setLarge(false); }} onKeyDown={e => e.stopPropagation()} onClick={e => { if (e.target === e.currentTarget) setLarge(false); }}>
+    </aside>}
+    {(large || picker) && createPortal(<dialog ref={dialogRef} className="asset-browser-dialog" aria-label={picker ? `Bibliothèque d’images pour ${picker.label}` : 'Bibliothèque agrandie'} data-library-surface="expanded"
+      onCancel={e => { e.preventDefault(); picker ? picker.close() : setLarge(false); }} onKeyDown={e => e.stopPropagation()} onClick={e => { if (e.target === e.currentTarget) picker ? picker.close() : setLarge(false); }}>
       <div className="asset-browser-shell">
-        <header className="asset-browser-header"><div><span className="overline">LUNARIA · BIBLIOTHÈQUE COMMUNE</span><h2>Choisis les éléments de ton plan.</h2><p>Double-clique sur une ressource pour l’ajouter et revenir à la scène.</p></div>
-          <button className="button subtle" onClick={() => setLarge(false)}><Icon name="close" size={16}/> Retour à la scène <kbd>ÉCHAP</kbd></button>
+        <header className="asset-browser-header"><div><span className="overline">LUNARIA · BIBLIOTHÈQUE COMMUNE</span><h2>{picker ? picker.label : 'Choisis les éléments de ton plan.'}</h2><p>{picker ? picker.multiple ? 'Choisis plusieurs images dans l’ordre, puis confirme la sélection.' : 'Double-clique sur une image pour la choisir.' : 'Double-clique sur une ressource pour l’ajouter et revenir à la scène.'}</p></div>
+          <button className="button subtle" onClick={picker ? picker.close : () => setLarge(false)}><Icon name="close" size={16}/> {picker ? 'Fermer' : 'Retour à la scène'} <kbd>ÉCHAP</kbd></button>
         </header>
-        <div className="asset-browser-toolbar">{tabStrip()}{collectionControls()}{search(true)}{viewControls()}</div>
+        <div className="asset-browser-toolbar">{tabStrip()}{collectionControls()}{search(true)}{viewControls()}{picker && <button className="button subtle" disabled={picker.importing} onClick={picker.importFiles}>{picker.importing ? 'Import en cours…' : 'Importer des fichiers…'}</button>}</div>
         <div className="asset-browser-body">
-          <aside className="asset-browser-folders"><div className="browser-section-label"><Icon name="folder" size={14}/> DOSSIERS <button className="link-button" onClick={() => setOpenPaths(new Set())}>Replier</button></div>{folderTree()}</aside>
+          <aside className="asset-browser-folders"><div className="browser-section-label"><Icon name="folder" size={14}/> DOSSIERS <button className="link-button" onClick={() => setOpenPaths(new Set())}>Replier</button></div>{favoriteFolderLinks()}{folderTree()}</aside>
           <section className="asset-browser-gallery"><div className="asset-browser-location">{breadcrumbs()}<strong aria-live="polite">{results.length} élément{results.length > 1 ? 's' : ''}</strong></div>{assetResults(true)}</section>
           <aside className="asset-browser-preview"><div className="browser-section-label">APERÇU</div>
             {selected ? <><div className="asset-preview-image checker">{selected.kind === 'audio' ? <audio controls src={selected.url} preload="none" aria-label={`Écouter ${selected.name}`}/> : <img src={selected.url} alt={selected.name}/>}</div>
               <h3>{selected.name}</h3><p className="asset-preview-path">{selected.path}</p><small>{selected.bytes ? (selected.bytes / 1024 / 1024).toFixed(1) + ' Mo · ' : ''}Référence partagée</small>
-              <button className="button primary full" disabled={disabled} onClick={() => void useAsset(selected)}><Icon name="plus" size={16}/>{actionLabels[tab]}</button>
-              {tab !== 'audio' && tab !== 'enemy' && <button className="link-button" disabled={disabled} onClick={() => void useAsset(selected, 'enemy')}>Ajouter comme ennemi</button>}
-              {tab !== 'audio' && tab !== 'prop' && <button className="link-button" disabled={disabled} onClick={() => void useAsset(selected, 'prop')}>Ajouter comme objet de décoration</button>}
+               <button className="button primary full" disabled={disabled} onClick={() => void useAsset(selected)}><Icon name="plus" size={16}/>{picker ? picker.multiple ? picker.chosen.includes(selected.ref) ? 'Retirer de la sélection' : 'Choisir cette image' : 'Utiliser cette image' : actionLabels[tab]}</button>
+               {!picker && tab !== 'audio' && tab !== 'enemy' && <button className="link-button" disabled={disabled} onClick={() => void useAsset(selected, 'enemy')}>Ajouter comme ennemi</button>}
+               {!picker && tab !== 'audio' && tab !== 'prop' && <button className="link-button" disabled={disabled} onClick={() => void useAsset(selected, 'prop')}>Ajouter comme objet de décoration</button>}
             </> : <div className="asset-preview-empty"><Icon name="image" size={32}/><p>Sélectionne une ressource pour l’examiner ici.</p><small>Un clic pour choisir.<br/>Double-clic pour l’utiliser.</small></div>}
-            {!!insertError && <p className="library-inline-error" role="alert">{insertError}</p>}<div className="asset-preview-note"><Icon name="leaf" size={16}/><span>Les images restent dans ta bibliothèque. Seul leur chemin est enregistré.</span></div>
-          </aside>
+             {!!(picker?.error || insertError) && <p className="library-inline-error" role="alert">{picker?.error || insertError}</p>}<div className="asset-preview-note"><Icon name="leaf" size={16}/><span>Les images restent dans ta bibliothèque. Seul leur chemin est enregistré.</span></div>
+           </aside>
         </div>
+        {picker?.multiple && <div className="asset-browser-picker-actions"><span>{picker.chosen.length} image{picker.chosen.length > 1 ? 's' : ''} choisie{picker.chosen.length > 1 ? 's' : ''}</span><button className="button primary" disabled={!picker.chosen.length} onClick={() => picker.select([...picker.chosen])}>Ajouter {picker.chosen.length} image{picker.chosen.length > 1 ? 's' : ''}</button></div>}
       </div>
     </dialog>, document.body)}
   </>;

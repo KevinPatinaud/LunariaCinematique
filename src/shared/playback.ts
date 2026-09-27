@@ -4,17 +4,20 @@ import {autoDialogueDuration, textNeedsCompletion} from './textAnimation.js';
 export function playbackStartIndex(doc: Pick<Cinematic, 'shots'>, shotId?: string): number {
   return shotId === undefined ? 0 : Math.max(0, doc.shots.findIndex(shot => shot.id === shotId));
 }
-export interface Playback { textCompletedAt?: number; shotIndex: number; elapsed: number; dialogueIndex: number; dialogueElapsed: number; paused: boolean; finished: boolean }
+export interface Playback { textCompletedAt?: number; exitElapsed?: number; shotIndex: number; elapsed: number; dialogueIndex: number; dialogueElapsed: number; paused: boolean; finished: boolean }
 export const beginPlayback = (shotIndex = 0): Playback => ({ shotIndex, elapsed: 0, dialogueIndex: 0, dialogueElapsed: 0, paused: false, finished: false });
 const EPS = 1e-9;
-function settle(doc: Cinematic, state: Playback): Playback {
+function finishShot(doc: Cinematic, state: Playback): Playback {
+  if (state.shotIndex + 1 >= doc.shots.length) return { ...state, finished: true };
+  return beginPlayback(state.shotIndex + 1);
+}
+function settle(doc: Cinematic, state: Playback, confirmed = false): Playback {
   const shot = doc.shots[state.shotIndex];
   if (!shot) return { ...state, finished: true };
-  if (state.elapsed + EPS >= shot.duration && state.dialogueIndex >= shot.bubbles.length && shot.endAdvance !== 'click') {
-    if (state.shotIndex + 1 >= doc.shots.length) return { ...state, finished: true };
-    return beginPlayback(state.shotIndex + 1);
-  }
-  return state;
+  if (state.exitElapsed !== undefined) return state.exitElapsed + EPS >= (shot.exitTransition?.duration ?? 0) ? finishShot(doc, state) : state;
+  if (state.elapsed + EPS < shot.duration || state.dialogueIndex < shot.bubbles.length || (shot.endAdvance === 'click' && !confirmed)) return state;
+  if (shot.exitTransition?.type === 'fade' && shot.exitTransition.duration > 0) return { ...state, exitElapsed: 0 };
+  return finishShot(doc, state);
 }
 /** Consume real elapsed time, including boundaries. Never discard slow frames or auto-dialogue overflow. */
 export function tickPlayback(doc: Cinematic, state: Playback, delta: number): Playback {
@@ -24,6 +27,14 @@ export function tickPlayback(doc: Cinematic, state: Playback, delta: number): Pl
   for (let guard = 0; guard < 52000 && remaining > EPS && !next.finished; guard++) {
     const shot = doc.shots[next.shotIndex];
     if (!shot) return { ...next, finished: true };
+    if (next.exitElapsed !== undefined) {
+      const step = Math.min(remaining, Math.max(0, (shot.exitTransition?.duration ?? 0) - next.exitElapsed));
+      next.elapsed += step; next.exitElapsed += step; remaining -= step;
+      const settled = settle(doc, next);
+      if (settled === next && step < EPS) break;
+      next = settled;
+      continue;
+    }
     const bubble = shot.bubbles[next.dialogueIndex];
     let step = remaining;
     if (bubble && next.elapsed < shot.dialogueStart - EPS) step = Math.min(step, shot.dialogueStart - next.elapsed);
@@ -46,15 +57,15 @@ export function tickPlayback(doc: Cinematic, state: Playback, delta: number): Pl
 }
 export function advanceDialogue(doc: Cinematic, state: Playback): Playback {
   const shot = doc.shots[state.shotIndex];
-  if (state.paused || state.finished || !shot) return state;
+  if (state.paused || state.finished || !shot || state.exitElapsed !== undefined) return state;
   if (state.dialogueIndex >= shot.bubbles.length) {
     if (shot.endAdvance !== 'click' || state.elapsed + EPS < shot.duration) return state;
-    return state.shotIndex + 1 >= doc.shots.length ? { ...state, finished: true } : beginPlayback(state.shotIndex + 1);
+    return settle(doc, state, true);
   }
   if (state.elapsed < shot.dialogueStart) return state;
   const bubble = shot.bubbles[state.dialogueIndex];
   if (textNeedsCompletion(bubble, state.dialogueElapsed, state.textCompletedAt)) return {...state, textCompletedAt: state.dialogueElapsed};
   const next = {...state, dialogueIndex: state.dialogueIndex + 1, dialogueElapsed: 0};
   delete next.textCompletedAt;
-  return settle(doc, next);
+  return settle(doc, next, shot.endAdvance === 'click');
 }

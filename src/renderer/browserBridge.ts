@@ -116,6 +116,11 @@ const browser: StudioAPI = {
     // Keep browser recovery: a download request does not prove that the user saved it.
     return { path: link.download, cinematic, missing: referencedAssets(cinematic).filter(ref => !library?.assets.some(a => a.ref === ref)) };
   },
+  async beginJpgExport() { return desktopOnly(); },
+  async writeJpgFrame() { return desktopOnly(); },
+  async imageDataForJpg() { return desktopOnly(); },
+  async finishJpgExport() { return desktopOnly(); },
+  async cancelJpgExport() { return desktopOnly(); },
   async autosave(cinematic, requestToken) {
     if (token === requestToken) { localStorage.setItem('lunaria-recovery-v1', JSON.stringify({ format: 'lunaria-recovery-v2', historyKey, libraryRoot: library?.rootPath ?? '', cinematic: parseCinematic(cinematic) })); checkpoint(cinematic,'Sauvegarde automatique',true); }
   },

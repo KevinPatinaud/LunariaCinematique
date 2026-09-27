@@ -10,8 +10,8 @@ export function combatIssues(p:GameProject):GameIssue[]{
  for(const category of ['abilities','effects','projectiles'] as const)for(const x of c[category]){if(ids.has(x.id))error('combat.'+category+'.'+x.id,'Identifiant répété : '+x.id);ids.add(x.id);}
  const effects=new Map(c.effects.map(e=>[e.id,e])),projectiles=new Set(c.projectiles.map(x=>x.id)),abilities=new Set(c.abilities.map(x=>x.id));
  for(const e of c.effects){const path='combat.effects.'+e.id;
-  if(FRACTION.includes(e.kind)&&(e.valueSource!=='fixed'||e.amount>(e.kind==='damage_boost'?3:.95)))error(path,'Un pourcentage est fixe : maximum 95 % (300 % pour le bonus de dégâts).');
-  if(['root','stun','armor_break','cleanse'].includes(e.kind)&&(e.valueSource!=='fixed'||e.amount!==0))error(path,'Ce résultat utilise uniquement sa durée : valeur fixe égale à 0.');
+  if(FRACTION.includes(e.kind)&&(e.valueSource!=='fixed'||e.amount>(['damage_boost','attack_speed_boost'].includes(e.kind)?3:.95)))error(path,'Un pourcentage est fixe : maximum 95 % (300 % pour les bonus de dégâts ou de cadence).');
+  if(['root','stun','armor_break','cleanse','counter_cooldown'].includes(e.kind)&&(e.valueSource!=='fixed'||e.amount!==0))error(path,'Ce résultat utilise uniquement sa durée : valeur fixe égale à 0.');
   if(e.kind==='reward_mark'&&(e.valueSource!=='fixed'||!Number.isInteger(e.amount)||e.amount>400))error(path,'Le bonus de recyclage est un entier fixe entre 0 et 400 graines.');
   if(PERIODIC.includes(e.kind)&&e.tickInterval>e.duration)error(path,'L’intervalle périodique dépasse la durée : aucun déclenchement possible.');
   if(['damage','heal','poison','regeneration'].includes(e.kind)&&e.valueSource==='attack'&&e.amount>10)error(path,'Le multiplicateur d’attaque est limité à 10.');
@@ -21,6 +21,8 @@ export function combatIssues(p:GameProject):GameIssue[]{
   if(a.delivery==='projectile'&&(!projectiles.has(a.projectileId)||a.target!=='opponent'||a.selection!=='one'))error(path,'Un tir à distance requiert une trajectoire existante et une cible adverse unique. Utilise son rayon ou sa perforation pour toucher plusieurs cibles.');
   if(a.delivery==='instant'&&a.projectileId!=='')error(path,'Une attaque immédiate ne référence pas de trajectoire de tir.');
   if(a.target==='self'&&(a.selection!=='one'||a.rowRadius!==0))error(path,'Une attaque sur soi cible uniquement son porteur.');
+  if(a.excludeSelf&&a.target!=='ally')error(path,'L’exclusion du porteur concerne uniquement une attaque sur allié.');
+  if(a.requiresActiveAttack&&a.target!=='ally')error(path,'La cible en cours d’attaque concerne uniquement un soutien allié.');
   if(a.target==='opponent'&&a.priority==='wounded')error(path,'La priorité « allié blessé » ne s’applique pas à un adversaire.');
   for(const id of a.effects){const e=effects.get(id);if(!e){error(path,'Résultat absent : '+id);continue;}
    if(BENEFICIAL.includes(e.kind)===(a.target==='opponent'))error(path,`${e.name} : cible incompatible (soin/protection sur allié, dégâts/altérations sur adversaire).`);

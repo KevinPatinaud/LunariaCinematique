@@ -1,8 +1,11 @@
-import type {GameProject} from '../shared/game/types.js';
+import {newId,type GameProject} from '../shared/game/types.js';
 import {seedProject} from '../shared/game/seed.js';
 import { gameAPI } from './game/bridge.js';
 import type { CampaignFilm } from '../shared/game/types.js';
+import { cinematicReferences } from '../shared/game/cinematicManagement.js';
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { ProjectOverview } from './components/ProjectOverview.js';
+import { CinematicsBrowser } from './components/CinematicsBrowser.js';
 import { GameEditor, type GameEditorHandle } from './game/GameEditor.js';
 import { textIntroDuration, textNeedsCompletion } from '../shared/textAnimation.js';
 import { api } from './browserBridge.js';
@@ -10,8 +13,10 @@ import { ImageCache } from './images.js';
 import { useMotionPreview } from './hooks/useMotionPreview.js';
 import { useLibraryLayout } from './hooks/useLibraryLayout.js';
 import { Library, type LibraryTab } from './components/Library.js';
+import { LibraryPickerContext } from './components/LibraryPickerContext.js';
 import { Inspector, cameraLabels } from './components/Inspector.js';
 import { Scene, type Selection } from './components/Scene.js';
+import { renderShotJpg } from './exportJpg.js';
 import { Layers } from './components/Layers.js';
 import { TemplateDialog, DuplicateDialog } from './components/PlanDialogs.js';
 import { VersionsDialog } from './components/VersionsDialog.js';
@@ -22,10 +27,10 @@ import { useCollections } from './hooks/useCollections.js';
 import { useObjectWorkspace } from './hooks/useObjectWorkspace.js';
 import { editCommand } from '../shared/commands.js';
 import { diagnose, type Diagnostic } from '../shared/diagnostics.js';
-import { alignObjects, applyObjectChanges, createTemplate, deleteObjects, duplicateObjects, moveObjects, objectBox, placeBubble, reorderObjects, smartDuplicate, type Alignment, type DuplicateOptions, type ObjectChange, type ObjectKind, type ShotTemplate } from '../shared/studio.js';
+import { alignObjects, applyObjectChanges, createTemplate, deleteObjects, duplicateObjects, moveObjects, objectBox, pasteActor, pasteBubble, placeBubble, reorderObjects, smartDuplicate, type Alignment, type DuplicateOptions, type ObjectChange, type ObjectKind, type ShotTemplate } from '../shared/studio.js';
 import type { VersionSummary } from '../shared/model.js';
 import { Icon } from './components/Icon.js';
-import { copy, duplicateShot, newActor, newBubble, newCinematic, newShot, referencedAssets, removeActor, uid, upgradeCinematicFormat,
+import { copy, duplicateCinematic, duplicateShot, newActor, newBubble, newCinematic, newShot, referencedAssets, removeActor, uid, upgradeCinematicFormat,
   type Actor, type Asset, type Bubble, type Cinematic, type LibrarySnapshot, type Shot } from '../shared/model.js';
 import { demoCinematic } from '../shared/demo.js';
 import { createHistory, historyReducer, type HistoryAction } from '../shared/history.js';
@@ -35,23 +40,29 @@ import { centeredObject } from '../shared/editing.js';
 import { isAudio, isImage } from '../shared/assets.js';
 import { advanceDialogue, beginPlayback, playbackStartIndex, tickPlayback, type Playback } from '../shared/playback.js';
 
+type CopiedObject = {kind:'actor'; actor:Actor; catalog?:Cinematic['presentationCatalog']} | {kind:'bubble'; bubble:Bubble; speaker?:Actor};
+
 export default function App() {
   const [presentationProject,setPresentationProject]=useState<GameProject>(()=>seedProject());
   const [gameBusy,setGameBusy]=useState(false);
   const [studioMode,setStudioMode]=useState<'cinematics'|'levels'>('cinematics');
   const [gameDirty,setGameDirty]=useState(false);
+  const [studioProjectPath,setStudioProjectPath]=useState('');
   const gameEditor=useRef<GameEditorHandle>(null);
   const libraryLayout = useLibraryLayout();
   const [history, dispatch] = useReducer(historyReducer<Cinematic>, undefined, () => createHistory(newCinematic()));
   const doc = history.present;
   const presentationUsages=useMemo(()=>{const uses:Record<string,string[]>={};for(const s of doc.shots)for(const a of s.actors)if(a.animation?.mode==='animation'&&a.animation.animationId)(uses[a.animation.animationId]??=[]).push('Film ouvert : '+doc.title+' / '+s.name+' / '+a.name);return uses;},[doc]);
+  const filmReferences=useMemo(()=>Object.fromEntries((presentationProject.cinematics??[]).map(film=>[film.id,cinematicReferences(presentationProject,film.id)])),[presentationProject]);
   const [saved, setSaved] = useState(() => JSON.stringify(doc)), [filePath, setFilePath] = useState('');
   const [library, setLibrary] = useState<LibrarySnapshot | null>(null), [tab, setTab] = useState<LibraryTab>('environment');
   const [shotId, setShotId] = useState(doc.shots[0].id), [selection, setPrimarySelection] = useState<Selection>({ kind: 'shot' });
   const [selectionIds, setSelectionIds] = useState<string[]>([]);
   const selectionIdsRef = useRef(selectionIds); selectionIdsRef.current = selectionIds;
+  const [copiedObject, setCopiedObject] = useState<CopiedObject | null>(null);
   const workspaceObjects = useObjectWorkspace();
-  const [studioModal, setStudioModal] = useState<'templates'|'duplicate'|'versions'|'recents'|null>(null);
+  const [studioModal, setStudioModal] = useState<'templates'|'duplicate'|'versions'|'recents'|'project'|'films'|null>(null);
+  const filmTitleInput = useRef<HTMLInputElement>(null);
   const [recentProjects, setRecentProjects] = useState<RecentProjectsSnapshot>({ projects: [] });
   const [recentError, setRecentError] = useState('');
   const recentRequest = useRef(0);
@@ -68,6 +79,7 @@ export default function App() {
   const [recoveryRoot, setRecoveryRoot] = useState(''), [desktop, setDesktop] = useState(!!window.lunaria);
   const [readyShot, setReadyShot] = useState(-1), [playbackRun, setPlaybackRun] = useState(0);
   const docRef = useRef(doc); docRef.current = doc;
+  const activeFilmId = useRef('');
   const historyRef = useRef(history); historyRef.current = history;
   const libraryRef = useRef(library); libraryRef.current = library;
   const savedRef = useRef(saved); savedRef.current = saved;
@@ -82,6 +94,7 @@ export default function App() {
   const assets = library?.assets ?? [];
   const assetRefs = useMemo(() => new Set(assets.map(a => a.ref)), [library]);
   const selectedShot = doc.shots.find(s => s.id === shotId) ?? doc.shots[0];
+  const selectedShotIndex = doc.shots.findIndex(s => s.id === selectedShot.id);
   const selectedShotNumber = String(playbackStartIndex(doc, selectedShot.id) + 1).padStart(2, '0');
   const textPreviewBubble = selectedShot.bubbles.find(b => b.id === textPreviewId);
   const previewDuration = textPreviewBubble ? Math.max(4, textIntroDuration(textPreviewBubble) + 2) : selectedShot.duration;
@@ -100,6 +113,7 @@ export default function App() {
   function changeHistory(action: HistoryAction<Cinematic>) {
     const next = historyReducer(historyRef.current, action);
     historyRef.current = next; docRef.current = next.present; dispatch(action);
+    if(action.type!=='reset'&&action.type!=='boundary'&&gameEditor.current){gameEditor.current.upsertCinematic(next.present,activeFilmId.current);activeFilmId.current=next.present.id;}
   }
   function setSelection(next: Selection, additive=false) {
     if (next.kind==='shot') { selectionIdsRef.current=[]; setSelectionIds([]); setPrimarySelection(next); return; }
@@ -137,13 +151,13 @@ export default function App() {
     if (workspaceObjects.locked.has(id)) return;
     const shotId = selectedShot.id;
     commit(next => { const current = next.shots.find(s => s.id === shotId); if (!current) return;
-      const object = kind === 'actor' ? current.actors.find(a => a.id === id) : current.bubbles.find(b => b.id === id);
-      if (object) Object.assign(object, patch);
+      applyObjectChanges(current, [{kind, id, patch}]);
     }, key ? `${shotId}:${id}:${key}` : '');
   }
   function selectShot(id: string) { currentShotRef.current = id; setShotId(id); setSelection({ kind: 'shot' }); changeHistory({ type: 'boundary' }); }
   function replaceDocument(next: Cinematic, token: string, path = '', isSaved = false) {
     documentEpoch.current++; documentToken.current = token; autosaved.current = false; setRecoveryStatus('idle');
+    activeFilmId.current=next.id;
     changeHistory({ type: 'reset', value: next }); selectShot(next.shots[0].id);
     setFilePath(path); const fingerprint = isSaved ? JSON.stringify(next) : ''; savedRef.current = fingerprint; setSaved(fingerprint);
     setPlayback(null); playbackStartId.current = undefined; readyShotRef.current = -1; setReadyShot(-1);
@@ -158,18 +172,33 @@ export default function App() {
     try { return await fn(); } catch (error) { errors(error); return undefined; }
     finally { running.current = false; setBusy(false); }
   }
-  async function saveDocument(saveAs = false): Promise<boolean> {
-    const requested = copy(docRef.current), epoch = documentEpoch.current;
-    if (validationIssues(requested).length) { setModal('issues'); return false; }
-    const result = await api.saveCinematic(requested, saveAs || !filePath, documentToken.current);
-    if (!result || epoch !== documentEpoch.current) return false;
-    setFilePath(result.path); const fingerprint = JSON.stringify(requested); savedRef.current = fingerprint; setSaved(fingerprint);
-    changeHistory({ type: 'boundary' });
-    void reloadRecents();
-    notify(result.warnings?.length ? result.warnings.join(' · ') : result.missing.length ? `Enregistré — ${result.missing.length} référence(s) à reconnecter.` : desktop ? 'Cinématique enregistrée. Les images restent dans la bibliothèque.' : 'Téléchargement du JSON demandé. Vérifie le fichier dans tes téléchargements.');
-    return true;
+  async function saveDocument(): Promise<boolean> {
+    if(studioMode==='cinematics' && activeFilmId.current)gameEditor.current?.upsertCinematic(docRef.current,activeFilmId.current);
+    const result=await gameEditor.current?.save()??false;
+    if(result){const fingerprint=JSON.stringify(docRef.current);savedRef.current=fingerprint;setSaved(fingerprint);changeHistory({type:'boundary'});notify('Projet Lunaria enregistré : niveaux et cinématiques dans un seul fichier.');}
+    return result;
   }
-  const save = (saveAs = false) => operation(() => saveDocument(saveAs));
+  const save = () => operation(() => saveDocument());
+  const exportJpg = () => operation(async () => {
+    const cinematic = copy(docRef.current);
+    const exportAssets = libraryRef.current?.assets ?? [];
+    const imageCache = new Map<string, string>();
+    const linkedCatalog = !cinematic.presentationCatalog || cinematic.presentationCatalog.projectId === presentationProject.id;
+    const session = await api.beginJpgExport(cinematic.title, cinematic.shots.length);
+    if (!session) return;
+    try {
+      for (let index = 0; index < cinematic.shots.length; index++) {
+        notify(`Export JPG : plan ${index + 1} / ${cinematic.shots.length}…`);
+        const jpg = await renderShotJpg(cinematic.shots[index], exportAssets, presentationProject, linkedCatalog, imageCache);
+        await api.writeJpgFrame(session.id, index + 1, jpg);
+      }
+      const folder = await api.finishJpgExport(session.id);
+      notify(`${cinematic.shots.length} JPG exporté${cinematic.shots.length > 1 ? 's' : ''} dans ${folder}`);
+    } catch (error) {
+      await api.cancelJpgExport(session.id).catch(() => undefined);
+      throw error;
+    }
+  });
   async function reloadRecents(): Promise<void> {
     const request = ++recentRequest.current;
     try { const result = await api.listRecentProjects(); if (request === recentRequest.current) setRecentProjects(result); }
@@ -215,12 +244,74 @@ export default function App() {
   });
 
   async function canReplace(reason: string) {
-    if (savedRef.current === JSON.stringify(docRef.current)) return true;
-    const choice = await api.confirmUnsaved(reason);
-    return choice === 'discard' || (choice === 'save' && await saveDocument());
+    void reason;
+    return true; // All film edits are already part of the in-memory game project.
   }
   const createDocument = () => operation(async () => {
-    if (await canReplace('Enregistrer avant de créer une nouvelle cinématique ?')) replaceDocument(newCinematic(), await api.resetDocument());
+    const next=newCinematic();next.id=newId('CIN');gameEditor.current?.upsertCinematic(next);replaceDocument(next,documentToken.current);
+    requestAnimationFrame(()=>{filmTitleInput.current?.focus();filmTitleInput.current?.select();});
+  });
+  function selectFilm(id: string) {
+    const film=presentationProject.cinematics?.find(item=>item.id===id);
+    if(film && film.id!==activeFilmId.current)replaceDocument(copy(film),documentToken.current,studioProjectPath,true);
+  }
+  const duplicateFilm = (id: string) => operation(async () => {
+    const films = presentationProject.cinematics ?? [];
+    if (films.length >= 500) throw new Error('Ce projet contient déjà le maximum de 500 cinématiques.');
+    const source = id === activeFilmId.current ? docRef.current : films.find(film => film.id === id);
+    if (!source || !gameEditor.current) throw new Error('Cinématique introuvable.');
+    const duplicate = duplicateCinematic(source, films.map(film => film.title));
+    gameEditor.current.upsertCinematic(duplicate);
+    replaceDocument(duplicate, documentToken.current, studioProjectPath);
+    setStudioModal(null);
+    notify(`« ${duplicate.title} » créée. Enregistre le projet pour conserver la copie.`);
+    requestAnimationFrame(() => { filmTitleInput.current?.focus(); filmTitleInput.current?.select(); });
+  });
+  function updateFilm(id: string, patch: Partial<Cinematic>) {
+    const film = presentationProject.cinematics?.find(item => item.id === id);
+    if (!film || !gameEditor.current) return;
+    if (id === activeFilmId.current) commit(next => {
+      Object.assign(next, patch);
+      if (patch.category === '') delete next.category;
+    }, '', 'Modifier la cinématique');
+    else {
+      const next = copy(film);
+      Object.assign(next, patch);
+      if (patch.category === '') delete next.category;
+      gameEditor.current.upsertCinematic(next);
+    }
+  }
+  const deleteFilm = (id: string) => operation(async () => {
+    const films = presentationProject.cinematics ?? [];
+    const film = films.find(item => item.id === id);
+    if (!film || !gameEditor.current) return;
+    const links = cinematicReferences(presentationProject, id);
+    if (links.length) { notify(`Retire d’abord « ${film.title} » de ${links.join(', ')} dans Campagne / Niveaux.`); return; }
+    if (!await api.confirmDelete(film.title)) return;
+    gameEditor.current.removeCinematic(id);
+    if (id === activeFilmId.current) {
+      const replacement = films.find(item => item.id !== id);
+      replaceDocument(copy(replacement ?? newCinematic()), documentToken.current, studioProjectPath, !!replacement);
+      if (!replacement) activeFilmId.current = '';
+    }
+    notify(`« ${film.title} » supprimée du projet. Enregistre pour confirmer la suppression dans le fichier.`);
+  });
+  const backupProject = () => operation(async () => {
+    if (!gameEditor.current) throw new Error('Projet indisponible.');
+    if (activeFilmId.current) gameEditor.current.upsertCinematic(docRef.current, activeFilmId.current);
+    if (!await gameEditor.current.save(true)) return;
+    const fingerprint = JSON.stringify(docRef.current);
+    savedRef.current = fingerprint; setSaved(fingerprint); changeHistory({type:'boundary'});
+    setStudioModal(null);
+    notify('Copie du projet enregistrée. Ce nouveau fichier est maintenant le projet ouvert.');
+  });
+  const importFilm = () => operation(async () => {
+    const imported=await gameAPI.addCampaignFilm();if(!imported)return;
+    const existing=presentationProject.cinematics?.find(f=>f.id===imported.cinematic.id);
+    if(existing)throw new Error('Cette cinématique existe déjà dans le projet. Ouvre-la dans la liste.');
+    gameEditor.current?.upsertCinematic(imported.cinematic);
+    replaceDocument(imported.cinematic,documentToken.current,studioProjectPath);
+    notify('Cinématique importée dans le projet. Son fichier d’origine reste intact.');
   });
   const chooseLibrary = () => operation(async () => {
     const result = await api.chooseLibrary();
@@ -230,36 +321,31 @@ export default function App() {
   const loadExample = () => operation(async () => {
     if (!await canReplace('Enregistrer avant de charger l’exemple ?')) return;
     const result = await api.exampleLibrary(); setLibrary(result); libraryRef.current = result;
-    replaceDocument(demoCinematic(), await api.resetDocument()); notify('Exemple chargé. Les images restent dans la bibliothèque exemple.');
+    const example=demoCinematic();example.id=newId('CIN');gameEditor.current?.upsertCinematic(example);
+    replaceDocument(example, await api.resetDocument()); notify('Exemple ajouté au projet. Les images restent dans la bibliothèque exemple.');
   });
   const open = () => operation(async () => {
-    if (!await canReplace('Enregistrer avant d’ouvrir une autre cinématique ?')) return;
-    try { applyOpened(await api.openCinematic()); }
-    catch (error) { setRecentError(error instanceof Error ? error.message : String(error)); throw error; }
+    await gameEditor.current?.open();
   });
   const openCampaignFilm = (film:CampaignFilm) => operation(async () => {
-    if(!await canReplace('Enregistrer la cinématique ouverte avant de passer au film du parcours ?'))return;
-    const result=await gameAPI.editCampaignFilm(film.file,film.documentId);
-    applyOpened(result);setPlayback(null);motionPreview.stop();setStudioMode('cinematics');
+    const embedded=presentationProject.cinematics?.find(item=>item.id===film.documentId);
+    if(embedded)replaceDocument(copy(embedded),documentToken.current,studioProjectPath,true);
+    else {const result=await gameAPI.editCampaignFilm(film.file,film.documentId);gameEditor.current?.upsertCinematic(result.cinematic);replaceDocument(result.cinematic,result.documentToken,studioProjectPath);}
+    setPlayback(null);motionPreview.stop();setStudioMode('cinematics');
   });
   async function prepareCampaignPublish():Promise<boolean> {
     if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
-    return canReplace('Enregistrer la cinématique ouverte avant de synchroniser le jeu ? La publication, le test et les builds utilisent les fichiers enregistrés, pas les brouillons.');
+    return true;
   }
   async function recover(accept: boolean) {
     await operation(async () => {
-      if (accept && recovery) replaceDocument(recovery, documentToken.current);
+      if (accept && recovery) {gameEditor.current?.upsertCinematic(recovery);replaceDocument(recovery, documentToken.current);}
       else await api.discardRecovery(documentToken.current);
       setRecoveryPending(false); setRecovery(null); setModal(null);
     });
   }
   closeAction.current = () => { void operation(async () => {
     if(gameEditor.current && !await gameEditor.current.prepareClose()) {setStudioMode('levels');return;}
-    if (savedRef.current !== JSON.stringify(docRef.current)) {
-      const choice = await api.confirmUnsaved('Enregistrer la cinématique avant de quitter ?');
-      if (choice === 'cancel' || (choice === 'save' && !await saveDocument())) return;
-      if (choice === 'discard') await api.autosave(docRef.current, documentToken.current);
-    }
     await api.closeWindow();
   }); };
   function addShot() {setStudioModal('templates');}
@@ -348,6 +434,37 @@ export default function App() {
     const ids=editableIds();if(!ids.length)return notify('Déverrouille la sélection avant de la dupliquer.');
     try {let added:string[]=[];commit(d=>{const s=d.shots.find(s=>s.id===selectedShot.id);if(s)added=duplicateObjects(s,ids);},'','Dupliquer la sélection');selectGroup(added);}catch(error){errors(error);}
   }
+  function copySelection() {
+    if (selectionIdsRef.current.length !== 1 || selection.kind === 'shot') return;
+    if (selection.kind === 'actor') {
+      const actor = selectedShot.actors.find(a => a.id === selection.id);
+      if (!actor) return;
+      setCopiedObject({kind:'actor',actor:copy(actor),catalog:doc.presentationCatalog ? copy(doc.presentationCatalog) : undefined});
+      notify(`« ${actor.name} » copié. Choisis un autre plan, puis colle-le.`);
+    } else {
+      const bubble = selectedShot.bubbles.find(b => b.id === selection.id);
+      if (!bubble) return;
+      const speaker = selectedShot.actors.find(a => a.id === bubble.speakerId);
+      setCopiedObject({kind:'bubble',bubble:copy(bubble),speaker:speaker ? copy(speaker) : undefined});
+      notify('Bulle copiée. Choisis un autre plan, puis colle-la.');
+    }
+  }
+  function pasteSelection() {
+    if (!copiedObject || playbackRef.current || running.current || busy || recoveryPending) return;
+    try {
+      let added: {kind:'actor'|'bubble'; id:string} | undefined;
+      const shotId = selectedShot.id;
+      commit(d => {
+        const target = d.shots.find(s => s.id === shotId);
+        if (!target) return;
+        if (copiedObject.kind === 'actor') {
+          if (copiedObject.actor.animation && copiedObject.catalog && !d.presentationCatalog) d.presentationCatalog = copy(copiedObject.catalog);
+          added = {kind:'actor',id:pasteActor(target, copiedObject.actor).id};
+        } else added = {kind:'bubble',id:pasteBubble(target, copiedObject.bubble, copiedObject.speaker).id};
+      }, '', copiedObject.kind === 'actor' ? 'Coller le personnage' : 'Coller la bulle');
+      if (added) { setSelection(added); notify(copiedObject.kind === 'actor' ? `« ${copiedObject.actor.name} » collé à la même position et à la même taille.` : 'Bulle collée à la même position et à la même taille.'); }
+    } catch (error) { errors(error); }
+  }
   function remove() {
     if (selection.kind === 'shot') {
       if (doc.shots.length === 1) return;
@@ -372,10 +489,18 @@ export default function App() {
     const bubbles = [...selectedShot.bubbles], i = bubbles.findIndex(b => b.id === id), j = i + direction;
     if (i >= 0 && j >= 0 && j < bubbles.length) { [bubbles[i], bubbles[j]] = [bubbles[j], bubbles[i]]; updateShot({ bubbles }); }
   }
+  function moveShotToIndex(source: string, index: number) {
+    const shots = docRef.current.shots;
+    const from = shots.findIndex(s => s.id === source);
+    if (from < 0 || index < 0 || index >= shots.length || from === index || playbackRef.current || running.current) return;
+    commit(d => { const [moving] = d.shots.splice(from, 1); d.shots.splice(index, 0, moving); }, '', 'Déplacer le plan');
+    requestAnimationFrame(() => {
+      const card = [...document.querySelectorAll<HTMLButtonElement>('.shot-card')].find(button => button.dataset.shotId === source);
+      card?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+  }
   function reorderShot(source: string, target: string) {
-    if (source === target || playbackRef.current || running.current) return;
-    commit(d => { const from = d.shots.findIndex(s => s.id === source), to = d.shots.findIndex(s => s.id === target);
-      if (from < 0 || to < 0) return; const [moving] = d.shots.splice(from, 1); d.shots.splice(to, 0, moving); });
+    moveShotToIndex(source, docRef.current.shots.findIndex(s => s.id === target));
   }
   async function preloadShot(index: number) {
     const refs = referencedAssets({ ...docRef.current, shots: docRef.current.shots.slice(index, index + 2) });
@@ -412,20 +537,7 @@ export default function App() {
     else {const valid=new Set([...selectedShot.actors,...selectedShot.bubbles].map(o=>o.id));const retained=selectionIdsRef.current.filter(id=>valid.has(id));if(retained.length!==selectionIdsRef.current.length)selectGroup(retained);}
   }, [doc, shotId, selection]);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(''), 9000); return () => clearTimeout(timer); }, [toast]);
-  useEffect(() => {
-    if (!booted || !documentToken.current) return;
-    api.setDirty(dirty || gameDirty);
-    if (busy || recoveryPending) return;
-    if (!dirty) {
-      if (autosaved.current && desktop) { autosaved.current = false; void api.discardRecovery(documentToken.current).catch(errors); }
-      return;
-    }
-    const token = documentToken.current;
-    const timer = setTimeout(() => {
-      if (!validationIssues(doc).length) { autosaved.current = true; setRecoveryStatus('saving'); void api.autosave(doc, token).then(()=>{if(documentToken.current===token)setRecoveryStatus('saved');}).catch(error => {if(documentToken.current===token)setRecoveryStatus('error');notify(`Récupération automatique indisponible : ${String(error)}`);}); }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [doc, dirty, gameDirty, busy, booted, recoveryPending]);
+  useEffect(() => {if(booted)api.setDirty(gameDirty);},[booted,gameDirty]);
   useEffect(() => {
     if (desktop || (!dirty && !gameDirty)) return;
     const listener = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
@@ -467,11 +579,13 @@ export default function App() {
       const target = event.target as HTMLElement;
       const input = target?.closest('input,textarea,select,[contenteditable="true"]');
       if (modal || document.querySelector('dialog[open]')) { if (event.key === 'Escape' && modal !== 'recovery' && !busy) setModal(null); return; }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o') { event.preventDefault(); if (!busy && !playback && !recoveryPending) { if (event.shiftKey) openRecents(); else void open(); } return; }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (!busy && !playback) void save(event.shiftKey); return; }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o') { event.preventDefault(); if (!busy && !playback && !recoveryPending) void open(); return; }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); if (!busy && !playback) void save(); return; }
       if (event.key === 'Escape' && motionPreview.active) { motionPreview.stop(); return; }
       if (event.key === 'Escape') { if(playback)setPlayback(null);else setSelection({kind:'shot'}); return; }
       if (input || busy || recoveryPending) return;
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !playback && event.key.toLowerCase() === 'c' && selection.kind !== 'shot' && selectionIdsRef.current.length === 1 && !target?.closest('[data-library-surface]')) { event.preventDefault(); copySelection(); return; }
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !playback && event.key.toLowerCase() === 'v' && copiedObject && !target?.closest('[data-library-surface]')) { event.preventDefault(); pasteSelection(); return; }
       // Works directly after clicking a storyboard card, while plain Space
       // retains native button activation and its existing full-preview shortcut.
       if (event.code === 'Space' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey && !playback) {
@@ -512,13 +626,19 @@ export default function App() {
   }, [modal]);
   const totalSeconds = doc.shots.reduce((n, s) => n + s.duration, 0);
   const activeDialogue = playback && !playback.finished && playback.elapsed >= shot.dialogueStart ? shot.bubbles[playback.dialogueIndex] : null;
-  const awaitingShotClick = !!playback && !playback.finished && shot.endAdvance === 'click' && playback.elapsed >= shot.duration && playback.dialogueIndex >= shot.bubbles.length;
-  const locked = busy || recoveryPending;
-  return <div className="studio-root"><nav className="studio-modebar" aria-label="Modes du Studio"><b>LUNARIA STUDIO</b><button className={studioMode==='cinematics'?'active':''} aria-pressed={studioMode==='cinematics'} disabled={busy||!!modal||!!studioModal||gameBusy} onClick={()=>{if(!gameEditor.current?.isBusy())setStudioMode('cinematics');}}>Cinématiques{dirty?' •':''}</button><button className={studioMode==='levels'?'active':''} aria-pressed={studioMode==='levels'} disabled={busy||!!modal||!!studioModal} onClick={()=>{setPlayback(null);motionPreview.stop();setStudioMode('levels');}}>Niveaux{gameDirty?' •':''}</button><small>V1.10 · campagne & création</small></nav><div style={studioMode==='cinematics'?undefined:{display:'none'}} className="app-shell" onDragOver={e => e.preventDefault()} onDrop={e => e.preventDefault()}>
+  const awaitingShotClick = !!playback && !playback.finished && shot.endAdvance === 'click' && playback.elapsed >= shot.duration && playback.dialogueIndex >= shot.bubbles.length && playback.exitElapsed === undefined;
+  const locked = busy || recoveryPending || gameBusy;
+  return <div className="studio-root"><nav className="studio-modebar" aria-label="Modes du Studio"><b>LUNARIA STUDIO</b><button className="studio-overview" disabled={locked||!!modal||!!studioModal||!!playback} onClick={()=>setStudioModal('project')}>Vue du projet</button><button className={studioMode==='cinematics'?'active':''} aria-pressed={studioMode==='cinematics'} disabled={busy||!!modal||!!studioModal||gameBusy} onClick={()=>{if(!gameEditor.current?.isBusy())setStudioMode('cinematics');}}>Cinématiques</button><button className={studioMode==='levels'?'active':''} aria-pressed={studioMode==='levels'} disabled={busy||!!modal||!!studioModal} onClick={()=>{setPlayback(null);motionPreview.stop();setStudioMode('levels');}}>Niveaux</button><span className="studio-project-state" title={studioProjectPath||'Ton projet contient les niveaux et toutes les cinématiques.'} role="status"><span className={gameDirty?'pending':''}>{gameBusy?'Opération en cours…':gameDirty?'Modifications non enregistrées':studioProjectPath?'Projet enregistré':'Projet non enregistré'}</span><small>{studioProjectPath.split(/[\\/]/).pop()||'Un seul fichier pour tout le projet'}</small></span><button className="studio-save" disabled={locked||!!modal||!!studioModal||!!playback} title="Enregistrer les cinématiques et les niveaux dans le même fichier (Ctrl+S)" onClick={()=>void save()}><Icon name="save" size={15}/> Enregistrer le projet</button></nav><div style={studioMode==='cinematics'?undefined:{display:'none'}} className="app-shell" onDragOver={e => e.preventDefault()} onDrop={e => e.preventDefault()}>
     <header className="topbar">
       <div className="brand"><div className="brand-mark"><Icon name="leaf" size={27}/></div><div><strong>LUNARIA</strong><span>CINEMATIC STUDIO</span></div><span className="version-tag">V1.10</span></div>
-      <div className="project-heading"><input aria-label="Titre de la cinématique" value={doc.title} maxLength={200} disabled={!!playback || locked} onChange={e => commit(d => { d.title = e.target.value; }, 'title')}/><label className="cinematic-id">ID <input aria-label="Identifiant de la cinématique" disabled={!!playback || locked} maxLength={100} value={doc.id} onChange={e => { if (e.target.value) commit(d => { d.id = e.target.value; }, 'cinematic-id'); }}/></label><span className="save-state"><span className={`status-dot ${dirty ? 'pending' : ''}`}/>{dirty ? 'Modifications non enregistrées' : filePath ? 'Enregistré' : 'Nouveau projet'}</span></div>
-      <div className="top-actions"><button className="icon-button" title="Nouveau projet" aria-label="Nouveau projet" disabled={!!playback || locked} onClick={createDocument}><Icon name="file"/></button><button className="button subtle" disabled={!!playback || locked} onClick={open}><Icon name="folder" size={16}/> Ouvrir</button><button ref={recentTrigger} className="button subtle recent-project-trigger" title="Projets récents (Ctrl+Maj+O)" aria-label="Projets récents" aria-keyshortcuts="Control+Shift+O Meta+Shift+O" disabled={!!playback || locked} onClick={openRecents}><Icon name="clock" size={16}/><span>Projets récents</span></button><button className="button save" disabled={!!playback || locked} onClick={() => save()}><Icon name="save" size={16}/> Enregistrer</button><button className="icon-button save-as" title="Enregistrer sous… (Ctrl+Maj+S)" aria-label="Enregistrer sous" disabled={!!playback || locked} onClick={() => save(true)}><Icon name="down" size={14}/></button><button className="icon-button" title="Versions locales" aria-label="Versions locales" disabled={!!playback || locked} onClick={openVersions}><Icon name="history"/></button><div className="toolbar-divider"/>{playback ? <button className="button primary" onClick={() => setPlayback(null)}><Icon name="stop" size={16}/> Quitter l’aperçu</button> : <div className="playback-actions" role="group" aria-label="Lecture de la cinématique">
+      <div className="project-heading">
+        <div className="project-heading-main">
+          {(presentationProject.cinematics?.length??0)>1&&<select className="film-switcher" aria-label="Cinématique du projet" value={presentationProject.cinematics?.some(f=>f.id===activeFilmId.current)?activeFilmId.current:''} onChange={e=>selectFilm(e.target.value)}><option value="">Choisir un film</option>{(presentationProject.cinematics??[]).map(f=><option key={f.id} value={f.id}>{f.title}</option>)}</select>}
+          <input ref={filmTitleInput} aria-label="Titre de la cinématique" value={doc.title} maxLength={200} disabled={!!playback || locked} onChange={e => commit(d => { d.title = e.target.value; }, 'title')}/>
+        </div>
+        <div className="project-heading-meta"><label className="cinematic-id">ID <input aria-label="Identifiant de la cinématique" disabled={!!playback || locked} maxLength={100} value={doc.id} onChange={e => { if (e.target.value) commit(d => { d.id = e.target.value; }, 'cinematic-id'); }}/></label><span className="save-state"><span className={`status-dot ${gameDirty ? 'pending' : ''}`}/>{gameDirty ? 'Projet modifié' : studioProjectPath ? 'Projet enregistré' : 'Projet non enregistré'}</span></div>
+      </div>
+      <div className="top-actions"><button className="button primary" disabled={!!playback || locked} onClick={createDocument}><Icon name="plus" size={15}/> Nouvelle cinématique</button><button className="button subtle" disabled={!!playback || locked} onClick={()=>setStudioModal('films')}>Toutes les cinématiques <span className="film-count">{presentationProject.cinematics?.length??0}</span></button><button className="button subtle" disabled={!!playback || locked} onClick={importFilm}>Importer un film</button><button className="button subtle" disabled={!!playback || locked} onClick={open}><Icon name="folder" size={16}/> Ouvrir le projet</button><button className="button subtle" disabled={!!playback || locked || !desktop} title={desktop ? 'Un JPG 1600 × 900 par plan, dans un dossier choisi' : 'Disponible dans l’application de bureau'} onClick={() => void exportJpg()}>Exporter en JPG</button><div className="toolbar-divider"/>{playback ? <button className="button primary" onClick={() => setPlayback(null)}><Icon name="stop" size={16}/> Quitter l’aperçu</button> : <div className="playback-actions" role="group" aria-label="Lecture de la cinématique">
         <button className="button subtle" data-testid="play-all" disabled={locked} title="Lire toute la cinématique depuis le premier plan" onClick={() => startPlayback()}><Icon name="play" size={16}/> Tout lire</button>
         <button className="button primary play-from-current" data-testid="play-from-current" disabled={locked} aria-label="Lire depuis ce plan" aria-keyshortcuts="Shift+Space" title={`Lire à partir du plan ${selectedShotNumber} — ${selectedShot.name}, puis les suivants (Maj+Espace)`} onClick={() => startPlayback(selectedShot.id)}><Icon name="play" size={16}/><span>Lire depuis ce plan</span><span className="play-from-number" aria-hidden="true">{selectedShotNumber}</span></button>
       </div>}<button className="icon-button" title="Mode d’emploi" aria-label="Mode d’emploi" onClick={() => setModal('help')}><Icon name="help"/></button></div>
@@ -530,23 +650,25 @@ export default function App() {
         <div className="canvas-area">
           <div className="canvas-topline"><span><span className="tiny-dot"/> {playback ? `Lecture · Plan ${String(playback.shotIndex + 1).padStart(2, '0')} / ${doc.shots.length}` : 'Composition du plan'}</span><span>1600 × 900 <b>16:9</b></span></div>
           <div className="canvas-fit"><div className="canvas-frame">
-            <Scene presentationRunning={!!playback&&!playback.paused&&!playback.finished&&readyShot===playback.shotIndex} presentationProject={presentationProject} catalogMatches={!doc.presentationCatalog||doc.presentationCatalog.projectId===presentationProject.id} key={shot.id} previewBubbleId={!playback && motionPreview.active ? textPreviewId ?? undefined : undefined} dialogueElapsed={playback?.dialogueElapsed} textCompleted={playback?.textCompletedAt !== undefined} motionTime={motionPreview.active && !playback ? motionPreview.time : undefined} disabled={locked || motionPreview.active} shot={shot} assets={assets} selectionIds={selectionIds} lockedIds={workspaceObjects.locked} hiddenIds={workspaceObjects.hidden} snap={snap} onGroupSelect={selectGroup} onBatchUpdate={batchUpdate} selection={selection} onSelect={setSelection} onUpdate={updateObject} playing={!!playback} elapsed={playback?.elapsed ?? 0} activeBubble={playback?.dialogueIndex ?? 0} onAdvance={advance} onDropAsset={(ref, as, position) => { const asset = assets.find(a => a.ref === ref); if (asset) void useAsset(asset, as ?? (asset.kind === 'other' ? 'character' : asset.kind), position); }} guides={guides}/>
+            <Scene presentationRunning={!!playback&&!playback.paused&&!playback.finished&&readyShot===playback.shotIndex} presentationProject={presentationProject} catalogMatches={!doc.presentationCatalog||doc.presentationCatalog.projectId===presentationProject.id} key={shot.id} previewBubbleId={!playback && motionPreview.active ? textPreviewId ?? undefined : undefined} dialogueElapsed={playback?.dialogueElapsed} textCompleted={playback?.textCompletedAt !== undefined} motionTime={motionPreview.active && !playback ? motionPreview.time : undefined} disabled={locked || motionPreview.active} shot={shot} assets={assets} selectionIds={selectionIds} lockedIds={workspaceObjects.locked} hiddenIds={workspaceObjects.hidden} snap={snap} onGroupSelect={selectGroup} onBatchUpdate={batchUpdate} selection={selection} onSelect={setSelection} onUpdate={updateObject} playing={!!playback} elapsed={playback?.elapsed ?? 0} exitElapsed={playback?.exitElapsed} activeBubble={playback?.dialogueIndex ?? 0} onAdvance={advance} onDropAsset={(ref, as, position) => { const asset = assets.find(a => a.ref === ref); if (asset) void useAsset(asset, as ?? (asset.kind === 'other' ? 'character' : asset.kind), position); }} guides={guides}/>
             {!shot.background.asset && !shot.actors.length && !shot.bubbles.length && !playback && <div className="welcome">
-              <div className="welcome-symbol"><Icon name="leaf" size={39}/></div><span className="overline">UN DÉCOR. QUELQUES MOTS. UNE HISTOIRE.</span><h1>Donne vie à Lunaria.</h1><p>Compose tes plans, place tes personnages et<br/>laisse les bulles raconter la suite.</p><div className="welcome-buttons"><button className="button primary" onClick={chooseLibrary} disabled={locked}><Icon name="folder" size={16}/> Choisir ma bibliothèque</button><button className="button subtle" onClick={loadExample} disabled={locked}>Essayer l’exemple</button></div><small>Ou glisse simplement un décor dans ce cadre.</small>
+              <div className="welcome-symbol"><Icon name="leaf" size={39}/></div><span className="overline">UN DÉCOR. QUELQUES MOTS. UNE HISTOIRE.</span><h1>Donne vie à Lunaria.</h1><p>Compose tes plans, place tes personnages et<br/>laisse les bulles raconter la suite.</p><div className="welcome-buttons"><button className="button primary" onClick={chooseLibrary} disabled={locked}><Icon name="folder" size={16}/> Choisir ma bibliothèque</button><button className="button subtle" onClick={loadExample} disabled={locked}>Essayer l’exemple</button></div><small>Ou glisse simplement un décor dans ce cadre.</small><button className="link-button welcome-project-guide" onClick={()=>setStudioModal('project')} disabled={locked}>Par où commencer ? Voir le projet →</button>
               {!!recentProjects.projects.length && <div className="welcome-recents"><div><strong>REPRENDRE UN PROJET</strong><button className="link-button" disabled={locked} onClick={openRecents}>Tout afficher <Icon name="chevron" size={12}/></button></div>{recentProjects.projects.slice(0,3).map(p => <button key={p.id} className="welcome-recent" disabled={locked} title={p.path} onClick={() => void openRecent(p.id)}><Icon name={p.pinned ? 'pin' : 'clock'} size={14}/><span><strong>{p.title}</strong><small>{p.path.split(/[\\/]/).at(-1)}</small></span><Icon name="chevron" size={13}/></button>)}</div>}
             </div>}
             {playback?.finished && <div className="end-screen"><Icon name="leaf" size={36}/><h2>Fin de la cinématique</h2><div><button className="button primary" title="Rejouer depuis le même plan de départ" onClick={() => { setPlayback(null); void startPlayback(playbackStartId.current); }}><Icon name="play" size={16}/> Rejouer</button><button className="button subtle" onClick={() => setPlayback(null)}>Retour à l’édition</button></div></div>}
             {(busy || (playback && !playback.finished && readyShot !== playback.shotIndex)) && <div className="busy-overlay"><span className="spinner"/> Chargement…</div>}
           </div></div>
-          <div className="canvas-bottomline">{playback ? <><button className="icon-button" aria-label={playback.paused ? 'Reprendre' : 'Pause'} disabled={playback.finished || readyShot !== playback.shotIndex} onClick={() => setPlayback(current => current ? { ...current, paused: !current.paused } : current)}><Icon name={playback.paused ? 'play' : 'pause'} size={16}/></button><span className="timecode">{Math.min(playback.elapsed, shot.duration).toFixed(1)} / {shot.duration.toFixed(1)} s</span><div className="playback-progress"><i style={{ width: `${Math.min(100, playback.elapsed / shot.duration * 100)}%` }}/></div><button className="continue-button" disabled={(!activeDialogue && !awaitingShotClick) || playback.paused || readyShot !== playback.shotIndex} onClick={advance}>{activeDialogue && textNeedsCompletion(activeDialogue, playback.dialogueElapsed, playback.textCompletedAt) ? 'Afficher tout le texte' : activeDialogue?.advance.mode === 'click' ? 'Cliquer pour continuer' : activeDialogue ? 'Réplique suivante' : awaitingShotClick ? playback.shotIndex + 1 < doc.shots.length ? 'Passer au plan suivant' : 'Terminer la cinématique' : playback.finished ? 'Lecture terminée' : 'Plan en cours'} <kbd>ESPACE</kbd></button></> : <><span><Icon name="camera" size={14}/> {cameraLabels[shot.camera.preset]}</span><span className="canvas-hint">Maj + clic : sélection multiple · Alt : sans aimant</span><button className={`icon-button ${snap?'toggled':''}`} aria-label="Alignement magnétique" title="Alignement magnétique · Alt pour désactiver pendant le glissement" aria-pressed={snap} onClick={()=>setSnap(!snap)}><Icon name="magnet" size={16}/></button><button className={`icon-button ${guides ? 'toggled' : ''}`} title="Afficher les repères" aria-label="Afficher les repères" onClick={() => setGuides(!guides)}><Icon name="grid" size={16}/></button></>}</div>
+          <div className="canvas-bottomline">{playback ? <><button className="icon-button" aria-label={playback.paused ? 'Reprendre' : 'Pause'} disabled={playback.finished || readyShot !== playback.shotIndex} onClick={() => setPlayback(current => current ? { ...current, paused: !current.paused } : current)}><Icon name={playback.paused ? 'play' : 'pause'} size={16}/></button><span className="timecode">{playback.exitElapsed !== undefined && shot.exitTransition?.type === "fade" ? `Fondu ${playback.exitElapsed.toFixed(1)} / ${shot.exitTransition.duration.toFixed(1)} s` : `${Math.min(playback.elapsed, shot.duration).toFixed(1)} / ${shot.duration.toFixed(1)} s`}</span><div className="playback-progress"><i style={{ width: `${playback.exitElapsed !== undefined && shot.exitTransition?.type === "fade" ? Math.min(100, playback.exitElapsed / shot.exitTransition.duration * 100) : Math.min(100, playback.elapsed / shot.duration * 100)}%` }}/></div><button className="continue-button" disabled={(!activeDialogue && !awaitingShotClick) || playback.paused || readyShot !== playback.shotIndex} onClick={advance}>{activeDialogue && textNeedsCompletion(activeDialogue, playback.dialogueElapsed, playback.textCompletedAt) ? 'Afficher tout le texte' : activeDialogue?.advance.mode === 'click' ? 'Cliquer pour continuer' : activeDialogue ? 'Réplique suivante' : awaitingShotClick && shot.exitTransition?.type === "fade" ? "Lancer le fondu vers le noir" : awaitingShotClick ? playback.shotIndex + 1 < doc.shots.length ? 'Passer au plan suivant' : 'Terminer la cinématique' : playback.finished ? 'Lecture terminée' : playback.exitElapsed !== undefined ? 'Fondu vers le noir' : 'Plan en cours'} <kbd>ESPACE</kbd></button></> : <><span><Icon name="camera" size={14}/> {cameraLabels[shot.camera.preset]}</span><span className="canvas-hint">Maj + clic : sélection multiple · Alt : sans aimant</span><button className={`icon-button ${snap?'toggled':''}`} aria-label="Alignement magnétique" title="Alignement magnétique · Alt pour désactiver pendant le glissement" aria-pressed={snap} onClick={()=>setSnap(!snap)}><Icon name="magnet" size={16}/></button><button className={`icon-button ${guides ? 'toggled' : ''}`} title="Afficher les repères" aria-label="Afficher les repères" onClick={() => setGuides(!guides)}><Icon name="grid" size={16}/></button></>}</div>
         </div>
         {!playback && <div className={`motion-preview-bar ${motionPreview.active ? 'active' : ''}`}>
           <button className="button text" aria-label={motionPreview.active ? motionPreview.running ? 'Pause des mouvements' : 'Reprendre les mouvements' : 'Aperçu des mouvements'} disabled={locked} onClick={() => { if (!motionPreview.active) setTextPreviewId(null); motionPreview.toggle(); }}><Icon name={motionPreview.running ? 'pause' : 'motion'} size={15}/><span>{motionPreview.active ? textPreviewBubble ? 'Texte animé' : 'Animations' : 'Aperçu des animations'}</span></button>
           {motionPreview.active ? <><input type="range" aria-label="Temps de l’aperçu des mouvements" min={0} max={previewDuration} step={0.01} value={motionPreview.time} onChange={e => motionPreview.seek(+e.target.value)}/><output>{motionPreview.time.toFixed(1)} / {previewDuration.toFixed(1)} s</output><button className="button subtle" onClick={motionPreview.stop}>Retour au placement</button></> : <small>Teste les effets sans audio ni déroulement des dialogues.</small>}
         </div>}
-        <section className="storyboard"><div className="storyboard-heading"><div><Icon name="layers" size={15}/><strong>LES PLANS</strong><span>{doc.shots.length} plan{doc.shots.length > 1 ? 's' : ''} · {totalSeconds.toFixed(0)} s minimum</span></div><button className="link-button continue-shot" disabled={!!playback || locked} onClick={()=>fromTemplate('continue')}>Continuer ce plan <Icon name="chevron" size={13}/></button><button className="link-button" data-testid="storyboard-play-current" disabled={!!playback || locked} title={`Lire à partir du plan ${selectedShotNumber}, puis les suivants (Maj+Espace)`} onClick={() => startPlayback(selectedShot.id)}><Icon name="play" size={13}/> Lire depuis ce plan</button></div>
+        <section className="storyboard"><div className="storyboard-heading"><div><Icon name="layers" size={15}/><strong>LES PLANS</strong><span>{doc.shots.length} plan{doc.shots.length > 1 ? 's' : ''} · {totalSeconds.toFixed(0)} s minimum</span></div>
+          <div className="shot-order-controls" role="group" aria-label="Ordre des plans"><span>Déplacer le plan {selectedShotNumber}</span><button type="button" aria-label="Déplacer le plan vers la gauche" title="Reculer d’une position" disabled={!!playback || locked || selectedShotIndex === 0} onClick={() => moveShotToIndex(selectedShot.id, selectedShotIndex - 1)}>←</button><button type="button" aria-label="Déplacer le plan vers la droite" title="Avancer d’une position" disabled={!!playback || locked || selectedShotIndex === doc.shots.length - 1} onClick={() => moveShotToIndex(selectedShot.id, selectedShotIndex + 1)}>→</button><label>Position <select aria-label="Position du plan sélectionné" value={selectedShotIndex + 1} disabled={!!playback || locked || doc.shots.length < 2} onChange={e => moveShotToIndex(selectedShot.id, Number(e.target.value) - 1)}>{doc.shots.map((_, index) => <option key={index} value={index + 1}>{index + 1} / {doc.shots.length}</option>)}</select></label></div>
+          <button className="link-button continue-shot" disabled={!!playback || locked} onClick={()=>fromTemplate('continue')}>Continuer ce plan <Icon name="chevron" size={13}/></button><button className="link-button" data-testid="storyboard-play-current" disabled={!!playback || locked} title={`Lire à partir du plan ${selectedShotNumber}, puis les suivants (Maj+Espace)`} onClick={() => startPlayback(selectedShot.id)}><Icon name="play" size={13}/> Lire depuis ce plan</button></div>
           <div className="shot-strip" onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-lunaria-shot'))e.preventDefault();}} onDrop={e=>{if(e.target!==e.currentTarget)return;const id=e.dataTransfer.getData('application/x-lunaria-shot');if(id)reorderShot(id,doc.shots.at(-1)!.id);}}>{doc.shots.map((s, index) => <button key={s.id} className={`shot-card ${shot.id === s.id ? 'active' : ''}`} draggable={!playback && !locked} disabled={!!playback || locked}
-            data-testid={`shot-card-${index}`} onClick={() => selectShot(s.id)}
+            data-testid={`shot-card-${index}`} data-shot-id={s.id} onClick={() => selectShot(s.id)}
             onDragStart={e => { e.dataTransfer.setData('application/x-lunaria-shot', s.id); e.dataTransfer.effectAllowed = 'move'; }}
             onDragOver={e => { if (e.dataTransfer.types.includes('application/x-lunaria-shot')) e.preventDefault(); }}
             onDrop={e => { e.preventDefault(); reorderShot(e.dataTransfer.getData('application/x-lunaria-shot'), s.id); }}>
@@ -554,14 +676,14 @@ export default function App() {
           </button>)}<button className="add-shot" disabled={!!playback || locked} onClick={addShot}><span><Icon name="plus" size={24}/></span>Ajouter un plan</button></div>
         </section>
       </section>
-      <Inspector presentationProject={presentationProject} setCatalog={value=>commit(d=>{d.presentationCatalog=value;d.schemaVersion=4;},'catalog-link','Relier le catalogue partagé')} previewMotion={startMotionPreview} previewText={startTextPreview} doc={doc} shot={shot} selection={playback ? { kind: 'shot' } : selection} multiCount={playback?0:selectionIds.length} objectLocked={!playback && selectionIds.length===1 && workspaceObjects.locked.has(selectionIds[0])} autoPlace={autoPlaceSelected} assets={assets} disabled={!!playback || locked} updateShot={updateShot} updateObject={updateObject} select={setSelection} remove={remove} duplicate={duplicate} layer={layer} moveBubble={moveBubble}>
+      <Inspector presentationProject={presentationProject} setCatalog={value=>commit(d=>{d.presentationCatalog=value;d.schemaVersion=4;},'catalog-link','Relier le catalogue partagé')} previewMotion={startMotionPreview} previewText={startTextPreview} doc={doc} shot={shot} selection={playback ? { kind: 'shot' } : selection} multiCount={playback?0:selectionIds.length} objectLocked={!playback && selectionIds.length===1 && workspaceObjects.locked.has(selectionIds[0])} copiedKind={copiedObject?.kind} copiedName={copiedObject?.kind === 'actor' ? copiedObject.actor.name : undefined} copySelection={copySelection} pasteSelection={pasteSelection} autoPlace={autoPlaceSelected} assets={assets} disabled={!!playback || locked} updateShot={updateShot} updateObject={updateObject} select={setSelection} remove={remove} duplicate={duplicate} layer={layer} moveBubble={moveBubble}>
         {!playback&&<Layers shot={shot} selectedIds={selectionIds} select={setSelection} selectAll={selectAll} locked={workspaceObjects.locked} hidden={workspaceObjects.hidden} toggle={(kind,id)=>workspaceObjects.change(kind,id)} reorder={reorderLayer} align={alignSelection} disabled={locked}/>}
       </Inspector>
     </main>
-    <footer className="statusbar"><div><Icon name="leaf" size={12}/><button className={`recovery-status ${recoveryStatus}`} title="Ouvrir les versions locales · Ctrl+S enregistre le fichier source" disabled={locked||!!playback} onClick={openVersions}><Icon name="history" size={12}/>{recoveryStatus==='saving'?'Copie automatique…':recoveryStatus==='saved'?'Récupération à jour':recoveryStatus==='error'?'Récupération en erreur':'Versions locales'}</button><span className="statusbar-divider"/><span title={filePath}>{filePath ? filePath.split(/[\\/]/).pop() : 'cinematic.json · chemins relatifs library://'}</span></div><button className={issueCount ? 'has-warnings' : ''} onClick={() => setModal('issues')}><Icon name={issueCount ? 'warning' : 'check'} size={13}/>{issueCount ? `${issueCount} point(s) à vérifier` : 'Aucune alerte détectée'}</button></footer>
+    <footer className="statusbar"><div><Icon name="leaf" size={12}/><span title={studioProjectPath}>{studioProjectPath ? studioProjectPath.split(/[\\/]/).pop() : 'Projet Lunaria non enregistré'}</span></div><button className={issueCount ? 'has-warnings' : ''} onClick={() => setModal('issues')}><Icon name={issueCount ? 'warning' : 'check'} size={13}/>{issueCount ? `${issueCount} point(s) à vérifier` : 'Aucune alerte détectée'}</button></footer>
     {!!toast && <div className="toast" role="status"><Icon name="leaf" size={18}/><span>{toast}</span><button className="icon-button" aria-label="Fermer le message" onClick={() => setToast('')}><Icon name="close" size={15}/></button></div>}
     {modal && <div className="modal-backdrop" onPointerDown={e => { if (e.target === e.currentTarget && modal !== 'recovery' && !busy) setModal(null); }}><section className="modal" role="dialog" aria-modal="true" aria-label={modal === 'help' ? 'Prendre en main le studio' : modal === 'issues' ? 'Vérification de la cinématique' : 'Récupérer le travail'}><button hidden={modal === 'recovery'} disabled={busy} className="icon-button modal-close" aria-label="Fermer" onClick={() => setModal(null)}><Icon name="close"/></button>
-      {modal === 'help' ? <><span className="overline">LUNARIA CINEMATIC STUDIO</span><h2>Ton histoire, plan par plan.</h2><div className="help-step"><b>01</b><div><h3>Connecte la bibliothèque commune.</h3><p>Sélectionne le dossier qui contient les continents. Garde personnages, objets (07_props) et bulles dans cette même racine. Rien n’est recopié à la sauvegarde.</p></div></div><div className="help-step"><b>02</b><div><h3>Compose un plan.</h3><p>Double-clique sur un décor, puis glisse tes PNG dans la scène. Sélectionne un personnage avant d’ajouter sa bulle : la queue le suivra.</p></div></div><div className="help-step"><b>03</b><div><h3>Écris, puis regarde.</h3><p>Sélectionne une vignette puis « Lire depuis ce plan » en haut à droite (Maj+Espace hors saisie). La lecture démarre au début de ce plan, puis poursuit les suivants. « Tout lire » repart du premier plan. Échap revient au plan sélectionné. Les bulles se lisent dans l’ordre indiqué. Dans « Animation du texte », choisis Écriture, Mot par mot ou Cri, puis « Tester ce texte ». Un premier clic termine l’apparition ; le suivant passe à la réplique suivante. Pour un personnage, ennemi ou objet, règle son entrée, ses Mouvements, sa destination B et sa Disparition. Les boutons de test donnent un aperçu avec curseur de temps.</p></div></div><div className="help-step"><b>04</b><div><h3>Enregistre le JSON.</h3><p>Les plans se réordonnent en les faisant glisser. Ctrl+S enregistre ; Ctrl+Z annule. « Projets récents » (Ctrl+Maj+O) retrouve les fichiers déjà ouverts ou enregistrés, avec leurs bibliothèques. Épingle ceux que tu utilises souvent. Le dossier godot du projet contient le lecteur et son guide d’intégration.</p></div></div><button className="button primary" onClick={() => setModal(null)}>Commencer à créer</button></>
+      {modal === 'help' ? <><span className="overline">LUNARIA CINEMATIC STUDIO</span><h2>Ton histoire, plan par plan.</h2><div className="help-step"><b>01</b><div><h3>Connecte la bibliothèque commune.</h3><p>Sélectionne le dossier qui contient les continents. Garde personnages, objets (07_props) et bulles dans cette même racine. Rien n’est recopié à la sauvegarde.</p></div></div><div className="help-step"><b>02</b><div><h3>Compose un plan.</h3><p>Double-clique sur un décor, puis glisse tes PNG dans la scène. Sélectionne un personnage avant d’ajouter sa bulle : la queue le suivra.</p></div></div><div className="help-step"><b>03</b><div><h3>Écris, puis regarde.</h3><p>Sélectionne une vignette puis « Lire depuis ce plan » en haut à droite (Maj+Espace hors saisie). La lecture démarre au début de ce plan, puis poursuit les suivants. « Tout lire » repart du premier plan. Échap revient au plan sélectionné. Les bulles se lisent dans l’ordre indiqué. Dans « Animation du texte », choisis Écriture, Mot par mot ou Cri, puis « Tester ce texte ». Un premier clic termine l’apparition ; le suivant passe à la réplique suivante. Pour un personnage, ennemi ou objet, règle son entrée, ses Mouvements, sa destination B et sa Disparition. Les boutons de test donnent un aperçu avec curseur de temps.</p></div></div><div className="help-step"><b>04</b><div><h3>Enregistre le JSON.</h3><p>Pour changer l’ordre, sélectionne un plan puis utilise les flèches ou le menu Position au-dessus des vignettes. Tu peux aussi faire glisser les plans. Ctrl+S enregistre ; Ctrl+Z annule. « Projets récents » (Ctrl+Maj+O) retrouve les fichiers déjà ouverts ou enregistrés, avec leurs bibliothèques. Épingle ceux que tu utilises souvent. Le dossier godot du projet contient le lecteur et son guide d’intégration.</p></div></div><button className="button primary" onClick={() => setModal(null)}>Commencer à créer</button></>
       : modal === 'recovery' ? <><span className="overline">RÉCUPÉRATION LOCALE</span><h2>Reprendre le dernier travail ?</h2><p>Une copie de récupération a été trouvée : <strong>{recovery?.title}</strong>. Les images ne sont pas incluses ; reconnecte la même bibliothèque.</p>{recoveryRoot && <p className="asset-reference">Bibliothèque utilisée : {recoveryRoot}</p>}<div className="modal-actions"><button className="button subtle" disabled={busy} onClick={() => void recover(false)}>Ne pas reprendre</button><button className="button primary" disabled={busy} onClick={() => void recover(true)}>Récupérer la cinématique</button></div></>
       : <><Diagnostics issues={diagnostics} onFocus={focusDiagnostic} onFix={fixDiagnostic} disabled={busy||!!playback}/><div className="modal-actions"><button className="button subtle" disabled={busy||!!playback} onClick={() => { setModal(null); void chooseLibrary(); }}>Reconnecter la bibliothèque</button><button className="button primary" onClick={() => setModal(null)}>Retour à la scène</button></div></>}
 
@@ -571,5 +693,16 @@ export default function App() {
     {studioModal==='duplicate'&&<DuplicateDialog onDuplicate={duplicatePlan} onClose={()=>setStudioModal(null)} disabled={busy}/>}
     {studioModal==='versions'&&<VersionsDialog versions={versions} desktop={desktop} busy={busy} onCreate={label=>void createVersion(label)} onRestore={id=>void restoreVersion(id)} onClose={()=>setStudioModal(null)}/>}
 
-  </div><section className="studio-game-host" hidden={studioMode!=='levels'}><GameEditor assets={assets} onProject={setPresentationProject} externalUsages={presentationUsages} ref={gameEditor} active={studioMode==='levels'} onDirty={setGameDirty} onBusy={setGameBusy} onOpenFilm={openCampaignFilm} onBeforePublish={prepareCampaignPublish}/></section></div>;
+   </div>
+    {studioModal==='project'&&<ProjectOverview project={presentationProject} path={studioProjectPath} modified={gameDirty} libraryName={library?.rootPath.split(/[\\/]/).pop()} disabled={locked} onClose={()=>setStudioModal(null)}
+      onOpen={()=>{setStudioModal(null);void open();}} onSave={()=>{setStudioModal(null);void save();}}
+      onLibrary={()=>{setStudioModal(null);void chooseLibrary();}}
+      onCreateFilm={()=>{setStudioModal(null);setStudioMode('cinematics');void createDocument();}}
+      onBrowseFilms={()=>{setStudioModal('films');setStudioMode('cinematics');}}
+      onCreateLevel={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.createLevel();}}
+      onCampaign={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.navigate('campaign');}}
+      onCharacters={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.navigate('plants');}}
+      onChecks={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.showChecks();}}/>}
+    {studioModal==='films'&&<CinematicsBrowser films={presentationProject.cinematics??[]} activeId={activeFilmId.current} disabled={locked} references={filmReferences} onClose={()=>setStudioModal(null)} onSelect={id=>{selectFilm(id);setStudioModal(null);}} onCreate={()=>{setStudioModal(null);void createDocument();}} onDuplicate={id=>{void duplicateFilm(id);}} onRename={(id,title)=>updateFilm(id,{title})} onCategory={(id,category)=>updateFilm(id,{category})} onMove={(id,targetId)=>gameEditor.current?.moveCinematic(id,targetId)} onDelete={id=>{void deleteFilm(id);}} onBackupProject={()=>{void backupProject();}}/>}
+    <LibraryPickerContext.Provider value={{library,choose:chooseLibrary,refresh:refreshLibrary,collections,layout:libraryLayout}}><section className="studio-game-host" hidden={studioMode!=='levels'}><GameEditor assets={assets} onProject={setPresentationProject} onProjectLoaded={(project,path)=>{const first=project.cinematics?.[0];replaceDocument(copy(first??newCinematic()),documentToken.current,path,true);if(!first)activeFilmId.current=''}} onProjectPath={setStudioProjectPath} externalUsages={presentationUsages} ref={gameEditor} active={studioMode==='levels'} onDirty={setGameDirty} onBusy={setGameBusy} onOpenFilm={openCampaignFilm} onBeforePublish={prepareCampaignPublish}/></section></LibraryPickerContext.Provider></div>;
 }

@@ -4,19 +4,19 @@ import { newId, type CampaignFilm, type CampaignStep, type GameProject } from '.
 import { gameAPI } from './bridge.js';
 import { api } from '../browserBridge.js';
 interface Props {
+ createLevel:()=>void;
  project:GameProject; change:(edit:(p:GameProject)=>void,key?:string,label?:string)=>void;
  run:(fn:()=>Promise<void>)=>Promise<void>;selectLevel:(id:string)=>void;
  openFilm:(film:CampaignFilm)=>Promise<void>;report:(message:string)=>void;
 }
-export function CampaignEditor({project,change,run,selectLevel,openFilm,report}:Props){
- const campaign=campaignOf(project),[selected,setSelected]=useState(campaign.steps[0]?.id??''),[folder,setFolder]=useState(''),[insertBefore,setInsertBefore]=useState<string|null|undefined>(undefined),[levelChoice,setLevelChoice]=useState('');
+export function CampaignEditor({project,change,run,selectLevel,openFilm,report,createLevel}:Props){
+  const campaign=campaignOf(project),[selected,setSelected]=useState(campaign.steps[0]?.id??''),[insertBefore,setInsertBefore]=useState<string|null|undefined>(undefined),[levelChoice,setLevelChoice]=useState(''),[filmChoice,setFilmChoice]=useState('');
  const inspector=useRef<HTMLElement>(null);
  useEffect(()=>{if(inspector.current)inspector.current.scrollTop=0;},[selected]);
  const [dragged,setDragged]=useState(''),[dropTarget,setDropTarget]=useState('');
  const step=campaign.steps.find(s=>s.id===selected),film=step?.kind==='cinematic'?campaign.cinematics.find(f=>f.id===step.cinematicId):undefined;
  const level=step?.kind==='level'?project.levels.find(l=>l.id===step.levelId):undefined;
  const available=project.levels.filter(l=>!campaign.steps.some(s=>s.kind==='level'&&s.levelId===l.id));
- useEffect(()=>{let live=true;gameAPI.campaignFolder().then(v=>{if(live)setFolder(v);}).catch(e=>{if(live)report(String(e));});return()=>{live=false;};},[]);
  useEffect(()=>{if(!campaign.steps.some(s=>s.id===selected))setSelected(campaign.steps[0]?.id??'');},[campaign.steps,selected]);
  useEffect(()=>{if(insertBefore!==undefined&&insertBefore!==null&&!campaign.steps.some(s=>s.id===insertBefore))setInsertBefore(undefined);},[campaign.steps,insertBefore]);
  function insertAt(next:CampaignStep,beforeId:string|null,reference?:CampaignFilm){
@@ -25,25 +25,35 @@ export function CampaignEditor({project,change,run,selectLevel,openFilm,report}:
  }
  function openInsertion(beforeId:string|null){setInsertBefore(current=>current===beforeId?undefined:beforeId);setLevelChoice(available[0]?.id??'');}
  function after(id:string):string|null{const i=campaign.steps.findIndex(s=>s.id===id);return campaign.steps[i+1]?.id??null;}
- const addFilm=(beforeId:string|null)=>void run(async()=>{
-  if(!await gameAPI.campaignFolder()){const root=await gameAPI.chooseCampaignFolder();if(!root)return;setFolder(root);}
-  const picked=await gameAPI.addCampaignFilm();if(!picked)return;
-  const existing=campaign.cinematics.find(f=>f.file.toLowerCase()===picked.file.toLowerCase());
-  if(existing&&existing.documentId!==picked.documentId)throw Error('Ce chemin désigne désormais un autre film. Retire l’ancienne référence avant de l’ajouter.');
-  const ref=existing??picked;insertAt({id:newId('step'),kind:'cinematic',cinematicId:ref.id,skippable:true},beforeId,ref);
- });
+  const addFilm=(beforeId:string|null)=>void run(async()=>{
+   const picked=await gameAPI.addCampaignFilm();if(!picked)return;
+   const existing=campaign.cinematics.find(f=>f.documentId===picked.cinematic.id);
+   const existingDoc=project.cinematics?.find(doc=>doc.id===picked.cinematic.id);
+   if(existingDoc&&JSON.stringify(existingDoc)!==JSON.stringify(picked.cinematic))throw Error('Cette cinématique existe déjà dans le projet avec des modifications différentes. Ouvre-la dans le Studio.');
+   const ref=existing??picked.film;
+   change(p=>{const c=ensureCampaign(p);if(!existing)c.cinematics.push(ref);if(!existingDoc)(p.cinematics??=[]).push(picked.cinematic);const i=beforeId===null?c.steps.length:c.steps.findIndex(s=>s.id===beforeId);c.steps.splice(i<0?c.steps.length:i,0,{id:newId('step'),kind:'cinematic',cinematicId:ref.id,skippable:true});},'','Importer et placer une cinématique');
+   setInsertBefore(undefined);
+  });
+  const placeExistingFilm=(beforeId:string|null)=>{
+   const doc=project.cinematics?.find(item=>item.id===(filmChoice||project.cinematics?.[0]?.id));if(!doc)return;
+   const existing=campaign.cinematics.find(item=>item.documentId===doc.id);
+   const id=newId('film'),ref=existing??{id,title:doc.title,file:id+'.cinematic.json',documentId:doc.id};
+   insertAt({id:newId('step'),kind:'cinematic',cinematicId:ref.id,skippable:true},beforeId,ref);
+  };
  const replaceFilm=()=>void run(async()=>{
   if(!film)return;
   const picked=await gameAPI.addCampaignFilm();if(!picked)return;
   const id=film.id;
-  change(p=>{const c=ensureCampaign(p),previous=c.cinematics.find(f=>f.id===id);if(!previous)return;
-   const existing=c.cinematics.find(f=>f.id!==id&&f.file.toLowerCase()===picked.file.toLowerCase());
-   if(existing){Object.assign(existing,{title:picked.title,documentId:picked.documentId});for(const s of c.steps)if(s.kind==='cinematic'&&s.cinematicId===id)s.cinematicId=existing.id;c.cinematics=c.cinematics.filter(f=>f.id!==id);}
-   else Object.assign(previous,{title:picked.title,file:picked.file,documentId:picked.documentId});
-  },'','Remplacer un fichier lié');
-  report('Fichier relié. Toutes les étapes qui utilisent ce film suivent cette référence ; aucun fichier source n’a été supprimé.');
- });
- const chooseRoot=()=>void run(async()=>{const next=await gameAPI.chooseCampaignFolder();if(next)setFolder(next);});
+   const existingDoc=project.cinematics?.find(doc=>doc.id===picked.cinematic.id);
+   if(existingDoc&&JSON.stringify(existingDoc)!==JSON.stringify(picked.cinematic))throw Error('Cette cinématique existe déjà avec des modifications différentes. Ouvre-la dans le Studio.');
+   change(p=>{const c=ensureCampaign(p),previous=c.cinematics.find(f=>f.id===id);if(!previous)return;
+    const existing=c.cinematics.find(f=>f.id!==id&&f.documentId===picked.cinematic.id);
+    if(existing){for(const s of c.steps)if(s.kind==='cinematic'&&s.cinematicId===id)s.cinematicId=existing.id;c.cinematics=c.cinematics.filter(f=>f.id!==id);}
+    else Object.assign(previous,picked.film,{id});
+    if(!(p.cinematics??=[]).some(doc=>doc.id===picked.cinematic.id))p.cinematics!.push(picked.cinematic);
+   },'','Remplacer une cinématique');
+   report('Cinématique intégrée au projet. Le fichier importé reste intact.');
+  });
  function move(id:string,beforeId:string|null){change(p=>{const c=ensureCampaign(p);c.steps=moveCampaignStep(c.steps,id,beforeId);},'','Déplacer une étape');}
  function nudge(by:number){if(!step)return;const i=campaign.steps.findIndex(s=>s.id===step.id),j=i+by;if(j<0||j>=campaign.steps.length)return;move(step.id,by<0?campaign.steps[j].id:campaign.steps[j+1]?.id??null);}
  const remove=()=>void run(async()=>{if(!step||!await api.confirmDelete('cette étape du parcours (le contenu reste dans le Studio)'))return;
@@ -56,13 +66,13 @@ export function CampaignEditor({project,change,run,selectLevel,openFilm,report}:
  return <section className="gd-campaign">
   <header className="gd-campaign-header"><div><span className="gd-kicker">LE PARCOURS DU JOUEUR</span><h1>Campagne</h1><p><strong>Le jeu lit cette liste de haut en bas.</strong> Une cinématique placée entre deux niveaux se lance après la victoire du premier, avant le chargement du suivant.</p></div><div className="gd-campaign-count"><b>{campaign.steps.length}</b><span>étapes</span><small>{campaign.steps.filter(s=>s.kind==='level').length} niveaux · {campaign.steps.filter(s=>s.kind==='cinematic').length} cinématiques</small></div></header>
   <div className="gd-campaign-explainer" aria-label="Exemple d’enchaînement de campagne"><div><span className="gd-flow-node start">DÉBUT</span><b>→</b><span className="gd-flow-node cinematic">▶ CINÉMATIQUE</span><b>→</b><span className="gd-flow-node level">⚑ NIVEAU</span><b>→</b><span className="gd-flow-node cinematic">▶ CINÉMATIQUE</span><b>→</b><span className="gd-flow-node level">⚑ NIVEAU</span></div><p>Clique sur <strong>« Insérer ici »</strong> exactement à l’endroit où le film ou le niveau doit être joué. Tu peux ensuite glisser les cartes pour les réordonner.</p></div>
-  <div className="gd-campaign-layout"><div className="gd-sequence-panel">
+  {!campaign.steps.length&&<div className="gd-campaign-start"><div><strong>Construis la première étape du voyage.</strong><p>Commence par un niveau, ou utilise « Insérer ici » pour placer une cinématique déjà créée.</p></div><button className="gd-primary" onClick={createLevel} disabled={project.levels.length>=200}>Créer un premier niveau</button></div>}<div className="gd-campaign-layout"><div className="gd-sequence-panel">
    <ol className="gd-campaign-cards" aria-label="Ordre de la campagne">
     {[...campaign.steps.map((s,i)=>({step:s,index:i,before:s.id})),{step:null,index:campaign.steps.length,before:null as string|null}].map(({step:s,index:i,before})=><React.Fragment key={s?.id??'campaign-end'}>
      <li role="presentation" className={`gd-insert-slot ${insertBefore===before?'open ':''}${dropTarget===`slot:${before??'end'}`?'drop-target':''}`}
       onDragOver={e=>{if(dragged){e.preventDefault();setDropTarget(`slot:${before??'end'}`);}}} onDrop={e=>{e.preventDefault();const id=e.dataTransfer.getData('application/x-lunaria-step');if(id)move(id,before);setDragged('');setDropTarget('');}}>
       <span className="gd-insert-line"/><button className="gd-insert-toggle" aria-expanded={insertBefore===before} aria-label={i===0?'Insérer au début de la campagne':i===campaign.steps.length?'Insérer après la dernière étape':`Insérer entre les étapes ${i} et ${i+1}`} onClick={()=>openInsertion(before)}><b>＋</b> Insérer ici <small>{i===0?'au démarrage':i===campaign.steps.length?'après la dernière étape':`entre ${i} et ${i+1}`}</small></button><span className="gd-insert-line"/>
-      {insertBefore===before&&<div className="gd-insert-menu"><div className="gd-insert-choice cinematic"><span className="gd-step-symbol cinematic">▶</span><div><strong>Cinématique</strong><small>Choisir un fichier cinematic.json. Il sera joué à cet endroit précis.</small></div><button className="gd-primary" disabled={campaign.steps.length>=1000} aria-label={i===0?'Choisir une cinématique au début de la campagne':i===campaign.steps.length?'Choisir une cinématique après la dernière étape':`Choisir une cinématique entre les étapes ${i} et ${i+1}`} onClick={()=>addFilm(before)}>Choisir un film…</button></div><span className="gd-insert-or">OU</span><div className="gd-insert-choice level"><span className="gd-step-symbol level">⚑</span><div><strong>Niveau</strong><small>{available.length?'Choisir un niveau qui n’est pas encore dans le parcours.':'Tous les niveaux du projet sont déjà placés.'}</small></div>{available.length?<><select aria-label="Niveau à ajouter au parcours" value={levelChoice} onChange={e=>setLevelChoice(e.target.value)}>{available.map(l=><option key={l.id} value={l.id}>{l.title}</option>)}</select><button disabled={!available.some(l=>l.id===levelChoice)||campaign.steps.length>=1000} onClick={()=>insertAt({id:newId('step'),kind:'level',levelId:levelChoice},before)}>Insérer le niveau ici</button></>:null}</div></div>}
+      {insertBefore===before&&<div className="gd-insert-menu"><div className="gd-insert-choice cinematic"><span className="gd-step-symbol cinematic">▶</span><div><strong>Cinématique</strong><small>Les films sont enregistrés avec les niveaux.</small></div>{!!project.cinematics?.length&&<><select aria-label="Cinématique à placer" value={filmChoice||project.cinematics[0].id} onChange={e=>setFilmChoice(e.target.value)}>{project.cinematics.map(doc=><option key={doc.id} value={doc.id}>{doc.title}</option>)}</select><button disabled={campaign.steps.length>=1000} onClick={()=>placeExistingFilm(before)}>Placer ce film</button></>}<button className="gd-primary" disabled={campaign.steps.length>=1000} aria-label={i===0?'Choisir une cinématique au début de la campagne':i===campaign.steps.length?'Choisir une cinématique après la dernière étape':`Choisir une cinématique entre les étapes ${i} et ${i+1}`} onClick={()=>addFilm(before)}>Importer un film…</button></div><span className="gd-insert-or">OU</span><div className="gd-insert-choice level"><span className="gd-step-symbol level">⚑</span><div><strong>Niveau</strong><small>{available.length?'Choisir un niveau qui n’est pas encore dans le parcours.':'Tous les niveaux du projet sont déjà placés.'}</small></div>{available.length?<><select aria-label="Niveau à ajouter au parcours" value={levelChoice} onChange={e=>setLevelChoice(e.target.value)}>{available.map(l=><option key={l.id} value={l.id}>{l.title}</option>)}</select><button disabled={!available.some(l=>l.id===levelChoice)||campaign.steps.length>=1000} onClick={()=>insertAt({id:newId('step'),kind:'level',levelId:levelChoice},before)}>Insérer le niveau ici</button></>:null}</div></div>}
      </li>
      {s&&<li className={`gd-step-item ${s.kind} ${s.id===selected?'selected ':''}`} draggable
       onDragStart={e=>{setDragged(s.id);e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('application/x-lunaria-step',s.id);}} onDragEnd={()=>{setDragged('');setDropTarget('');}}>
@@ -74,10 +84,9 @@ export function CampaignEditor({project,change,run,selectLevel,openFilm,report}:
    </ol>
   </div><aside className="gd-campaign-inspector" ref={inspector}>
    {step?<><div className="gd-kicker">ÉTAPE {campaign.steps.indexOf(step)+1} · {step.kind==='level'?'NIVEAU JOUABLE':'CINÉMATIQUE'}</div><h2>{label(step)}</h2><div className="gd-step-context"><span>{campaign.steps[campaign.steps.indexOf(step)-1]?`Après « ${label(campaign.steps[campaign.steps.indexOf(step)-1])} »`:'Au début du jeu'}</span><b>→ CETTE ÉTAPE →</b><span>{campaign.steps[campaign.steps.indexOf(step)+1]?`Puis « ${label(campaign.steps[campaign.steps.indexOf(step)+1])} »`:'Puis fin de campagne'}</span></div><div className="gd-inline"><button aria-label="Monter l’étape" disabled={campaign.steps[0]===step} onClick={()=>nudge(-1)}>↑ Monter</button><button aria-label="Descendre l’étape" disabled={campaign.steps.at(-1)===step} onClick={()=>nudge(1)}>↓ Descendre</button></div>
-    {film?<><p className="gd-note">Ce film est joué à cette position dans la liste. Le fichier reste lié, sans copie ; ses prochaines modifications enregistrées seront reprises à la publication.</p><code className="gd-movie-path">{film.file}</code><label className="gd-check"><input type="checkbox" checked={step.kind==='cinematic'&&step.skippable} onChange={e=>change(p=>{const s=ensureCampaign(p).steps.find(s=>s.id===step.id);if(s?.kind==='cinematic')s.skippable=e.target.checked;},'','Autoriser le passage du film')}/>Autoriser le joueur à passer cette cinématique</label><button onClick={edit}>Ouvrir dans l’éditeur de cinématiques</button><button onClick={replaceFilm}>Changer le fichier lié…</button><p className="gd-note">Le changement de fichier s’applique à toutes les occurrences de ce film dans le parcours.</p><button disabled={campaign.steps.length>=1000} onClick={()=>insertAt({id:newId('step'),kind:'cinematic',cinematicId:film.id,skippable:step.kind==='cinematic'&&step.skippable},after(step.id))}>Répéter ce film juste après</button></>:<><p>{level?.waves.length??0} vagues · {level?.allowedPlants.length??0} plantes disponibles</p><button onClick={edit}>Ouvrir le niveau</button><p className="gd-note">Après la victoire, le jeu passe automatiquement à la carte placée juste en dessous : film ou niveau. Une défaite ne débloque pas la suite.</p></>}
-    <button className="gd-remove-step" onClick={remove}>Retirer du parcours</button></>:<p>Ajoute une première étape. Le parcours doit contenir au moins un niveau.</p>}
-   <hr/><h3>Dossier des cinématiques</h3><p className="gd-movie-path">{folder||'Choisir le dossier contenant tes fichiers cinematic.json'}</p><button onClick={chooseRoot}>Choisir le dossier…</button><p className="gd-note">Les chemins sont relatifs à ce dossier. Tu peux déplacer l’ensemble et reconnecter sa nouvelle racine ici.</p>
-   <hr/><h3>Avant publication</h3><p className="gd-note">Enregistre tes films. La publication vérifie les fichiers et les images, puis installe le parcours, le catalogue commun et les films utilisés.</p><button onClick={()=>void run(async()=>{const r=await gameAPI.checkCampaign(project);report(`Vérification réussie : ${r.steps} étapes, ${r.levels} niveaux, ${r.films} fichiers cinématiques, ${r.assets} ressources uniques. ${r.warnings.join(' ')}`);})}>Vérifier les fichiers du parcours</button>
+     {film?<><p className="gd-note">Ce film est enregistré avec les niveaux dans le projet Lunaria.</p><label className="gd-check"><input type="checkbox" checked={step.kind==='cinematic'&&step.skippable} onChange={e=>change(p=>{const s=ensureCampaign(p).steps.find(s=>s.id===step.id);if(s?.kind==='cinematic')s.skippable=e.target.checked;},'','Autoriser le passage du film')}/>Autoriser le joueur à passer cette cinématique</label><button onClick={edit}>Ouvrir dans l’éditeur de cinématiques</button><button onClick={replaceFilm}>Remplacer par un film importé…</button><button disabled={campaign.steps.length>=1000} onClick={()=>insertAt({id:newId('step'),kind:'cinematic',cinematicId:film.id,skippable:step.kind==='cinematic'&&step.skippable},after(step.id))}>Répéter ce film juste après</button></>:<><p>{level?.waves.length??0} vagues · {level?.allowedPlants.length??0} plantes disponibles</p><button onClick={edit}>Ouvrir le niveau</button><p className="gd-note">Après la victoire, le jeu passe automatiquement à la carte placée juste en dessous : film ou niveau. Une défaite ne débloque pas la suite.</p></>}
+    <button className="gd-remove-step" onClick={remove}>Retirer du parcours</button></>:<p>Ajoute une première cinématique ou un premier niveau quand tu seras prêt.</p>}
+    <hr/><h3>Avant publication</h3><p className="gd-note">Enregistre le projet unique. La publication vérifie ses films et ses images, puis installe le parcours dans le jeu.</p><button onClick={()=>void run(async()=>{const r=await gameAPI.checkCampaign(project);report(`Vérification réussie : ${r.steps} étapes, ${r.levels} niveaux, ${r.films} cinématiques, ${r.assets} ressources uniques. ${r.warnings.join(' ')}`);})}>Vérifier le parcours</button>
   </aside></div>
  </section>;
 }

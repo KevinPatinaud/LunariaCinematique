@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parseCollections, recordRecent, toggleFavorite, type Collections } from '../../shared/collections.js';
+import { parseCollections, recordRecent, toggleFavorite, toggleFavoriteFolder, type Collections } from '../../shared/collections.js';
 import type { AssetRef } from '../../shared/model.js';
 function load(key:string):Collections { try {return parseCollections(JSON.parse(localStorage.getItem(key)??'null'));} catch {return parseCollections(null);} }
 export function useCollections(root:string, warn:(message:string)=>void) {
@@ -13,5 +13,5 @@ export function useCollections(root:string, warn:(message:string)=>void) {
     try {localStorage.setItem(key,JSON.stringify(value));} catch {warn('Préférences locales indisponibles : les favoris ne seront pas conservés.');}
     setState({key,value});
   }
-  return {...collections,toggle:(ref:AssetRef)=>update(c=>toggleFavorite(c,ref)),use:(ref:AssetRef)=>update(c=>recordRecent(c,ref)),clearRecent:()=>update(c=>({...c,recent:[]}))};
+  return {...collections,toggle:(ref:AssetRef)=>update(c=>toggleFavorite(c,ref)),toggleFolder:(path:string)=>update(c=>toggleFavoriteFolder(c,path)),use:(ref:AssetRef)=>update(c=>recordRecent(c,ref)),clearRecent:()=>update(c=>({...c,recent:[]}))};
 }

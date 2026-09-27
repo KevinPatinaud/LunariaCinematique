@@ -1,6 +1,6 @@
 import { copy, duplicateShot, newBubble, newShot, removeActor, uid, STAGE, type Actor, type Box, type Bubble, type Shot } from './model.js';
 import { autoDialogueDuration } from './textAnimation.js';
-import { travelOffset } from './motion.js';
+import { actorAnchor, travelOffset } from './motion.js';
 import { bubbleLayout, clamp } from './geometry.js';
 export type ObjectKind = 'actor' | 'bubble';
 export interface ObjectChange { kind: ObjectKind; id: string; patch: Partial<Actor> | Partial<Bubble> }
@@ -20,7 +20,11 @@ export function selectionBounds(shot: Shot, ids: readonly string[]): Box | null 
 export function applyObjectChanges(shot: Shot, changes: readonly ObjectChange[]) {
   for (const change of changes) {
     const object = change.kind === 'actor' ? shot.actors.find(a => a.id === change.id) : shot.bubbles.find(b => b.id === change.id);
-    if (object) Object.assign(object, change.patch);
+    if (object) {
+      Object.assign(object, change.patch);
+      // Clearing an optional field must remove it: undefined is not a JSON value.
+      for (const [key, value] of Object.entries(change.patch)) if (value === undefined) Reflect.deleteProperty(object, key);
+    }
   }
 }
 export function moveObjects(shot: Shot, ids: readonly string[], dx: number, dy: number): ObjectChange[] {
@@ -60,6 +64,38 @@ export function duplicateObjects(shot: Shot, ids: readonly string[]): string[] {
     else { const b = cloned as Bubble; if (b.speakerId && remap.has(b.speakerId)) b.speakerId = remap.get(b.speakerId)!; shot.bubbles.push(b); }
   }
   return [...remap.values()];
+}
+/** Place a copied character in another shot without changing its authored geometry. */
+export function pasteActor(shot: Shot, source: Actor): Actor {
+  if (shot.actors.length >= 50) throw new Error('Ce plan contient déjà le maximum de 50 éléments.');
+  const actor = copy(source);
+  actor.id = uid();
+  shot.actors.push(actor);
+  return actor;
+}
+/** Preserve the bubble's authored box and reconnect its speaker when unambiguous. */
+export function pasteBubble(shot: Shot, source: Bubble, sourceSpeaker?: Actor): Bubble {
+  if (shot.bubbles.length >= 100) throw new Error('Ce plan contient déjà le maximum de 100 bulles.');
+  const bubble = copy(source);
+  bubble.id = uid();
+  if (bubble.speakerId) {
+    let speaker = shot.actors.find(actor => actor.id === bubble.speakerId);
+    if (!speaker && sourceSpeaker) {
+      const matches = shot.actors.filter(actor => actor.asset === sourceSpeaker.asset && actor.name === sourceSpeaker.name && (actor.role ?? 'character') === (sourceSpeaker.role ?? 'character'));
+      if (matches.length === 1) speaker = matches[0];
+    }
+    bubble.speakerId = speaker?.id ?? null;
+    if (!speaker && bubble.tail.mode === 'auto') {
+      if (sourceSpeaker) {
+        const head = actorAnchor(sourceSpeaker, 0, false);
+        bubble.tail.x = clamp(head.x / STAGE.width, -1, 2);
+        bubble.tail.y = clamp(head.y / STAGE.height, -1, 2);
+      }
+      bubble.tail.mode = 'manual';
+    }
+  }
+  shot.bubbles.push(bubble);
+  return bubble;
 }
 export function deleteObjects(shot: Shot, ids: readonly string[]) {
   const chosen = new Set(ids); shot.bubbles = shot.bubbles.filter(b => !chosen.has(b.id));

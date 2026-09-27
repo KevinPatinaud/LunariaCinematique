@@ -28,7 +28,7 @@ L'éditeur accepte PNG, JPG/JPEG, WebP pour les images ; WAV, OGG, MP3 pour l'au
 
 ## Plan
 
-Un plan contient `id`, `name`, `duration`, `background`, `camera`, `transition`, `actors`, `bubbles`, `dialogueStart` et `audio`.
+Un plan contient `id`, `name`, `duration`, `background`, `camera`, `transition`, `actors`, `bubbles`, `dialogueStart` et `audio`. Il peut aussi contenir `exitTransition`.
 
 `duration` est la durée **minimale**, en secondes. La caméra atteint son état final à cet instant. Le plan ne s'achève que lorsque cette durée est atteinte **et** que toutes ses bulles ont été terminées. Sans bulle, il se termine à la durée indiquée.
 
@@ -38,7 +38,7 @@ Le décor peut être absent dans un brouillon (`asset: null`). `cover` remplit l
 
 Caméra : `fixed`, `zoom_in`, `zoom_out`, `pan_left`, `pan_right`, `pan_up`, `pan_down`. `intensity` va de 0 à 1. Les zooms/panoramiques interpolent avec smoothstep. Les bulles restent en coordonnées écran ; les pointes attachées suivent le personnage transformé par la caméra.
 
-Transition : `cut` ou `fade`. `fade` est un fondu **depuis le noir au début du plan**. Il n'y a pas de chevauchement temporel de deux plans.
+`transition` : `cut` ou `fade`. `fade` est un fondu **depuis le noir au début du plan**. `exitTransition` utilise les mêmes valeurs : `fade` noircit le plan à sa sortie, après la durée minimale et toutes les répliques. Sa durée (au plus 3 s) s'ajoute au temps du plan. Si le passage au plan suivant attend un clic, ce clic déclenche le fondu. Un document sans `exitTransition` conserve une sortie par coupe. Il n'y a pas de chevauchement temporel de deux plans.
 
 Audio : `null` ou `{asset, volume, loop}`. La piste commence à l'entrée du plan, s'arrête à sa sortie et se met en pause avec le lecteur. Le même fichier affecté au plan suivant redémarre, sans continuité garantie.
 

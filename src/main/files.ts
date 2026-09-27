@@ -49,10 +49,10 @@ async function replaceWithRetry(from: string, to: string): Promise<void> {
   }
 }
 /** Temporary sibling + fsync + replace; optional .bak preserves the previous JSON. */
-export async function atomicJson(file: string, value: unknown, backup = false): Promise<void> {
+export async function atomicJson(file: string, value: unknown, backup = false, maxBytes = 5 * 1024 * 1024): Promise<void> {
   const temporary = `${file}.${randomUUID()}.tmp`, backupTemporary = `${temporary}.bak`;
   const serialized = JSON.stringify(value, null, 2) + '\n';
-  if (Buffer.byteLength(serialized, 'utf8') > 5 * 1024 * 1024) throw new Error('Le document dépasse 5 Mo. Répartis cette cinématique en plusieurs fichiers.');
+  if (Buffer.byteLength(serialized, 'utf8') > maxBytes) throw new Error(`Le document dépasse ${Math.floor(maxBytes / 1048576)} Mo.`);
   await fs.mkdir(path.dirname(file), { recursive: true });
   let handle;
   try {

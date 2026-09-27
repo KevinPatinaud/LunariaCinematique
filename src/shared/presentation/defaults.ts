@@ -398,6 +398,134 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
+      "id": "rose_punch_combo",
+      "ownerSpeciesId": "rose",
+      "name": "Rose — esquive et riposte",
+      "kind": "combined",
+      "frames": [
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "width": 1024,
+            "height": 1536
+          },
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.07
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/expressions/Gardienne rose en garde de combat.png",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "width": 1024,
+            "height": 1536
+          },
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.11
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "width": 1024,
+            "height": 1536
+          },
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.07
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_palm_strike_v01.png",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "width": 1024,
+            "height": 1536
+          },
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.14
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/expressions/Gardienne rose en garde de combat.png",
+          "region": {
+            "x": 0,
+            "y": 0,
+            "width": 1024,
+            "height": 1536
+          },
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.06
+        }
+      ],
+      "duration": 0.45,
+      "loop": false,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "recoil",
+        "amplitude": 0.7,
+        "period": 0.45
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.15
+        },
+        {
+          "id": "launch",
+          "x": 0.82,
+          "y": 0.4
+        }
+      ],
+      "markers": [
+        {
+          "id": "release",
+          "type": "release",
+          "at": 0.32,
+          "ref": "",
+          "attach": "launch"
+        }
+      ]
+    },
+    {
      "id": "radish_throw",
       "ownerSpeciesId": "radish",
       "name": "Radis — jet de caillou (4 poses conservées)",
@@ -1222,7 +1350,12 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
     {
       "id": "profile_rose",
       "name": "Profil rose",
-      "slots": [],
+      "slots": [
+        {
+          "slot": "attack",
+          "animationId": "rose_punch_combo"
+        }
+      ],
       "events": []
     },
     {
@@ -1246,6 +1379,12 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
     {
       "id": "profile_ivy",
       "name": "Profil ivy",
+      "slots": [],
+      "events": []
+    },
+    {
+      "id": "profile_scindapsus",
+      "name": "Profil Scindapsus",
       "slots": [],
       "events": []
     },
@@ -1713,6 +1852,21 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "tint": "#ffffff",
     "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
   },
+  "scindapsus": {
+    "sprite": {
+      "asset": "library://02_characters/scindapsus/stage_01/scindapsus_stage_01_master_v01.png",
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "width": 88,
+    "height": 118,
+    "baseline": 32,
+    "mirror": false,
+    "tint": "#ffffff",
+    "note": "Illustration du stade 1 (1086 × 1448 px). Les deux images du stade 2 restent disponibles dans la bibliothèque ; animations procédurales en attendant des poses dédiées."
+  },
   "nettle": {
     "sprite": {
       "asset": "library://combat/illustrations/plants/nettle.png",
@@ -1921,7 +2075,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+    "note": "Image de repos existante ; éclat de gingembre et halo du bonus dessinés en combat."
   },
   "chrysanthemum": {
     "sprite": {
@@ -2454,7 +2608,7 @@ export function ensurePresentation(p:GameProject):void {
  if(!p.presentation){
   p.presentation=structuredClone(DEFAULT_PRESENTATION);
   for(const s of [...p.balance.plants,...p.balance.enemies]){s.animationProfileId='profile_'+s.id;s.visual=structuredClone(INITIAL_VISUALS[s.id]);}
-  for(const a of p.combat?.abilities??[])a.presentation=structuredClone(DEFAULT_ABILITY_PRESENTATION);
+  for(const a of p.combat?.abilities??[])a.presentation??=structuredClone(DEFAULT_ABILITY_PRESENTATION);
   for(const q of p.combat?.projectiles??[])q.presentation={asset:'',animationId:'',trailVfxId:'',impact:{soundId:'',vfxId:'',attach:'center'}};
  }
  p.schemaVersion=4;

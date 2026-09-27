@@ -1,0 +1,36 @@
+dialog.studio-dialog:has(.cinematics-browser) { width: min(1050px, calc(100vw - 48px)); }
+.cinematics-browser { display: grid; gap: 15px; }
+.cinematics-browser-intro, .cinematics-browser-backup { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.cinematics-browser-intro p, .cinematics-browser-backup p { margin: 0; }
+.cinematics-browser-backup { border-top: 1px solid #455b40; padding-top: 15px; }
+.cinematics-browser-backup p { color: #b7c9aa; font-size: 12px; }
+.cinematics-browser-intro button, .cinematics-browser-backup button { flex-shrink: 0; }
+.cinematics-browser-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 220px); gap: 12px; }
+.cinematics-browser-filters label, .cinematics-browser-row-bottom label { display: grid; gap: 6px; color: #b9caa9; font-size: 12px; }
+.cinematics-browser-filters input, .cinematics-browser-filters select { width: 100%; font-size: 13px; }
+.cinematics-browser-list { display: grid; gap: 9px; max-height: min(55vh, 540px); overflow: auto; padding: 2px; }
+.cinematics-browser-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 10px; padding: 8px; border: 1px solid #455b40; border-radius: 9px; background: #202e24; }
+.cinematics-browser-film { display: flex; align-items: center; gap: 14px; width: 100%; min-width: 0; padding: 8px 10px; text-align: left; color: #dce6d3; background: #243328; border: 1px solid transparent; border-radius: 6px; }
+.cinematics-browser-film:hover:not(:disabled), .cinematics-browser-film:focus-visible { background: #304431; border-color: #aec48c; }
+.cinematics-browser-film.active { background: #35492d; border-color: #a6bc83; }
+.cinematics-browser-number { font-family: Georgia, serif; font-size: 21px; color: #d3d7a1; }
+.cinematics-browser-description { display: grid; flex: 1; min-width: 0; gap: 3px; }
+.cinematics-browser-description strong, .cinematics-browser-description small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cinematics-browser-description strong { font-size: 13px; }
+.cinematics-browser-description small { color: #a0b397; font-size: 10px; }
+.cinematics-browser-details { flex-shrink: 0; color: #b7c9aa; font-size: 11px; }
+.cinematics-browser-open { flex-shrink: 0; min-width: 62px; text-align: right; color: #d5dfa9; font-size: 11px; }
+.cinematics-browser-tools { display: flex; align-items: center; gap: 4px; }
+.cinematics-browser-tools .button { padding: 7px 8px; font-size: 11px; }
+.cinematics-browser-tools .danger { color: #ffb6a3; }
+.cinematics-browser-row-bottom { grid-column: 1 / -1; display: flex; align-items: end; gap: 14px; flex-wrap: wrap; padding: 0 10px 4px; }
+.cinematics-browser-row-bottom label { min-width: 190px; }
+.cinematics-browser-row-bottom select { width: 100%; }
+.cinematics-browser-linked { color: #d9c594; font-size: 11px; }
+.cinematics-browser-edit { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 260px; }
+.cinematics-browser-edit input { flex: 1; min-width: 100px; }
+.cinematics-browser-edit .button { flex-shrink: 0; }
+.cinematics-browser-error { margin: 0; color: #ffb6a3; font-size: 12px; }
+.cinematics-browser-empty { padding: 34px 15px; text-align: center; color: #b2c1a5; border: 1px dashed #58704c; border-radius: 8px; font-size: 13px; }
+@media (max-width: 900px) { .cinematics-browser-row { grid-template-columns: 1fr; } .cinematics-browser-tools { flex-wrap: wrap; } }
+@media (max-width: 620px) { .cinematics-browser-intro, .cinematics-browser-backup { align-items: stretch; flex-direction: column; } .cinematics-browser-filters { grid-template-columns: 1fr; } .cinematics-browser-details { display: none; } }

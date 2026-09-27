@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { newId, waveSchedule, replaceWaves, type WaveDefinition, type LevelDefinition, type EnemyDefinition, type SpawnGroup } from '../../shared/game/types.js';
+import { DEFAULT_WAVE_SEED_REWARD, newId, waveSchedule, replaceWaves, type WaveDefinition, type LevelDefinition, type EnemyDefinition, type SpawnGroup } from '../../shared/game/types.js';
 import { Num } from './BalanceEditor.js';
 export function WaveEditor({level,enemies,update}:{level:LevelDefinition;enemies:EnemyDefinition[];update:(patch:Partial<LevelDefinition>,key?:string)=>void}){
  const [waveId,setWaveId]=useState(level.waves[0].id),[time,setTime]=useState(0),[playing,setPlaying]=useState(false);
@@ -10,11 +10,12 @@ export function WaveEditor({level,enemies,update}:{level:LevelDefinition;enemies
  useEffect(()=>{if(time>=end)setPlaying(false);},[time,end]);
  const edit=(fn:(w:WaveDefinition)=>void,key='')=>{const waves=structuredClone(level.waves);fn(waves.find(w=>w.id===wave.id)!);update({waves},key);};
  const patch=(id:string,part:Partial<SpawnGroup>,key='')=>edit(w=>Object.assign(w.groups.find(g=>g.id===id)!,part),key);
- const addWave=()=>{const next:WaveDefinition={id:newId('wave'),groups:[{id:newId('group'),enemyId:enemies[0].id,count:5,lane:-1,start:0,interval:3}]};update({waves:[...level.waves,next]});setWaveId(next.id);};
+ const addWave=()=>{const next:WaveDefinition={id:newId('wave'),seedReward:DEFAULT_WAVE_SEED_REWARD,groups:[{id:newId('group'),enemyId:enemies[0].id,count:5,lane:-1,start:0,interval:3}]};update({waves:[...level.waves,next]});setWaveId(next.id);};
  const duplicate=()=>{const next=structuredClone(wave);next.id=newId('wave');next.groups.forEach(g=>g.id=newId('group'));const waves=[...level.waves];waves.splice(waves.findIndex(w=>w.id===wave.id)+1,0,next);update(replaceWaves(level,waves));setWaveId(next.id);};
  return <section className="gd-waves">
   <div className="gd-wave-tabs" role="tablist" aria-label="Vagues">{level.waves.map((w,i)=><button key={w.id} role="tab" aria-selected={wave.id===w.id} className={wave.id===w.id?'selected':''} onClick={()=>setWaveId(w.id)}>Vague {i+1}<small>{w.groups.reduce((n,g)=>n+g.count,0)} ennemis</small></button>)}<button disabled={level.waves.length>=50} onClick={addWave}>+ Vague</button></div>
   <div className="gd-section-heading"><div><h2>Composition de la vague</h2><p><strong>{schedule.length} ennemis</strong> · Dernière arrivée à {(end-2).toFixed(1)} s · Aucun renfort caché</p></div><div className="gd-inline"><button onClick={duplicate} disabled={level.waves.length>=50}>Dupliquer la vague</button><button disabled={level.waves.length===1} onClick={()=>update(replaceWaves(level,level.waves.filter(w=>w.id!==wave.id)))}>Retirer la vague</button></div></div>
+  <div className="gd-wave-reward"><Num label="Graines pour la vague éliminée" value={wave.seedReward??DEFAULT_WAVE_SEED_REWARD} max={10000} integer change={v=>edit(w=>{w.seedReward=v;},`${wave.id}:seedReward`)}/><p>Versées une fois lorsque tous les ennemis de cette vague ont été éliminés. Aucune prime si un ennemi s’échappe. La récompense par ennemi reste indépendante.</p></div>
   <div className="gd-wave-table"><div className="gd-wave-head"><span>Ennemi</span><span>Nombre</span><span>Allée</span><span>Début (s)</span><span>Intervalle (s)</span><span/></div>
    {wave.groups.map((g,i)=><div className="gd-spawn-row" key={g.id}>
     <select aria-label={`Ennemi du groupe ${i+1}`} value={g.enemyId} onChange={e=>patch(g.id,{enemyId:e.target.value})}>{enemies.map(e=><option value={e.id} key={e.id}>{e.name}</option>)}</select>

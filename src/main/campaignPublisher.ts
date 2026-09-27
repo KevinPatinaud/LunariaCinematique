@@ -21,7 +21,9 @@ interface Plan {project:GameProject;files:PlannedFile[];check:CampaignCheck}
 export async function planCampaign(value:unknown,movieRoot:string,libraryRoot:string):Promise<Plan>{
  const original=parseGameProject(value),project=compileCampaign(original),files:PlannedFile[]=[],assets=new Map<string,string>();
  const movies=project.campaign!.cinematics;
- const root=movies.length?await fs.realpath(movieRoot).catch(()=>{throw Error('Choisis un dossier de cinématiques accessible.');}):'';
+ const embedded=new Map((original.cinematics??[]).map(doc=>[doc.id,doc]));
+ const needsLegacyFolder=movies.some(film=>!embedded.has(film.documentId));
+ const root=needsLegacyFolder?await fs.realpath(movieRoot).catch(()=>{throw Error('Choisis le dossier des anciennes cinématiques à importer.');}):'';
  const folded=new Map<string,string>(), canonicalMovies=new Map<string,string>();
  async function collect(ref:string):Promise<void>{
    const relative=ref.slice(10);if(!safeMoviePath(relative+'.json'))throw Error('Nom de ressource non portable : '+ref);
@@ -38,12 +40,18 @@ export async function planCampaign(value:unknown,movieRoot:string,libraryRoot:st
  if(project.presentation)await validatePresentationRegions(project,libraryRoot);
  const aliases=new Map<string,string>();
  for(const film of movies){
-  if(!safeMoviePath(film.file))throw Error('Chemin de cinématique invalide : '+film.file);
-  const real=await fs.realpath(path.join(root,...film.file.split('/'))).catch(()=>{throw Error('Cinématique introuvable : '+film.file);});
-  if(!isWithin(root,real))throw Error('Cinématique hors du dossier autorisé : '+film.file);
-  const doc=parseCinematic((await readJsonSource(real)).value);
+  let doc;
+  const authored=embedded.get(film.documentId);
+  if(authored)doc=parseCinematic(authored);
+  else{
+   if(!safeMoviePath(film.file))throw Error('Chemin de cinématique invalide : '+film.file);
+   const real=await fs.realpath(path.join(root,...film.file.split('/'))).catch(()=>{throw Error('Cinématique introuvable : '+film.file);});
+   if(!isWithin(root,real))throw Error('Cinématique hors du dossier autorisé : '+film.file);
+   doc=parseCinematic((await readJsonSource(real)).value);
+  }
   if(doc.id!==film.documentId)throw Error('Le fichier ne correspond plus à la cinématique liée : '+film.file);
   const presentationErrors=cinematicPresentationIssues(doc,project);if(presentationErrors.length)throw Error(presentationErrors.join('\n'));
+  delete doc.category; // Studio organization must not change the playable film or its content hash.
   if(doc.presentationCatalog)doc.presentationCatalog.file='content/design/game_content.json';
   const text=json(doc),digest=sha(text),relative=`content/cinematics/studio/${digest}.cinematic.json`;
   if(!files.some(f=>f.relative===relative))files.push({relative,hash:digest,text});
@@ -52,6 +60,7 @@ export async function planCampaign(value:unknown,movieRoot:string,libraryRoot:st
   film.file=relative;film.title=doc.title;
   for(const ref of referencedAssets(doc))await collect(ref);
  }
+ delete project.cinematics;
  // Two source files may contain an identical film. Reuse one immutable blob/catalog entry.
  if(aliases.size){
   project.campaign!.cinematics=movies.filter(f=>!aliases.has(f.id));

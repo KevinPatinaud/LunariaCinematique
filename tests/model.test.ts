@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { demoCinematic } from '../src/shared/demo.js';
-import { copy, duplicateShot, newBubble, newCinematic, newActor, referencedAssets, removeActor, type Asset } from '../src/shared/model.js';
+import { copy, duplicateCinematic, duplicateShot, newBubble, newCinematic, newActor, referencedAssets, removeActor, type Asset } from '../src/shared/model.js';
 import { isSafeAssetRef, parseCinematic, validationIssues, contentWarnings } from '../src/shared/schema.js';
 import { actorPose, bubbleLayout, bubbleTarget, cameraTransform, framePatches, prepareCinematic, tailPoints, wrapText } from '../src/shared/geometry.js';
 import { advanceDialogue, beginPlayback, tickPlayback } from '../src/shared/playback.js';
@@ -18,8 +18,29 @@ test('literal percent signs are allowed, URL encoding is handled separately', ()
 test('future schema versions are refused', () => { const doc = newCinematic() as unknown as { schemaVersion: number }; doc.schemaVersion = 5; assert.throws(() => parseCinematic(doc)); });
 test('unknown keys cannot silently disappear', () => { const doc = { ...newCinematic(), eval: 'do_not_run()' }; assert.throws(() => parseCinematic(doc)); });
 test('shot transition accepts both choices and keeps existing films valid', () => { const doc=newCinematic(); assert.equal(parseCinematic(doc).shots[0].endAdvance,'auto'); doc.shots[0].endAdvance='click'; assert.equal(parseCinematic(doc).shots[0].endAdvance,'click'); delete doc.shots[0].endAdvance; assert.equal(validationIssues(doc).length,0); (doc.shots[0] as {endAdvance?:string}).endAdvance='unknown'; assert.throws(()=>parseCinematic(doc)); });
+test('exit fade saves without changing older films', () => { const doc=newCinematic(); delete doc.shots[0].exitTransition; assert.equal(validationIssues(doc).length,0); doc.shots[0].exitTransition={type:'fade',duration:.6}; assert.equal(parseCinematic(doc).shots[0].exitTransition?.type,'fade'); doc.shots[0].exitTransition.duration=4; assert.throws(()=>parseCinematic(doc)); });
 test('NaN cannot enter a saved project', () => { const doc = newCinematic(); doc.shots[0].duration = NaN; assert.throws(() => parseCinematic(doc)); });
 test('duplicate IDs are rejected', () => { const doc = newCinematic(); doc.shots.push(copy(doc.shots[0])); assert.throws(() => parseCinematic(doc)); });
+test('duplicate film keeps its content and speaker links with independent IDs', () => {
+  const source = newCinematic(), actor = newActor(asset, 0.8);
+  source.title = 'Le jardin'; source.shots[0].actors.push(actor);
+  source.shots[0].bubbles.push(newBubble(actor.id));
+  source.shots.push(duplicateShot(source.shots[0]));
+  const duplicate = duplicateCinematic(source, ['Le jardin', 'Le jardin — copie']);
+  assert.equal(duplicate.title, 'Le jardin — copie 2');
+  assert.notEqual(duplicate.id, source.id);
+  assert.deepEqual(duplicate.shots.map(shot => shot.name), source.shots.map(shot => shot.name));
+  assert.equal(duplicate.shots.length, source.shots.length);
+  for (const [index, shot] of duplicate.shots.entries()) {
+    assert.notEqual(shot.id, source.shots[index].id);
+    assert.notEqual(shot.actors[0].id, source.shots[index].actors[0].id);
+    assert.notEqual(shot.bubbles[0].id, source.shots[index].bubbles[0].id);
+    assert.equal(shot.bubbles[0].speakerId, shot.actors[0].id);
+  }
+  duplicate.shots[0].bubbles[0].text = 'Texte de la copie';
+  assert.notEqual(source.shots[0].bubbles[0].text, duplicate.shots[0].bubbles[0].text);
+  assert.deepEqual(validationIssues(duplicate), []);
+});
 test('null texture on a textured style is rejected', () => { const doc = newCinematic(); const b = newBubble(); b.style = 'simple'; doc.shots[0].bubbles.push(b); assert.throws(() => parseCinematic(doc)); });
 test('duplicate a shot remaps actors and their bubbles consistently', () => {
   const doc = newCinematic(), shot = doc.shots[0], actor = newActor(asset, 0.8);

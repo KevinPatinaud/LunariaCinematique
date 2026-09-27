@@ -3,7 +3,7 @@
  */
 import {test,expect,_electron,type ElectronApplication,type Page} from '@playwright/test';
 import {promises as fs} from 'node:fs';import path from 'node:path';import os from 'node:os';import {fileURLToPath} from 'node:url';
-import {seedProject} from '../../src/shared/game/seed.js';import {ensureCampaign} from '../../src/shared/game/campaign.js';import {newCinematic} from '../../src/shared/model.js';
+import {seedProject} from '../fixtures/seed40.js';import {ensureCampaign} from '../../src/shared/game/campaign.js';import {newCinematic} from '../../src/shared/model.js';
 import {fixturePresentation,PIXEL_PNG} from '../presentation-fixture.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');let app:ElectronApplication,page:Page,dir:string,movies:string,file:string,game:string,library:string,profile:string;
 test.beforeEach(async()=>{
@@ -20,12 +20,11 @@ test.beforeEach(async()=>{
  await app.evaluate(({dialog},{file,game,movies,movieFile})=>{
   dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});
   dialog.showSaveDialog=async()=>({canceled:false,filePath:file});
-  dialog.showOpenDialog=async(...args:any[])=>{const options=args.at(-1);return{canceled:false,filePaths:[options.properties?.includes('openDirectory')?(options.title?.includes('project.godot')?game:movies):options.title?.includes('Ajouter une cinématique')?movieFile:file]};};
+  dialog.showOpenDialog=async(...args:any[])=>{const options=args.at(-1);return{canceled:false,filePaths:[options.properties?.includes('openDirectory')?(options.title?.includes('project.godot')?game:movies):options.title?.includes('Importer une cinématique')?movieFile:file]};};
  },{file,game,movies,movieFile:path.join(movies,'intro.json')});
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();await expect(page.locator('.gd-step-card')).toHaveCount(3);
  await page.locator('.gd-step-card').filter({hasText:'Introduction de test'}).click();
- await page.getByRole('button',{name:'Choisir le dossier…',exact:true}).click();
  if(await page.getByRole('button',{name:'Fermer le message des niveaux'}).isVisible())await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
 });
 test.afterEach(async()=>{await app?.close();await fs.rm(dir,{recursive:true,force:true});});
@@ -33,14 +32,14 @@ test('sequence reordering and undo are persisted through real IPC',async()=>{
  await page.getByRole('button',{name:'Descendre l’étape',exact:true}).click();await expect(page.locator('.gd-step-card').nth(1)).toContainText('Introduction de test');
  await page.keyboard.press('Control+z');await expect(page.locator('.gd-step-card').first()).toContainText('Introduction de test');
  await page.getByRole('button',{name:'Répéter ce film juste après'}).click();await expect(page.locator('.gd-step-card')).toHaveCount(4);
- await page.locator('.gd-toolbar').getByRole('button',{name:'Enregistrer',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');
+ await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');
  const saved=JSON.parse(await fs.readFile(file,'utf8'));expect(saved.campaign.steps).toHaveLength(4);expect(saved.campaign.cinematics).toHaveLength(1);
 });
 test('explicit insertion rail places a cinematic between two levels',async()=>{
  await expect(page.getByText('Le jeu lit cette liste de haut en bas.')).toBeVisible();
  await page.getByRole('button',{name:'Insérer entre les étapes 2 et 3',exact:true}).click();
- await expect(page.getByText('Il sera joué à cet endroit précis.')).toBeVisible();
- await page.getByRole('button',{name:'Choisir une cinématique entre les étapes 2 et 3',exact:true}).click();
+ await expect(page.getByText('Les films sont enregistrés avec les niveaux.')).toBeVisible();
+ await page.getByRole('button',{name:'Placer ce film',exact:true}).click();
  await expect(page.locator('.gd-step-card')).toHaveCount(4);await expect(page.locator('.gd-step-card').nth(2)).toContainText('Introduction de test');
 });
 test('linked film opens in cinematic mode without replacing the level document',async()=>{
@@ -48,7 +47,7 @@ test('linked film opens in cinematic mode without replacing the level document',
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();await expect(page.locator('.gd-step-card')).toHaveCount(3);
 });
 test('native grouped publisher installs film before committing the sequence',async()=>{
- await page.getByRole('button',{name:'Publier la campagne',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Publié');
+ await page.locator('.gd-delivery > summary').click();await page.getByRole('button',{name:'Publier la campagne',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Publié');
  const published=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));expect(published.campaign.steps).toHaveLength(3);
  expect(published.campaign.cinematics[0].file).toMatch(/^content\/cinematics\/studio\//);const d=JSON.parse(await fs.readFile(path.join(game,published.campaign.cinematics[0].file),'utf8'));expect(d.id).toBe('CIN_TEST_CAMPAIGN');
 });

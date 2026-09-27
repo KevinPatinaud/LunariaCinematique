@@ -3,9 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, mkdir, symlink, rm } from 'node:fs/promises';
 import os from 'node:os'; import path from 'node:path';
-import {seedProject} from '../src/shared/game/seed.js';
-import {newLevel,cloneLevel,totalEnemies,waveSchedule,damageAfterProtection,replaceWaves, type GameProject} from '../src/shared/game/types.js';
+import {seedProject} from './fixtures/seed40.js';
+import {newLevel,cloneLevel,totalEnemies,waveSchedule,damageAfterProtection,replaceWaves, OBJECTIVES, type GameProject} from '../src/shared/game/types.js';
 import {gameIssues,parseGameProject} from '../src/shared/game/validation.js';
+import {presentationAssets} from '../src/shared/presentation/runtime.js';
 import {GameDocuments,publishGameProject} from '../src/main/gameDocuments.js';
 const errors=(p:unknown)=>gameIssues(p).filter(x=>x.severity==='error');
 function valid(){return seedProject();}
@@ -14,9 +15,36 @@ const good=(fn:(p:GameProject)=>void)=>assert.equal(errors(change(fn)).length,0)
 const bad=(fn:(p:any)=>void)=>assert.ok(errors(change(fn)).length>0);
 
 test('starter: 40 levels / 28 global plants / 13 global enemies, valid without warnings',()=>{const p=valid();assert.equal(p.levels.length,40);assert.equal(p.balance.plants.length,28);assert.equal(p.balance.enemies.length,13);assert.deepEqual(gameIssues(p),[]);});
+test('one operation type covers the former work missions',()=>{
+ const p=valid();assert.deepEqual(OBJECTIVES,['defend','protect_cell','operation','rescue']);
+ assert.equal(p.levels.filter(level=>level.objective.type==='operation').length,30);
+ const level=p.levels.find(level=>level.objective.type==='operation')!;
+ assert.ok(level.objective.target>0);assert.ok(level.objectiveText.length>0);
+ level.objective.target=0;assert.ok(errors(p).some(issue=>issue.message.includes('opération')));
+ level.objective={type:'escort' as GameProject['levels'][number]['objective']['type'],target:60};
+ assert.ok(errors(p).some(issue=>issue.path.includes('objective.type')));
+});
 test('official companion name is Rose everywhere in the authored campaign',()=>{const p=valid();assert.equal(p.balance.plants.find(x=>x.id==='rose')?.name,'Rose');assert.equal(p.balance.enemies.find(x=>x.id==='corrupted_rose')?.name,'Rose contaminée');assert.doesNotMatch(JSON.stringify(p),/\bRonce\b/);assert.doesNotMatch(JSON.stringify(p),/\bronce\b/);});
 test('seed returns independent deep clones',()=>{const a=valid();a.balance.plants[0].damage=500;assert.notEqual(valid().balance.plants[0].damage,500);});
 test('new level contains references, not embedded stats',()=>{const l=newLevel(['radish','rose'],'litterer');assert.deepEqual(l.allowedPlants,['radish','rose']);assert.equal(totalEnemies(l),5);assert.equal('damage' in l,false);good(p=>p.levels=[l]);});
+test('each level keeps its own terrain image and publication tracks both assets',()=>{
+ const p=valid(),first=p.levels[0],second=p.levels[1];
+ first.terrainImage='library://terrains/jardin.png';second.terrainImage='library://terrains/riviere.webp';
+ assert.equal(errors(p).length,0);
+ assert.deepEqual(presentationAssets(p).filter(ref=>ref.startsWith('library://terrains/')).sort(),['library://terrains/jardin.png','library://terrains/riviere.webp']);
+ const copy=cloneLevel(first);assert.equal(copy.terrainImage,first.terrainImage);
+ copy.terrainImage='library://terrains/copie.jpg';assert.equal(first.terrainImage,'library://terrains/jardin.png');
+ assert.equal(parseGameProject(p).levels[1].terrainImage,second.terrainImage);
+ first.terrainImage='library://terrains/invalid.svg';assert.ok(errors(p).length>0);
+});
+test('a protected cell is authored, validated, duplicated and published as an image dependency',()=>{
+ const p=valid(),level=p.levels[0];level.objective={type:'protect_cell',target:0};
+ level.protectedCell={row:2,col:1,image:'library://target.png',maxHp:300,armor:.2,resistances:{physical:.1,piercing:0,toxic:.25}};
+ assert.equal(errors(p).length,0);assert.ok(presentationAssets(p).includes('library://target.png'));
+ const copy=cloneLevel(level);assert.deepEqual(copy.protectedCell,level.protectedCell);copy.protectedCell!.maxHp=100;assert.equal(level.protectedCell.maxHp,300);
+ level.protectedCell.row=5;assert.ok(errors(p).length>0);level.protectedCell.row=2;
+ level.protectedCell.image='' as `library://${string}`;assert.ok(errors(p).length>0);
+});
 test('duplicating level regenerates every nested ID',()=>{const p=valid(),l=cloneLevel(p.levels[0]);p.levels.push(l);assert.equal(errors(p).length,0);assert.notEqual(l.id,p.levels[0].id);assert.notEqual(l.waves[0].groups[0].id,p.levels[0].waves[0].groups[0].id);});
 test('shared rebalance does not rewrite any level',()=>{const p=valid(),before=JSON.stringify(p.levels);p.balance.plants[0].damage=80;p.balance.enemies[0].hp=450;assert.equal(JSON.stringify(p.levels),before);assert.equal(errors(p).length,0);});
 test('global resistance and pure damage formula',()=>{const t={armor:.5,resistances:{physical:.2,piercing:.2,toxic:.5}};assert.equal(damageAfterProtection(100,'physical',t),40);assert.equal(damageAfterProtection(100,'piercing',t),80);assert.equal(damageAfterProtection(100,'toxic',t),50);assert.equal(damageAfterProtection(100,'pure',t),100);assert.equal(damageAfterProtection(100,'physical',t,true),80);});
@@ -27,7 +55,7 @@ test('more than forty and up to two hundred levels are valid',()=>good(p=>{p.lev
 test('a one-level campaign is valid',()=>good(p=>p.levels=[newLevel(['radish'],'litterer')]));
 test('fifty waves are valid',()=>good(p=>{const l=newLevel(['radish'],'litterer');while(l.waves.length<50)l.waves.push(cloneLevel(l).waves[0]);p.levels=[l];}));
 const cases:[string,(p:any)=>void][]=[
- ['no empty campaign',p=>p.levels=[]],['no 201 levels',p=>{p.levels=Array.from({length:201},()=>cloneLevel(p.levels[0]));}],
+ ['no 201 levels',p=>{p.levels=Array.from({length:201},()=>cloneLevel(p.levels[0]));}],
  ['no empty allowed roster',p=>p.levels[0].allowedPlants=[]],['no duplicate allowed plant',p=>p.levels[0].allowedPlants.push(p.levels[0].allowedPlants[0])],
  ['no unknown plant reference',p=>p.levels[0].allowedPlants=['made_up']],['no unknown enemy reference',p=>p.levels[0].waves[0].groups[0].enemyId='made_up'],
  ['no duplicate level ID',p=>p.levels[1].id=p.levels[0].id],['no duplicate wave ID',p=>p.levels[1].waves[0].id=p.levels[0].waves[0].id],
@@ -53,12 +81,13 @@ test('parse validates before cloning and rejects unknown keys',()=>assert.throws
 test('legacy bonus goals are discarded instead of entering the game contract',()=>{const legacy=valid() as any;legacy.levels[0].optionalGoals=[{id:'healthy',title:'Ancien bonus',target:80}];const parsed=parseGameProject(legacy);assert.equal(Object.hasOwn(parsed.levels[0],'optionalGoals'),false);assert.equal(legacy.levels[0].optionalGoals.length,1);});
 async function fixture(fn:(root:string)=>Promise<void>){const root=await mkdtemp(path.join(os.tmpdir(),'lunaria-authoring-'));try{await fn(root);}finally{await rm(root,{recursive:true,force:true});}}
 test('new save roundtrips globally calibrated content and tracks MRU',()=>fixture(async root=>{const d=new GameDocuments(path.join(root,'profile')),file=path.join(root,'first.game.json');const p=valid();p.balance.plants[0].damage=71;const out=await d.save(p,'',file);assert.equal(out.path,file);assert.equal((await new GameDocuments(path.join(root,'profile')).bootstrap()).recent[0].path,file);assert.equal((await d.open(file)).project.balance.plants[0].damage,71);}));
-test('save refuses an unowned token',()=>fixture(async root=>{const d=new GameDocuments(root);await assert.rejects(d.save(valid(),'forged'),/Enregistrer sous/);}));
+test('save refuses an unowned token',()=>fixture(async root=>{const d=new GameDocuments(root);await assert.rejects(d.save(valid(),'forged'),/Crée une copie/);}));
 test('external edits cannot be overwritten silently',()=>fixture(async root=>{const d=new GameDocuments(root),file=path.join(root,'a.json');const f=await d.save(valid(),'',file);await writeFile(file,'{}');await assert.rejects(d.save(valid(),f.token),/modifié hors/);assert.equal(await readFile(file,'utf8'),'{}');}));
-test('saving twice preserves a previous JSON backup',()=>fixture(async root=>{const d=new GameDocuments(root),file=path.join(root,'a.json'),p=valid(),f=await d.save(p,'',file);p.title='Edited';await d.save(p,f.token);assert.equal(JSON.parse(await readFile(file+'.bak','utf8')).title,valid().title);}));
+test('saving twice keeps a single authoring file',()=>fixture(async root=>{const d=new GameDocuments(root),file=path.join(root,'a.json'),p=valid(),f=await d.save(p,'',file);p.title='Edited';await d.save(p,f.token);assert.equal(JSON.parse(await readFile(file,'utf8')).title,'Edited');await assert.rejects(readFile(file+'.bak','utf8'));}));
 test('stale token does not replace another opened project',()=>fixture(async root=>{const d=new GameDocuments(root),a=await d.save(valid(),'',path.join(root,'a.json'));await d.save(valid(),'',path.join(root,'b.json'));await assert.rejects(d.save(valid(),a.token),/remplacé/);}));
 test('recent open authorizes only recorded paths',()=>fixture(async root=>{const d=new GameDocuments(root);await assert.rejects(d.openRecent(path.join(root,'secret.json')),/inconnu/);}));
 test('recovery persists semantic drafts and clear is effective after restart',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.levels[0].allowedPlants=[p.levels[0].allowedPlants[0],p.levels[0].allowedPlants[0]];await d.recover(p);assert.deepEqual((await new GameDocuments(root).bootstrap()).recovery,p);await d.clearRecovery();assert.equal((await d.bootstrap()).recovery,null);}));
+test('recovery keeps an unfinished protected cell while its image is being chosen',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.levels[0].objective={type:'protect_cell',target:0};p.levels[0].protectedCell={row:2,col:1,image:'' as `library://${string}`,maxHp:300,armor:0,resistances:{physical:0,piercing:0,toxic:0}};await d.recover(p);assert.deepEqual((await d.bootstrap()).recovery?.levels[0].protectedCell,p.levels[0].protectedCell);assert.throws(()=>parseGameProject(p));}));
 test('recovery rejects structurally invalid objects',()=>fixture(async root=>{await assert.rejects(new GameDocuments(root).recover({bad:1}),/structure/);}));
 async function game(root:string){await mkdir(path.join(root,'LunariaArtLibrary'),{recursive:true});await writeFile(path.join(root,'LunariaArtLibrary/pixel.png'),PIXEL_PNG);for(const f of ['domain/presentation/animation_registry.gd','app/controllers/campaign_flow.gd']){await mkdir(path.dirname(path.join(root,f)),{recursive:true});await writeFile(path.join(root,f),'extends RefCounted');}await mkdir(path.join(root,'domain/logic'),{recursive:true});await writeFile(path.join(root,'domain/logic/event_runtime.gd'),'extends RefCounted');await mkdir(path.join(root,'content/design'),{recursive:true});await writeFile(path.join(root,'project.godot'),'[application]');await writeFile(path.join(root,'content/design/game_content.gd'),'extends RefCounted');}
 test('publish replaces only shared game document and creates backup',()=>fixture(async root=>{await game(root);const p=fixturePresentation(valid(),'library://pixel.png'),file=await publishGameProject(p,root);p.title='New balance';await publishGameProject(p,root);assert.equal(JSON.parse(await readFile(file,'utf8')).title,'New balance');assert.equal(JSON.parse(await readFile(file+'.bak','utf8')).title,valid().title);}));
@@ -74,4 +103,4 @@ test('negative source damage is clamped exactly as in Godot',()=>{const t={armor
 
 test('empty roster and temporary empty name remain recoverable but not publishable',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.title='';p.balance.plants[0].name='';p.levels[0].allowedPlants=[];await d.recover(p);assert.deepEqual((await new GameDocuments(root).bootstrap()).recovery,p);assert.throws(()=>parseGameProject(p));}));
 test('draft relaxation does not permit arbitrary fields or oversized numbers',()=>fixture(async root=>{const p=valid() as any,d=new GameDocuments(root);p.levels[0].damage=8;await assert.rejects(d.recover(p));delete p.levels[0].damage;p.balance.enemies[0].hp=20001;await assert.rejects(d.recover(p));}));
-test('draft cannot contain an empty campaign or empty global catalog',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.levels=[];await assert.rejects(d.recover(p));const q=valid();q.balance.plants=[];await assert.rejects(d.recover(q));}));
+test('draft accepts no missions but still requires the global catalog',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.levels=[];p.campaign={steps:[],cinematics:[]};await d.recover(p);assert.deepEqual((await d.bootstrap()).recovery,p);const q=valid();q.balance.plants=[];await assert.rejects(d.recover(q));}));

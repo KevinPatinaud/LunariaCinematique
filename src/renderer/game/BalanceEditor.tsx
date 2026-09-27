@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {SpeciesAnimations} from '../presentation/SpeciesAnimations.js';
 import type {Change} from '../presentation/PresentationEditor.js';
 import type {Asset} from '../../shared/model.js';
@@ -6,12 +6,16 @@ import { DAMAGE_LABELS, DAMAGE_TYPES, type PlantDefinition, type EnemyDefinition
 import { attackTypeLabel } from '../../shared/game/combat.js';
 import { NumberInput } from '../components/NumberInput.js';
 import type {AnimationDefinition} from '../../shared/presentation/types.js';
-import {ImagePicker,ImagePreview} from '../presentation/ImagePicker.js';
+import {ImagePicker} from '../presentation/ImagePicker.js';
 export function Num({label,value,min=0,max,integer=false,change}:{label:string;value:number;min?:number;max:number;integer?:boolean;change:(v:number)=>void}){
  return <label className="gd-field"><span>{label}</span><NumberInput label={label} value={value} min={min} max={max} onCommit={n=>change(integer?Math.round(n):n)}/></label>;
 }
 export function BalanceEditor({project,role,id,select,update,editAbility,editBehavior,assets,change,openProfile,tab,setTab,focusAnimationId,renderAnimationEditor}:{assets:Asset[];change:Change;openProfile:(id:string)=>void;editBehavior:(id:string)=>void;editAbility:(id:string)=>void;project:GameProject;role:'plants'|'enemies';id:string;select:(id:string)=>void;update:(id:string,patch:Partial<PlantDefinition&EnemyDefinition>,key:string)=>void;tab:'details'|'animations';setTab:(tab:'details'|'animations')=>void;focusAnimationId?:string;renderAnimationEditor:(animation:AnimationDefinition,patch:(data:Record<string,unknown>,key?:string)=>void,speciesId:string)=>React.ReactNode}){
  const list=project.balance[role], item=list.find(x=>x.id===id)??list[0], plant=role==='plants';
+ const [query,setQuery]=useState('');
+ useEffect(()=>setQuery(''),[role]);
+ const normalize=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr');
+ const visible=list.filter(x=>normalize(x.name+' '+x.id+' '+('role' in x?x.role:'')).includes(normalize(query.trim())));
  const uses=project.levels.filter(l=>plant?l.allowedPlants.includes(item.id):l.waves.some(w=>w.groups.some(g=>g.enemyId===item.id))).length;
  const set=(key:string,value:unknown)=>update(item.id,{[key]:value},`${item.id}:${key}`);
  const n=(key:string,label:string,max:number,min=0,integer=false)=><Num key={key} label={label} value={Number((item as unknown as Record<string,unknown>)[key])} min={min} max={max} integer={integer} change={v=>set(key,v)}/>;
@@ -19,13 +23,12 @@ export function BalanceEditor({project,role,id,select,update,editAbility,editBeh
  const attackName=(attackId:string)=>{const attack=project.combat!.abilities.find(a=>a.id===attackId);return attack?`${attack.name} — ${attackTypeLabel(attack,project.combat!)}`:attackId;};
  const selectPrimary=(attackId:string)=>{const attack=project.combat!.abilities.find(a=>a.id===attackId);if(!attack)return;const ability_ids=[attackId,...assigned.slice(1).filter(x=>x!==attackId)];update(item.id,{ability_ids,...(plant?{ability:attack.name}:{})},`${item.id}:primary-attack`);};
  return <div className="gd-balance">
-  <aside className="gd-catalog" aria-label={plant?'Catalogue des plantes':'Catalogue des ennemis'}>{list.map(x=><button key={x.id} className={x.id===item.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{x.id}</small></button>)}</aside>
+  <aside className="gd-catalog" aria-label={plant?'Catalogue des plantes':'Catalogue des ennemis'}><div className="gd-catalog-search"><label><span>{plant?'Trouver une plante':'Trouver un ennemi'}</span><input type="search" aria-label="Rechercher un personnage" placeholder="Nom ou rôle…" value={query} onChange={e=>setQuery(e.target.value)}/></label><small role="status">{visible.length} / {list.length} personnages</small></div>{!visible.length&&<div className="gd-empty-search"><p>Aucun personnage trouvé.</p><button onClick={()=>setQuery('')}>Effacer la recherche</button></div>}{visible.map(x=><button key={x.id} className={x.id===item.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{x.id}</small></button>)}</aside>
   <section className="gd-scroll gd-balance-form" key={item.id}>
    <div className="gd-kicker">CATALOGUE GLOBAL · {plant?'PLANTE ALLIÉE':'ENNEMI'}</div><h1>{item.name}</h1>
-   <section className="lp-character-image" aria-label={'Image principale de '+item.name}>
-    <ImagePreview asset={assets.find(asset=>asset.ref===item.visual?.sprite.asset)} region={item.visual?.sprite.region} label={'Image principale de '+item.name}/>
-    <div><h2>Image du personnage</h2><p>Cette image apparaît au repos et sert de point de départ aux animations de {item.name}. Elle est partagée par tous les niveaux.</p>
-     <ImagePicker label={'Image principale de '+item.name} value={item.visual?.sprite.asset?[item.visual.sprite.asset]:[]} assets={assets} change={refs=>{if(!refs[0])return;update(item.id,{visual:{...item.visual??{width:100,height:100,baseline:0,mirror:false,tint:'#ffffff',note:''},sprite:{asset:refs[0] as `library://${string}`}}},`${item.id}:visual:image`);}} buttonLabel="Choisir ou importer une image"/>
+   <section className="lp-character-image lp-character-image-compact" aria-label={'Image principale de '+item.name}>
+    <div><h2>Image du personnage</h2><p>Image de repos partagée entre tous les niveaux.</p>
+     <ImagePicker label={'Image principale de '+item.name} value={item.visual?.sprite.asset?[item.visual.sprite.asset]:[]} region={item.visual?.sprite.region} assets={assets} category={plant?'character':'enemy'} change={refs=>{if(!refs[0])return;update(item.id,{visual:{...item.visual??{width:100,height:100,baseline:0,mirror:false,tint:'#ffffff',note:''},sprite:{asset:refs[0] as `library://${string}`}}},`${item.id}:visual:image`);}} buttonLabel="Choisir ou importer une image"/>
     </div>
    </section>
    {tab==='details'&&<p className="gd-callout">Ce réglage est partagé par <strong>tous les niveaux</strong>. Cette espèce est utilisée dans {uses} niveau{uses>1?'x':''}. Aucun niveau ne peut remplacer ces valeurs.</p>}

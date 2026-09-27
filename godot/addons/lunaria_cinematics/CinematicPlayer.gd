@@ -21,6 +21,7 @@ signal shot_started(shot_id: String)
 @export var reduced_motion: bool = false
 @export_range(0.0, 1.0) var volume: float = 1.0
 var auto_advance: bool = false
+var manual_advance_only: bool = false
 var last_error: String = ""
 const SharedPresentation = preload("CinematicPresentation.gd")
 var _shared = SharedPresentation.new()
@@ -43,6 +44,7 @@ var _document: Dictionary = {}
 var _schema: Dictionary = {}
 var _shot_index: int = 0
 var _elapsed: float = 0.0
+var _exit_elapsed: float = -1.0
 var _dialogue_index: int = 0
 var _dialogue_elapsed: float = 0.0
 var _text_completed_at: float = -1.0
@@ -146,6 +148,7 @@ func state() -> Dictionary:
 	return {"playing":true, "id":_document["id"], "title":_document["title"],
 		"paused":_paused, "shot_index":_shot_index, "shot_count":_document["shots"].size(),
 		"shot_name":shot["name"], "shot_id":shot["id"], "elapsed":_elapsed,
+		"exit_elapsed":_exit_elapsed,
 		"duration":shot["duration"], "dialogue_index":_dialogue_index,
 		"dialogue_count":shot["bubbles"].size(), "dialogue_elapsed":_dialogue_elapsed,
 		"dialogue_active":_elapsed + EPS >= float(shot["dialogueStart"]) and _dialogue_index < shot["bubbles"].size()}
@@ -173,7 +176,7 @@ func set_volume(value: float) -> void:
 		_audio.volume_db = linear_to_db(maxf(0.0001, float(_current_shot()["audio"]["volume"]) * volume)) if volume > 0.0 else -80.0
 
 func _automatic(bubble: Dictionary) -> bool:
-	return auto_advance or bubble["advance"]["mode"] == "auto"
+	return not manual_advance_only and (auto_advance or bubble["advance"]["mode"] == "auto")
 
 func _motion_actor(actor: Dictionary) -> Dictionary:
 	if not reduced_motion: return actor
@@ -213,12 +216,14 @@ func is_playing() -> bool:
 func advance() -> void:
 	if not _playing or _paused:
 		return
+	if _exit_elapsed >= 0.0:
+		return
 	var shot: Dictionary = _current_shot()
 	if _elapsed + EPS < float(shot["dialogueStart"]):
 		return
 	if _dialogue_index >= shot["bubbles"].size():
-		if str(shot.get("endAdvance", "auto")) == "click" and _elapsed + EPS >= float(shot["duration"]):
-			_finish_current_shot()
+		if (manual_advance_only or str(shot.get("endAdvance", "auto")) == "click") and _elapsed + EPS >= float(shot["duration"]):
+			_start_exit()
 		return
 	var bubble: Dictionary = shot["bubbles"][_dialogue_index]
 	if TextAnimation.needs_completion(bubble, _dialogue_elapsed, _text_completed_at):
@@ -228,8 +233,8 @@ func advance() -> void:
 	_dialogue_index += 1
 	_dialogue_elapsed = 0.0
 	_text_completed_at = -1.0
-	if str(shot.get("endAdvance", "auto")) == "click" and _dialogue_index >= shot["bubbles"].size() and _elapsed + EPS >= float(shot["duration"]):
-		_finish_current_shot()
+	if (manual_advance_only or str(shot.get("endAdvance", "auto")) == "click") and _dialogue_index >= shot["bubbles"].size() and _elapsed + EPS >= float(shot["duration"]):
+		_start_exit()
 	else:
 		_settle()
 	queue_redraw()
@@ -284,6 +289,7 @@ func _shot_refs(shot: Dictionary) -> Array[String]:
 func _enter_shot(index: int) -> bool:
 	_shot_index = index
 	_elapsed = 0.0
+	_exit_elapsed = -1.0
 	_dialogue_index = 0
 	_dialogue_elapsed = 0.0
 	_text_completed_at = -1.0
@@ -348,6 +354,18 @@ func advance_time(delta: float) -> void:
 	while _playing and not _paused and remaining > EPS and guard < 52000:
 		guard += 1
 		var shot: Dictionary = _current_shot()
+		if _exit_elapsed >= 0.0:
+			var exit_duration: float = float(shot.get("exitTransition", {}).get("duration", 0.0))
+			var exit_step: float = minf(remaining, maxf(0.0, exit_duration - _exit_elapsed))
+			_elapsed += exit_step
+			_exit_elapsed += exit_step
+			_shared.advance(shot, _elapsed - exit_step, _elapsed, reduced_motion)
+			remaining -= exit_step
+			if _exit_elapsed + EPS >= exit_duration:
+				_finish_current_shot()
+			elif exit_step < EPS:
+				break
+			continue
 		var bubble: Dictionary = shot["bubbles"][_dialogue_index] if _dialogue_index < shot["bubbles"].size() else {}
 		var step: float = remaining
 		if not bubble.is_empty() and _elapsed < float(shot["dialogueStart"]) - EPS:
@@ -369,8 +387,9 @@ func advance_time(delta: float) -> void:
 			_text_completed_at = -1.0
 			event = true
 		var previous_shot: int = _shot_index
+		var previous_exit: float = _exit_elapsed
 		_settle()
-		if previous_shot != _shot_index or not _playing:
+		if previous_shot != _shot_index or previous_exit != _exit_elapsed or not _playing:
 			event = true
 		if step < EPS and not event:
 			break
@@ -380,9 +399,17 @@ func _settle() -> void:
 	var shot: Dictionary = _current_shot()
 	if _elapsed + EPS < float(shot["duration"]) or _dialogue_index < shot["bubbles"].size():
 		return
-	if str(shot.get("endAdvance", "auto")) == "click":
+	if manual_advance_only or str(shot.get("endAdvance", "auto")) == "click":
 		return
-	_finish_current_shot()
+	_start_exit()
+
+func _start_exit() -> void:
+	var exit_transition: Dictionary = _current_shot().get("exitTransition", {})
+	if str(exit_transition.get("type", "cut")) == "fade" and float(exit_transition.get("duration", 0.0)) > 0.0:
+		_exit_elapsed = 0.0
+		queue_redraw()
+	else:
+		_finish_current_shot()
 
 func _finish_current_shot() -> void:
 	if _shot_index + 1 < _document["shots"].size():
@@ -615,6 +642,9 @@ func _draw() -> void:
 	if shot["transition"]["type"] == "fade" and _elapsed < float(shot["transition"]["duration"]):
 		var opacity: float = 1.0 - _elapsed / maxf(0.01, float(shot["transition"]["duration"]))
 		draw_rect(Rect2(Vector2.ZERO, LOGICAL), Color(0, 0, 0, opacity))
+	if _exit_elapsed >= 0.0 and str(shot.get("exitTransition", {}).get("type", "cut")) == "fade":
+		var exit_opacity: float = minf(1.0, _exit_elapsed / maxf(0.01, float(shot["exitTransition"]["duration"])))
+		draw_rect(Rect2(Vector2.ZERO, LOGICAL), Color(0, 0, 0, exit_opacity))
 	# Mask everything outside the logical frame on other screen ratios.
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if origin.x > 0.0:

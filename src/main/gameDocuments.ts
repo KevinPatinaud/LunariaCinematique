@@ -5,6 +5,7 @@ import { atomicJson, readJsonSource } from './files.js';
 import { parseGameProject, parseGameDraft } from '../shared/game/validation.js';
 import type { GameProject, GameFile, GameRecent, GameBootstrap } from '../shared/game/types.js';
 const digest=(s:string)=>createHash('sha256').update(s).digest('hex');
+const MAX_PROJECT_BYTES=32*1024*1024;
 /** File ownership stays in Node. Renderer tokens are not filesystem paths. */
 export class GameDocuments {
  private active:{path:string;token:string;hash:string}|null=null;
@@ -20,26 +21,28 @@ export class GameDocuments {
  private async remember(file:string,project:GameProject){const list=await this.recents();const norm=(x:string)=>process.platform==='win32'?x.toLowerCase():x;
   await atomicJson(path.join(this.profile,'game-recents.json'),[{path:file,title:project.title,updatedAt:new Date().toISOString()},...list.filter(x=>norm(x.path)!==norm(file))].slice(0,20));}
  async bootstrap():Promise<GameBootstrap>{let recovery:GameProject|null=null;
-  try {const value=(await readJsonSource(path.join(this.profile,'game-recovery.json'))).value;recovery=parseGameDraft(value);}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')console.warn('Game recovery unavailable',e);}
+  try {const value=(await readJsonSource(path.join(this.profile,'game-recovery.json'),MAX_PROJECT_BYTES)).value;recovery=parseGameDraft(value);}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')console.warn('Game recovery unavailable',e);}
   return {recovery,recent:await this.recents()};
  }
- open(file:string):Promise<GameFile>{return this.serial(async()=>{const real=await fs.realpath(file);const {value,source}=await readJsonSource(real);const project=parseGameProject(value);
+ open(file:string):Promise<GameFile>{return this.serial(async()=>{const real=await fs.realpath(file);const {value,source}=await readJsonSource(real,MAX_PROJECT_BYTES);const project=parseGameProject(value);
   await this.remember(real,project);this.active={path:real,token:randomUUID(),hash:digest(source)};return {project,path:real,token:this.active.token};});}
  async openRecent(file:unknown):Promise<GameFile>{if(typeof file!=='string'||!(await this.recents()).some(x=>x.path===file))throw new Error('Projet récent inconnu. Utilise Ouvrir.');return this.open(file);}
  currentPath(token:unknown):string|undefined{return typeof token==='string'&&this.active?.token===token?this.active.path:undefined;}
  save(value:unknown,token:unknown,chosenPath?:string):Promise<GameFile>{return this.serial(async()=>{
   const project=parseGameProject(value);const owned=this.active?.token===token?this.active:null;
-  if(!chosenPath&&!owned)throw new Error('Document remplacé. Utilise Enregistrer sous.');
+  for(const film of project.campaign?.cinematics??[])
+   if(!project.cinematics?.some(doc=>doc.id===film.documentId))throw new Error('La cinématique « '+film.title+' » doit être intégrée au fichier du projet avant enregistrement.');
+  if(!chosenPath&&!owned)throw new Error('Document remplacé. Crée une copie du projet depuis Récents pour conserver ce travail.');
   const target=chosenPath?path.resolve(chosenPath):owned!.path;
-  if(owned&&target===owned.path){let source:string;try{source=(await readJsonSource(target)).source;}catch{throw new Error('Le fichier a disparu ou est devenu illisible. Utilise Enregistrer sous.');}
-   if(digest(source)!==owned.hash)throw new Error('Le fichier a été modifié hors du Studio. Utilise Enregistrer sous pour conserver les deux versions.');}
-  await atomicJson(target,project,true);const source=(await readJsonSource(target)).source;
+  if(owned&&target===owned.path){let source:string;try{source=(await readJsonSource(target,MAX_PROJECT_BYTES)).source;}catch{throw new Error('Le fichier a disparu ou est devenu illisible. Crée une copie du projet depuis Récents.');}
+   if(digest(source)!==owned.hash)throw new Error('Le fichier a été modifié hors du Studio. Crée une copie du projet depuis Récents pour conserver les deux versions.');}
+  await atomicJson(target,project,false,MAX_PROJECT_BYTES);const source=(await readJsonSource(target,MAX_PROJECT_BYTES)).source;
   this.active={path:target,token:owned&&target===owned.path?owned.token:randomUUID(),hash:digest(source)};
   // The document is safely written even if the optional MRU cannot be updated.
   await this.remember(target,project).catch(e=>console.warn('Recent game project',e));
   return {project,path:target,token:this.active.token};
  });}
- recover(value:unknown):Promise<void>{return this.serial(async()=>{parseGameDraft(value);await atomicJson(path.join(this.profile,'game-recovery.json'),value);});}
+ recover(value:unknown):Promise<void>{return this.serial(async()=>{parseGameDraft(value);await atomicJson(path.join(this.profile,'game-recovery.json'),value,false,MAX_PROJECT_BYTES);});}
  clearRecovery():Promise<void>{return this.serial(async()=>{await fs.unlink(path.join(this.profile,'game-recovery.json')).catch(e=>{if(e.code!=='ENOENT')throw e;});});}
 }
 /** Compatibility API for level-only publication. The same transitive preflight is mandatory.

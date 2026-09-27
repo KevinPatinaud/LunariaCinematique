@@ -82,3 +82,29 @@ test('replaying a selected preview resets to its origin, not the last visited pl
   assert.equal(end.finished, true);
   assert.equal(beginPlayback(playbackStartIndex(doc, origin)).shotIndex, 2);
 });
+
+test('exit fade holds the current plan until black before advancing', () => {
+  const doc = fixture();
+  doc.shots[0].exitTransition = { type: 'fade', duration: .5 };
+  let current = tickPlayback(doc, beginPlayback(), 2.25);
+  assert.equal(current.shotIndex, 0);
+  assert.equal(current.exitElapsed, .25);
+  current = tickPlayback(doc, current, .5);
+  assert.equal(current.shotIndex, 1);
+  assert.equal(current.elapsed, .25);
+});
+
+test('exit fade starts after a late dialogue and after a required plan click', () => {
+  const doc = fixture(), shot = doc.shots[0];
+  shot.duration = 1;
+  shot.endAdvance = 'click';
+  shot.exitTransition = { type: 'fade', duration: .4 };
+  shot.bubbles = [newBubble()];
+  let current = tickPlayback(doc, beginPlayback(), 2);
+  assert.equal(current.exitElapsed, undefined);
+  current = advanceDialogue(doc, current);
+  assert.equal(current.shotIndex, 0);
+  assert.equal(current.exitElapsed, 0);
+  current = tickPlayback(doc, current, .4);
+  assert.equal(current.shotIndex, 1);
+});

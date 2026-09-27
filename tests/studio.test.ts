@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { newCinematic, newActor, newBubble, copy, type Asset } from '../src/shared/model.js';
+import { newCinematic, newActor, newBubble, newShot, copy, type Asset } from '../src/shared/model.js';
 import { parseCinematic } from '../src/shared/schema.js';
 import { bubbleLayout } from '../src/shared/geometry.js';
 import { editCommand } from '../src/shared/commands.js';
 import { createHistory, historyReducer } from '../src/shared/history.js';
-import { alignObjects, applyObjectChanges, createTemplate, deleteObjects, duplicateObjects, moveObjects, objectBox, placeBubble, reorderObjects, selectionBounds, smartDuplicate, snapMove } from '../src/shared/studio.js';
+import { alignObjects, applyObjectChanges, createTemplate, deleteObjects, duplicateObjects, moveObjects, objectBox, pasteActor, pasteBubble, placeBubble, reorderObjects, selectionBounds, smartDuplicate, snapMove } from '../src/shared/studio.js';
 import { diagnose } from '../src/shared/diagnostics.js';
-import { parseCollections, recordRecent, toggleFavorite } from '../src/shared/collections.js';
+import { parseCollections, recordRecent, toggleFavorite, toggleFavoriteFolder } from '../src/shared/collections.js';
 const asset:Asset={ref:'library://05_characters/rose/rose.png',path:'05_characters/rose/rose.png',name:'Rose',folder:'05_characters/rose',kind:'character',bytes:300,modified:0,url:'',thumbnail:''};
 function example() {
  const doc=newCinematic(),shot=doc.shots[0]; shot.background.asset='library://01_europe/serre.png';
@@ -22,6 +22,27 @@ test('command boundaries and bounded histories retain the existing contract',()=
 test('group movement preserves relative positions and the source',()=>{const {shot,rose,radis}=example(),before=copy(shot);const changes=moveObjects(shot,[rose.id,radis.id],.1,.2);assert.deepEqual(shot,before);applyObjectChanges(shot,changes);assert.ok(Math.abs((radis.x-rose.x)-(.67-.12))<1e-10);assert.equal(shot.actors[2].x,.41);});
 test('movement clamps the group together, not each object separately',()=>{const {shot,rose,radis}=example();applyObjectChanges(shot,moveObjects(shot,[rose.id,radis.id],9,0));assert.equal(radis.x,2);assert.ok(Math.abs(radis.x-rose.x-.55)<1e-10);});
 test('nonfinite moves do not corrupt a document',()=>{const {shot,rose}=example();assert.deepEqual(moveObjects(shot,[rose.id],NaN,0),[]);});
+
+for (const mode of ['species', 'animation'] as const) test(`switching ${mode} animation to a static image remains valid through undo and redo`, () => {
+ const doc = newCinematic(), shot = doc.shots[0], actor = newActor(asset, 1);
+ doc.schemaVersion = 4;
+ doc.presentationCatalog = {projectId:'lunaria',file:''};
+ actor.animation = {mode,speciesId:'radish',slot:'idle',animationId:'default_idle',speed:1};
+ shot.background.asset = asset.ref;
+ shot.actors.push(actor);
+ const command = editCommand(doc, draft => applyObjectChanges(draft.shots[0], [
+  {kind:'actor',id:actor.id,patch:{animation:undefined}},
+ ]), 'Revenir à une image fixe');
+ const history = historyReducer(createHistory(doc), {type:'execute',command});
+ for (const result of [history.present, historyReducer(historyReducer(history,{type:'undo'}),{type:'redo'}).present]) {
+  assert.equal(Object.hasOwn(result.shots[0].actors[0], 'animation'), false);
+  assert.deepEqual(result.shots[0].actors[0], (({animation,...rest}) => rest)(actor));
+  assert.equal(diagnose(result,[asset],true).filter(issue => issue.severity === 'error').length, 0);
+  assert.deepEqual(parseCinematic(result), parseCinematic(JSON.parse(JSON.stringify(result))));
+ }
+ assert.deepEqual(historyReducer(history,{type:'undo'}).present, doc);
+ assert.equal(actor.animation.mode, mode);
+});
 test('bounding boxes use the actual automatic bubble height',()=>{const {shot}=example();shot.bubbles[0].text='La serre bruisse doucement. '.repeat(10);assert.equal(objectBox(shot.bubbles[0]).height,bubbleLayout(shot.bubbles[0]).height/900);assert.ok(selectionBounds(shot,[shot.bubbles[0].id]));assert.equal(selectionBounds(shot,['absent']),null);});
 for(const alignment of ['left','right','center-x','top','bottom','center-y'] as const)test(`align selected objects: ${alignment}`,()=>{const {shot,rose,radis}=example();applyObjectChanges(shot,alignObjects(shot,[rose.id,radis.id],alignment));const coordinate=(a:typeof rose)=>alignment==='left'?a.x:alignment==='right'?a.x+a.width:alignment==='center-x'?a.x+a.width/2:alignment==='top'?a.y:alignment==='bottom'?a.y+a.height:a.y+a.height/2;assert.ok(Math.abs(coordinate(rose)-coordinate(radis))<1e-9);});
 test('distribution keeps extreme objects and creates equal gaps',()=>{const {shot,rose,radis,third}=example();const first=rose.x,last=radis.x;applyObjectChanges(shot,alignObjects(shot,shot.actors.map(a=>a.id),'distribute-x'));assert.equal(rose.x,first);assert.ok(Math.abs(radis.x-last)<1e-10);assert.ok(Math.abs((third.x-rose.x-rose.width)-(radis.x-third.x-third.width))<1e-9);});
@@ -33,6 +54,44 @@ test('duplicating a bubble alone keeps its original speaker',()=>{const {shot,ro
 test('group deletion safely detaches any remaining bubble',()=>{const {doc,shot,rose,radis}=example();deleteObjects(shot,[rose.id,radis.id]);assert.equal(shot.actors.length,1);assert.equal(shot.bubbles[0].speakerId,null);assert.equal(shot.bubbles[0].tail.mode,'manual');parseCinematic(doc);});
 test('deleting a group including its own bubble leaves no dangling references',()=>{const {doc,shot,rose}=example();deleteObjects(shot,[rose.id,shot.bubbles[0].id]);assert.equal(shot.bubbles.length,0);parseCinematic(doc);});
 test('duplicate refuses excessive object counts atomically',()=>{const {shot}=example();while(shot.actors.length<50)shot.actors.push({...copy(shot.actors[0]),id:crypto.randomUUID()});const before=copy(shot);assert.throws(()=>duplicateObjects(shot,shot.actors.map(a=>a.id)));assert.deepEqual(shot,before);});
+test('pasting a character into another shot keeps its exact geometry and creates an independent instance',()=>{
+ const {doc,shot,rose}=example(),target=newShot();doc.shots.push(target);
+ rose.x=.137;rose.y=.523;rose.width=.219;rose.height=.491;rose.flipX=true;rose.entry={preset:'fade',duration:1.2,delay:.3};
+ const before=copy(rose),pasted=pasteActor(target,copy(rose));
+ assert.notEqual(pasted.id,rose.id);assert.deepEqual({...pasted,id:rose.id},before);
+ assert.deepEqual([pasted.x,pasted.y,pasted.width,pasted.height],[.137,.523,.219,.491]);
+ pasted.x=.8;pasted.entry.delay=2;
+ assert.deepEqual(rose,before);parseCinematic(doc);
+});
+test('pasting refuses a full shot without changing it',()=>{
+ const {shot,rose}=example(),target=newShot();
+ while(target.actors.length<50)target.actors.push({...copy(rose),id:crypto.randomUUID()});
+ const before=copy(target);assert.throws(()=>pasteActor(target,rose),/maximum de 50/);assert.deepEqual(target,before);
+});
+test('pasting a dialogue bubble preserves geometry and reconnects the matching speaker',()=>{
+ const {doc,shot,rose}=example(),source=shot.bubbles[0],target=newShot();doc.shots.push(target);
+ source.x=.137;source.y=.213;source.width=.419;source.height=.177;source.text='Un dialogue précis.';
+ const targetRose={...copy(rose),id:crypto.randomUUID()};target.actors.push(targetRose);
+ const before=copy(source),pasted=pasteBubble(target,copy(source),rose);
+ assert.notEqual(pasted.id,source.id);assert.equal(pasted.speakerId,targetRose.id);
+ assert.deepEqual({...pasted,id:source.id,speakerId:source.speakerId},before);
+ assert.deepEqual([pasted.x,pasted.y,pasted.width,pasted.height],[.137,.213,.419,.177]);
+ pasted.text='Autre texte';pasted.tail.x=.9;
+ assert.deepEqual(source,before);parseCinematic(doc);
+});
+test('pasting a dialogue bubble without its speaker leaves a valid free tail',()=>{
+ const {doc,shot,rose}=example(),source=shot.bubbles[0],target=newShot();doc.shots.push(target);
+ const before=copy(source),pasted=pasteBubble(target,source,rose);
+ assert.equal(pasted.speakerId,null);assert.equal(pasted.tail.mode,'manual');
+ assert.deepEqual([pasted.x,pasted.y,pasted.width,pasted.height],[source.x,source.y,source.width,source.height]);
+ assert.notDeepEqual([pasted.tail.x,pasted.tail.y],[source.tail.x,source.tail.y]);
+ assert.deepEqual(source,before);parseCinematic(doc);
+});
+test('pasting refuses a full dialogue list without changing it',()=>{
+ const {shot,rose}=example(),target=newShot();
+ while(target.bubbles.length<100)target.bubbles.push({...copy(shot.bubbles[0]),id:crypto.randomUUID(),speakerId:null});
+ const before=copy(target);assert.throws(()=>pasteBubble(target,shot.bubbles[0],rose),/maximum de 100/);assert.deepEqual(target,before);
+});
 test('layer reorder changes only its own type and ignores foreign IDs',()=>{const {shot,rose,radis}=example();const bubbles=copy(shot.bubbles);reorderObjects(shot,'actor',rose.id,radis.id);assert.equal(shot.actors[1].id,rose.id);assert.deepEqual(shot.bubbles,bubbles);const before=copy(shot);reorderObjects(shot,'bubble',rose.id,'missing');assert.deepEqual(shot,before);});
 test('smart duplication can discard dialogues, entrances and audio',()=>{const {shot,rose}=example();rose.entry.preset='left';shot.audio={asset:'library://audio/music.ogg',volume:.5,loop:true};const next=smartDuplicate(shot,{dialogues:false,entrances:false,audio:false});assert.equal(next.bubbles.length,0);assert.equal(next.audio,null);assert.equal(next.actors[0].entry.preset,'none');assert.equal(rose.entry.preset,'left');});
 for(const template of ['blank','continue','dialogue','establishing','entrance','narration'] as const)test(`template ${template} is a valid distinct shot`,()=>{const {doc,shot,rose,radis}=example();const before=copy(shot);const next=createTemplate(shot,template,[rose.id,radis.id]);assert.notEqual(next.id,shot.id);assert.deepEqual(shot,before);doc.shots.push(next);parseCinematic(doc);if(template==='continue'){assert.equal(next.bubbles.length,0);assert.equal(next.actors[0].x,rose.x);}});
@@ -45,6 +104,16 @@ test('without a library missing references remain unverified warnings',()=>{cons
 test('diagnostics point to out-of-frame actors with a non-destructive fix',()=>{const {doc,rose}=example();rose.x=1.4;const before=copy(doc);const issue=diagnose(doc,[asset],true).find(i=>i.fix==='center');assert.equal(issue?.objectId,rose.id);assert.deepEqual(doc,before);});
 test('overlapping sequential bubbles are informational, not playback errors',()=>{const {doc,shot}=example();const b=newBubble();Object.assign(b,{x:shot.bubbles[0].x,y:shot.bubbles[0].y});shot.bubbles.push(b);const i=diagnose(doc,[asset],true).find(i=>i.message.includes('chevauche'));assert.equal(i?.severity,'info');});
 test('overflow warning retains an actionable bubble ID',()=>{const {doc,shot}=example();const b=shot.bubbles[0];b.autoHeight=false;b.height=.04;b.text='Très long. '.repeat(40);assert.equal(diagnose(doc,[asset],true).find(i=>i.fix==='fit-bubble')?.objectId,b.id);});
-test('corrupt collection storage is normalized without unsafe paths',()=>{assert.deepEqual(parseCollections({favorites:['file:///private','library://../bad',asset.ref,asset.ref],recent:'oops'}),{favorites:[asset.ref],recent:[]});});
+test('corrupt collection storage is normalized without unsafe paths',()=>{assert.deepEqual(parseCollections({favorites:['file:///private','library://../bad',asset.ref,asset.ref],recent:'oops',favoriteFolders:['02_characters/Rose','../secret','02_characters/Rose','C:/private']}),{favorites:[asset.ref],recent:[],favoriteFolders:['02_characters/Rose']});});
 test('favorite toggles do not mutate the previous collection',()=>{const initial=parseCollections(null);const next=toggleFavorite(initial,asset.ref);assert.equal(initial.favorites.length,0);assert.deepEqual(toggleFavorite(next,asset.ref).favorites,[]);});
+test('folder favorites are persistent, removable, and preserve image favorites',()=>{
+ const initial=toggleFavorite(parseCollections(null),asset.ref);
+ const radis=toggleFavoriteFolder(initial,'02_characters/Radis');
+ const rose=toggleFavoriteFolder(radis,'02_characters/Rose');
+ assert.deepEqual(initial.favoriteFolders,[]);
+ assert.deepEqual(parseCollections(JSON.parse(JSON.stringify(rose))).favoriteFolders,['02_characters/Rose','02_characters/Radis']);
+ assert.deepEqual(toggleFavoriteFolder(rose,'02_characters/Rose').favoriteFolders,['02_characters/Radis']);
+ assert.deepEqual(rose.favorites,[asset.ref]);
+ assert.equal(toggleFavoriteFolder(rose,'../secret'),rose);
+});
 test('recents are MRU ordered, deduplicated and bounded at forty',()=>{let c=parseCollections(null);for(let i=0;i<55;i++)c=recordRecent(c,`library://image${i}.png`);c=recordRecent(c,'library://image30.png');assert.equal(c.recent.length,40);assert.equal(c.recent[0],'library://image30.png');assert.equal(new Set(c.recent).size,40);});

@@ -1,10 +1,32 @@
 # Lunaria V1.10 — installation et utilisation
 
-## Nature de cette livraison
+**Mise à jour du projet courant :** un seul fichier `lunaria.game.json` enregistre les niveaux, le parcours et les cinématiques complètes. Le projet démarre sans mission ; les 40 missions d’exemple ont été retirées. Les images restent dans la bibliothèque graphique. Les indications plus bas sur une campagne initiale de 40 niveaux décrivent l’ancienne livraison V1.10.
+
+## Prise en main du Studio courant
+
+1. Ouvrir **Vue du projet**, dans la barre du haut. Cette vue indique le nombre de niveaux, de cinématiques et d’étapes du parcours, ainsi que l’état de l’enregistrement.
+2. Utiliser **Connecter** pour relier la bibliothèque, puis **Créer un niveau** ou **Créer une cinématique**. La campagne vide propose aussi **Créer un premier niveau**.
+3. Dans **Plantes alliées** ou **Ennemis**, chercher un personnage par nom ou rôle. Les accents sont facultatifs : `aloes` retrouve `Aloès`. **Effacer la recherche** permet de revenir au catalogue après une recherche sans résultat.
+4. Utiliser **Enregistrer le projet** ou **Ctrl+S**. La copie locale de récupération est distincte du fichier enregistré. Le bouton **Enregistrer** et Ctrl+S fonctionnent aussi depuis la vue du projet.
+5. Organiser l’ordre de jeu dans **Campagne**. Un niveau créé est ajouté au parcours ; une copie de niveau doit y être ajoutée explicitement.
+6. Ouvrir **Animations et sons** pour les catalogues communs et les profils avancés. Les animations propres à un personnage restent accessibles dans sa fiche.
+7. Dans **Niveaux → Publier et exporter**, choisir **Publier la campagne**, **Exporter pour PC** ou **Exporter pour Android**. Ces actions enregistrent le projet puis mettent à jour le contenu du jeu sélectionné ; l’export construit ensuite son application. Les erreurs bloquantes proposent d’ouvrir **Vérifier le projet**. Les avertissements restent consultables sans empêcher la publication.
+
+Dans **Cinématiques**, **Nouvelle cinématique** crée un film dans le projet et sélectionne son titre pour le renommer aussitôt. **Toutes les cinématiques** affiche les films du projet, leur nombre de plans et leur durée ; la recherche accepte le titre ou l’identifiant, avec ou sans accents. La même liste est accessible depuis **Vue du projet**. Les films restent enregistrés avec les niveaux dans le fichier unique du projet.
+
+Dans **Toutes les cinématiques**, **Dupliquer** crée une nouvelle cinématique indépendante dans le projet, avec tous ses plans, personnages, dialogues et réglages. Renommer la copie si besoin, puis utiliser **Enregistrer le projet** pour la conserver. Pour une sauvegarde dans un fichier distinct, choisir **Créer une copie du projet…** dans la même fenêtre : le nouveau fichier contient aussi les niveaux et devient le projet ouvert. Les images de la bibliothèque restent référencées ; elles ne sont pas recopiées.
+
+La même fenêtre permet de **renommer**, **monter ou descendre** et **supprimer** un film. La liste peut être filtrée par catégorie ; pour en créer une, choisir **+ Nouvelle catégorie…** sur un film, puis classer les autres avec **Classer dans**. Les catégories servent uniquement à retrouver les films dans Studio. Le déplacement dans cette liste ne change pas le parcours du joueur, qui se règle dans **Campagne**. Si un film est utilisé dans le parcours, un événement ou un comportement, retirez ces liens avant de le supprimer. Enregistrez ensuite le projet pour conserver les changements.
+
+**Exporter en JPG** demande un dossier puis crée un sous-dossier au titre de la cinématique. Il contient une image 1600 × 900 par plan, dans l’ordre du storyboard, nommée `01 - Titre de la cinématique.jpg`, `02 - Titre de la cinématique.jpg`, etc. L’image montre la composition fixe et toutes les bulles du plan, sans les poignées et repères de l’éditeur. Les animations et l’audio ne figurent pas dans ces images. Les caractères interdits dans un nom de fichier sont retirés du titre ; un nouvel export crée un autre sous-dossier pour conserver les JPG précédents.
+
+La fenêtre **Vérifier le projet** se ferme avec **Échap**. Cliquer une erreur de nom de niveau ouvre ce niveau et place le curseur dans son champ de nom. Les recherches et filtres de niveaux sont effacés lors d’une création ou d’une duplication, pour que le nouveau niveau reste visible.
+
+## Contenu de la livraison V1.10
 
 Deux projets sources complets : Studio React/TypeScript/Node/Electron et jeu Godot/GDScript. La présentation de combat est désormais définie dans le document de jeu et interprétée par un lecteur générique. Les deux modes principaux restent **Cinématiques** et **Niveaux**.
 
-**L’intégration native et le build desktop ne sont pas validés dans cette livraison.** Les tests Node ont été exécutés ; les dépendances déclarées n’ont pas pu être installées et Godot n’est pas présent dans l’environnement de réalisation. Aucun EXE ni APK n’est fourni. Lire `docs/TEST_REPORT_V1_10.md` avant de remplacer une version de travail.
+Les résultats de validation de la livraison V1.10 sont conservés dans `docs/TEST_REPORT_V1_10.md`. Ils précèdent la mise à jour du projet courant décrite ci-dessus.
 
 ## Installation du Studio
 
@@ -37,7 +59,7 @@ node tools/test-game.mjs --godot "C:/Outils/Godot/Godot_console.exe"
 
 Adapter uniquement le chemin de l’exécutable Godot. La première commande ne lance **aucun moteur**. La seconde lance les contrôles Node, l’import et les suites Godot, dont `presentation_runtime_smoke`. Elle doit être exécutée avant de déclarer ce runtime validé.
 
-Le contenu actif reste la campagne principale à 40 niveaux. L’atelier est séparé et ne change pas automatiquement cette campagne.
+Le contenu actif ne contient plus les 40 niveaux d’exemple. La publication remplace la campagne jouable par le parcours enregistré dans le projet.
 
 ## Relier la bibliothèque commune
 
@@ -68,7 +90,7 @@ Les aperçus disposent de lecture/pause, reprise, curseur, déplacement frame pa
 
 ## Attaques, profils, audio et VFX
 
-La navigation repliable **Présentation** regroupe Animations, Profils d’animation, Audio et VFX. Les attaques disposent d’une section Présentation : slot sémantique, mode/délai de libération et indices de présentation de lancement/impact. Ne pas mettre un identifiant comme `radish_throw` dans une attaque partagée : choisir `attack`.
+La navigation repliable **Animations et sons** regroupe les animations communes, les profils d’animation, l’audio et les VFX. Les attaques disposent d’une section Présentation : slot sémantique, mode/délai de libération et indices de présentation de lancement/impact. Ne pas mettre un identifiant comme `radish_throw` dans une attaque partagée : choisir `attack`.
 
 Un slot absent hérite du profil global. Un slot de base doit toujours être résolu. Une liaison optionnelle vide, telle que `victory`, désactive ce slot. Une plante ne se déplace pas parce qu’elle possède une animation `move`.
 

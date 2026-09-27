@@ -3,7 +3,7 @@ import { app, BrowserWindow, dialog, ipcMain, protocol, net, session, nativeImag
 import { promises as fs, constants as fsConstants, watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { atomicJson, readJson, resolveAsset, isWithin } from './files.js';
+import { atomicJson, readJson, readJsonSource, resolveAsset, isWithin } from './files.js';
 import { scanLibrary, libraryKey, IMAGE_EXTENSIONS, AUDIO_EXTENSIONS } from './library.js';
 import { GameDocuments } from './gameDocuments.js';
 import { CampaignSources } from './campaignSources.js';
@@ -12,11 +12,13 @@ import { discoverGodot, installedGodotExecutables, launchGodotLevel, loadGamePre
 import { runGameBuild, simulateGameBuild, type GameBuildTarget } from './gameBuild.js';
 import { parseGameProject, parseGameDraft } from '../shared/game/validation.js';
 import { ensureCampaign } from '../shared/game/campaign.js';
+import { newId, type GameFile } from '../shared/game/types.js';
 import { DocumentFiles } from './documents.js';
 import { RecentProjects } from './recentProjects.js';
 import { ProjectHistory } from './projectHistory.js';
 import { referencedAssets, type Cinematic, type LibrarySnapshot } from '../shared/model.js';
 import { parseCinematic, isSafeAssetRef } from '../shared/schema.js';
+import { JpgExports } from './jpgExport.js';
 
 // The opt-in E2E runner uses an isolated profile, never the author's real workspace.
 // Ignored entirely in a packaged application; it does not relax renderer/IPC security.
@@ -43,6 +45,7 @@ let campaignSources: CampaignSources;
 let recentProjects: RecentProjects;
 let projectHistory: ProjectHistory;
 const thumbnailCache = new Map<string, Buffer>();
+const jpgExports = new JpgExports();
 const appRoot = () => app.getAppPath();
 const rendererRoot = () => path.join(appRoot(), 'dist', 'renderer');
 const dataFile = (name: string) => path.join(app.getPath('userData'), name);
@@ -121,14 +124,32 @@ function previewProject(value:unknown,levelId:string){
  if(!campaign.steps.some(step=>step.kind==='level'&&step.levelId===levelId))campaign.steps.push({id:'studio_preview_'+globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12),kind:'level',levelId});
  return{preview,level};
 }
+async function openAuthoringProject(file:string,recent=false):Promise<GameFile>{
+  const source=parseGameProject((await readJsonSource(file,32*1024*1024)).value);
+  const existing=new Set((source.cinematics??[]).map(doc=>doc.id));
+  const missing=(source.campaign?.cinematics??[]).filter(film=>!existing.has(film.documentId));
+  let imported:Cinematic[]=[];
+  if(missing.length){
+    const load=async()=>Promise.all(missing.map(async film=>(await campaignSources.resolve(film.file,film.documentId)).cinematic));
+    try{imported=await load();}
+    catch{
+      const chosen=await dialog.showOpenDialog(window!,{title:'Choisir le dossier des cinématiques de cet ancien projet',properties:['openDirectory']});
+      if(chosen.canceled||!chosen.filePaths[0])throw Error('Ouverture annulée : les cinématiques de cet ancien projet doivent être importées dans le fichier unique.');
+      await campaignSources.select(chosen.filePaths[0]);imported=await load();
+    }
+  }
+  const opened=recent?await gameDocuments.openRecent(file):await gameDocuments.open(file);
+  if(imported.length){opened.project.cinematics=[...(opened.project.cinematics??[]),...imported];opened.migrated=true;}
+  return opened;
+}
 
 function setupIpc() {
   handle('game:bootstrap', () => gameDocuments.bootstrap());
   handle('game:open', async () => {
     const result = await dialog.showOpenDialog(window!, {title:'Ouvrir un projet de niveaux',properties:['openFile'],filters:[{name:'Projet Lunaria',extensions:['json']}]});
-    return result.canceled||!result.filePaths[0]?null:gameDocuments.open(result.filePaths[0]);
+    return result.canceled||!result.filePaths[0]?null:openAuthoringProject(result.filePaths[0]);
   });
-  handle('game:recent', file => gameDocuments.openRecent(file));
+  handle('game:recent', file => {if(typeof file!=='string')throw Error('Projet récent invalide.');return openAuthoringProject(file,true);});
   handle('game:save', async (value, token, saveAs) => {
     parseGameProject(value);
     if(typeof token!=='string'||typeof saveAs!=='boolean')throw new Error('Requête invalide.');
@@ -147,9 +168,11 @@ function setupIpc() {
     return result.canceled||!result.filePaths[0]?null:campaignSources.select(result.filePaths[0]);
   });
   handle('campaign:add-film',async()=>{
-    const folder=await campaignSources.folder();if(!folder)throw Error('Choisis le dossier des cinématiques.');
-    const result=await dialog.showOpenDialog(window!,{title:'Ajouter une cinématique au parcours',defaultPath:folder,properties:['openFile'],filters:[{name:'Cinématique Lunaria',extensions:['json']}]});
-    return result.canceled||!result.filePaths[0]?null:campaignSources.add(result.filePaths[0]);
+    const result=await dialog.showOpenDialog(window!,{title:'Importer une cinématique dans le projet',properties:['openFile'],filters:[{name:'Cinématique Lunaria',extensions:['json']}]});
+    if(result.canceled||!result.filePaths[0])return null;
+    const cinematic=parseCinematic((await readJsonSource(result.filePaths[0],6*1024*1024)).value);
+    const id=newId('film');
+    return {film:{id,title:cinematic.title,file:id+'.cinematic.json',documentId:cinematic.id},cinematic};
   });
   handle('campaign:edit-film',async(file,documentId)=>{
     if(typeof documentId!=='string')throw Error('Identifiant de film invalide.');
@@ -283,6 +306,33 @@ function setupIpc() {
       try { if (!root) throw new Error(); await resolveAsset(root, ref); } catch { missing.push(ref); }
     }
     return { path: target, missing, cinematic: saved, warnings };
+  });
+  handle('cinematic-jpg:begin', async (title, count) => {
+    if (typeof title !== 'string' || typeof count !== 'number') throw new Error('Demande d’export JPG invalide.');
+    const result = await dialog.showOpenDialog(window!, { title: 'Choisir où exporter les JPG de la cinématique', properties: ['openDirectory', 'createDirectory'] });
+    return result.canceled || !result.filePaths[0] ? null : jpgExports.begin(result.filePaths[0], title, count);
+  });
+  handle('cinematic-jpg:write', (id, index, dataUrl) => {
+    if (typeof id !== 'string' || typeof index !== 'number' || typeof dataUrl !== 'string') throw new Error('Image JPG invalide.');
+    return jpgExports.write(id, index, dataUrl);
+  });
+  handle('cinematic-jpg:image', async ref => {
+    if (typeof ref !== 'string' || !root) throw new Error('Image de bibliothèque introuvable.');
+    const file = await resolveAsset(root, ref);
+    const extension = path.extname(file).toLowerCase();
+    const mime = extension === '.png' ? 'image/png' : extension === '.webp' ? 'image/webp' : extension === '.jpg' || extension === '.jpeg' ? 'image/jpeg' : '';
+    if (!mime) throw new Error('Format d’image non pris en charge.');
+    const stat = await fs.stat(file);
+    if (stat.size > 80 * 1024 * 1024) throw new Error('Image trop volumineuse pour l’export.');
+    return `data:${mime};base64,${(await fs.readFile(file)).toString('base64')}`;
+  });
+  handle('cinematic-jpg:finish', id => {
+    if (typeof id !== 'string') throw new Error('Session JPG invalide.');
+    return jpgExports.finish(id);
+  });
+  handle('cinematic-jpg:cancel', id => {
+    if (typeof id !== 'string') throw new Error('Session JPG invalide.');
+    return jpgExports.cancel(id);
   });
   handle('versions:list', token => {
     if (typeof token !== 'string') throw new Error('Session invalide.');
