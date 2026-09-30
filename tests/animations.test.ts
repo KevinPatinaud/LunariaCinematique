@@ -4,6 +4,7 @@ import {newActor, newBubble, newCinematic, copy, duplicateShot, hasV3Features, u
   type ActorRole, type Asset, type TextReveal, type TextEffect, type MotionPreset, type EntryPreset, type ExitPreset} from '../src/shared/model.js';
 import {graphemes, unitsForLines} from '../src/shared/textSegments.js';
 import {autoDialogueDuration, bubbleTextUnits, glyphPose, fitGlyphPose, newTextAnimation, textIntroDuration, textNeedsCompletion} from '../src/shared/textAnimation.js';
+import {bubbleEntryPose} from '../src/shared/bubbleEntry.js';
 import {beginPlayback, tickPlayback, advanceDialogue} from '../src/shared/playback.js';
 import {newMotion, newMovement, actorPose, actorAnchor, restPose} from '../src/shared/motion.js';
 import {bubbleLayout, prepareCinematic, wrapText} from '../src/shared/geometry.js';
@@ -20,6 +21,30 @@ function firstGlyph(b:ReturnType<typeof newBubble>,time:number,complete=false) {
 test('V1.5 never upgrades an untouched v1 document',()=>assert.equal(prepareCinematic(newCinematic()).schemaVersion,1));
 test('v2 actor effects remain v2',()=>{const d=newCinematic();d.shots[0].actors=[newActor(source,1)];d.shots[0].actors[0].motion=newMotion('float');assert.equal(prepareCinematic(d).schemaVersion,2);});
 test('animated text requires v3 and round-trips without rewriting the text',()=>{const {d,b}=scene();const original=JSON.stringify(d);assert.ok(validationIssues(d).some(s=>s.includes('schemaVersion: 3')));const ready=prepareCinematic(d);assert.equal(ready.schemaVersion,3);const out=parseCinematic(JSON.parse(JSON.stringify(ready)));assert.deepEqual(out.shots[0].bubbles[0].textAnimation,b.textAnimation);assert.equal(out.shots[0].bubbles[0].text,b.text);assert.equal(JSON.stringify(d),original);});
+test('existing bubbles pop during dialogue and rest after their entrance',()=>{const b=newBubble(),rest={dx:0,dy:0,scale:1,rotation:0,burst:0};assert.equal(bubbleEntryPose(b,0).scale,.82);assert.ok(bubbleEntryPose(b,.2).scale>1);assert.deepEqual(bubbleEntryPose(b,.3),rest);assert.deepEqual(bubbleEntryPose(b,.1,true),rest);});
+test('custom bubble entry survives saving and keeps automatic dialogue visible',()=>{const d=newCinematic(),b=newBubble();b.bubbleEntry={preset:'left',duration:2};b.advance={mode:'auto',seconds:.5};d.shots[0].bubbles=[b];assert.equal(bubbleEntryPose(b,0).dx,-36);assert.equal(bubbleEntryPose(b,2).dx,0);assert.equal(autoDialogueDuration(b),2.5);const saved=prepareCinematic(d);assert.equal(saved.schemaVersion,3);assert.deepEqual(validationIssues(saved),[]);assert.deepEqual(parseCinematic(JSON.parse(JSON.stringify(saved))).shots[0].bubbles[0].bubbleEntry,b.bubbleEntry);});
+test('explosion, secousse et rebond animent la bulle puis reviennent au repos',()=>{
+  const b=newBubble(),rest={dx:0,dy:0,scale:1,rotation:0,burst:0};
+  for(const preset of ['burst','shake','bounce'] as const){
+    b.bubbleEntry={preset,duration:.8};
+    const pose=bubbleEntryPose(b,.2);
+    assert.notDeepEqual(pose,rest);
+    assert.deepEqual(bubbleEntryPose(b,.2),pose);
+    assert.deepEqual(bubbleEntryPose(b,.8),rest);
+    assert.deepEqual(bubbleEntryPose(b,.2,true),rest);
+  }
+  b.bubbleEntry={preset:'burst',duration:.8};
+  assert.ok(bubbleEntryPose(b,.24).scale>1);
+  assert.ok(bubbleEntryPose(b,.24).burst>0);
+  const doc=newCinematic();doc.shots[0].bubbles=[b];
+  assert.deepEqual(validationIssues(prepareCinematic(doc)),[]);
+});
+test('an existing shouted line uses the burst unless its bubble chooses another effect',()=>{
+  const b=newBubble();b.textAnimation=newTextAnimation('instant','shout');
+  assert.ok(bubbleEntryPose(b,.15).burst>0);
+  b.bubbleEntry={preset:'none',duration:.65};
+  assert.equal(bubbleEntryPose(b,.15).burst,0);
+});
 test('v3 is never downgraded when an effect is removed',()=>{const d=newCinematic();d.schemaVersion=3;d.shots[0].actors=[newActor(source,1)];upgradeCinematicFormat(d);assert.equal(d.schemaVersion,3);});
 test('animation change is undoable and restores the older format',()=>{const d=newCinematic();d.shots[0].bubbles=[newBubble()];let h=createHistory(d);h=historyReducer(h,{type:'execute',command:editCommand(d,n=>{n.shots[0].bubbles[0].textAnimation=newTextAnimation();upgradeCinematicFormat(n);},'Animer le texte')});assert.equal(h.present.schemaVersion,3);h=historyReducer(h,{type:'undo'});assert.equal(h.present.schemaVersion,1);assert.equal(h.present.shots[0].bubbles[0].textAnimation,undefined);h=historyReducer(h,{type:'redo'});assert.equal(h.present.schemaVersion,3);});
 test('duplicate plan keeps animation settings but remaps identities',()=>{const {s,b}=scene();const a=newActor(source,1);a.exit={preset:'fade',start:4,duration:1};s.actors=[a];b.speakerId=a.id;const out=duplicateShot(s);assert.deepEqual(out.bubbles[0].textAnimation,b.textAnimation);assert.deepEqual(out.actors[0].exit,a.exit);assert.equal(out.bubbles[0].speakerId,out.actors[0].id);assert.notEqual(out.actors[0].id,a.id);});

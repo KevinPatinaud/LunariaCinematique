@@ -8,7 +8,7 @@ import { ensureCombat } from './combatDefaults.js';
 import { safeMoviePath } from './campaign.js';
 import { validationIssues as cinematicIssues } from '../schema.js';
 import { GAME_SCHEMA, type Rule } from './schema.js';
-import { totalEnemies, type GameProject } from './types.js';
+import { defaultRewards, totalEnemies, type GameProject } from './types.js';
 export interface GameIssue {path:string;message:string;levelId?:string;severity:'error'|'warning'}
 export function walkRule(rule:Rule,value:unknown,path:string,issues:GameIssue[]):void {
  if(issues.length>=100)return;
@@ -44,14 +44,24 @@ export function gameIssues(input:unknown):GameIssue[]{
    for(const message of cinematicIssues(film))issues.push({path:'cinematics.'+film.id,message,severity:'error'});
   }
  const plants=new Set(p.balance.plants.map(x=>x.id)),enemies=new Set(p.balance.enemies.map(x=>x.id));
- for(const enemy of p.balance.enemies)if(enemy.id!=='thorn_knot'&&enemy.speed<=0)issues.push({path:'balance.enemies.'+enemy.id,message:'La vitesse doit être positive pour entrer sur le plateau.',severity:'error'});
+ for(const enemy of p.balance.enemies)if(!['thorn_knot','plaque'].includes(enemy.id)&&enemy.speed<=0)issues.push({path:'balance.enemies.'+enemy.id,message:'La vitesse doit être positive pour entrer sur le plateau.',severity:'error'});
  for(const [i,l] of p.levels.entries()){ 
   const path=`levels[${i}]`;unique(l.id,path);const add=(message:string,severity:'error'|'warning'='error')=>issues.push({path,levelId:l.id,message,severity});
   if(new Set(l.allowedPlants).size!==l.allowedPlants.length)add('Une plante autorisée apparaît deux fois.');
   if(l.allowedPlants.some(id=>!plants.has(id)))add('Une plante autorisée est absente du catalogue global.');
   if(l.midWave>l.waves.length)add('Le dialogue intermédiaire dépasse le nombre de vagues.');
   if(l.midDialogue.length&&l.midWave===0)add('Choisis une vague pour le dialogue intermédiaire.');
-  if(['defend','protect_cell'].includes(l.objective.type)&&l.objective.target!==0)add('Une défense utilise le nombre de vagues : sa cible doit être 0.');
+  if(['defend','advance','invasive_foci','protect_cell'].includes(l.objective.type)&&l.objective.target!==0)add('Cet objectif utilise une cible automatique : sa cible doit être 0.');
+  if(l.objective.type==='invasive_foci'){
+   const f=l.invasiveFoci;
+   if(!f)add('Place deux ou trois foyers invasifs et choisis leurs renforts.');
+   else {
+    if(new Set(f.positions.map(p=>`${p.row}:${p.col}`)).size!==f.positions.length)add('Deux foyers ne peuvent pas occuper la même case.');
+    if(f.reinforcementEnemyId==='plaque'||f.reinforcementEnemyId==='thorn_knot'||!enemies.has(f.reinforcementEnemyId))add('Choisis un ennemi mobile pour les renforts des foyers.');
+    if(f.positions.some(p=>p.col<2))add('Place les foyers au-delà des deux premières colonnes.');
+   }
+   if(l.waves.some(w=>w.groups.some(g=>g.enemyId==='plaque')))add('Les Plaques de ce niveau sont déjà définies par les foyers invasifs : retire-les des vagues.');
+  }else if(l.invasiveFoci)add('Les réglages des foyers sont réservés au niveau Foyers invasifs.');
   if(l.objective.type==='rescue'&&l.objective.target!==3)add('Un sauvetage exige une cible de 3 excroissances.');
   if(l.objective.type==='operation'&&l.objective.target<1)add('Une opération exige une cible positive.');
   if(l.objective.type==='protect_cell'&&!l.protectedCell)add('Choisis la case, l’image et les protections de la cible.');
@@ -63,7 +73,12 @@ export function gameIssues(input:unknown):GameIssue[]{
   for(const [j,w] of l.waves.entries()){
    unique(w.id,`${path}.waves[${j}]`);
    if(w.groups.reduce((n,g)=>n+g.count,0)>256)add(`Vague ${j+1} : maximum 256 ennemis.`);
-   for(const g of w.groups){unique(g.id,`${path}.waves[${j}]`);if(!enemies.has(g.enemyId))add(`Vague ${j+1} : ennemi inconnu ${g.enemyId}.`);if(g.start+(g.count-1)*g.interval>3600)add(`Vague ${j+1} : la dernière arrivée dépasse 60 minutes.`);}
+   for(const g of w.groups){unique(g.id,`${path}.waves[${j}]`);if(!enemies.has(g.enemyId))add(`Vague ${j+1} : ennemi inconnu ${g.enemyId}.`);if(g.start+(g.count-1)*g.interval>3600)add(`Vague ${j+1} : la dernière arrivée dépasse 60 minutes.`);
+    if(g.enemyId==='plaque'){
+     if(!g.placement)add(`Vague ${j+1} : définis la case ou la zone de la Plaque.`);
+     else if(g.placement.rowMin>g.placement.rowMax||g.placement.colMin>g.placement.colMax)add(`Vague ${j+1} : la zone de la Plaque est inversée.`);
+    }else if(g.placement)add(`Vague ${j+1} : seule la Plaque peut apparaître directement dans une case.`);
+   }
   }
   const attackers=l.allowedPlants.map(id=>p.balance.plants.find(x=>x.id===id)).filter(x=>x&&(p.combat ? (x.ability_ids??[]).some(id=>{const a=p.combat!.abilities.find(a=>a.id===id);return a?.target==='opponent'&&a.effects.some(id=>{const f=p.combat!.effects.find(f=>f.id===id);return f&&['damage','poison'].includes(f.kind)&&f.amount>0&&(f.valueSource!=='attack'||x.damage>0);});}) : x.damage>0));
   if(!attackers.length)add('Aucune plante autorisée ne possède une attaque directe : vérifie que le niveau est jouable.','warning');
@@ -106,7 +121,7 @@ function withoutLegacyBonusGoals(value:unknown):unknown {
 }
 export function parseGameProject(value:unknown):GameProject{
  const normalized=withoutLegacyBonusGoals(value),errors=gameIssues(normalized).filter(x=>x.severity==='error');if(errors.length)throw new Error(errors.slice(0,12).map(x=>`${x.path} : ${x.message}`).join('\n'));
- const copy=structuredClone(normalized) as GameProject;ensureCombat(copy);ensureLogic(copy);ensurePresentation(copy);const upgraded=gameIssues(copy).filter(x=>x.severity==='error');if(upgraded.length)throw Error(upgraded.map(x=>x.message).join('\n'));return copy;
+ const copy=structuredClone(normalized) as GameProject;copy.rewards??=defaultRewards();ensureCombat(copy);ensureLogic(copy);ensurePresentation(copy);const upgraded=gameIssues(copy).filter(x=>x.severity==='error');if(upgraded.length)throw Error(upgraded.map(x=>x.message).join('\n'));return copy;
 }
 
 /** Recovery is allowed to hold an in-progress title or temporarily empty roster.
@@ -131,5 +146,5 @@ export function parseGameDraft(value:unknown):GameProject {
  if(draft.schemaVersion>=2&&(!draft.combat||[...draft.balance.plants,...draft.balance.enemies].some(x=>!Array.isArray(x.ability_ids))))throw Error('Catalogues ou associations absents du brouillon V1.8.');
  if(draft.schemaVersion>=3&&(!draft.logic||[...draft.balance.plants,...draft.balance.enemies].some(x=>!x.behaviorId)||draft.levels.some(l=>!Array.isArray(l.events))))throw Error('Données de logique absentes du brouillon V1.9.');
  if(draft.schemaVersion===4&&(!draft.presentation||[...draft.balance.plants,...draft.balance.enemies].some(s=>!s.visual||!s.animationProfileId)||draft.combat!.abilities.some(a=>!a.presentation)||draft.combat!.projectiles.some(q=>!q.presentation)))throw Error('Données de présentation absentes du brouillon V1.10.');
- ensureCombat(draft);ensureLogic(draft);ensurePresentation(draft);return draft;
+ draft.rewards??=defaultRewards();ensureCombat(draft);ensureLogic(draft);ensurePresentation(draft);return draft;
 }

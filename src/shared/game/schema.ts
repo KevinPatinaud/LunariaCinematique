@@ -256,7 +256,7 @@ export const GAME_SCHEMA:Rule = {
         "enemies": {
           "type": "array",
           "minItems": 13,
-          "maxItems": 13,
+          "maxItems": 14,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -266,7 +266,6 @@ export const GAME_SCHEMA:Rule = {
               "hp",
               "speed",
               "attack",
-              "leak",
               "reward",
               "reach",
               "damage_type",
@@ -290,7 +289,8 @@ export const GAME_SCHEMA:Rule = {
                   "devourer",
                   "corrupted_rose",
                   "furnace",
-                  "thorn_knot"
+                  "thorn_knot",
+                  "plaque"
                 ]
               },
               "name": {
@@ -313,12 +313,6 @@ export const GAME_SCHEMA:Rule = {
                 "type": "number",
                 "minimum": 0,
                 "maximum": 200,
-                "multipleOf": 1
-              },
-              "leak": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 100,
                 "multipleOf": 1
               },
               "reward": {
@@ -470,6 +464,8 @@ export const GAME_SCHEMA:Rule = {
                 "type": "string",
                 "enum": [
                   "defend",
+                  "advance",
+                  "invasive_foci",
                   "protect_cell",
                   "operation",
                   "rescue"
@@ -587,6 +583,17 @@ export const GAME_SCHEMA:Rule = {
                         "type": "number",
                         "minimum": 0.1,
                         "maximum": 120
+                      },
+                      "placement": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["rowMin", "rowMax", "colMin", "colMax"],
+                        "properties": {
+                          "rowMin": {"type":"number","minimum":0,"maximum":4,"multipleOf":1},
+                          "rowMax": {"type":"number","minimum":0,"maximum":4,"multipleOf":1},
+                          "colMin": {"type":"number","minimum":0,"maximum":7,"multipleOf":1},
+                          "colMax": {"type":"number","minimum":0,"maximum":7,"multipleOf":1}
+                        }
                       }
                     }
                   }
@@ -786,13 +793,20 @@ const ids:Rule={type:'array',minItems:0,maxItems:8,items:idRule};
 const base={id:idRule,name:str(120,1),description:str(1000)};
 const effect=obj({...base,kind:enumeration('damage','heal','poison','regeneration','slow','root','stun','weaken','armor_break','damage_boost','attack_speed_boost','protection','cleanse','counter_cooldown','reward_mark'),valueSource:enumeration('fixed','attack','strength'),amount:num(0,10000),damageType:enumeration('inherit','physical','piercing','toxic','pure'),duration:num(.05,120),tickInterval:num(.05,30)});
 const projectile=obj({...base,speed:num(0,20),lifetime:num(.1,30),maxHits:num(1,16,true),hitRadius:num(.01,.5),splashRadius:num(0,4),rowRadius:num(0,4,true),color:{...str(7,7),pattern:'^#[0-9a-fA-F]{6}$'},size:num(.02,.3)});
-const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','strongest','wounded','random'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
+const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','nearest_right','rightmost','strongest','wounded','random'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
+ability.properties!.allowBehind={type:'boolean'};
 ability.properties!.excludeSelf={type:'boolean'};
 ability.properties!.requiresActiveAttack={type:'boolean'};
 const array=(items:Rule,maxItems:number):Rule=>({type:'array',minItems:1,maxItems,items});
 GAME_SCHEMA.properties!.schemaVersion={type:'number',enum:[1,2],multipleOf:1};
 GAME_SCHEMA.properties!.combat=obj({abilities:array(ability,256),effects:array(effect,256),projectiles:array(projectile,128)});
 for(const role of ['plants','enemies'])GAME_SCHEMA.properties!.balance.properties![role].items!.properties!.ability_ids=ids;
+GAME_SCHEMA.properties!.balance.properties!.enemies.items!.properties!.archived={type:'boolean'};
+GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci=obj({
+ positions:{type:'array',minItems:2,maxItems:3,items:obj({row:num(0,4,true),col:num(2,7,true)})},
+ reinforcementEnemyId:idRule,
+ interval:num(5,60),
+});
 
 // V1.9: bounded behaviors, phases, variables and level events.
 import { extendLogicSchema } from './logicSchema.js';
@@ -803,3 +817,5 @@ extendPresentationSchema(GAME_SCHEMA);
 // Authoring films live inside the same JSON as the levels. Publication removes
 // this field and writes the runtime film snapshots addressed by content hash.
 GAME_SCHEMA.properties!.cinematics={type:'array',minItems:0,maxItems:500,items:cinematicSchema as Rule};
+GAME_SCHEMA.properties!.rewards=obj({combo:obj({enabled:{type:'boolean'},seedsPerStep:num(0,10000,true),maxSeeds:num(0,10000,true)})});
+GAME_SCHEMA.properties!.levels.items!.properties!.laneCaptureSeedReward=num(0,10000,true);

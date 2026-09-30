@@ -3,6 +3,7 @@ import { bubbleLayout } from './geometry.js';
 import { actorVisualBox, entryEnd } from './motion.js';
 import { textIntroDuration } from './textAnimation.js';
 import { validationIssues } from './schema.js';
+import { soundTargetTime } from './cinematicAudio.js';
 import { intersectionArea, objectBox, type ObjectKind } from './studio.js';
 export interface Diagnostic {
   id: string; severity: 'error'|'warning'|'info'; message: string; detail?: string;
@@ -21,6 +22,15 @@ export function diagnose(doc: Cinematic, assets: readonly Asset[], libraryConnec
       if (ref && !refs.has(ref)) add({severity:libraryConnected?'error':'warning',message:'Ressource introuvable',detail:ref,asset:ref,kind,objectId});
     };
     checkRef(shot.background.asset); if (shot.audio) checkRef(shot.audio.asset);
+    for (const track of doc.musicTracks ?? []) if (track.startShotId === shot.id) checkRef(track.asset);
+    for (const cue of shot.sounds ?? []) {
+      checkRef(cue.asset);
+      if (cue.event !== 'bubble_open') {
+        const time = soundTargetTime(shot, cue, {});
+        if (time === undefined) add({severity:'warning',message:'Un son attend une animation désactivée.',detail:'Active cette animation ou choisis un autre déclencheur dans Son.'});
+        else if (time >= shot.duration) add({severity:'warning',message:'Un son commence après la durée minimale du plan.',detail:'Allonge le plan ou réduis le délai dans Son.'});
+      }
+    }
     if (!shot.background.asset) add({severity:'warning',message:'Ce plan n’a pas de décor.',detail:'C’est autorisé pour un fond noir volontaire.'});
     for (const actor of shot.actors) {
       const meta={objectId:actor.id,kind:'actor' as const}; checkRef(actor.asset,'actor',actor.id);

@@ -570,6 +570,26 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "effects": [
         "fx_stun"
       ]
+    },
+    {
+      "id": "ab_plaque_spit",
+      "name": "Crachat de la Plaque",
+      "description": "Tir toxique vers la plante la plus proche dans la même allée, à gauche ou à droite ; à distance égale, celle de droite est prioritaire.",
+      "delivery": "projectile",
+      "projectileId": "proj_plaque_slime",
+      "target": "opponent",
+      "allowBehind": true,
+      "selection": "one",
+      "priority": "nearest_right",
+      "rangeSource": "species",
+      "range": 8,
+      "rowRadius": 0,
+      "cooldownSource": "fixed",
+      "cooldown": 2.7,
+      "initialDelay": 1,
+      "effects": [
+        "fx_attack"
+      ]
     }
   ],
   "effects": [
@@ -789,6 +809,19 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "rowRadius": 1,
       "color": "#ebcc74",
       "size": 0.13
+    },
+    {
+      "id": "proj_plaque_slime",
+      "name": "Goutte de slime violet",
+      "description": "Projectile toxique de la Plaque.",
+      "speed": 5.2,
+      "lifetime": 2,
+      "maxHits": 1,
+      "hitRadius": 0.18,
+      "splashRadius": 0,
+      "rowRadius": 0,
+      "color": "#bd39ed",
+      "size": 0.13
     }
   ]
 };
@@ -800,7 +833,6 @@ const assignments:Record<string,string[]>={
     "ab_root_shot"
   ],
   "hazel": [
-    "ab_basic_shot",
     "ab_personal_regeneration"
   ],
   "fern": [

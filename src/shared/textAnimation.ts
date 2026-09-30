@@ -2,6 +2,7 @@
 import type { Bubble, TextAnimation, TextEffect, TextReveal } from './model.js';
 import { bubbleLayout } from './geometry.js';
 import { unitsForLines, type TextUnit } from './textSegments.js';
+import { bubbleEntryDuration } from './bubbleEntry.js';
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const smooth = (v: number) => { const t = clamp(v); return t * t * (3 - 2 * t); };
 export const revealLabels: Record<TextReveal, string> = {
@@ -45,7 +46,8 @@ export function textNeedsCompletion(bubble: Bubble, elapsed: number, completedAt
   return elapsed + 1e-9 < intro;
 }
 export function autoDialogueDuration(bubble: Bubble, completedAt?: number): number {
-  return Math.min(textIntroDuration(bubble), completedAt ?? Infinity) + bubble.advance.seconds;
+  return Math.max(Math.min(textIntroDuration(bubble), completedAt ?? Infinity) + bubble.advance.seconds,
+    completedAt === undefined ? bubbleEntryDuration(bubble) + (bubble.bubbleEntry ? bubble.advance.seconds : 0) : 0);
 }
 export interface GlyphPose { opacity: number; dx: number; dy: number; rotation: number; scale: number }
 /** Coordinates x/y are centres in the text's content box; effect never moves the frame. */

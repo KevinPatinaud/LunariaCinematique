@@ -14,7 +14,7 @@ const tabs = [
   ['ui', 'bubble', 'Bulles'], ['audio', 'music', 'Audio']
 ] as const;
 const allLabels: Record<LibraryTab, string> = { environment: 'Tous les lieux', character: 'Tous les personnages', enemy: 'Tous les ennemis', prop: 'Tous les objets', ui: 'Tous les modèles', audio: 'Tous les sons' };
-const actionLabels: Record<LibraryTab, string> = { environment: 'Utiliser comme décor', character: 'Ajouter le personnage', enemy: 'Ajouter l’ennemi', prop: 'Ajouter l’objet', ui: 'Appliquer à la bulle', audio: 'Ajouter au plan' };
+const actionLabels: Record<LibraryTab, string> = { environment: 'Utiliser comme décor', character: 'Ajouter le personnage', enemy: 'Ajouter l’ennemi', prop: 'Ajouter l’objet', ui: 'Appliquer à la bulle', audio: 'Configurer ce son' };
 export interface LibraryProps {
   library: LibrarySnapshot | null; tab: LibraryTab; setTab: (tab: LibraryTab) => void;
   choose: () => void; refresh: () => void; useAsset: (asset: Asset, as: LibraryTab) => boolean | Promise<boolean>;

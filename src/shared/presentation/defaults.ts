@@ -526,7 +526,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       ]
     },
     {
-     "id": "radish_throw",
+      "id": "radish_throw",
       "ownerSpeciesId": "radish",
       "name": "Radis — jet de caillou (4 poses conservées)",
       "kind": "combined",
@@ -640,7 +640,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       ]
     },
     {
-     "id": "move_litterer",
+      "id": "move_litterer",
       "ownerSpeciesId": "litterer",
       "name": "Jeteur de déchets — déplacement",
       "kind": "procedural",
@@ -689,7 +689,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_runner",
+      "id": "move_runner",
       "ownerSpeciesId": "runner",
       "name": "Canette pressée — déplacement",
       "kind": "procedural",
@@ -738,7 +738,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_sprayer",
+      "id": "move_sprayer",
       "ownerSpeciesId": "sprayer",
       "name": "Pulvérisateur — déplacement",
       "kind": "procedural",
@@ -787,7 +787,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_truck",
+      "id": "move_truck",
       "ownerSpeciesId": "truck",
       "name": "Camion pollueur — déplacement",
       "kind": "procedural",
@@ -836,7 +836,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_jammer",
+      "id": "move_jammer",
       "ownerSpeciesId": "jammer",
       "name": "Drone brouilleur — déplacement",
       "kind": "procedural",
@@ -885,7 +885,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_tanker",
+      "id": "move_tanker",
       "ownerSpeciesId": "tanker",
       "name": "Citerne blindée — déplacement",
       "kind": "procedural",
@@ -934,7 +934,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_collector",
+      "id": "move_collector",
       "ownerSpeciesId": "collector",
       "name": "Le Ramasseur — déplacement",
       "kind": "procedural",
@@ -983,7 +983,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_pump",
+      "id": "move_pump",
       "ownerSpeciesId": "pump",
       "name": "L’Assoiffeur — déplacement",
       "kind": "procedural",
@@ -1032,7 +1032,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_factory",
+      "id": "move_factory",
       "ownerSpeciesId": "factory",
       "name": "Mille-Gueules — déplacement",
       "kind": "procedural",
@@ -1081,7 +1081,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_devourer",
+      "id": "move_devourer",
       "ownerSpeciesId": "devourer",
       "name": "L’Avaleur — déplacement",
       "kind": "procedural",
@@ -1130,7 +1130,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_corrupted_rose",
+      "id": "move_corrupted_rose",
       "ownerSpeciesId": "corrupted_rose",
       "name": "Rose contaminée — déplacement",
       "kind": "procedural",
@@ -1179,7 +1179,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_furnace",
+      "id": "move_furnace",
       "ownerSpeciesId": "furnace",
       "name": "La Fournaise — déplacement",
       "kind": "procedural",
@@ -1228,7 +1228,7 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "markers": []
     },
     {
-     "id": "move_thorn_knot",
+      "id": "move_thorn_knot",
       "ownerSpeciesId": "thorn_knot",
       "name": "Excroissance contaminée — déplacement",
       "kind": "procedural",
@@ -1275,6 +1275,212 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
         }
       ],
       "markers": []
+    },
+    {
+      "id": "plaque_idle",
+      "name": "Plaque — veille",
+      "kind": "frames",
+      "frames": [
+        {
+          "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.8
+        }
+      ],
+      "duration": 0.8,
+      "loop": true,
+      "ownerSpeciesId": "plaque",
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "none",
+        "amplitude": 0,
+        "period": 1
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.22
+        },
+        {
+          "id": "launch",
+          "x": 0.17,
+          "y": 0.68
+        }
+      ],
+      "markers": []
+    },
+    {
+      "id": "plaque_spawn",
+      "name": "Plaque — surgit",
+      "kind": "frames",
+      "frames": [
+        {
+          "asset": "library://03_enemies/plaque/Grille de drainage rouillée en métal.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.22
+        },
+        {
+          "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.28
+        }
+      ],
+      "duration": 0.5,
+      "loop": false,
+      "ownerSpeciesId": "plaque",
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "none",
+        "amplitude": 0,
+        "period": 1
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.22
+        },
+        {
+          "id": "launch",
+          "x": 0.17,
+          "y": 0.68
+        }
+      ],
+      "markers": []
+    },
+    {
+      "id": "plaque_attack",
+      "name": "Plaque — crache",
+      "kind": "frames",
+      "frames": [
+        {
+          "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.12
+        },
+        {
+          "asset": "library://03_enemies/plaque/Monstre égoutier au slime violet.png",
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.25
+        },
+        {
+          "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+          "anchor": {
+            "x": 0.5,
+            "y": 1
+          },
+          "duration": 0.2
+        }
+      ],
+      "duration": 0.5700000000000001,
+      "loop": false,
+      "ownerSpeciesId": "plaque",
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "none",
+        "amplitude": 0,
+        "period": 1
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.22
+        },
+        {
+          "id": "launch",
+          "x": 0.17,
+          "y": 0.68
+        }
+      ],
+      "markers": [
+        {
+          "id": "plaque_release",
+          "at": 0.18,
+          "type": "release",
+          "ref": "",
+          "attach": "launch"
+        }
+      ]
     }
   ],
   "profiles": [
@@ -1662,6 +1868,25 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
         }
       ],
       "events": []
+    },
+    {
+      "id": "profile_plaque",
+      "name": "Profil Plaque",
+      "slots": [
+        {
+          "slot": "idle",
+          "animationId": "plaque_idle"
+        },
+        {
+          "slot": "spawn",
+          "animationId": "plaque_spawn"
+        },
+        {
+          "slot": "attack",
+          "animationId": "plaque_attack"
+        }
+      ],
+      "events": []
     }
   ],
   "audio": [
@@ -1787,7 +2012,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
+    "note": "Image de repos du rempart ; Noisetier se régénère sans attaquer."
   },
   "fern": {
     "sprite": {
@@ -2470,7 +2695,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
@@ -2491,7 +2716,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
@@ -2512,7 +2737,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
@@ -2533,7 +2758,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
@@ -2554,7 +2779,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
@@ -2575,7 +2800,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
@@ -2596,17 +2821,36 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
       }
     },
     "width": 153.4,
-    "height": 143.0,
+    "height": 143,
     "baseline": 50.7,
     "mirror": false,
     "tint": "#ffffff",
     "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+  },
+  "plaque": {
+    "sprite": {
+      "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      }
+    },
+    "width": 118,
+    "height": 92,
+    "baseline": 29,
+    "mirror": false,
+    "tint": "#ffffff",
+    "note": "Plaque fixe. La grille s’ouvre lors de l’apparition et crache du slime pendant le tir."
   }
 };
 /** Authoring upgrade only. This function is never part of player save loading. */
 export function ensurePresentation(p:GameProject):void {
  if(!p.presentation){
   p.presentation=structuredClone(DEFAULT_PRESENTATION);
+  if(!p.balance.enemies.some(enemy=>enemy.id==='plaque')){
+   p.presentation.animations=p.presentation.animations.filter(animation=>animation.ownerSpeciesId!=='plaque');
+   p.presentation.profiles=p.presentation.profiles.filter(profile=>profile.id!=='profile_plaque');
+  }
   for(const s of [...p.balance.plants,...p.balance.enemies]){s.animationProfileId='profile_'+s.id;s.visual=structuredClone(INITIAL_VISUALS[s.id]);}
   for(const a of p.combat?.abilities??[])a.presentation??=structuredClone(DEFAULT_ABILITY_PRESENTATION);
   for(const q of p.combat?.projectiles??[])q.presentation={asset:'',animationId:'',trailVfxId:'',impact:{soundId:'',vfxId:'',attach:'center'}};

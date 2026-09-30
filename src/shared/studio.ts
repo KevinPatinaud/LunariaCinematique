@@ -151,6 +151,8 @@ export function smartDuplicate(source: Shot, options: DuplicateOptions): Shot {
   if (!options.dialogues) shot.bubbles = [];
   if (!options.entrances) shot.actors.forEach(a => a.entry = {...a.entry,preset:'none',delay:0});
   if (!options.audio) shot.audio = null;
+  if (!options.audio) shot.sounds = [];
+  else if (shot.sounds) shot.sounds = shot.sounds.filter(s => options.dialogues || s.event !== 'bubble_open');
   return shot;
 }
 export function createTemplate(source: Shot, template: ShotTemplate, speakerIds: string[] = []): Shot {

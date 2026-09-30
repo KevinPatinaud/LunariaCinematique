@@ -1,7 +1,9 @@
 import { ensurePresentation } from '../presentation/defaults.js';
 import type { GameProject } from './types.js';
+import { defaultRewards } from './types.js';
 /** Editable starter content, not a runtime fallback. */
 export const GAME_SEED:GameProject={
+  rewards: defaultRewards(),
   "schemaVersion": 3,
   "kind": "lunaria-game-project",
   "id": "lunaria_campaign",
@@ -81,7 +83,7 @@ export const GAME_SEED:GameProject={
         "cooldown": 5.5,
         "max_hp": 680,
         "rate": 2,
-        "damage": 9,
+        "damage": 0,
         "range": 1,
         "behavior": "guard",
         "effect_radius": 0,
@@ -97,7 +99,6 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_basic_shot",
           "ab_personal_regeneration"
         ],
         "behaviorId": "ai_defender"
@@ -925,7 +926,6 @@ export const GAME_SEED:GameProject={
         "hp": 105,
         "speed": 0.205,
         "attack": 19,
-        "leak": 12,
         "reward": 35,
         "reach": 0.69,
         "damage_type": "physical",
@@ -947,7 +947,6 @@ export const GAME_SEED:GameProject={
         "hp": 66,
         "speed": 0.34,
         "attack": 14,
-        "leak": 10,
         "reward": 30,
         "reach": 0.62,
         "damage_type": "physical",
@@ -969,7 +968,6 @@ export const GAME_SEED:GameProject={
         "hp": 175,
         "speed": 0.17,
         "attack": 22,
-        "leak": 18,
         "reward": 50,
         "reach": 1.05,
         "damage_type": "physical",
@@ -991,7 +989,6 @@ export const GAME_SEED:GameProject={
         "hp": 365,
         "speed": 0.135,
         "attack": 40,
-        "leak": 26,
         "reward": 90,
         "reach": 0.77,
         "damage_type": "physical",
@@ -1013,7 +1010,6 @@ export const GAME_SEED:GameProject={
         "hp": 185,
         "speed": 0.185,
         "attack": 17,
-        "leak": 18,
         "reward": 65,
         "reach": 1.05,
         "damage_type": "physical",
@@ -1036,7 +1032,6 @@ export const GAME_SEED:GameProject={
         "hp": 490,
         "speed": 0.115,
         "attack": 43,
-        "leak": 30,
         "reward": 110,
         "reach": 0.8,
         "damage_type": "physical",
@@ -1058,7 +1053,6 @@ export const GAME_SEED:GameProject={
         "hp": 1100,
         "speed": 0.065,
         "attack": 40,
-        "leak": 42,
         "reward": 240,
         "reach": 0.85,
         "damage_type": "physical",
@@ -1080,7 +1074,6 @@ export const GAME_SEED:GameProject={
         "hp": 1450,
         "speed": 0.06,
         "attack": 42,
-        "leak": 42,
         "reward": 260,
         "reach": 0.85,
         "damage_type": "physical",
@@ -1102,7 +1095,6 @@ export const GAME_SEED:GameProject={
         "hp": 1650,
         "speed": 0.055,
         "attack": 44,
-        "leak": 42,
         "reward": 280,
         "reach": 0.9,
         "damage_type": "physical",
@@ -1124,7 +1116,6 @@ export const GAME_SEED:GameProject={
         "hp": 1900,
         "speed": 0.05,
         "attack": 48,
-        "leak": 46,
         "reward": 300,
         "reach": 1,
         "damage_type": "physical",
@@ -1146,7 +1137,6 @@ export const GAME_SEED:GameProject={
         "hp": 1400,
         "speed": 0.035,
         "attack": 42,
-        "leak": 46,
         "reward": 300,
         "reach": 1.1,
         "damage_type": "physical",
@@ -1168,7 +1158,6 @@ export const GAME_SEED:GameProject={
         "hp": 2400,
         "speed": 0.038,
         "attack": 48,
-        "leak": 50,
         "reward": 400,
         "reach": 1,
         "damage_type": "physical",
@@ -1190,7 +1179,6 @@ export const GAME_SEED:GameProject={
         "hp": 230,
         "speed": 0,
         "attack": 12,
-        "leak": 0,
         "reward": 50,
         "reach": 1,
         "damage_type": "physical",
@@ -1203,6 +1191,27 @@ export const GAME_SEED:GameProject={
         "special_damage": 0,
         "ability_ids": [
           "ab_enemy_contact"
+        ],
+        "behaviorId": "ai_fixed"
+      },
+      {
+        "id": "plaque",
+        "name": "Plaque",
+        "hp": 260,
+        "speed": 0,
+        "attack": 22,
+        "reward": 55,
+        "reach": 8,
+        "damage_type": "toxic",
+        "armor": 0.25,
+        "resistances": {
+          "physical": 0.12,
+          "piercing": 0,
+          "toxic": 0.35
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_plaque_spit"
         ],
         "behaviorId": "ai_fixed"
       }
@@ -1958,6 +1967,26 @@ export const GAME_SEED:GameProject={
         "effects": [
           "fx_furnace_special"
         ]
+      },
+      {
+        "id": "ab_plaque_spit",
+        "name": "Crachat de la Plaque",
+        "description": "Tir toxique vers la plante la plus proche dans la même allée, à gauche ou à droite ; à distance égale, celle de droite est prioritaire.",
+        "delivery": "projectile",
+        "projectileId": "proj_plaque_slime",
+        "target": "opponent",
+        "allowBehind": true,
+        "selection": "one",
+        "priority": "nearest_right",
+        "rangeSource": "species",
+        "range": 8,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 2.7,
+        "initialDelay": 1,
+        "effects": [
+          "fx_attack"
+        ]
       }
     ],
     "effects": [
@@ -2334,6 +2363,19 @@ export const GAME_SEED:GameProject={
         "splashRadius": 0.95,
         "rowRadius": 1,
         "color": "#ebcc74",
+        "size": 0.13
+      },
+      {
+        "id": "proj_plaque_slime",
+        "name": "Goutte de slime violet",
+        "description": "Projectile toxique de la Plaque.",
+        "speed": 5.2,
+        "lifetime": 2,
+        "maxHits": 1,
+        "hitRadius": 0.18,
+        "splashRadius": 0,
+        "rowRadius": 0,
+        "color": "#bd39ed",
         "size": 0.13
       }
     ]

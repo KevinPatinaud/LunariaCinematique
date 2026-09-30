@@ -2,6 +2,7 @@ import {CinematicCues} from '../presentation/PreviewCues.js';
 import type {GameProject} from '../../shared/game/types.js';
 import {CinematicSprite,cinematicSpriteGeometry} from '../presentation/CinematicSprite.js';
 import { AnimatedBubbleText } from './AnimatedBubbleText.js';
+import { bubbleEntryPose } from '../../shared/bubbleEntry.js';
 import { isLibraryTab } from '../../shared/libraryBrowser.js';
 import React, { useEffect, useRef, useState, useId } from 'react';
 import type { Actor, Asset, Box, Bubble, Shot } from '../../shared/model.js';
@@ -172,14 +173,26 @@ export function Scene(props: Props) {
         const tail = b.kind === 'speech' && b.tail.mode !== 'none' ? tailPoints({ x, y, width: l.width, height: l.height }, target) : null;
         const frame = asset(b.frameAsset), textured = (b.style === 'simple' || b.style === 'ornate') && !!frame;
         const fill = b.style === 'plain' ? '#fffdf6' : '#f0e1bf', stroke = b.style === 'plain' ? '#353b33' : '#ad8b4b';
-        return <g key={b.id} data-testid={`bubble-${b.id}`}>
+        const bubbleTime = playing ? (props.dialogueElapsed ?? Math.max(0, elapsed - shot.dialogueStart)) : props.previewBubbleId === b.id ? props.motionTime : undefined;
+        const entry = bubbleTime === undefined ? {dx: 0, dy: 0, scale: 1, rotation: 0, burst: 0} : bubbleEntryPose(b, bubbleTime, playing && props.textCompleted);
+        const cx = x + l.width / 2, cy = y + l.height / 2;
+        const entryTransform = `translate(${cx + entry.dx},${cy + entry.dy}) rotate(${entry.rotation}) scale(${entry.scale}) translate(${-cx},${-cy})`;
+        return <g key={b.id} data-testid={`bubble-${b.id}`} transform={entryTransform}>
+          {entry.burst > 0 && <g data-testid={`bubble-burst-${b.id}`} pointerEvents="none" opacity={entry.burst}>
+            {Array.from({length:8},(_,index)=>{
+              const angle=-Math.PI/2+index*Math.PI/4, vx=Math.cos(angle), vy=Math.sin(angle);
+              const edge=Math.min((l.width/2+12)/Math.max(0.0001,Math.abs(vx)),(l.height/2+12)/Math.max(0.0001,Math.abs(vy)));
+              const x1=cx+vx*(edge+8), y1=cy+vy*(edge+8), x2=cx+vx*(edge+8+64*entry.burst), y2=cy+vy*(edge+8+64*entry.burst);
+              return <g key={index} data-burst-ray="true"><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#5f3926" strokeWidth="13" strokeLinecap="round"/><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ffcf70" strokeWidth="7" strokeLinecap="round"/></g>;
+            })}
+          </g>}
           {tail && <polygon points={tail.join(' ')} fill={fill} stroke={stroke} strokeWidth="4" strokeLinejoin="round" pointerEvents="none"/>}
           <g transform={`translate(${x},${y})`} onPointerDown={e => begin(e, 'bubble', b.id)} className={playing ? '' : locked.has(b.id) ? 'object-locked' : 'movable'}>
             <rect width={l.width} height={l.height} rx={b.kind === 'narration' ? 10 : 26} fill={textured ? "transparent" : fill} stroke={stroke} strokeWidth={textured ? 0 : 3}/>
             {textured ? <Frame asset={frame!} style={b.style as 'simple' | 'ornate'} width={l.width} height={l.height}/>
               : b.style !== 'plain' && <rect x="7" y="7" width={l.width - 14} height={l.height - 14} rx={b.kind === 'narration' ? 6 : 20} fill="none" stroke="#bba677" strokeWidth="1" pointerEvents="none"/>}
             <svg x={l.paddingX} y={l.paddingY - 2} width={Math.max(1, l.width - l.paddingX * 2)} height={Math.max(1, l.height - l.paddingY * 2 + 7)} pointerEvents="none" overflow="hidden">
-              <AnimatedBubbleText bubble={b} elapsed={playing ? (props.dialogueElapsed ?? Math.max(0, elapsed - shot.dialogueStart)) : props.previewBubbleId === b.id ? props.motionTime : undefined} completed={playing && props.textCompleted}/>
+              <AnimatedBubbleText bubble={b} elapsed={bubbleTime} completed={playing && props.textCompleted}/>
             </svg>
           </g>
           {!animated && !props.exporting && <g pointerEvents="none"><circle cx={x + 12} cy={y - 12} r="15" fill={selection.kind === 'bubble' && selection.id === b.id ? '#b9d5a0' : '#2e4239'}/><text x={x + 12} y={y - 7} textAnchor="middle" fontSize="16" fill="#101b14">{i + 1}</text></g>}

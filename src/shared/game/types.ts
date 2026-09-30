@@ -17,17 +17,27 @@ export interface PlantDefinition {
  effect_radius:number;effect_strength:number;color:string;chapter:number;unlock:number;
  damage_type:DamageType;armor:number;resistances:Resistances;
 }
-export interface EnemyDefinition {animationProfileId?:string;visual?:SpeciesVisual;behaviorId?:string;ability_ids?:string[];id:string;name:string;hp:number;speed:number;attack:number;leak:number;reward:number;reach:number;damage_type:DamageType;armor:number;resistances:Resistances;special_damage:number}
-export const OBJECTIVES = ['defend','protect_cell','operation','rescue'] as const;
-export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',protect_cell:'Protéger une case',operation:'Opération',rescue:'Sauvetage'};
+export interface EnemyDefinition {archived?:boolean;animationProfileId?:string;visual?:SpeciesVisual;behaviorId?:string;ability_ids?:string[];id:string;name:string;hp:number;speed:number;attack:number;reward:number;reach:number;damage_type:DamageType;armor:number;resistances:Resistances;special_damage:number}
+/** Archived enemies remain in saved projects and existing references. */
+export const activeEnemies=(enemies:EnemyDefinition[])=>enemies.filter(enemy=>!enemy.archived);
+export const enemyChoices=(enemies:EnemyDefinition[],selectedId='')=>enemies.filter(enemy=>!enemy.archived||enemy.id===selectedId);
+export const OBJECTIVES = ['defend','advance','invasive_foci','protect_cell','operation','rescue'] as const;
+export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',advance:'Conquérir les allées',invasive_foci:'Foyers invasifs',protect_cell:'Protéger une case',operation:'Opération',rescue:'Sauvetage'};
 export interface ProtectedCell {row:number;col:number;image:`library://${string}`;maxHp:number;armor:number;resistances:Resistances}
-export interface SpawnGroup {id:string;enemyId:string;count:number;lane:number;start:number;interval:number}
+export interface InvasiveFoci {positions:{row:number;col:number}[];reinforcementEnemyId:string;interval:number}
+export const defaultInvasiveFoci=():InvasiveFoci=>({positions:[{row:1,col:5},{row:3,col:5}],reinforcementEnemyId:'runner',interval:10});
+/** Inclusive board rectangle. A single cell has equal minimum and maximum coordinates. */
+export interface SpawnArea {rowMin:number;rowMax:number;colMin:number;colMax:number}
+export interface SpawnGroup {id:string;enemyId:string;count:number;lane:number;start:number;interval:number;placement?:SpawnArea}
 export const DEFAULT_WAVE_SEED_REWARD=50;
+export interface ComboReward {enabled:boolean;seedsPerStep:number;maxSeeds:number}
+export interface RewardSettings {combo:ComboReward}
+export const defaultRewards=():RewardSettings=>({combo:{enabled:false,seedsPerStep:3,maxSeeds:12}});
 export interface WaveDefinition {id:string;groups:SpawnGroup[];seedReward?:number}
 export interface StoryLine {speaker:string;text:string}
 export interface LevelDefinition {
  events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;terrainImage?:`library://${string}`;startingEnergy:number;allowedPlants:string[];
- objective:{type:typeof OBJECTIVES[number];target:number};protectedCell?:ProtectedCell;objectiveText:string;tip:string;waves:WaveDefinition[];
+ objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;tip:string;waves:WaveDefinition[];
  briefing:StoryLine[];outro:StoryLine[];midDialogue:StoryLine[];midWave:number;restoration:string;
 }
 export interface CampaignFilm {id:string;title:string;file:string;documentId:string}
@@ -35,7 +45,7 @@ export interface ImportedCampaignFilm {film:CampaignFilm;cinematic:Cinematic}
 export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean};
 export interface CampaignSequence {steps:CampaignStep[];cinematics:CampaignFilm[]}
 export interface CampaignCheck {films:number;assets:number;steps:number;levels:number;warnings:string[]}
-export interface GameProject {schemaVersion:1|2|3|4;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
+export interface GameProject {schemaVersion:1|2|3|4;rewards?:RewardSettings;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
 export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean}
 export interface GameRecent {path:string;title:string;updatedAt:string}
 export interface GameBootstrap {recovery:GameProject|null;recent:GameRecent[]}
@@ -68,8 +78,8 @@ export function cloneLevel(level:LevelDefinition):LevelDefinition {
  for(const wave of copy.waves){wave.id=newId('wave');for(const group of wave.groups)group.id=newId('group');}return copy;
 }
 export const totalEnemies = (level:LevelDefinition) => level.waves.reduce((sum,w)=>sum+w.groups.reduce((n,g)=>n+g.count,0),0);
-export function waveSchedule(wave:WaveDefinition):{at:number;enemyId:string;lane:number;groupId:string}[]{
- return wave.groups.flatMap(g=>Array.from({length:g.count},(_,i)=>({at:g.start+i*g.interval,enemyId:g.enemyId,lane:g.lane,groupId:g.id}))).sort((a,b)=>a.at-b.at);
+export function waveSchedule(wave:WaveDefinition):{at:number;enemyId:string;lane:number;groupId:string;placement?:SpawnArea}[]{
+ return wave.groups.flatMap(g=>Array.from({length:g.count},(_,i)=>({at:g.start+i*g.interval,enemyId:g.enemyId,lane:g.lane,groupId:g.id,placement:g.placement}))).sort((a,b)=>a.at-b.at);
 }
 /** Shared calibration formula. Status effects are applied separately by the combat engine. */
 export function damageAfterProtection(amount:number,type:DamageType,target:{armor:number;resistances:Resistances},armorBroken=false):number{

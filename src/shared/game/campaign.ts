@@ -27,6 +27,8 @@ export function compileCampaign(project:GameProject):GameProject {
  const filmIds=new Set(campaign.steps.filter((s):s is Extract<CampaignStep,{kind:'cinematic'}>=>s.kind==='cinematic').map(s=>s.cinematicId));
  for(const id of logicFilmIds(result))filmIds.add(id);
  campaign.cinematics=campaign.cinematics.filter(f=>filmIds.has(f.id));
+ // Archiving is a Studio catalog preference. Keep every enemy and its references playable.
+ for(const enemy of result.balance.enemies)delete enemy.archived;
  return result;
 }
 /** Pure progress model mirrored by campaign_sequence.gd. Replay never advances a frontier. */

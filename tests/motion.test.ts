@@ -25,6 +25,13 @@ test('decoration role explicitly upgrades to version 2; old reader cannot ignore
 test('prepare makes format 2 without mutating source',()=>{const d=newCinematic();d.shots[0].actors=[{...actor(),motion:newMotion('float')}];const out=prepareCinematic(d);assert.equal(out.schemaVersion,2);assert.equal(d.schemaVersion,1);assert.equal(parseCinematic(out).shots[0].actors[0].motion?.preset,'float');});
 test('new format round-trips without image payloads',()=>{const d=newCinematic();d.shots[0].actors=[{...actor(),role:'prop',motion:newMotion('sway'),movement:newMovement(actor())}];upgradeCinematicFormat(d);assert.deepEqual(parseCinematic(JSON.parse(JSON.stringify(d))),d);assert.ok(!JSON.stringify(d).includes('base64'));});
 test('untouched old pose is stable over arbitrary times',()=>{const a=actor();for(const t of [-1,0,1,60,Infinity,NaN])samePose(actorPose(a,t),restPose(a));});
+test('a 2.3 second entrance delay hides the character until its fade begins',()=>{
+ const a=actor();a.entry={preset:'fade',duration:.8,delay:2.3};
+ near(actorPose(a,2.29).opacity,0);
+ near(actorPose(a,2.3).opacity,0);
+ assert.ok(actorPose(a,2.7).opacity>0);
+ near(actorPose(a,3.1).opacity,a.opacity);
+});
 const presets:MotionPreset[]=['float','sway','pulse','spin','shake','bounce'];
 for(const preset of presets) {
  test(`${preset}: motion starts from rest`,()=>{const a={...actor(),motion:newMotion(preset)};samePose(actorPose(a,0),restPose(a));});

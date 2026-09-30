@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {SpeciesAnimations} from '../presentation/SpeciesAnimations.js';
 import type {Change} from '../presentation/PresentationEditor.js';
 import type {Asset} from '../../shared/model.js';
-import { DAMAGE_LABELS, DAMAGE_TYPES, type PlantDefinition, type EnemyDefinition, type GameProject } from '../../shared/game/types.js';
+import { activeEnemies, DAMAGE_LABELS, DAMAGE_TYPES, type PlantDefinition, type EnemyDefinition, type GameProject } from '../../shared/game/types.js';
 import { attackTypeLabel } from '../../shared/game/combat.js';
 import { NumberInput } from '../components/NumberInput.js';
 import type {AnimationDefinition} from '../../shared/presentation/types.js';
@@ -11,26 +11,34 @@ export function Num({label,value,min=0,max,integer=false,change}:{label:string;v
  return <label className="gd-field"><span>{label}</span><NumberInput label={label} value={value} min={min} max={max} onCommit={n=>change(integer?Math.round(n):n)}/></label>;
 }
 export function BalanceEditor({project,role,id,select,update,editAbility,editBehavior,assets,change,openProfile,tab,setTab,focusAnimationId,renderAnimationEditor}:{assets:Asset[];change:Change;openProfile:(id:string)=>void;editBehavior:(id:string)=>void;editAbility:(id:string)=>void;project:GameProject;role:'plants'|'enemies';id:string;select:(id:string)=>void;update:(id:string,patch:Partial<PlantDefinition&EnemyDefinition>,key:string)=>void;tab:'details'|'animations';setTab:(tab:'details'|'animations')=>void;focusAnimationId?:string;renderAnimationEditor:(animation:AnimationDefinition,patch:(data:Record<string,unknown>,key?:string)=>void,speciesId:string)=>React.ReactNode}){
- const list=project.balance[role], item=list.find(x=>x.id===id)??list[0], plant=role==='plants';
+ const list=project.balance[role],plant=role==='plants';
  const [query,setQuery]=useState('');
- useEffect(()=>setQuery(''),[role]);
+ const [showArchived,setShowArchived]=useState(false);
+ useEffect(()=>{setQuery('');setShowArchived(false);},[role]);
+ useEffect(()=>{if(role==='enemies'&&project.balance.enemies.find(x=>x.id===id)?.archived)setShowArchived(true);},[id,role]);
+ const archived=(species:PlantDefinition|EnemyDefinition)=>'archived' in species&&species.archived===true;
+ const entries=plant?list:list.filter(x=>archived(x)===showArchived);
+ const item=entries.find(x=>x.id===id)??entries[0];
  const normalize=(value:string)=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr');
- const visible=list.filter(x=>normalize(x.name+' '+x.id+' '+('role' in x?x.role:'')).includes(normalize(query.trim())));
- const uses=project.levels.filter(l=>plant?l.allowedPlants.includes(item.id):l.waves.some(w=>w.groups.some(g=>g.enemyId===item.id))).length;
- const set=(key:string,value:unknown)=>update(item.id,{[key]:value},`${item.id}:${key}`);
+ const visible=entries.filter(x=>normalize(x.name+' '+x.id+' '+('role' in x?x.role:'')).includes(normalize(query.trim())));
+ const uses=project.levels.filter(l=>plant?l.allowedPlants.includes(item?.id):l.waves.some(w=>w.groups.some(g=>g.enemyId===item?.id))).length;
+ const set=(key:string,value:unknown)=>{if(item)update(item.id,{[key]:value},`${item.id}:${key}`);};
  const n=(key:string,label:string,max:number,min=0,integer=false)=><Num key={key} label={label} value={Number((item as unknown as Record<string,unknown>)[key])} min={min} max={max} integer={integer} change={v=>set(key,v)}/>;
- const assigned=item.ability_ids??[],primaryId=assigned[0]??'',primary=project.combat!.abilities.find(a=>a.id===primaryId);
+ const assigned=item?.ability_ids??[],primaryId=assigned[0]??'',primary=project.combat!.abilities.find(a=>a.id===primaryId);
  const attackName=(attackId:string)=>{const attack=project.combat!.abilities.find(a=>a.id===attackId);return attack?`${attack.name} — ${attackTypeLabel(attack,project.combat!)}`:attackId;};
- const selectPrimary=(attackId:string)=>{const attack=project.combat!.abilities.find(a=>a.id===attackId);if(!attack)return;const ability_ids=[attackId,...assigned.slice(1).filter(x=>x!==attackId)];update(item.id,{ability_ids,...(plant?{ability:attack.name}:{})},`${item.id}:primary-attack`);};
+ const selectPrimary=(attackId:string)=>{const attack=project.combat!.abilities.find(a=>a.id===attackId);if(!attack||!item)return;const ability_ids=[attackId,...assigned.slice(1).filter(x=>x!==attackId)];update(item.id,{ability_ids,...(plant?{ability:attack.name}:{})},`${item.id}:primary-attack`);};
+ const archive=()=>{if(!item||plant)return;const id=item.id;change(p=>{p.balance.enemies.find(x=>x.id===id)!.archived=true;},'','Archiver l’ennemi');select(activeEnemies(project.balance.enemies).find(x=>x.id!==id)?.id??'');};
+ const restore=()=>{if(!item||plant)return;const id=item.id;change(p=>{delete p.balance.enemies.find(x=>x.id===id)!.archived;},'','Restaurer l’ennemi');setShowArchived(false);select(id);};
  return <div className="gd-balance">
-  <aside className="gd-catalog" aria-label={plant?'Catalogue des plantes':'Catalogue des ennemis'}><div className="gd-catalog-search"><label><span>{plant?'Trouver une plante':'Trouver un ennemi'}</span><input type="search" aria-label="Rechercher un personnage" placeholder="Nom ou rôle…" value={query} onChange={e=>setQuery(e.target.value)}/></label><small role="status">{visible.length} / {list.length} personnages</small></div>{!visible.length&&<div className="gd-empty-search"><p>Aucun personnage trouvé.</p><button onClick={()=>setQuery('')}>Effacer la recherche</button></div>}{visible.map(x=><button key={x.id} className={x.id===item.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{x.id}</small></button>)}</aside>
-  <section className="gd-scroll gd-balance-form" key={item.id}>
-   <div className="gd-kicker">CATALOGUE GLOBAL · {plant?'PLANTE ALLIÉE':'ENNEMI'}</div><h1>{item.name}</h1>
+  <aside className="gd-catalog" aria-label={plant?'Catalogue des plantes':'Catalogue des ennemis'}><div className="gd-catalog-search"><label><span>{plant?'Trouver une plante':'Trouver un ennemi'}</span><input type="search" aria-label="Rechercher un personnage" placeholder="Nom ou rôle…" value={query} onChange={e=>setQuery(e.target.value)}/></label><small role="status">{visible.length} / {entries.length} personnages</small>{!plant&&<button type="button" className="gd-archive-toggle" aria-pressed={showArchived} onClick={()=>{setShowArchived(!showArchived);setQuery('');}}>{showArchived?'← Ennemis actifs':`Archives (${list.filter(archived).length})`}</button>}</div>{!visible.length&&<div className="gd-empty-search"><p>{entries.length?'Aucun personnage trouvé.':showArchived?'Aucun ennemi archivé.':'Aucun ennemi actif.'}</p>{!!query&&<button onClick={()=>setQuery('')}>Effacer la recherche</button>}</div>}{visible.map(x=><button key={x.id} className={x.id===item?.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{x.id}</small></button>)}</aside>
+   {item?<section className="gd-scroll gd-balance-form" key={item.id}>
+    <div className="gd-kicker">CATALOGUE GLOBAL · {plant?'PLANTE ALLIÉE':'ENNEMI'}{!plant&&archived(item)?' · ARCHIVÉ':''}</div><div className="gd-section-heading"><h1>{item.name}</h1>{!plant&&<button type="button" className="gd-archive-action" onClick={archived(item)?restore:archive}>{archived(item)?'Restaurer l’ennemi':'Archiver l’ennemi'}</button>}</div>
+    {!plant&&<p className="gd-note">{archived(item)?'Espèce masquée dans les choix futurs. Ses données et ses utilisations existantes sont conservées.':'L’archivage masque cet ennemi du catalogue actif et des nouveaux choix, sans modifier les niveaux existants.'}</p>}
    <section className="lp-character-image lp-character-image-compact" aria-label={'Image principale de '+item.name}>
     <div><h2>Image du personnage</h2><p>Image de repos partagée entre tous les niveaux.</p>
      <ImagePicker label={'Image principale de '+item.name} value={item.visual?.sprite.asset?[item.visual.sprite.asset]:[]} region={item.visual?.sprite.region} assets={assets} category={plant?'character':'enemy'} change={refs=>{if(!refs[0])return;update(item.id,{visual:{...item.visual??{width:100,height:100,baseline:0,mirror:false,tint:'#ffffff',note:''},sprite:{asset:refs[0] as `library://${string}`}}},`${item.id}:visual:image`);}} buttonLabel="Choisir ou importer une image"/>
     </div>
-   </section>
+    </section>
    {tab==='details'&&<p className="gd-callout">Ce réglage est partagé par <strong>tous les niveaux</strong>. Cette espèce est utilisée dans {uses} niveau{uses>1?'x':''}. Aucun niveau ne peut remplacer ces valeurs.</p>}
    <nav className="gd-detail-tabs lp-species-tabs" aria-label={'Fiche de '+item.name}><button className={tab==='details'?'active':''} onClick={()=>setTab('details')}>Caractéristiques et attaques</button><button className={tab==='animations'?'active':''} onClick={()=>setTab('animations')}>Animations de {item.name}</button></nav>
    {tab==='animations'?<SpeciesAnimations project={project} id={item.id} assets={assets} change={change} openProfile={openProfile} focusAnimationId={focusAnimationId} renderAnimationEditor={renderAnimationEditor}/>:<>
@@ -39,7 +47,7 @@ export function BalanceEditor({project,role,id,select,update,editAbility,editBeh
     <label className="gd-field"><span>Type de dégâts</span><select aria-label="Type de dégâts" value={item.damage_type} onChange={e=>set('damage_type',e.target.value)}>{DAMAGE_TYPES.map(x=><option key={x} value={x}>{DAMAGE_LABELS[x]}</option>)}</select></label>
     {plant?<>{n('max_hp','Points de vie',6000,1,true)}{n('damage','Dégâts par attaque',600,0,true)}{n('rate','Intervalle entre attaques (s)',15,.1)}{n('range','Portée (cases)',12)}{n('cost','Coût en graines',10000,0,true)}{n('cooldown','Recharge de plantation (s)',120)}
      {n('effect_strength','Puissance des résultats spéciaux',5)}
-    </>:<>{n('hp','Points de vie',20000,1,true)}{n('attack','Attaque de base (PV)' ,200,0,true)}{n('speed','Vitesse (cases/s)',2,item.id==='thorn_knot'?0:.01)}{n('reach','Portée de contact (cases)',9)}{n('leak','Dégâts au jardin en cas de fuite',100,0,true)}{n('reward','Graines au recyclage',400,0,true)}
+    </>:<>{n('hp','Points de vie',20000,1,true)}{n('attack','Attaque de base (PV)' ,200,0,true)}{n('speed','Vitesse (cases/s)',2,item.id==='thorn_knot'?0:.01)}{n('reach','Portée de contact (cases)',9)}{n('reward','Graines au recyclage',400,0,true)}
      
     </>}
    </div>
@@ -47,7 +55,8 @@ export function BalanceEditor({project,role,id,select,update,editAbility,editBeh
     <label className="gd-field"><span>Type d’attaque principal</span><select aria-label="Type d’attaque principal" value={primaryId} onChange={e=>selectPrimary(e.target.value)}>{project.combat!.abilities.map(a=><option key={a.id} value={a.id}>{attackName(a.id)}</option>)}</select></label>
     {assigned.length>1&&<><h3>Attaques supplémentaires</h3><div className="gd-effect-chain">{assigned.slice(1).map((attackId,i)=><div key={attackId}><b>{i+2}</b><button onClick={()=>editAbility(attackId)}>{attackName(attackId)} →</button><button aria-label={'Retirer attaque supplémentaire '+(i+1)} onClick={()=>set('ability_ids',assigned.filter(id=>id!==attackId))}>×</button></div>)}</div></>}
     <label className="gd-field"><span>Ajouter une attaque supplémentaire</span><select aria-label="Ajouter une attaque supplémentaire" value="" onChange={e=>{if(e.target.value&&assigned.length<8)set('ability_ids',[...assigned,e.target.value]);}}><option value="">Choisir une attaque…</option>{project.combat!.abilities.filter(a=>!assigned.includes(a.id)).map(a=><option key={a.id} value={a.id}>{attackName(a.id)}</option>)}</select></label>
-   </section>
+    </section>
+   {!plant&&item.id==='plaque'&&<p className="gd-callout">Chaque Plaque fait arriver une Canette pressée dans sa propre allée toutes les 10 secondes pendant le combat, même sans plante à attaquer. La première arrive après 10 secondes de présence. Détruire la Plaque arrête cette génération.</p>}
    <h2>Comportement</h2><div className="gd-inline"><label className="gd-field"><span>Comportement attribué</span><select aria-label="Comportement attribué" value={item.behaviorId??''} onChange={e=>set('behaviorId',e.target.value)}>{project.logic!.behaviors.filter(b=>b.team===role).map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label><button onClick={()=>editBehavior(item.behaviorId!)}>Éditer les règles et phases →</button></div>
    <h2>Protections</h2><p>Le perforant et le toxique ignorent l’armure, mais pas leur résistance. Le type pur ignore les deux.</p>
    <div className="gd-form-grid">
@@ -56,7 +65,7 @@ export function BalanceEditor({project,role,id,select,update,editAbility,editBeh
    </div>
    {plant&&<label className="gd-field"><span>Description</span><textarea maxLength={1000} rows={3} value={(item as PlantDefinition).description} onChange={e=>set('description',e.target.value)}/></label>}
    <div className="gd-note">{plant?`Dégâts bruts théoriques : ${((item as PlantDefinition).damage/(item as PlantDefinition).rate).toFixed(1)} / s (hors zone et résultats spéciaux). `:''}La valeur d’attaque et la cadence sont utilisées par les attaques qui choisissent les caractéristiques de l’espèce. Les attaques spéciales et phases des boss se règlent dans les comportements. La pluie garde ses règles fixes de joueur.</div>
-   </>}
-  </section>
+    </>}
+   </section>:<section className="gd-scroll gd-balance-form"><h1>{showArchived?'Aucun ennemi archivé':'Aucun ennemi actif'}</h1><p>Utilise « Archives » pour retrouver et restaurer une espèce.</p></section>}
  </div>;
 }

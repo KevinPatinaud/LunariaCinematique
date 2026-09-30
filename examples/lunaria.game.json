@@ -1507,7 +1507,6 @@
         "hp": 105,
         "speed": 0.205,
         "attack": 19,
-        "leak": 12,
         "reward": 35,
         "reach": 0.69,
         "damage_type": "physical",
@@ -1551,7 +1550,6 @@
         "hp": 66,
         "speed": 0.34,
         "attack": 14,
-        "leak": 10,
         "reward": 30,
         "reach": 0.62,
         "damage_type": "physical",
@@ -1595,7 +1593,6 @@
         "hp": 175,
         "speed": 0.17,
         "attack": 22,
-        "leak": 18,
         "reward": 50,
         "reach": 1.05,
         "damage_type": "physical",
@@ -1639,7 +1636,6 @@
         "hp": 365,
         "speed": 0.135,
         "attack": 40,
-        "leak": 26,
         "reward": 90,
         "reach": 0.77,
         "damage_type": "physical",
@@ -1683,7 +1679,6 @@
         "hp": 185,
         "speed": 0.185,
         "attack": 17,
-        "leak": 18,
         "reward": 65,
         "reach": 1.05,
         "damage_type": "physical",
@@ -1728,7 +1723,6 @@
         "hp": 490,
         "speed": 0.115,
         "attack": 43,
-        "leak": 30,
         "reward": 110,
         "reach": 0.8,
         "damage_type": "physical",
@@ -1772,7 +1766,6 @@
         "hp": 1100,
         "speed": 0.065,
         "attack": 40,
-        "leak": 42,
         "reward": 240,
         "reach": 0.85,
         "damage_type": "physical",
@@ -1816,7 +1809,6 @@
         "hp": 1450,
         "speed": 0.06,
         "attack": 42,
-        "leak": 42,
         "reward": 260,
         "reach": 0.85,
         "damage_type": "physical",
@@ -1860,7 +1852,6 @@
         "hp": 1650,
         "speed": 0.055,
         "attack": 44,
-        "leak": 42,
         "reward": 280,
         "reach": 0.9,
         "damage_type": "physical",
@@ -1904,7 +1895,6 @@
         "hp": 1900,
         "speed": 0.05,
         "attack": 48,
-        "leak": 46,
         "reward": 300,
         "reach": 1,
         "damage_type": "physical",
@@ -1948,7 +1938,6 @@
         "hp": 1400,
         "speed": 0.035,
         "attack": 42,
-        "leak": 46,
         "reward": 300,
         "reach": 1.1,
         "damage_type": "physical",
@@ -1992,7 +1981,6 @@
         "hp": 2400,
         "speed": 0.038,
         "attack": 48,
-        "leak": 50,
         "reward": 400,
         "reach": 1,
         "damage_type": "physical",
@@ -2036,7 +2024,6 @@
         "hp": 230,
         "speed": 0,
         "attack": 12,
-        "leak": 0,
         "reward": 50,
         "reach": 1,
         "damage_type": "physical",
@@ -2072,6 +2059,43 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        }
+      },
+      {
+        "id": "plaque",
+        "name": "Plaque",
+        "hp": 260,
+        "speed": 0,
+        "attack": 22,
+        "reward": 55,
+        "reach": 8,
+        "damage_type": "toxic",
+        "armor": 0.25,
+        "resistances": {
+          "physical": 0.12,
+          "piercing": 0,
+          "toxic": 0.35
+        },
+        "special_damage": 0,
+        "ability_ids": [
+          "ab_plaque_spit"
+        ],
+        "behaviorId": "ai_fixed",
+        "animationProfileId": "profile_plaque",
+        "visual": {
+          "sprite": {
+            "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            }
+          },
+          "width": 118,
+          "height": 92,
+          "baseline": 29,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Plaque fixe. La grille s’ouvre lors de l’apparition et crache du slime pendant le tir."
         }
       }
     ]
@@ -20366,6 +20390,47 @@
             "attach": "center"
           }
         }
+      },
+      {
+        "id": "ab_plaque_spit",
+        "name": "Crachat de la Plaque",
+        "description": "Tir toxique vers la plante la plus proche dans la même allée, à gauche ou à droite ; à distance égale, celle de droite est prioritaire.",
+        "delivery": "projectile",
+        "projectileId": "proj_plaque_slime",
+        "target": "opponent",
+        "allowBehind": true,
+        "selection": "one",
+        "priority": "nearest_right",
+        "rangeSource": "species",
+        "range": 8,
+        "rowRadius": 0,
+        "cooldownSource": "fixed",
+        "cooldown": 2.7,
+        "initialDelay": 1,
+        "effects": [
+          "fx_attack"
+        ],
+        "presentation": {
+          "slot": "attack",
+          "release": "marker",
+          "delay": 0,
+          "fitCadence": true,
+          "start": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "releaseCue": {
+            "soundId": "sound_shoot",
+            "vfxId": "",
+            "attach": "launch"
+          },
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
       }
     ],
     "effects": [
@@ -20692,6 +20757,29 @@
         "splashRadius": 0.95,
         "rowRadius": 1,
         "color": "#ebcc74",
+        "size": 0.13,
+        "presentation": {
+          "asset": "",
+          "animationId": "",
+          "trailVfxId": "",
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        }
+      },
+      {
+        "id": "proj_plaque_slime",
+        "name": "Goutte de slime violet",
+        "description": "Projectile toxique de la Plaque.",
+        "speed": 5.2,
+        "lifetime": 2,
+        "maxHits": 1,
+        "hitRadius": 0.18,
+        "splashRadius": 0,
+        "rowRadius": 0,
+        "color": "#bd39ed",
         "size": 0.13,
         "presentation": {
           "asset": "",
@@ -22341,6 +22429,212 @@
           }
         ],
         "markers": []
+      },
+      {
+        "id": "plaque_idle",
+        "name": "Plaque — veille",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            },
+            "duration": 0.8
+          }
+        ],
+        "duration": 0.8,
+        "loop": true,
+        "ownerSpeciesId": "plaque",
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 1
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.22
+          },
+          {
+            "id": "launch",
+            "x": 0.17,
+            "y": 0.68
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "plaque_spawn",
+        "name": "Plaque — surgit",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/plaque/Grille de drainage rouillée en métal.png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            },
+            "duration": 0.22
+          },
+          {
+            "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            },
+            "duration": 0.28
+          }
+        ],
+        "duration": 0.5,
+        "loop": false,
+        "ownerSpeciesId": "plaque",
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 1
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.22
+          },
+          {
+            "id": "launch",
+            "x": 0.17,
+            "y": 0.68
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "plaque_attack",
+        "name": "Plaque — crache",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            },
+            "duration": 0.12
+          },
+          {
+            "asset": "library://03_enemies/plaque/Monstre égoutier au slime violet.png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            },
+            "duration": 0.25
+          },
+          {
+            "asset": "library://03_enemies/plaque/Image ChatGPT 28 sept. 2026, 13_55_48(1).png",
+            "anchor": {
+              "x": 0.5,
+              "y": 1
+            },
+            "duration": 0.2
+          }
+        ],
+        "duration": 0.5700000000000001,
+        "loop": false,
+        "ownerSpeciesId": "plaque",
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 1
+        },
+        "attachments": [
+          {
+            "id": "center",
+            "x": 0.5,
+            "y": 0.5
+          },
+          {
+            "id": "feet",
+            "x": 0.5,
+            "y": 1
+          },
+          {
+            "id": "head",
+            "x": 0.5,
+            "y": 0.22
+          },
+          {
+            "id": "launch",
+            "x": 0.17,
+            "y": 0.68
+          }
+        ],
+        "markers": [
+          {
+            "id": "plaque_release",
+            "at": 0.18,
+            "type": "release",
+            "ref": "",
+            "attach": "launch"
+          }
+        ]
       }
     ],
     "profiles": [
@@ -22714,6 +23008,25 @@
           {
             "slot": "move",
             "animationId": "move_thorn_knot"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_plaque",
+        "name": "Profil Plaque",
+        "slots": [
+          {
+            "slot": "idle",
+            "animationId": "plaque_idle"
+          },
+          {
+            "slot": "spawn",
+            "animationId": "plaque_spawn"
+          },
+          {
+            "slot": "attack",
+            "animationId": "plaque_attack"
           }
         ],
         "events": []

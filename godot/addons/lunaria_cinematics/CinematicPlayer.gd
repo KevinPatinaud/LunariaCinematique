@@ -35,6 +35,7 @@ const Validator = preload("CinematicValidator.gd")
 const Layout = preload("CinematicLayout.gd")
 const Motion = preload("CinematicMotion.gd")
 const TextAnimation = preload("CinematicText.gd")
+const BubbleEntry = preload("CinematicBubbleEntry.gd")
 const EPS: float = 0.000000001
 const FRAME_SPECS: Dictionary = {
 	"simple": {"x":58.0,"y":170.0,"width":1420.0,"height":600.0,"left":190.0,"right":190.0,"top":120.0,"bottom":180.0,"bottomX":320.0,"bottomWidth":260.0},
@@ -45,6 +46,7 @@ var _schema: Dictionary = {}
 var _shot_index: int = 0
 var _elapsed: float = 0.0
 var _exit_elapsed: float = -1.0
+var _exit_duration: float = 0.0
 var _dialogue_index: int = 0
 var _dialogue_elapsed: float = 0.0
 var _text_completed_at: float = -1.0
@@ -55,7 +57,9 @@ var _owns_pause: bool = false
 var _textures: Dictionary = {}
 # Draw commands are deferred: these Resources must survive the _draw call.
 var _style_boxes: Dictionary = {}
-var _audio: AudioStreamPlayer
+const FilmAudio = preload("CinematicAudio.gd")
+var _film_audio = FilmAudio.new()
+var _audio_clock: float = 0.0
 var _last_tick_usec: int = 0
 
 func _ready() -> void:
@@ -63,10 +67,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	clip_contents = true
-	_audio = AudioStreamPlayer.new()
-	_audio.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_audio)
-	_audio.finished.connect(_on_audio_finished)
 	var schema_path: String = get_script().resource_path.get_base_dir().path_join("cinematic.schema.json")
 	if FileAccess.file_exists(schema_path):
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(schema_path))
@@ -108,6 +108,8 @@ func play_data(value: Variant, start_shot: int = 0) -> bool:
 	if _playing:
 		stop()
 	_document = value.duplicate(true)
+	_audio_clock = 0.0
+	_film_audio.configure(self, _assets, _document)
 	if not _shared.configure(self,_document,library_root): return _failure(_shared.error)
 	_shared.set_volumes(volume,sound_volume)
 	Layout.prepare(_document)
@@ -122,6 +124,8 @@ func play_data(value: Variant, start_shot: int = 0) -> bool:
 		for ref: String in _shot_refs(shot):
 			if not _assets.exists(ref):
 				return _failure("Ressource introuvable : " + ref)
+	for track: Dictionary in _document.get("musicTracks", []):
+		if not _assets.exists(str(track.asset)): return _failure("Ressource introuvable : " + str(track.asset))
 	_previous_tree_pause = get_tree().paused
 	_owns_pause = pause_gameplay
 	if _owns_pause:
@@ -161,6 +165,8 @@ func plans() -> Array[Dictionary]:
 
 func seek_shot(index: int) -> bool:
 	if not _playing or index < 0 or index >= _document["shots"].size(): return false
+	_film_audio.stop()
+	_audio_clock = 0.0
 	return _enter_shot(index)
 
 func skip() -> void:
@@ -172,8 +178,7 @@ func skip() -> void:
 func set_volume(value: float) -> void:
 	volume = clampf(value, 0.0, 1.0)
 	_shared.set_volumes(volume,sound_volume)
-	if _playing and _current_shot()["audio"] != null and is_instance_valid(_audio):
-		_audio.volume_db = linear_to_db(maxf(0.0001, float(_current_shot()["audio"]["volume"]) * volume)) if volume > 0.0 else -80.0
+	_sync_audio()
 
 func _automatic(bubble: Dictionary) -> bool:
 	return not manual_advance_only and (auto_advance or bubble["advance"]["mode"] == "auto")
@@ -198,8 +203,7 @@ func pause() -> void:
 	_paused = true
 	_shared.set_paused(true)
 	paused_changed.emit(true)
-	if is_instance_valid(_audio):
-		_audio.stream_paused = true
+	_film_audio.set_paused(true)
 
 func resume() -> void:
 	if not _playing or not _paused: return
@@ -207,8 +211,7 @@ func resume() -> void:
 	_shared.set_paused(false)
 	_last_tick_usec = Time.get_ticks_usec()
 	paused_changed.emit(false)
-	if is_instance_valid(_audio):
-		_audio.stream_paused = false
+	_film_audio.set_paused(false)
 
 func is_playing() -> bool:
 	return _playing
@@ -230,6 +233,8 @@ func advance() -> void:
 		_text_completed_at = _dialogue_elapsed
 		queue_redraw()
 		return
+	_sync_audio()
+	if not _playing: return
 	_dialogue_index += 1
 	_dialogue_elapsed = 0.0
 	_text_completed_at = -1.0
@@ -237,6 +242,7 @@ func advance() -> void:
 		_start_exit()
 	else:
 		_settle()
+	_sync_audio()
 	queue_redraw()
 
 func _failure(message: String) -> bool:
@@ -252,10 +258,7 @@ func _shutdown() -> void:
 	_paused = false
 	set_process(false)
 	hide()
-	if is_instance_valid(_audio):
-		_audio.stream_paused = false
-		_audio.stop()
-		_audio.stream = null
+	_film_audio.stop()
 	_textures.clear()
 	_visual_actors.clear()
 	queue_redraw()
@@ -265,6 +268,7 @@ func _shutdown() -> void:
 
 func _exit_tree() -> void:
 	_shared.shutdown()
+	_film_audio.stop()
 	if _owns_pause and is_inside_tree():
 		get_tree().paused = _previous_tree_pause
 
@@ -282,6 +286,7 @@ func _shot_refs(shot: Dictionary) -> Array[String]:
 			refs.append(bubble["frameAsset"])
 	if shot["audio"] != null:
 		refs.append(shot["audio"]["asset"])
+	for cue: Dictionary in shot.get("sounds", []): refs.append(str(cue.asset))
 	for ref: String in _shared.references(shot):
 		if not refs.has(ref): refs.append(ref)
 	return refs
@@ -290,6 +295,7 @@ func _enter_shot(index: int) -> bool:
 	_shot_index = index
 	_elapsed = 0.0
 	_exit_elapsed = -1.0
+	_exit_duration = 0.0
 	_dialogue_index = 0
 	_dialogue_elapsed = 0.0
 	_text_completed_at = -1.0
@@ -312,32 +318,17 @@ func _enter_shot(index: int) -> bool:
 			if texture == null:
 				return _failure(_assets.error)
 			_textures[ref] = texture
-	_audio.stop()
-	_audio.stream = null
-	_audio.stream_paused = false
-	if shot["audio"] != null:
-		var stream: AudioStream = _assets.audio(str(shot["audio"]["asset"]))
-		if stream == null: return _failure(_assets.error)
-		# Disable import-level looping; shot.audio.loop controls replay uniformly.
-		if stream is AudioStreamWAV:
-			(stream as AudioStreamWAV).loop_mode = AudioStreamWAV.LOOP_DISABLED
-		elif stream is AudioStreamOggVorbis:
-			(stream as AudioStreamOggVorbis).loop = false
-		elif stream is AudioStreamMP3:
-			(stream as AudioStreamMP3).loop = false
-		_audio.stream = stream
-		_audio.volume_db = linear_to_db(maxf(0.0001, float(shot["audio"]["volume"]) * volume)) if volume > 0.0 else -80.0
-		_audio.play()
-		_audio.stream_paused = _paused
+	_sync_audio()
+	if not _playing: return false
 	_last_tick_usec = Time.get_ticks_usec() # Asset decoding is not cinematic time.
 	shot_started.emit(str(shot["id"]))
 	queue_redraw()
 	return true
 
-func _on_audio_finished() -> void:
-	if _playing and _current_shot()["audio"] != null and bool(_current_shot()["audio"]["loop"]):
-		_audio.play()
-		_audio.stream_paused = _paused
+func _sync_audio() -> void:
+	if not _playing: return
+	_film_audio.update(_shot_index, _elapsed, _dialogue_index, _dialogue_elapsed, _exit_elapsed, _audio_clock, volume, sound_volume, _paused)
+	if not _film_audio.error.is_empty(): _failure(_film_audio.error)
 
 func _process(_delta: float) -> void:
 	var now: int = Time.get_ticks_usec()
@@ -355,10 +346,13 @@ func advance_time(delta: float) -> void:
 		guard += 1
 		var shot: Dictionary = _current_shot()
 		if _exit_elapsed >= 0.0:
-			var exit_duration: float = float(shot.get("exitTransition", {}).get("duration", 0.0))
+			var exit_duration: float = _exit_duration
 			var exit_step: float = minf(remaining, maxf(0.0, exit_duration - _exit_elapsed))
 			_elapsed += exit_step
+			_audio_clock += exit_step
 			_exit_elapsed += exit_step
+			_sync_audio()
+			if not _playing: return
 			_shared.advance(shot, _elapsed - exit_step, _elapsed, reduced_motion)
 			remaining -= exit_step
 			if _exit_elapsed + EPS >= exit_duration:
@@ -372,13 +366,16 @@ func advance_time(delta: float) -> void:
 			step = minf(step, float(shot["dialogueStart"]) - _elapsed)
 		elif not bubble.is_empty() and _automatic(bubble):
 			step = minf(step, maxf(0.0, TextAnimation.auto_duration(bubble, _text_completed_at) - _dialogue_elapsed))
-		if bubble.is_empty():
+		if bubble.is_empty() and not ((manual_advance_only or str(shot.get("endAdvance", "auto")) == "click") and _elapsed >= float(shot.duration)):
 			step = minf(step, maxf(0.0, float(shot["duration"]) - _elapsed))
 		var active_before: bool = _elapsed + EPS >= float(shot["dialogueStart"])
 		_elapsed += step
+		_audio_clock += step
 		_shared.advance(shot,_elapsed-step,_elapsed,reduced_motion)
 		if not bubble.is_empty() and active_before:
 			_dialogue_elapsed += step
+		_sync_audio()
+		if not _playing: return
 		remaining -= step
 		var event: bool = false
 		if not bubble.is_empty() and _automatic(bubble) and _elapsed + EPS >= float(shot["dialogueStart"]) and _dialogue_elapsed + EPS >= TextAnimation.auto_duration(bubble, _text_completed_at):
@@ -389,6 +386,7 @@ func advance_time(delta: float) -> void:
 		var previous_shot: int = _shot_index
 		var previous_exit: float = _exit_elapsed
 		_settle()
+		_sync_audio()
 		if previous_shot != _shot_index or previous_exit != _exit_elapsed or not _playing:
 			event = true
 		if step < EPS and not event:
@@ -404,9 +402,10 @@ func _settle() -> void:
 	_start_exit()
 
 func _start_exit() -> void:
-	var exit_transition: Dictionary = _current_shot().get("exitTransition", {})
-	if str(exit_transition.get("type", "cut")) == "fade" and float(exit_transition.get("duration", 0.0)) > 0.0:
+	_exit_duration = FilmAudio.exit_duration(_document, _shot_index, _elapsed, _film_audio.opened)
+	if _exit_duration > 0.0:
 		_exit_elapsed = 0.0
+		_sync_audio()
 		queue_redraw()
 	else:
 		_finish_current_shot()
@@ -525,10 +524,20 @@ func _draw_tail(rect: Rect2, target: Vector2, fill: Color, border: Color) -> voi
 
 func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> void:
 	var rect: Rect2 = Rect2(Vector2(float(bubble["x"]), float(bubble["y"])) * LOGICAL, Vector2(float(bubble["width"]), float(bubble["height"])) * LOGICAL)
+	var factor: float = minf(size.x / LOGICAL.x, size.y / LOGICAL.y)
+	var origin: Vector2 = (size - LOGICAL * factor) / 2.0
+	var entry: Dictionary = BubbleEntry.pose(bubble, _dialogue_elapsed, reduced_motion or _text_completed_at >= 0.0)
+	var entry_scale: float = float(entry["scale"])
+	var entry_rotation: float = deg_to_rad(float(entry["rotation"]))
+	var center: Vector2 = rect.get_center()
+	var entry_offset: Vector2 = Vector2(float(entry["dx"]), float(entry["dy"]))
+	draw_set_transform(origin + (center + entry_offset - (center * entry_scale).rotated(entry_rotation)) * factor, entry_rotation, Vector2.ONE * factor * entry_scale)
 	var plain: bool = bubble["style"] == "plain"
 	var fill: Color = Color("fffdf6") if plain else Color("f0e1bf")
 	var border: Color = Color("353b33") if plain else Color("ad8b4b")
 	var textured: bool = bubble["style"] in ["simple", "ornate"] and _textures.has(bubble["frameAsset"])
+	if float(entry["burst"]) > 0.0:
+		_draw_burst_rays(rect, float(entry["burst"]))
 	if bubble["kind"] == "speech" and bubble["tail"]["mode"] != "none":
 		_draw_tail(rect, _bubble_target(bubble, shot, camera), fill, border)
 	if textured:
@@ -562,15 +571,31 @@ func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> v
 		# Save from the editor to include deterministic, shared line breaks.
 		lines = Array(str(bubble["text"]).split("\n"))
 	if bubble.has("textAnimation"):
-		_draw_animated_text(bubble, rect, font, font_size, padding, line_height)
+		_draw_animated_text(bubble, rect, font, font_size, padding, line_height, center, entry_offset, entry_scale, entry_rotation)
+		draw_set_transform(origin, 0.0, Vector2.ONE * factor)
 		return
 	for index: int in range(lines.size()):
 		var baseline: float = padding.y - 2.0 + float(font_size) + float(index) * line_height
 		if baseline > rect.size.y - padding.y + 7.0:
 			break
 		draw_string(font, rect.position + Vector2(padding.x, baseline), str(lines[index]), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - padding.x * 2.0, font_size, Color("342e24"))
+	draw_set_transform(origin, 0.0, Vector2.ONE * factor)
 
-func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, font_size: int, padding: Vector2, line_height: float) -> void:
+func _draw_burst_rays(rect: Rect2, strength: float) -> void:
+	var center: Vector2 = rect.get_center()
+	var outline: Color = Color("5f3926")
+	outline.a = strength
+	var ink: Color = Color("ffcf70")
+	ink.a = strength
+	for index: int in range(8):
+		var direction: Vector2 = Vector2.RIGHT.rotated(-PI * 0.5 + float(index) * PI * 0.25)
+		var edge: float = minf((rect.size.x * 0.5 + 12.0) / maxf(0.0001, absf(direction.x)), (rect.size.y * 0.5 + 12.0) / maxf(0.0001, absf(direction.y)))
+		var ray_start: Vector2 = center + direction * (edge + 8.0)
+		var ray_end: Vector2 = center + direction * (edge + 8.0 + 64.0 * strength)
+		draw_line(ray_start, ray_end, outline, 13.0, true)
+		draw_line(ray_start, ray_end, ink, 7.0, true)
+
+func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, font_size: int, padding: Vector2, line_height: float, bubble_center: Vector2, entry_offset: Vector2, entry_scale: float, entry_rotation: float) -> void:
 	var text_units: Array = TextAnimation.units(bubble)
 	var factor: float = minf(size.x / LOGICAL.x, size.y / LOGICAL.y)
 	var origin: Vector2 = (size - LOGICAL * factor) / 2.0
@@ -605,7 +630,8 @@ func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, font_size:
 		if float(m["y"]) > rect.size.y - padding.y * 2.0 + 9.0 or point.x < 0.0 or point.x > dimensions.x:
 			continue
 		var glyph_origin: Vector2 = rect.position + padding + Vector2(0.0, -2.0) + point
-		draw_set_transform(origin + glyph_origin * factor, deg_to_rad(float(pose["rotation"])), Vector2.ONE * factor * float(pose["scale"]))
+		var animated_origin: Vector2 = bubble_center + entry_offset + ((glyph_origin - bubble_center) * entry_scale).rotated(entry_rotation)
+		draw_set_transform(origin + animated_origin * factor, entry_rotation + deg_to_rad(float(pose["rotation"])), Vector2.ONE * factor * entry_scale * float(pose["scale"]))
 		draw_string(font, Vector2(-float(m["width"]) / 2.0, float(font_size) * 0.35), str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, Color(0.204, 0.18, 0.141, float(pose["opacity"])))
 	draw_set_transform(origin, 0.0, Vector2.ONE * factor)
 

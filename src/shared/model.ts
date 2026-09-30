@@ -36,14 +36,30 @@ export interface TextAnimation {
   reveal: TextReveal; effect: TextEffect; speed: number; delay: number;
   duration: number; intensity: number; loop: boolean;
 }
+export type BubbleEntryPreset = 'none' | 'pop' | 'left' | 'right' | 'burst' | 'shake' | 'bounce';
+export interface BubbleEntry { preset: BubbleEntryPreset; duration: number }
 export interface Bubble extends Box {
   textAnimation?: TextAnimation;
+  /** Optional: older films use the same gentle pop as newly created bubbles. */
+  bubbleEntry?: BubbleEntry;
   id: string; kind: 'speech' | 'narration'; style: BubbleStyle; frameAsset: AssetRef | null;
   speakerId: string | null; text: string; fontSize: number; autoHeight: boolean;
   tail: { mode: 'auto' | 'manual' | 'none'; x: number; y: number };
   advance: { mode: 'click' | 'auto'; seconds: number };
   /** Computed at save-time. The Godot player reuses these line breaks. */
   lines?: string[];
+}
+export interface AudioSettings {
+  asset: AssetRef; volume: number; loop: boolean; fadeIn: number; fadeOut: number;
+}
+export interface MusicTrack extends AudioSettings {
+  id: string; startShotId: string; endShotId: string;
+}
+export type SoundEvent = 'shot_start' | 'bubble_open' | 'actor_entry' | 'actor_movement' | 'actor_motion' | 'actor_exit' | 'actor_animation';
+export interface SoundCue extends AudioSettings {
+  id: string; event: SoundEvent; targetId: string; delay: number;
+  /** Zero: play to the end of the file (or this shot). Otherwise limit in seconds. */
+  duration: number;
 }
 export interface Shot {
   id: string; name: string; duration: number;
@@ -56,6 +72,7 @@ export interface Shot {
   exitTransition?: { type: 'cut' | 'fade'; duration: number };
   actors: Actor[]; bubbles: Bubble[]; dialogueStart: number;
   audio: { asset: AssetRef; volume: number; loop: boolean } | null;
+  sounds?: SoundCue[];
 }
 export interface Cinematic {
   schemaVersion: 1 | 2 | 3 | 4; presentationCatalog?:CatalogLink; id: string; title: string;
@@ -63,6 +80,7 @@ export interface Cinematic {
   category?: string;
   stage: { width: 1600; height: 900 };
   shots: Shot[];
+  musicTracks?: MusicTrack[];
 }
 export interface Asset {
   ref: AssetRef; path: string; name: string; folder: string;
@@ -118,7 +136,7 @@ export function hasV2Features(cinematic: Cinematic): boolean {
   return cinematic.shots.some(s => s.actors.some(a => ['role', 'rotation', 'pivot', 'motion', 'movement'].some(k => Object.hasOwn(a, k))));
 }
 export function hasV3Features(cinematic: Cinematic): boolean {
-  return cinematic.shots.some(s => s.bubbles.some(b => Object.hasOwn(b, 'textAnimation')) || s.actors.some(a =>
+  return cinematic.shots.some(s => s.bubbles.some(b => Object.hasOwn(b, 'textAnimation') || Object.hasOwn(b, 'bubbleEntry')) || s.actors.some(a =>
     Object.hasOwn(a, 'exit') || ['top', 'pop', 'zoom'].includes(a.entry.preset) ||
     ['nod', 'recoil', 'heartbeat', 'flutter'].includes(a.motion?.preset ?? 'none')));
 }
@@ -155,7 +173,8 @@ export function duplicateShot(source: Shot): Shot {
   const shot = copy(source); const ids = new Map<string, string>();
   shot.id = uid(); shot.name = (shot.name + ' — copie').slice(0, 180);
   shot.actors.forEach(actor => { const id = uid(); ids.set(actor.id, id); actor.id = id; });
-  shot.bubbles.forEach(bubble => { bubble.id = uid(); if (bubble.speakerId) bubble.speakerId = ids.get(bubble.speakerId) ?? null; });
+  shot.bubbles.forEach(bubble => { const old = bubble.id; bubble.id = uid(); ids.set(old, bubble.id); if (bubble.speakerId) bubble.speakerId = ids.get(bubble.speakerId) ?? null; });
+  shot.sounds?.forEach(cue => { cue.id = uid(); cue.targetId = ids.get(cue.targetId) ?? ''; });
   return shot;
 }
 /** Copy a whole film without sharing editable objects or internal identifiers. */
@@ -177,6 +196,11 @@ export function duplicateCinematic(source: Cinematic, existingTitles: readonly s
     duplicate.name = shot.name;
     return duplicate;
   });
+  cinematic.musicTracks?.forEach(track => {
+    track.id = uid();
+    track.startShotId = cinematic.shots[source.shots.findIndex(s => s.id === track.startShotId)]?.id ?? '';
+    track.endShotId = cinematic.shots[source.shots.findIndex(s => s.id === track.endShotId)]?.id ?? '';
+  });
   return cinematic;
 }
 export function removeActor(shot: Shot, id: string): void {
@@ -193,9 +217,11 @@ export function removeActor(shot: Shot, id: string): void {
 }
 export function referencedAssets(cinematic: Cinematic): AssetRef[] {
   const refs = new Set<AssetRef>();
+  cinematic.musicTracks?.forEach(track => refs.add(track.asset));
   for (const shot of cinematic.shots) {
     if (shot.background.asset) refs.add(shot.background.asset);
     if (shot.audio) refs.add(shot.audio.asset);
+    shot.sounds?.forEach(cue => refs.add(cue.asset));
     shot.actors.forEach(actor => refs.add(actor.asset));
     shot.bubbles.forEach(bubble => { if (bubble.frameAsset) refs.add(bubble.frameAsset); });
   }

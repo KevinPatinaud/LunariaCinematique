@@ -96,6 +96,16 @@ static func validate(value: Variant, schema: Dictionary) -> Array[String]:
 	if not errors.is_empty():
 		return errors
 	var ids: Dictionary = {}
+	for track: Dictionary in value.get("musicTracks", []):
+		if ids.has(track.id): errors.append("Repeated audio ID: " + str(track.id))
+		ids[track.id] = true
+		var start: int = -1
+		var end: int = -1
+		for index: int in range(value.shots.size()):
+			if value.shots[index].id == track.startShotId: start = index
+			if value.shots[index].id == track.endShotId: end = index
+		if start < 0 or end < start: errors.append("Invalid music shot range.")
+		if not str(track.asset).get_extension().to_lower() in ["wav", "ogg", "mp3"]: errors.append("Invalid music format.")
 	for shot: Dictionary in value["shots"]:
 		var images: Array = []
 		if shot["background"]["asset"] != null:
@@ -111,8 +121,8 @@ static func validate(value: Variant, schema: Dictionary) -> Array[String]:
 						errors.append("Actor roles (enemy/prop) and motions require schemaVersion: 2.")
 						break
 		for bubble: Dictionary in shot["bubbles"]:
-			if value["schemaVersion"] < 3 and bubble.has("textAnimation"):
-				errors.append("Animated text requires schemaVersion: 3.")
+			if value["schemaVersion"] < 3 and (bubble.has("textAnimation") or bubble.has("bubbleEntry")):
+				errors.append("Bubble animations require schemaVersion: 3.")
 			if bubble["frameAsset"] != null:
 				images.append(bubble["frameAsset"])
 		for ref: String in images:
@@ -123,6 +133,14 @@ static func validate(value: Variant, schema: Dictionary) -> Array[String]:
 		var objects: Array = [shot]
 		objects.append_array(shot["actors"])
 		objects.append_array(shot["bubbles"])
+		objects.append_array(shot.get("sounds", []))
+		for cue: Dictionary in shot.get("sounds", []):
+			if not str(cue.asset).get_extension().to_lower() in ["wav", "ogg", "mp3"]: errors.append("Invalid sound format.")
+			var found_target: bool = cue.event == "shot_start" and cue.targetId == ""
+			if cue.event != "shot_start":
+				for target: Dictionary in (shot.bubbles if cue.event == "bubble_open" else shot.actors):
+					if target.id == cue.targetId: found_target = true
+			if not found_target: errors.append("Sound event target not found.")
 		for object: Dictionary in objects:
 			if ids.has(object["id"]):
 				errors.append("Repeated ID: " + str(object["id"]))

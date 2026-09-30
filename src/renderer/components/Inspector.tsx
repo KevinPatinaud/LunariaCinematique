@@ -9,6 +9,7 @@ import { MotionInspector } from './MotionInspector.js';
 import { NumberInput } from './NumberInput.js';
 import { centeredObject, proportionalSize } from '../../shared/editing.js';
 import { bubbleLayout } from '../../shared/geometry.js';
+import { bubbleEntryLabels, effectiveBubbleEntry } from '../../shared/bubbleEntry.js';
 import type { Selection } from './Scene.js';
 import { Icon } from './Icon.js';
 export const cameraLabels = { fixed: 'Fixe', zoom_in: 'Zoom lent avant', zoom_out: 'Zoom lent arrière', pan_left: 'Travelling vers la gauche', pan_right: 'Travelling vers la droite', pan_up: 'Montée lente', pan_down: 'Descente lente' };
@@ -17,6 +18,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
   return <label className="field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
 interface Props {
+  editAudio: () => void;
   presentationProject:GameProject;setCatalog:(value:CatalogLink)=>void;
   previewMotion: () => void; previewText: (id: string) => void;
   children?: React.ReactNode; multiCount?: number; objectLocked?: boolean; autoPlace?: () => void;
@@ -28,9 +30,17 @@ interface Props {
   layer: (direction: number) => void; moveBubble: (id: string, direction: number) => void;
 }
 export function Inspector(p: Props) {
+  const scrollArea = React.useRef<HTMLFieldSetElement>(null);
+  const pendingEntryScroll = React.useRef<number | null>(null);
   const selectedId = p.selection.kind === 'shot' ? null : p.selection.id;
   const actor = (p.multiCount??0)<=1 && p.selection.kind === 'actor' ? p.shot.actors.find(a => a.id === selectedId) : undefined;
   const bubble = (p.multiCount??0)<=1 && p.selection.kind === 'bubble' ? p.shot.bubbles.find(b => b.id === selectedId) : undefined;
+  React.useLayoutEffect(() => {
+    if (pendingEntryScroll.current !== null && scrollArea.current) {
+      scrollArea.current.scrollTop = pendingEntryScroll.current;
+      pendingEntryScroll.current = null;
+    }
+  }, [actor?.entry.preset]);
   const changeActor = (patch: Partial<Actor>, key = '') => actor && p.updateObject('actor', actor.id, patch, key);
   const changeBubble = (patch: Partial<Bubble>, key = '') => bubble && p.updateObject('bubble', bubble.id, patch, key);
   function setStyle(style: Bubble['style']) {
@@ -42,10 +52,11 @@ export function Inspector(p: Props) {
   }
   const textureExists = (s: string) => p.assets.some(a => a.path.endsWith(s));
   return <aside className="inspector panel">
+    <div className="audio-summary"><small>{p.shot.sounds?.length??0} son(s) sur ce plan · {p.doc.musicTracks?.length??0} musique(s) dans le film</small><button className="button subtle" disabled={p.disabled} onClick={p.editAudio}><Icon name="music" size={15}/> Configurer le son</button></div>
     <div className="panel-heading"><span>{actor ? actor.role === 'enemy' ? 'ENNEMI' : actor.role === 'prop' ? 'OBJET DE DÉCORATION' : 'PERSONNAGE' : bubble ? 'BULLE DE DIALOGUE' : 'MISE EN SCÈNE'}</span><Icon name={actor ? actor.role === 'enemy' ? 'enemy' : actor.role === 'prop' ? 'prop' : 'actor' : bubble ? 'bubble' : 'camera'} size={16}/></div>
     {p.children}
     {p.objectLocked && <p className="locked-note"><Icon name="lock" size={13}/> Calque verrouillé. Déverrouille-le dans la liste pour le modifier.</p>}
-    <fieldset disabled={p.disabled || p.objectLocked} className="inspector-content">
+    <fieldset ref={scrollArea} disabled={p.disabled || p.objectLocked} className="inspector-content">
       <div className="inspector-title"><span className="overline">{actor ? 'DANS CE PLAN' : bubble ? `RÉPLIQUE ${p.shot.bubbles.indexOf(bubble) + 1}` : `PLAN ${String(p.doc.shots.indexOf(p.shot) + 1).padStart(2, '0')}`}</span><h2>{actor ? actor.name : bubble ? bubble.kind === 'narration' ? 'Narration' : 'Une voix dans la scène' : p.shot.name}</h2></div>
       {(p.multiCount??0)>1 && <div className="multi-selection-note"><h3>{p.multiCount} éléments sélectionnés</h3><p>Déplace le groupe directement dans la scène. Les commandes d’alignement sont au-dessus ; Dupliquer et Supprimer agissent sur toute la sélection.</p><small>Les calques verrouillés ne sont pas modifiés.</small></div>}
       {!actor && !bubble && (p.multiCount??0)<=1 && <>
@@ -85,8 +96,9 @@ export function Inspector(p: Props) {
         </details>
         <MotionInspector actor={actor} change={changeActor} preview={p.previewMotion}/>
         <div className="section-label"><Icon name="actor" size={15}/> APPARITION</div>
-        <Field label="Entrée"><select value={actor.entry.preset} onChange={e => changeActor({ entry: { ...actor.entry, preset: e.target.value as Actor['entry']['preset'] } })}>{Object.entries(entryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
-        {actor.entry.preset !== 'none' && <div className="field-row"><Field label="Durée (s)"><NumberInput min={0.1} max={10} value={actor.entry.duration} onCommit={duration => changeActor({ entry: { ...actor.entry, duration } }, 'entry-duration')}/></Field><Field label="Délai (s)"><NumberInput min={0} max={300} value={actor.entry.delay} onCommit={delay => changeActor({ entry: { ...actor.entry, delay } }, 'entry-delay')}/></Field></div>}
+        <Field label="Entrée"><select value={actor.entry.preset} onChange={e => { pendingEntryScroll.current = scrollArea.current?.scrollTop ?? null; changeActor({ entry: { ...actor.entry, preset: e.target.value as Actor['entry']['preset'] } }); }}>{Object.entries(entryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+        {actor.entry.preset !== 'none' && <div className="field-row"><Field label="Durée (s)"><NumberInput min={0.1} max={10} value={actor.entry.duration} onCommit={duration => changeActor({ entry: { ...actor.entry, duration } }, 'entry-duration')}/></Field><Field label="Délai d’apparition (s)"><NumberInput label="Délai d’apparition" min={0} max={300} value={actor.entry.delay} onCommit={delay => changeActor({ entry: { ...actor.entry, delay } }, 'entry-delay')}/></Field></div>}
+        <p className="field-hint">{actor.entry.preset === 'none' ? '« Déjà présent » affiche ce personnage dès le début du plan. Choisis une autre entrée pour régler un délai.' : 'Le délai commence au début du plan. La composition garde le personnage visible pour le placer ; teste les animations ou lis le plan pour voir son apparition réelle.'}</p>
         <ExitInspector actor={actor} change={changeActor} duration={p.shot.duration} preview={p.previewMotion}/>
         <p className="field-hint">Les effets animent le PNG entier, pas une marche articulée. Ils fonctionnent aussi pour les ennemis et les objets.</p>
         <ActorBindingFields actor={actor} doc={p.doc} project={p.presentationProject} change={changeActor} setCatalog={p.setCatalog}/>
@@ -100,6 +112,10 @@ export function Inspector(p: Props) {
         <label className="check-field"><input type="checkbox" checked={bubble.autoHeight} onChange={e => changeBubble({ autoHeight: e.target.checked, height: bubbleLayout(bubble).height / 900 })}/> Adapter la hauteur au texte</label>
         {bubbleLayout(bubble).overflow && <p className="inline-warning"><Icon name="warning" size={15}/> Le texte dépasse : agrandis la bulle.</p>}
         {bubble.kind === 'speech' && <Field label="Queue de la bulle"><select value={bubble.tail.mode} onChange={e => changeBubble({ tail: { ...bubble.tail, mode: e.target.value as Bubble['tail']['mode'] } })}><option value="auto" disabled={!bubble.speakerId}>Reliée à celui qui parle</option><option value="manual">Point libre, à déplacer</option><option value="none">Sans queue</option></select><small>Déplace le point à l’extrémité de la queue pour l’orienter librement.</small></Field>}
+        <div className="section-label"><Icon name="wand" size={15}/> ANIMATION DE LA BULLE</div>
+        <Field label="Apparition"><select aria-label="Apparition de la bulle" value={effectiveBubbleEntry(bubble).preset} onChange={e => changeBubble({bubbleEntry: {...effectiveBubbleEntry(bubble), preset: e.target.value as NonNullable<Bubble['bubbleEntry']>['preset']}})}>{Object.entries(bubbleEntryLabels).map(([preset,label]) => <option key={preset} value={preset}>{label}</option>)}</select></Field>
+        {effectiveBubbleEntry(bubble).preset !== 'none' && <Field label="Durée de l’apparition (s)"><NumberInput label="Durée de l’animation de la bulle" min={0.1} max={3} value={effectiveBubbleEntry(bubble).duration} onCommit={duration => changeBubble({bubbleEntry: {...effectiveBubbleEntry(bubble), duration}}, 'bubble-entry-duration')}/></Field>}
+        <p className="field-hint">Le cadre, la queue et le texte s’animent ensemble au début de chaque réplique. « Explosion de cri » ajoute des traits d’impact qui disparaissent avant la lecture.</p>
         <TextAnimationInspector bubble={bubble} change={changeBubble} preview={() => p.previewText(bubble.id)}/>
         <div className="section-label"><Icon name="play" size={14}/> LECTURE</div>
         <label className="check-field"><input type="checkbox" checked={bubble.advance.mode === 'click'} onChange={e => changeBubble({ advance: { ...bubble.advance, mode: e.target.checked ? 'click' : 'auto' } })}/> Attendre le clic du joueur</label>

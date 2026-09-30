@@ -2,6 +2,7 @@ class_name LunariaCinematicText
 extends RefCounted
 ## Mirrors textSegments.ts / textAnimation.ts. No random or independent animation clock.
 const EPS: float = 0.000000001
+const BubbleEntry = preload("CinematicBubbleEntry.gd")
 
 static func _smooth(value: float) -> float:
 	var t: float = clampf(value, 0.0, 1.0)
@@ -64,7 +65,7 @@ static func needs_completion(bubble: Dictionary, elapsed: float, completed_at: f
 	return elapsed + EPS < duration
 
 static func auto_duration(bubble: Dictionary, completed_at: float = -1.0) -> float:
-	return minf(intro_duration(bubble), completed_at if completed_at >= 0.0 else INF) + float(bubble["advance"]["seconds"])
+	return maxf(minf(intro_duration(bubble), completed_at if completed_at >= 0.0 else INF) + float(bubble["advance"]["seconds"]), BubbleEntry.duration(bubble) + (float(bubble["advance"]["seconds"]) if bubble.has("bubbleEntry") else 0.0) if completed_at < 0.0 else 0.0)
 
 static func glyph_pose(bubble: Dictionary, unit: Dictionary, elapsed: float, center: Vector2, dimensions: Vector2, completed: bool = false) -> Dictionary:
 	var result: Dictionary = {"opacity":1.0, "dx":0.0, "dy":0.0, "rotation":0.0, "scale":1.0}

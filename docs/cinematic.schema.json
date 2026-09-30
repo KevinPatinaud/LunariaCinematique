@@ -646,6 +646,33 @@
                   ],
                   "additionalProperties": false
                 },
+                "bubbleEntry": {
+                  "type": "object",
+                  "properties": {
+                    "preset": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "pop",
+                        "left",
+                        "right",
+                        "burst",
+                        "shake",
+                        "bounce"
+                      ]
+                    },
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0.1,
+                      "maximum": 3
+                    }
+                  },
+                  "required": [
+                    "preset",
+                    "duration"
+                  ],
+                  "additionalProperties": false
+                },
                 "advance": {
                   "type": "object",
                   "properties": {
@@ -731,6 +758,84 @@
               "loop"
             ],
             "additionalProperties": false
+          },
+          "sounds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "asset": {
+                  "type": "string",
+                  "minLength": 11,
+                  "maxLength": 1024,
+                  "pattern": "^library://[^\\\\\\u0000-\\u001f:?#]+$"
+                },
+                "volume": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "loop": {
+                  "type": "boolean"
+                },
+                "fadeIn": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30
+                },
+                "fadeOut": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30
+                },
+                "id": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "minLength": 1
+                },
+                "event": {
+                  "type": "string",
+                  "enum": [
+                    "shot_start",
+                    "bubble_open",
+                    "actor_entry",
+                    "actor_movement",
+                    "actor_motion",
+                    "actor_exit",
+                    "actor_animation"
+                  ]
+                },
+                "targetId": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "delay": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 300
+                },
+                "duration": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 600
+                }
+              },
+              "required": [
+                "asset",
+                "volume",
+                "loop",
+                "fadeIn",
+                "fadeOut",
+                "id",
+                "event",
+                "targetId",
+                "delay",
+                "duration"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 100
           }
         },
         "required": [
@@ -749,6 +854,66 @@
       },
       "minItems": 1,
       "maxItems": 500
+    },
+    "musicTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "type": "string",
+            "minLength": 11,
+            "maxLength": 1024,
+            "pattern": "^library://[^\\\\\\u0000-\\u001f:?#]+$"
+          },
+          "volume": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "loop": {
+            "type": "boolean"
+          },
+          "fadeIn": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "fadeOut": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "startShotId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "endShotId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "asset",
+          "volume",
+          "loop",
+          "fadeIn",
+          "fadeOut",
+          "id",
+          "startShotId",
+          "endShotId"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 100
     }
   },
   "required": [

@@ -17,7 +17,7 @@ test.beforeEach(async()=>{
  await expect(navigation.getByRole('button',{name:'Projectiles',exact:true})).toHaveCount(0);
  await navigation.getByRole('button',{name:/^Attaque/}).click();
 });
-test.afterEach(async({},info)=>{if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('combat',{body:await page.screenshot(),contentType:'image/png'});await app?.close();await fs.rm(dir,{recursive:true,force:true});});
+test.afterEach(async({},info)=>{if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('combat',{body:await page.screenshot(),contentType:'image/png'});if(app){const child=app.process();try{await app.evaluate(({app})=>{setTimeout(()=>app.exit(0),0);});}catch{}await Promise.race([app.close().catch(()=>{}),new Promise<void>(resolve=>setTimeout(resolve,5000))]);if(child.exitCode===null)child.kill();}await fs.rm(dir,{recursive:true,force:true,maxRetries:15,retryDelay:200});});
 async function save(){await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');return JSON.parse(await fs.readFile(target,'utf8'));}
 test('catalogs persist with v4 and global references',async()=>{
  await expect(page.getByLabel('Nom de l’attaque')).toHaveValue('Tir simple');
@@ -39,4 +39,33 @@ test('same ability can be assigned to an enemy without copying its definition',a
  await page.getByRole('navigation',{name:'Sections du mode Niveaux'}).getByRole('button',{name:/^Ennemis/}).click();
  await page.getByLabel('Type d’attaque principal').selectOption('ab_basic_shot');
  const doc=await save();expect(doc.balance.enemies[0].ability_ids[0]).toBe('ab_basic_shot');expect(doc.combat.abilities.filter((a:{id:string})=>a.id==='ab_basic_shot')).toHaveLength(1);
+});
+test('an enemy can be archived and restored without losing its level use',async()=>{
+ const navigation=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
+ await navigation.getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.gd-level-list').getByRole('button',{name:'+ Créer un niveau'}).click();
+ await page.getByRole('button',{name:'Vagues & ennemis'}).click();
+ await expect(page.getByLabel('Ennemi du groupe 1')).toHaveValue('litterer');
+ await navigation.getByRole('button',{name:/^Ennemis/}).click();
+ const catalog=page.getByRole('complementary',{name:'Catalogue des ennemis'});
+ await page.getByRole('button',{name:'Archiver l’ennemi'}).click();
+ await expect(catalog.getByRole('button',{name:/litterer/})).toHaveCount(0);
+ await catalog.getByRole('button',{name:'Archives (1)'}).click();
+ await expect(catalog.getByRole('button',{name:/litterer/})).toBeVisible();
+ await page.screenshot({path:path.join(ROOT,'work','archivage-ennemi.png')});
+ await navigation.getByRole('button',{name:/^Niveaux/}).click();
+ await page.getByRole('button',{name:'Vagues & ennemis'}).click();
+ await expect(page.getByLabel('Ennemi du groupe 1').locator('option:checked')).toContainText('archivé');
+ await page.getByRole('button',{name:'+ Ajouter un groupe d’ennemis'}).click();
+ await expect(page.getByLabel('Ennemi du groupe 2')).toHaveValue('runner');
+ const archived=await save();
+ expect(archived.balance.enemies.find((enemy:{id:string})=>enemy.id==='litterer').archived).toBe(true);
+ expect(archived.levels[0].waves[0].groups.map((group:{enemyId:string})=>group.enemyId)).toEqual(['litterer','runner']);
+ await navigation.getByRole('button',{name:/^Ennemis/}).click();
+ await catalog.getByRole('button',{name:'Archives (1)'}).click();
+ await page.getByRole('button',{name:'Restaurer l’ennemi'}).click();
+ await expect(catalog.getByRole('button',{name:/litterer/})).toBeVisible();
+ await expect(catalog.getByRole('button',{name:'Archives (0)'})).toBeVisible();
+ await save();
+ await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).balance.enemies.find((enemy:{id:string})=>enemy.id==='litterer').archived).toBeUndefined();
 });

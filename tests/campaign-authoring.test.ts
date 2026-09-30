@@ -20,6 +20,19 @@ const steps:CampaignStep[]=[{id:'intro',kind:'cinematic',cinematicId:'f',skippab
 test('campaign default references all forty levels without mutating the catalogue',()=>{const p=seedProject(),before=JSON.stringify(p),c=campaignOf(p);assert.equal(c.steps.length,40);assert.equal(JSON.stringify(p),before);assert.ok(c.steps.every(s=>s.kind==='level'));});
 test('new project starts without missions and saves as one document',()=>fixture(async root=>{const p=emptySeedProject();ensureCampaign(p);p.cinematics=[];assert.equal(p.levels.length,0);assert.equal(p.campaign!.steps.length,0);assert.deepEqual(errors(p),[]);const file=path.join(root,'lunaria.game.json'),documents=new GameDocuments(path.join(root,'profile'));await documents.save(p,'',file);assert.deepEqual((await documents.open(file)).project,p);}));
 test('explicit default sequence is valid and warning-free',()=>assert.deepEqual(gameIssues(project()),[]));
+test('invasive foci positions and reinforcement settings survive publication',()=>fixture(async root=>{
+ const x=await setup(root),level=x.p.levels[0];
+ level.objective={type:'invasive_foci',target:0};
+ level.objectiveText='Détruire les foyers.';
+ level.invasiveFoci={positions:[{row:1,col:5},{row:3,col:6}],reinforcementEnemyId:'litterer',interval:12.5};
+ assert.deepEqual(errors(x.p),[]);
+ const published=await publishCampaign(x.p,x.game,x.movies,x.library);
+ const game=JSON.parse(await fs.readFile(published.path,'utf8'));
+ assert.equal(game.levels[0].objective.type,'invasive_foci');
+ assert.deepEqual(game.levels[0].invasiveFoci,level.invasiveFoci);
+ level.invasiveFoci.positions[1]={row:1,col:5};
+ assert.ok(errors(x.p).some(i=>i.message.includes('même case')));
+}));
 test('wave seed rewards are independent integers and bounded',()=>{const p=project(),waves=p.levels[0].waves;waves[0].seedReward=0;waves[1].seedReward=10000;assert.deepEqual(errors(p),[]);waves[0].seedReward=1.5;assert.ok(errors(p).some(i=>i.path.endsWith('seedReward')));waves[0].seedReward=10001;assert.ok(errors(p).some(i=>i.path.endsWith('seedReward')));});
 test('publication reorders levels by stable sequence IDs and preserves the authoring library',()=>{const p=project(),first=p.levels[0].id,last=p.levels[39].id;p.campaign!.steps=[p.campaign!.steps[39],p.campaign!.steps[0]];const text=JSON.stringify(p),out=compileCampaign(parseGameProject(p));assert.deepEqual(out.levels.map(l=>l.id),[last,first]);assert.equal(JSON.stringify(p),text);assert.equal(p.levels.length,40);assert.ok(gameIssues(p).some(i=>i.severity==='warning'));});
 test('step drag/drop before/after/end is immutable and stable',()=>{const s=structuredClone(steps),before=JSON.stringify(s);assert.deepEqual(moveCampaignStep(s,'end','intro').map(x=>x.id),['end','intro','level']);assert.deepEqual(moveCampaignStep(s,'intro',null).map(x=>x.id),['level','end','intro']);assert.equal(JSON.stringify(s),before);assert.equal(moveCampaignStep(s,'no','intro'),s);assert.equal(moveCampaignStep(s,'intro','no'),s);assert.equal(moveCampaignStep(s,'intro','intro'),s);});
@@ -59,6 +72,21 @@ async function setup(root:string){
 test('folder permission is persistent and relative movie identity is checked',()=>fixture(async root=>{const x=await setup(root),sources=new CampaignSources(x.profile);assert.equal(await sources.folder(),'');await sources.select(x.movies);const film=await sources.add(path.join(x.movies,'intro.json'));assert.equal(film.file,'intro.json');assert.equal((await new CampaignSources(x.profile).resolve(film.file,film.documentId)).cinematic.title,'Réveil');await assert.rejects(sources.resolve('../private.json'));await assert.rejects(sources.resolve('intro.json','different'),/correspond/);}));
 test('folder resolver refuses selected files and symlinks outside the authorized root',t=>fixture(async root=>{const x=await setup(root),s=new CampaignSources(x.profile);await s.select(x.movies);await fs.writeFile(path.join(root,'external.json'),JSON.stringify(x.doc));await assert.rejects(s.add(path.join(root,'external.json')),/hors/);if(!await symlinkOrSkip(t,path.join(root,'external.json'),path.join(x.movies,'link.json')))return;await assert.rejects(s.resolve('link.json'),/sort/);}));
 test('preflight only reads, deduplicates resources, and never changes the author document',()=>fixture(async root=>{const x=await setup(root),before=JSON.stringify(x.p),r=await planCampaign(x.p,x.movies,x.library);assert.equal(r.check.films,1);assert.equal(r.check.assets,1);assert.equal(r.check.steps,42);assert.equal(JSON.stringify(x.p),before);assert.equal(await fs.readFile(x.content,'utf8'),'{"old":true}');assert.ok(r.project.campaign!.cinematics[0].file.startsWith('content/cinematics/studio/'));}));
+test('publication includes range music and event sounds and refuses a missing audio asset',()=>fixture(async root=>{
+ const x=await setup(root),shot=x.doc.shots[0];
+ const settings={volume:.6,loop:true,fadeIn:1,fadeOut:2};
+ x.doc.musicTracks=[{...settings,id:'music',asset:'library://song.ogg',startShotId:shot.id,endShotId:shot.id}];
+ shot.sounds=[{...settings,id:'cue',asset:'library://cue.wav',loop:false,event:'shot_start',targetId:'',delay:.2,duration:1}];
+ x.p.cinematics=[x.doc];
+ await fs.writeFile(path.join(x.library,'song.ogg'),'music fixture');await fs.writeFile(path.join(x.library,'cue.wav'),'sound fixture');
+ const result=await publishCampaign(x.p,x.game,x.movies,x.library);assert.equal(result.assets,3);
+ const published=JSON.parse(await fs.readFile(x.content,'utf8'));
+ const film=JSON.parse(await fs.readFile(path.join(x.game,published.campaign.cinematics[0].file),'utf8'));
+ assert.deepEqual(film.musicTracks,x.doc.musicTracks);assert.deepEqual(film.shots[0].sounds,shot.sounds);
+ assert.equal(await fs.readFile(path.join(x.game,'LunariaArtLibrary/song.ogg'),'utf8'),'music fixture');
+ assert.equal(await fs.readFile(path.join(x.game,'LunariaArtLibrary/cue.wav'),'utf8'),'sound fixture');
+ await fs.unlink(path.join(x.library,'cue.wav'));await assert.rejects(planCampaign(x.p,x.movies,x.library),/Ressource introuvable/);
+}));
 test('publication copies the terrain image selected for a level',()=>fixture(async root=>{
  const x=await setup(root);x.p.levels[0].terrainImage='library://terrain.png';
  await fs.writeFile(path.join(x.library,'terrain.png'),PIXEL_PNG);

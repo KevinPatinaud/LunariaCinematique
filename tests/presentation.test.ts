@@ -29,6 +29,19 @@ const errors=(x:GameProject)=>gameIssues(x).filter(e=>e.severity==='error');
 const clip=(x:GameProject,id='radish',slot='attack')=>resolveAnimation(x,species(x,id),slot)!;
 const near=(a:number,b:number)=>assert.ok(Math.abs(a-b)<1e-8,`${a} ≠ ${b}`);
 const fixtureAsset:Asset={ref:'library://pixel.png',name:'Personnage',url:'',kind:'character',path:'pixel.png',folder:'',bytes:1,modified:0,thumbnail:''};
+test('Rose, Radis and Noisetier author dedicated looping walk sheets',()=>{
+ const x=mainSeedProject();
+ for(const id of ['rose','radish','hazel']){
+  const s=species(x,id)!,walk=resolveAnimation(x,s,'move')!;
+  assert.equal(walk.ownerSpeciesId,id);assert.equal(walk.kind,'frames');assert.equal(walk.loop,true);assert.equal(walk.frames.length,6);
+  assert.equal(new Set(walk.frames.map(frame=>JSON.stringify(frame.region))).size,6);
+  assert.ok(walk.frames.every(frame=>frame.duration>0&&frame.asset.includes('_walk_sheet_v01.png')));
+  assert.equal(walk.markers.length,0);assert.notEqual(walk.id,resolveAnimation(x,s,'attack')!.id);
+  assert.deepEqual(frameAt(walk,.0001).frame,frameAt(walk,duration(walk)+.0001).frame);
+  assert.ok(presentationAssets(x).includes(walk.frames[0].asset));
+ }
+ assert.deepEqual(errors(x),[]);
+});
 test('Scindapsus appears in the Studio and resolves in a cinematic',()=>{const x=mainSeedProject(),s=species(x,'scindapsus');assert.ok(s);assert.equal(x.balance.plants.length,29);assert.equal(s.visual?.sprite.asset,'library://02_characters/scindapsus/stage_01/scindapsus_stage_01_master_v01.png');assert.equal(s.animationProfileId,'profile_scindapsus');assert.ok(resolveAnimation(x,s,'idle'));assert.deepEqual(errors(x),[]);const d=newCinematic(),a=newActor(fixtureAsset,1);a.animation={mode:'species',animationId:'',speciesId:s.id,slot:'idle',speed:1};d.shots[0].actors.push(a);d.presentationCatalog={projectId:x.id,file:'content/design/game_content.json'};assert.deepEqual(cinematicPresentationIssues(d,x),[]);});
 function film(x:GameProject){const d=newCinematic();d.presentationCatalog={projectId:x.id,file:'content/design/game_content.json'};const a=newActor(fixtureAsset,1);a.name='Radis';a.animation={mode:'species',animationId:'',speciesId:'radish',slot:'attack',speed:1};d.shots[0].actors.push(a);d.shots[0].duration=5;upgradeCinematicFormat(d);return d;}
 async function temp(run:(root:string)=>Promise<void>){const root=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-presentation-'));try{await run(root);}finally{await fs.rm(root,{recursive:true,force:true});}}

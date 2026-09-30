@@ -3,7 +3,7 @@ import {gameAPI} from '../game/bridge.js';
 import React,{useEffect,useRef,useState} from 'react';
 import type {Asset} from '../../shared/model.js';
 import type {GameProject} from '../../shared/game/types.js';
-import {newId} from '../../shared/game/types.js';
+import {enemyChoices,newId} from '../../shared/game/types.js';
 import {DEFAULT_PRESENTATION,newAnimation} from '../../shared/presentation/defaults.js';
 import {animationUsages,duration} from '../../shared/presentation/runtime.js';
 import {animationOwnerId} from '../../shared/presentation/ownership.js';
@@ -60,7 +60,7 @@ export function AnimationFields({value:a,project,assets,patch,previewSpeciesId}:
  type SheetFormat={atlas:string;grid:SheetGrid|null;manual:SheetGrid|null;status:'loading'|'saved'|'detected'|'uncertain'};
  const [frameIndex,setFrameIndex]=useState(0),[atlas,setAtlas]=useState<string>(existingSheet),[imageMode,setImageMode]=useState<'sheet'|'files'>(existingSheet?'sheet':'files'),[previewSpecies,setPreviewSpecies]=useState(previewSpeciesId??project.balance.plants[0].id),[fps,setFps]=useState(12),[advanced,setAdvanced]=useState(false);
  const [sheetFormat,setSheetFormat]=useState<SheetFormat>(()=>({atlas:existingSheet,grid:existingSheet?sheetGrid(a.frames):null,manual:null,status:existingSheet?'saved':'loading'}));
- const selected=a.frames[frameIndex],all=[...project.balance.plants,...project.balance.enemies],visual=all.find(x=>x.id===previewSpecies)?.visual,atlasAsset=assets.find(x=>x.ref===atlas),atlasSize=useImageSize(atlasAsset?.url??'');
+  const selected=a.frames[frameIndex],all=[...project.balance.plants,...enemyChoices(project.balance.enemies,previewSpeciesId??previewSpecies)],visual=all.find(x=>x.id===previewSpecies)?.visual,atlasAsset=assets.find(x=>x.ref===atlas),atlasSize=useImageSize(atlasAsset?.url??'');
  useEffect(()=>{
   if(!atlas){setSheetFormat({atlas:'',grid:null,manual:null,status:'loading'});return;}
   if(atlas===existingSheet){setSheetFormat({atlas,grid:sheetGrid(a.frames),manual:null,status:'saved'});return;}

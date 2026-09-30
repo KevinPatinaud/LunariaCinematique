@@ -18,3 +18,7 @@ Le bouton **Vue du projet** donne accès à la création de niveaux et de ciném
 Extraire les projets dans de nouveaux dossiers et conserver les originaux. Dans le Studio, relier **`game/LunariaArtLibrary`** pour travailler sur la présentation de combat. Le petit exemple autonome `example-library` ne remplace pas cette bibliothèque.
 
 Le projet initial et le contenu actif du jeu ne contiennent plus de missions par défaut. L’introduction cinématique reste dans le parcours. La carte du jeu crée ses onglets selon les continents qui possèdent des missions ; un continent vide n’apparaît pas. Les anciens projets liés à des fichiers de cinématiques séparés sont importés dans le document unique lors de leur ouverture dans l’application de bureau.
+
+## Son des cinématiques
+
+Le bouton **Son** permet de choisir une plage de plans pour chaque musique, de régler les fondus et de lier les bruitages aux dialogues et animations. [Guide des musiques et événements sonores](docs/SON_CINEMATIQUES.md).

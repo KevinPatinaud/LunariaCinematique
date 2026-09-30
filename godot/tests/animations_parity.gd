@@ -3,6 +3,7 @@ extends SceneTree
 ## Reference vectors generated from TypeScript; must be run in native Godot to validate parity.
 const Text = preload("res://addons/lunaria_cinematics/CinematicText.gd")
 const Motion = preload("res://addons/lunaria_cinematics/CinematicMotion.gd")
+const BubbleEntry = preload("res://addons/lunaria_cinematics/CinematicBubbleEntry.gd")
 const Player = preload("res://addons/lunaria_cinematics/CinematicPlayer.gd")
 var failures: int = 0
 var comparisons: int = 0
@@ -53,5 +54,8 @@ func _initialize() -> void:
 		var pivot: Vector2 = pose["pivot"]
 		var anchor: Vector2 = Motion.anchor(row["actor"], float(row["elapsed"]), 0.3, 0.22)
 		compare_dictionary({"x":position.x,"y":position.y,"pivotX":pivot.x,"pivotY":pivot.y,"rotation":pose["rotation"],"opacity":pose["opacity"],"scale":pose["scale"],"anchorX":anchor.x,"anchorY":anchor.y}, row["expected"], "actor/" + str(index))
+	for index: int in range(content.get("bubble", []).size()):
+		var row: Dictionary = content["bubble"][index]
+		compare_dictionary(BubbleEntry.pose(row["bubble"], float(row["elapsed"]), bool(row["completed"])), row["expected"], "bubble/" + str(index))
 	print("Lunaria animations parity: ", comparisons, " comparisons; ", failures, " failure(s).")
 	quit(0 if failures == 0 else 1)

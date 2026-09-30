@@ -2,6 +2,7 @@ import { ACTOR_ANIMATION_SCHEMA,CATALOG_LINK_SCHEMA } from './presentation/schem
 import { isImage, isAudio } from './assets.js';
 import { hasV2Features, hasV3Features, type Cinematic } from './model.js';
 import { bubbleLayout } from './geometry.js';
+import { musicRange } from './cinematicAudio.js';
 type Rule = { type?: string | string[]; const?: unknown; enum?: unknown[]; minimum?: number; maximum?: number;
   minLength?: number; maxLength?: number; pattern?: string; minItems?: number; maxItems?: number;
   items?: Rule; properties?: Record<string, Rule>; required?: string[]; additionalProperties?: boolean };
@@ -31,15 +32,19 @@ const bubble = obj({ ...box, id, kind: en('speech', 'narration'), style: en('par
   tail: obj({ mode: en('auto', 'manual', 'none'), x: num(-1, 2), y: num(-1, 2) }),
   textAnimation: obj({ reveal: en('instant', 'typewriter', 'words', 'fade'), effect: en('none', 'shout', 'wave', 'shake', 'bounce'),
     speed: num(0.5, 120), delay: num(0, 30), duration: num(0.1, 10), intensity: num(0, 1), loop: bool }),
-  advance: obj({ mode: en('click', 'auto'), seconds: num(0.5, 120) }), lines: arr(str(1500), 1501) }, ['lines', 'textAnimation']);
+  bubbleEntry: obj({ preset: en('none', 'pop', 'left', 'right', 'burst', 'shake', 'bounce'), duration: num(0.1, 3) }),
+  advance: obj({ mode: en('click', 'auto'), seconds: num(0.5, 120) }), lines: arr(str(1500), 1501) }, ['lines', 'textAnimation', 'bubbleEntry']);
 const audio: Rule = { ...obj({ asset: ref, volume: num(0, 1), loop: bool }), type: ['object', 'null'] };
+const audioSettings = { asset: ref, volume: num(0, 1), loop: bool, fadeIn: num(0, 30), fadeOut: num(0, 30) };
+const sound = obj({ ...audioSettings, id, event: en('shot_start','bubble_open','actor_entry','actor_movement','actor_motion','actor_exit','actor_animation'), targetId: str(100), delay: num(0, 300), duration: num(0, 600) });
+const music = obj({ ...audioSettings, id, startShotId: id, endShotId: id });
 const shot = obj({ id, name: str(180), duration: num(1, 300), endAdvance: en('auto', 'click'), background: obj({ asset: nullableRef, fit: en('cover', 'contain') }),
   camera: obj({ preset: en('fixed', 'zoom_in', 'zoom_out', 'pan_left', 'pan_right', 'pan_up', 'pan_down'), intensity: num(0, 1) }),
   transition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), exitTransition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), actors: arr(actor, 50), bubbles: arr(bubble, 100),
-  dialogueStart: num(0, 300), audio }, ['endAdvance', 'exitTransition']);
+  dialogueStart: num(0, 300), audio, sounds: arr(sound, 100) }, ['endAdvance', 'exitTransition', 'sounds']);
 export const cinematicSchema = { $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'Lunaria Cinematic v1 / v2 / v3', ...obj({ schemaVersion: { type: 'number', enum: [1, 2, 3,4] }, id, title: str(200),category: str(100),presentationCatalog:CATALOG_LINK_SCHEMA as Rule,
-    stage: obj({ width: { const: 1600 }, height: { const: 900 } }), shots: arr(shot, 500, 1) },['presentationCatalog','category']) };
+    stage: obj({ width: { const: 1600 }, height: { const: 900 } }), shots: arr(shot, 500, 1), musicTracks: arr(music, 100) },['presentationCatalog','category','musicTracks']) };
 export function isSafeAssetRef(value: unknown): value is `library://${string}` {
   if (typeof value !== 'string' || !value.startsWith('library://') || value.length > 1024) return false;
   const relative = value.slice(10);
@@ -82,11 +87,22 @@ export function validationIssues(value: unknown): string[] {
   if (doc.schemaVersion === 1 && hasV2Features(doc)) issues.push('Les rôles (ennemi, objet) ou mouvements nécessitent schemaVersion: 2.');
   if (doc.schemaVersion < 3 && hasV3Features(doc)) issues.push('Les nouvelles animations et le texte animé nécessitent schemaVersion: 3.');
   const unique = (id: string) => { if (allIds.has(id)) issues.push(`Identifiant répété : ${id}.`); allIds.add(id); };
+  for (const track of doc.musicTracks ?? []) {
+    unique(track.id);
+    const [start, end] = musicRange(doc, track.startShotId, track.endShotId);
+    if (start < 0 || end < start) issues.push('Musique : les plans de début et de fin doivent exister et être dans cet ordre.');
+    if (!isAudio(track.asset)) issues.push('Musique : format audio non pris en charge.');
+  }
   for (const shot of doc.shots) {
     const imageRef = (value: string | null) => { if (value && !isImage(value)) issues.push(`${shot.name} : la source graphique n’est pas une image prise en charge.`); };
     imageRef(shot.background.asset); shot.actors.forEach(a => imageRef(a.asset)); shot.bubbles.forEach(b => imageRef(b.frameAsset));
     if (shot.audio && !isAudio(shot.audio.asset)) issues.push(`${shot.name} : format audio non pris en charge.`);
     unique(shot.id); shot.actors.forEach(a => unique(a.id)); shot.bubbles.forEach(b => unique(b.id));
+    for (const cue of shot.sounds ?? []) {
+      unique(cue.id);
+      if (!isAudio(cue.asset)) issues.push(`${shot.name} : format du bruitage non pris en charge.`);
+      if (cue.event === 'shot_start' ? cue.targetId !== '' : !(cue.event === 'bubble_open' ? shot.bubbles : shot.actors).some(o => o.id === cue.targetId)) issues.push(`${shot.name} : cible du son introuvable.`);
+    }
     if (shot.dialogueStart > shot.duration) issues.push(`${shot.name} : début des dialogues après la durée minimale.`);
     if (shot.transition.duration > shot.duration) issues.push(`${shot.name} : transition plus longue que le plan.`);
     for (const b of shot.bubbles) {

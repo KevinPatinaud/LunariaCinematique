@@ -12,9 +12,9 @@ export function ExitInspector({actor, change, duration, preview}: {actor: Actor;
       onChange={e => change({exit: {...exit, preset: e.target.value as ExitPreset}})}>
       {Object.entries(labels).map(([key, text]) => <option key={key} value={key}>{text}</option>)}</select></label>
     {exit.preset !== 'none' && <><div className="field-row">
-      <label className="field"><span>Début dans le plan (s)</span><NumberInput label="Début de la sortie" min={0} max={300} value={exit.start} onCommit={start => change({exit: {...exit, start}}, 'exit-start')}/></label>
       <label className="field"><span>Durée (s)</span><NumberInput label="Durée de la sortie" min={0.1} max={10} value={exit.duration} onCommit={duration => change({exit: {...exit, duration}}, 'exit-duration')}/></label>
-    </div><p className="field-hint">Comptée depuis le début du plan. Une fois sorti, l’élément reste invisible.</p>
+      <label className="field"><span>Délai de disparition (s)</span><NumberInput label="Délai de disparition" min={0} max={300} value={exit.start} onCommit={start => change({exit: {...exit, start}}, 'exit-start')}/></label>
+    </div><p className="field-hint">Le délai commence au début du plan. Une fois sorti, l’élément reste invisible.</p>
       {exit.start + exit.duration > duration && <p className="inline-warning">La sortie dépasse la durée minimale du plan. Allonge le plan pour la voir entièrement sans attente de dialogue.</p>}
     </>}
     <button className="button subtle full" onClick={preview}><Icon name="play" size={14}/> Tester les animations de l’élément</button>

@@ -23,6 +23,7 @@ export function combatIssues(p:GameProject):GameIssue[]{
   if(a.target==='self'&&(a.selection!=='one'||a.rowRadius!==0))error(path,'Une attaque sur soi cible uniquement son porteur.');
   if(a.excludeSelf&&a.target!=='ally')error(path,'L’exclusion du porteur concerne uniquement une attaque sur allié.');
   if(a.requiresActiveAttack&&a.target!=='ally')error(path,'La cible en cours d’attaque concerne uniquement un soutien allié.');
+  if(a.allowBehind&&(a.target!=='opponent'||a.delivery!=='projectile'))error(path,'Le tir dans les deux sens exige un projectile visant un adversaire.');
   if(a.target==='opponent'&&a.priority==='wounded')error(path,'La priorité « allié blessé » ne s’applique pas à un adversaire.');
   for(const id of a.effects){const e=effects.get(id);if(!e){error(path,'Résultat absent : '+id);continue;}
    if(BENEFICIAL.includes(e.kind)===(a.target==='opponent'))error(path,`${e.name} : cible incompatible (soin/protection sur allié, dégâts/altérations sur adversaire).`);

@@ -1,5 +1,5 @@
 import type { GameProject } from './types.js';
-import { newId } from './types.js';
+import { activeEnemies, newId } from './types.js';
 /** Bounded data-only rules. No source code, eval, recursion or executable expression. */
 export type Team = 'plants'|'enemies';
 export type Compare = 'eq'|'ne'|'lt'|'lte'|'gt'|'gte';
@@ -34,7 +34,7 @@ export function newAction(type:ActionType,project:GameProject,self=false):LogicA
  case 'cinematic':return {...common,cinematicId:project.campaign?.cinematics[0]?.id??'',skippable:true};
  case 'sound':return {...common,sound:'wave'};
  case 'shake':return {...common,amount:5,duration:.4};
- case 'spawn':return {...common,enemyId:project.balance.enemies[0].id,count:3,lane:-1,interval:1};
+ case 'spawn':return {...common,enemyId:(activeEnemies(project.balance.enemies)[0]??project.balance.enemies[0]).id,count:3,lane:-1,interval:1};
  case 'set_variable':case 'add_variable':return {...common,variableId:project.logic?.variables[0]?.id??'',value:1};
  case 'use_ability':return {...common,target,speciesId:'',abilityId:project.combat?.abilities[0]?.id??''};
  case 'set_ability':return {...common,target,speciesId:'',abilityId:project.combat?.abilities[0]?.id??'',enabled:true};

@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, mkdir, symlink, rm } from 'node:fs/promises';
 import os from 'node:os'; import path from 'node:path';
 import {seedProject} from './fixtures/seed40.js';
-import {newLevel,cloneLevel,totalEnemies,waveSchedule,damageAfterProtection,replaceWaves, OBJECTIVES, type GameProject} from '../src/shared/game/types.js';
+import {seedProject as mainSeedProject} from '../src/shared/game/seed.js';
+import {activeEnemies,enemyChoices,defaultInvasiveFoci,newLevel,cloneLevel,totalEnemies,waveSchedule,damageAfterProtection,replaceWaves, OBJECTIVES, type GameProject} from '../src/shared/game/types.js';
+import {compileCampaign} from '../src/shared/game/campaign.js';
 import {gameIssues,parseGameProject} from '../src/shared/game/validation.js';
 import {presentationAssets} from '../src/shared/presentation/runtime.js';
 import {GameDocuments,publishGameProject} from '../src/main/gameDocuments.js';
@@ -15,14 +17,63 @@ const good=(fn:(p:GameProject)=>void)=>assert.equal(errors(change(fn)).length,0)
 const bad=(fn:(p:any)=>void)=>assert.ok(errors(change(fn)).length>0);
 
 test('starter: 40 levels / 28 global plants / 13 global enemies, valid without warnings',()=>{const p=valid();assert.equal(p.levels.length,40);assert.equal(p.balance.plants.length,28);assert.equal(p.balance.enemies.length,13);assert.deepEqual(gameIssues(p),[]);});
+test('archiving an enemy preserves its saved data and existing level references',async()=>fixture(async root=>{
+ const p=valid(),enemy=p.balance.enemies[0],before=structuredClone(enemy),level=p.levels.find(l=>l.waves.some(w=>w.groups.some(g=>g.enemyId===enemy.id)))!;
+ enemy.archived=true;
+ assert.equal(errors(p).length,0);
+ assert.ok(!activeEnemies(p.balance.enemies).some(x=>x.id===enemy.id));
+ assert.ok(!enemyChoices(p.balance.enemies).some(x=>x.id===enemy.id));
+ assert.ok(enemyChoices(p.balance.enemies,enemy.id).some(x=>x.id===enemy.id));
+ const saved=await new GameDocuments(root).save(p,'',path.join(root,'archived.game.json'));
+ const reopened=(await new GameDocuments(root).open(saved.path)).project;
+ assert.deepEqual(reopened.balance.enemies[0],{...before,archived:true});
+ assert.ok(reopened.levels.some(l=>l.id===level.id&&l.waves.some(w=>w.groups.some(g=>g.enemyId===enemy.id))));
+ const published=compileCampaign(reopened);
+ assert.equal(published.balance.enemies.length,reopened.balance.enemies.length);
+ assert.deepEqual(published.balance.enemies[0],before);
+ assert.equal(reopened.balance.enemies[0].archived,true);
+}));
+test('Plaque placement is authored per wave as a fixed cell or bounded random zone',()=>{
+ const p=mainSeedProject(),level=newLevel(['radish'],'plaque');
+ const group=level.waves[0].groups[0];group.count=2;group.start=1.25;group.interval=2;
+ group.placement={rowMin:1,rowMax:3,colMin:2,colMax:5};p.levels=[level];
+ assert.deepEqual(errors(p),[]);
+ assert.deepEqual(waveSchedule(level.waves[0]).map(a=>a.at),[1.25,3.25]);
+ assert.deepEqual(waveSchedule(level.waves[0])[0].placement,group.placement);
+ assert.equal(p.balance.enemies.find(e=>e.id==='plaque')?.speed,0);
+ assert.equal(p.combat!.abilities.find(a=>a.id==='ab_plaque_spit')?.allowBehind,true);
+ assert.equal(p.combat!.abilities.find(a=>a.id==='ab_plaque_spit')?.priority,'nearest_right');
+ assert.equal(p.combat!.abilities.find(a=>a.id==='ab_plaque_spit')?.rowRadius,0);
+ group.placement={rowMin:2,rowMax:2,colMin:6,colMax:6};
+ assert.deepEqual(errors(p),[]);
+ delete group.placement;assert.ok(errors(p).some(i=>i.message.includes('Plaque')));
+ group.placement={rowMin:3,rowMax:1,colMin:2,colMax:5};assert.ok(errors(p).some(i=>i.message.includes('inversée')));
+});
+test('default invasive foci use the Plaque canette reinforcement every ten seconds',()=>{
+ const p=mainSeedProject(),level=newLevel(['radish'],'runner');p.levels=[level];
+ level.objective={type:'invasive_foci',target:0};level.invasiveFoci=defaultInvasiveFoci();
+ assert.deepEqual(errors(p),[]);
+ assert.equal(level.invasiveFoci.reinforcementEnemyId,'runner');
+ assert.equal(level.invasiveFoci.interval,10);
+ assert.deepEqual(compileCampaign(p).levels[0].invasiveFoci,level.invasiveFoci);
+});
 test('one operation type covers the former work missions',()=>{
- const p=valid();assert.deepEqual(OBJECTIVES,['defend','protect_cell','operation','rescue']);
+ const p=valid();assert.deepEqual(OBJECTIVES,['defend','advance','invasive_foci','protect_cell','operation','rescue']);
  assert.equal(p.levels.filter(level=>level.objective.type==='operation').length,30);
  const level=p.levels.find(level=>level.objective.type==='operation')!;
  assert.ok(level.objective.target>0);assert.ok(level.objectiveText.length>0);
  level.objective.target=0;assert.ok(errors(p).some(issue=>issue.message.includes('opération')));
  level.objective={type:'escort' as GameProject['levels'][number]['objective']['type'],target:60};
  assert.ok(errors(p).some(issue=>issue.path.includes('objective.type')));
+});
+test('advance objective is authored and published with an automatic five-lane target',()=>{
+ const p=valid(),level=p.levels[0];
+ level.objective={type:'advance',target:0};level.objectiveText='Conquérir les cinq allées.';
+ assert.deepEqual(errors(p),[]);
+ assert.deepEqual(parseGameProject(p).levels[0].objective,level.objective);
+ assert.deepEqual(compileCampaign(p).levels[0].objective,level.objective);
+ level.objective.target=5;
+ assert.ok(errors(p).some(issue=>issue.message.includes('cible automatique')));
 });
 test('official companion name is Rose everywhere in the authored campaign',()=>{const p=valid();assert.equal(p.balance.plants.find(x=>x.id==='rose')?.name,'Rose');assert.equal(p.balance.enemies.find(x=>x.id==='corrupted_rose')?.name,'Rose contaminée');assert.doesNotMatch(JSON.stringify(p),/\bRonce\b/);assert.doesNotMatch(JSON.stringify(p),/\bronce\b/);});
 test('seed returns independent deep clones',()=>{const a=valid();a.balance.plants[0].damage=500;assert.notEqual(valid().balance.plants[0].damage,500);});
@@ -90,7 +141,7 @@ test('recovery persists semantic drafts and clear is effective after restart',()
 test('recovery keeps an unfinished protected cell while its image is being chosen',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.levels[0].objective={type:'protect_cell',target:0};p.levels[0].protectedCell={row:2,col:1,image:'' as `library://${string}`,maxHp:300,armor:0,resistances:{physical:0,piercing:0,toxic:0}};await d.recover(p);assert.deepEqual((await d.bootstrap()).recovery?.levels[0].protectedCell,p.levels[0].protectedCell);assert.throws(()=>parseGameProject(p));}));
 test('recovery rejects structurally invalid objects',()=>fixture(async root=>{await assert.rejects(new GameDocuments(root).recover({bad:1}),/structure/);}));
 async function game(root:string){await mkdir(path.join(root,'LunariaArtLibrary'),{recursive:true});await writeFile(path.join(root,'LunariaArtLibrary/pixel.png'),PIXEL_PNG);for(const f of ['domain/presentation/animation_registry.gd','app/controllers/campaign_flow.gd']){await mkdir(path.dirname(path.join(root,f)),{recursive:true});await writeFile(path.join(root,f),'extends RefCounted');}await mkdir(path.join(root,'domain/logic'),{recursive:true});await writeFile(path.join(root,'domain/logic/event_runtime.gd'),'extends RefCounted');await mkdir(path.join(root,'content/design'),{recursive:true});await writeFile(path.join(root,'project.godot'),'[application]');await writeFile(path.join(root,'content/design/game_content.gd'),'extends RefCounted');}
-test('publish replaces only shared game document and creates backup',()=>fixture(async root=>{await game(root);const p=fixturePresentation(valid(),'library://pixel.png'),file=await publishGameProject(p,root);p.title='New balance';await publishGameProject(p,root);assert.equal(JSON.parse(await readFile(file,'utf8')).title,'New balance');assert.equal(JSON.parse(await readFile(file+'.bak','utf8')).title,valid().title);}));
+test('publish replaces only shared game document and creates backup',()=>fixture(async root=>{await game(root);const p=fixturePresentation(valid(),'library://pixel.png');p.balance.enemies[0].archived=true;const file=await publishGameProject(p,root);p.title='New balance';await publishGameProject(p,root);const published=JSON.parse(await readFile(file,'utf8'));assert.equal(published.title,'New balance');assert.equal(published.balance.enemies[0].id,p.balance.enemies[0].id);assert.equal(published.balance.enemies[0].hp,p.balance.enemies[0].hp);assert.equal(published.balance.enemies[0].archived,undefined);assert.equal(JSON.parse(await readFile(file+'.bak','utf8')).title,valid().title);}));
 test('publisher requires the new runtime marker',()=>fixture(async root=>{await writeFile(path.join(root,'project.godot'),'x');await assert.rejects(publishGameProject(fixturePresentation(valid(),'library://pixel.png'),root),/V1.10/);}));
 test('publisher validates before writing',()=>fixture(async root=>{await game(root);await assert.rejects(publishGameProject(change(p=>p.levels[0].hp=10),root),/interdit/);}));
 test('publisher refuses destination symlinks',t=>fixture(async root=>{await game(root);await writeFile(path.join(root,'keep.json'),'untouched');try{await symlink(path.join(root,'keep.json'),path.join(root,'content/design/game_content.json'));}catch(error){if(process.platform==='win32'&&['EPERM','EACCES'].includes((error as NodeJS.ErrnoException).code??'')){t.skip('Création de liens symboliques non autorisée sur cet hôte Windows.');return;}throw error;}await assert.rejects(publishGameProject(fixturePresentation(valid(),'library://pixel.png'),root),/non régulière/);assert.equal(await readFile(path.join(root,'keep.json'),'utf8'),'untouched');}));
