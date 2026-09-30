@@ -1481,6 +1481,408 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
           "attach": "launch"
         }
       ]
+    },
+    {
+      "id": "rose_walk",
+      "name": "Rose — marche",
+      "kind": "frames",
+      "frames": [
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 109,
+            "y": 62,
+            "width": 307,
+            "height": 399
+          },
+          "anchor": {
+            "x": 0.5368340168046297,
+            "y": 0.9924812030075187
+          }
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 621,
+            "y": 62,
+            "width": 307,
+            "height": 399
+          },
+          "anchor": {
+            "x": 0.45960346256736784,
+            "y": 0.9899749373433584
+          }
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 1133,
+            "y": 62,
+            "width": 307,
+            "height": 399
+          },
+          "anchor": {
+            "x": 0.43249598702404524,
+            "y": 0.9949874686716792
+          }
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 109,
+            "y": 574,
+            "width": 307,
+            "height": 399
+          },
+          "anchor": {
+            "x": 0.5576693036038036,
+            "y": 0.924812030075188
+          }
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 621,
+            "y": 574,
+            "width": 307,
+            "height": 399
+          },
+          "anchor": {
+            "x": 0.48379048515370865,
+            "y": 0.9273182957393483
+          }
+        },
+        {
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 1133,
+            "y": 574,
+            "width": 307,
+            "height": 399
+          },
+          "anchor": {
+            "x": 0.45521551001542526,
+            "y": 0.9273182957393483
+          }
+        }
+      ],
+      "duration": 0.84,
+      "loop": true,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "none",
+        "amplitude": 0,
+        "period": 0.84
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.15
+        },
+        {
+          "id": "launch",
+          "x": 0.82,
+          "y": 0.4
+        }
+      ],
+      "markers": [],
+      "ownerSpeciesId": "rose"
+    },
+    {
+      "id": "radish_walk",
+      "name": "Radis — marche",
+      "kind": "frames",
+      "frames": [
+        {
+          "asset": "library://02_characters/radis/stage_01/animations/radish_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 53,
+            "y": 46,
+            "width": 441,
+            "height": 421
+          },
+          "anchor": {
+            "x": 0.4003421643902129,
+            "y": 0.995249406175772
+          }
+        },
+        {
+          "asset": "library://02_characters/radis/stage_01/animations/radish_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 565,
+            "y": 46,
+            "width": 441,
+            "height": 421
+          },
+          "anchor": {
+            "x": 0.3927053004494999,
+            "y": 0.995249406175772
+          }
+        },
+        {
+          "asset": "library://02_characters/radis/stage_01/animations/radish_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 1077,
+            "y": 46,
+            "width": 441,
+            "height": 421
+          },
+          "anchor": {
+            "x": 0.3944029645645295,
+            "y": 0.995249406175772
+          }
+        },
+        {
+          "asset": "library://02_characters/radis/stage_01/animations/radish_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 53,
+            "y": 558,
+            "width": 441,
+            "height": 421
+          },
+          "anchor": {
+            "x": 0.40553451863029816,
+            "y": 0.9904988123515439
+          }
+        },
+        {
+          "asset": "library://02_characters/radis/stage_01/animations/radish_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 565,
+            "y": 558,
+            "width": 441,
+            "height": 421
+          },
+          "anchor": {
+            "x": 0.3993290186817083,
+            "y": 0.9881235154394299
+          }
+        },
+        {
+          "asset": "library://02_characters/radis/stage_01/animations/radish_walk_sheet_v01.png",
+          "duration": 0.14,
+          "region": {
+            "x": 1077,
+            "y": 558,
+            "width": 441,
+            "height": 421
+          },
+          "anchor": {
+            "x": 0.42376222647012113,
+            "y": 0.9881235154394299
+          }
+        }
+      ],
+      "duration": 0.84,
+      "loop": true,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "none",
+        "amplitude": 0,
+        "period": 0.84
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.15
+        },
+        {
+          "id": "launch",
+          "x": 0.82,
+          "y": 0.4
+        }
+      ],
+      "markers": [],
+      "ownerSpeciesId": "radish"
+    },
+    {
+      "id": "hazel_walk",
+      "name": "Noisetier — marche",
+      "kind": "frames",
+      "frames": [
+        {
+          "asset": "library://02_characters/noisetier/stage_01/animations/hazel_walk_sheet_v01.png",
+          "duration": 0.18,
+          "region": {
+            "x": 74,
+            "y": 39,
+            "width": 378,
+            "height": 442
+          },
+          "anchor": {
+            "x": 0.5369829984516792,
+            "y": 0.9773755656108597
+          }
+        },
+        {
+          "asset": "library://02_characters/noisetier/stage_01/animations/hazel_walk_sheet_v01.png",
+          "duration": 0.18,
+          "region": {
+            "x": 586,
+            "y": 39,
+            "width": 378,
+            "height": 442
+          },
+          "anchor": {
+            "x": 0.4670682475254536,
+            "y": 0.9705882352941176
+          }
+        },
+        {
+          "asset": "library://02_characters/noisetier/stage_01/animations/hazel_walk_sheet_v01.png",
+          "duration": 0.18,
+          "region": {
+            "x": 1098,
+            "y": 39,
+            "width": 378,
+            "height": 442
+          },
+          "anchor": {
+            "x": 0.4491239345259382,
+            "y": 0.9751131221719457
+          }
+        },
+        {
+          "asset": "library://02_characters/noisetier/stage_01/animations/hazel_walk_sheet_v01.png",
+          "duration": 0.18,
+          "region": {
+            "x": 74,
+            "y": 551,
+            "width": 378,
+            "height": 442
+          },
+          "anchor": {
+            "x": 0.5353648115757781,
+            "y": 0.995475113122172
+          }
+        },
+        {
+          "asset": "library://02_characters/noisetier/stage_01/animations/hazel_walk_sheet_v01.png",
+          "duration": 0.18,
+          "region": {
+            "x": 586,
+            "y": 551,
+            "width": 378,
+            "height": 442
+          },
+          "anchor": {
+            "x": 0.4721542027103802,
+            "y": 0.995475113122172
+          }
+        },
+        {
+          "asset": "library://02_characters/noisetier/stage_01/animations/hazel_walk_sheet_v01.png",
+          "duration": 0.18,
+          "region": {
+            "x": 1098,
+            "y": 551,
+            "width": 378,
+            "height": 442
+          },
+          "anchor": {
+            "x": 0.4526352590033613,
+            "y": 0.9932126696832579
+          }
+        }
+      ],
+      "duration": 1.08,
+      "loop": true,
+      "anchor": {
+        "x": 0.5,
+        "y": 1
+      },
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "rotation": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "opacity": 1
+      },
+      "motion": {
+        "preset": "none",
+        "amplitude": 0,
+        "period": 1.08
+      },
+      "attachments": [
+        {
+          "id": "center",
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "id": "feet",
+          "x": 0.5,
+          "y": 1
+        },
+        {
+          "id": "head",
+          "x": 0.5,
+          "y": 0.15
+        },
+        {
+          "id": "launch",
+          "x": 0.82,
+          "y": 0.4
+        }
+      ],
+      "markers": [],
+      "ownerSpeciesId": "hazel"
     }
   ],
   "profiles": [
@@ -1549,6 +1951,10 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
         {
           "slot": "attack",
           "animationId": "radish_throw"
+        },
+        {
+          "slot": "move",
+          "animationId": "radish_walk"
         }
       ],
       "events": []
@@ -1560,6 +1966,10 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
         {
           "slot": "attack",
           "animationId": "rose_punch_combo"
+        },
+        {
+          "slot": "move",
+          "animationId": "rose_walk"
         }
       ],
       "events": []
@@ -1567,7 +1977,12 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
     {
       "id": "profile_hazel",
       "name": "Profil hazel",
-      "slots": [],
+      "slots": [
+        {
+          "slot": "move",
+          "animationId": "hazel_walk"
+        }
+      ],
       "events": []
     },
     {
@@ -1970,7 +2385,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Quatre poses et ancrages de pieds repris de radish_art.gd. La libération est désormais au marqueur release."
+    "note": "Radis : repos et tir d’origine conservés, déplacement en six poses."
   },
   "rose": {
     "sprite": {
@@ -1991,7 +2406,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Design officiel de Rose détouré sur transparence pour l’accueil, les cartes et le combat."
+    "note": "Rose : repos d’origine, combo de coups conservé et déplacement en six poses."
   },
   "hazel": {
     "sprite": {
@@ -2012,7 +2427,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Image de repos du rempart ; Noisetier se régénère sans attaquer."
+    "note": "Noisetier : défense et régénération personnelle ; déplacement en six poses avec bouclier."
   },
   "fern": {
     "sprite": {
