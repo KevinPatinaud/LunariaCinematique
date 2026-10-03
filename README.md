@@ -1,24 +1,32 @@
-# Lunaria Studio V1.10 — présentation pilotée par le Studio
+# Lunaria Studio
 
-Sources complètes actualisées depuis V1.9. Profils par espèce, catalogue commun d’animations, atlas/séquences/procédural, marqueurs, audio et VFX, publication partagée et réutilisation cinématique.
+Application Electron/React/TypeScript pour créer les **niveaux, le parcours, les cinématiques et la présentation de combat** de Lunaria. Version npm actuelle : **1.10.0**, Node **>= 22.12.0**. Le fichier `package-lock.json` fixe les dépendances reproductibles.
 
-Le projet d’auteur `lunaria.game.json` contient maintenant les niveaux, le parcours et les documents complets des cinématiques. Le Studio ouvre, modifie et enregistre ce seul fichier. Les images restent référencées dans `LunariaArtLibrary`.
+## Démarrer
 
-Au lancement de l’application de bureau, le dernier projet ouvert ou enregistré se recharge automatiquement. Si une copie locale non enregistrée existe, le Studio propose de la reprendre après avoir chargé le projet.
+Depuis `C:/dev/Lunaria cinematic studio` :
 
-Le bouton **Enregistrer le projet**, présent dans la barre commune aux deux modes, écrit les niveaux et toutes les cinématiques dans le même JSON. Au premier enregistrement, il demande un emplacement ; ensuite, il met à jour ce fichier. Pour créer volontairement un second fichier, ouvrir **Récents → Créer une copie du projet…**. Le menu **Publier et exporter**, dans Niveaux, permet de publier la campagne ou d’exporter le jeu pour PC et Android.
+```powershell
+npm ci
+npm test
+npm run build
+npm start
+```
 
-Le bouton **Vue du projet** donne accès à la création de niveaux et de cinématiques, au parcours de campagne, à la bibliothèque et aux vérifications. La barre commune indique si le projet est enregistré ou modifié. Les outils **Animations et sons** se déplient à la demande ; une recherche par nom ou rôle permet de retrouver les personnages, même sans saisir les accents.
+`npm run build` inclut le typecheck. `npm run dev` démarre le développement Electron ; `npm run dev:web` ne valide pas le pont natif ni l’accès aux fichiers. `npm run test:e2e:built -- <fichier>` exécute les scénarios Electron après compilation.
 
-- [Installation et utilisation](docs/GUIDE_V1_10.md)
-- [Architecture et contrats](docs/ARCHITECTURE_V1_10.md)
-- [Rapport de validation](docs/TEST_REPORT_V1_10.md)
-- [Atelier Radis / Rose](examples/Atelier_Presentation_V1_10/README.md)
+## Éditer Lunaria
 
-Extraire les projets dans de nouveaux dossiers et conserver les originaux. Dans le Studio, relier **`game/LunariaArtLibrary`** pour travailler sur la présentation de combat. Le petit exemple autonome `example-library` ne remplace pas cette bibliothèque.
+Ouvrir **`C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json`**. Connecter **`C:/dev/Lunaria/LunariaArtLibrary`**, la bibliothèque source. Le projet unique conserve films complets, niveaux et catalogues. Un nouveau document démarre sans niveau ; cela ne signifie pas que la campagne existante est vide.
 
-Le projet initial et le contenu actif du jeu ne contiennent plus de missions par défaut. L’introduction cinématique reste dans le parcours. La carte du jeu crée ses onglets selon les continents qui possèdent des missions ; un continent vide n’apparaît pas. Les anciens projets liés à des fichiers de cinématiques séparés sont importés dans le document unique lors de leur ouverture dans l’application de bureau.
+Enregistrer puis utiliser **Niveaux → Publier et exporter → Publier la campagne**, vers **`C:/dev/Lunaria/game`**. Le JSON compilé `game/content/design/game_content.json` et le miroir `game/LunariaArtLibrary` sont des sorties de publication. Les médias restent des références exactes `library://...` ; tout renommage doit atteindre les projets et films concernés.
 
-## Son des cinématiques
+Le jeu utilise toutes les plantes autorisées par le niveau dès son début, sans composition d’équipe. Les espèces et attaques se règlent globalement ; les terrains restent indépendants par niveau. Archiver un ennemi conserve ses données et références.
 
-Le bouton **Son** permet de choisir une plage de plans pour chaque musique, de régler les fondus et de lier les bruitages aux dialogues et animations. [Guide des musiques et événements sonores](docs/SON_CINEMATIQUES.md).
+## Documentation
+
+Lire l’[index](docs/README.md), le [guide courant](docs/GUIDE_V1_10.md), l’[architecture](docs/ARCHITECTURE.md), les [contrats de campagne](docs/ARCHITECTURE_CAMPAGNE.md), de [présentation](docs/ARCHITECTURE_V1_10.md) et de [cinématique](docs/FORMAT.md), puis l’[intégration Godot](docs/INTEGRATION_GODOT.md). Les [validations](docs/VALIDATION.md) distinguent contrôles réussis, échecs et essais restant à faire.
+
+Les rapports et guides des anciennes livraisons sont archivés et signalés comme tels. L’[atelier](examples/Atelier_Presentation_V1_10/README.md) est un exemple isolé, pas la campagne active. Les sources Godot sous `godot/` servent à maintenir le lecteur commun ; le jeu réel reste dans `C:/dev/Lunaria/game`.
+
+Les [animations de Plaque et Canette](docs/PLAQUE_CANETTE.md) se règlent directement dans leur fiche d’ennemi et utilisent les nouvelles planches de combat de la bibliothèque source.

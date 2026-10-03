@@ -1,14 +1,13 @@
-# Lecteur Godot V1.5
+# Lecteur cinématique commun — projet de test Godot
 
-Copier **tout** `addons/lunaria_cinematics` dans le dossier `addons` du jeu.
+Ce mini-projet maintient `addons/lunaria_cinematics/` et les tests de parité mouvement, animation et audio. Le lecteur courant accepte les schémas 1 à 4 et inclut les entrées de bulle, catalogues de présentation et musiques multi-plans. Copier l’addon complet lorsqu’une intégration distincte le nécessite ; ne pas remplacer le projet réel de Lunaria par ce mini-projet.
 
-Guide : `../docs/INTEGRATION_GODOT.md`. Nouveaux fichiers v3 : animations de texte, nouvelles entrées/effets et sorties. **`CinematicText.gd` et le schéma JSON actualisé sont requis.** Les fichiers v1/v2 restent acceptés. Le rôle ennemi est une information de mise en scène, pas une création d’intelligence artificielle.
-
-Cette partie est fournie en sources et n’a pas été exécutée dans Godot pendant la livraison. Le mini-projet `project.godot` sert uniquement aux tests, pas à remplacer celui du jeu.
+Guide : [intégration Godot](../docs/INTEGRATION_GODOT.md). Les commandes ci-dessous se lancent depuis la racine du Studio avec Godot 4.7.2 :
 
 ```powershell
 godot --headless --path godot --script res://tests/motion_parity.gd
 godot --headless --path godot --script res://tests/animations_parity.gd
+godot --headless --path godot --script res://tests/audio_smoke.gd
 ```
 
-Les vecteurs de référence sont générés depuis TypeScript. Les scripts comparent les valeurs dans le moteur et préchargent le lecteur entier. Leur présence n’est pas une preuve de parité exécutée.
+Les vecteurs sont calculés depuis TypeScript. Le jeu intégré sous `C:/dev/Lunaria/game` possède aussi des suites de cinématiques et de campagne, lancées par `node tools/test.mjs` à la racine du dépôt Lunaria. Leur réussite ne signifie pas qu’un téléphone a été testé. Voir les [preuves datées](../docs/VALIDATION.md).

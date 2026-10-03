@@ -1,5 +1,7 @@
 import type { GameProject } from './types.js';
 import type { BehaviorDefinition, BehaviorPhase } from './logic.js';
+import {PLASTIC_BAG_BEHAVIOR} from './plasticBag.js';
+import {CIGARETTE_BEHAVIOR} from './cigarette.js';
 /** Only authoring documents are initialized. Old player profiles are never migrated. */
 export function ensureLogic(p:GameProject):void{
  if(p.schemaVersion>=3)return;
@@ -7,6 +9,8 @@ export function ensureLogic(p:GameProject):void{
  const base=(id:string,name:string,team:'plants'|'enemies'):BehaviorDefinition=>({id,name,description:'',team,mode:'automatic',fallback:team==='plants'?'hold':'advance',stopToAttack:true,rules:[],phases:[phase(id+'_normal','Normal',100)]});
  const defender=base('ai_defender','Défenseur immobile','plants'),ground=base('ai_ground','Ennemi terrestre','enemies'),fixed=base('ai_fixed','Ennemi immobile','enemies');fixed.fallback='hold';
  const behaviors=[defender,ground,fixed];
+ if(p.balance.enemies.some(e=>e.id==='plastic_bag'))behaviors.push(structuredClone(PLASTIC_BAG_BEHAVIOR));
+ if(p.balance.enemies.some(e=>e.id==='cigarette'))behaviors.push(structuredClone(CIGARETTE_BEHAVIOR));
  // Replace former per-species native boss branches with explicit global data.
  for(const enemy of p.balance.enemies.filter(e=>['collector','pump','factory','devourer','corrupted_rose','furnace'].includes(e.id))){
  const id='ai_'+enemy.id,behavior=base(id,enemy.name+' — phases','enemies');behavior.description='Ancienne attaque spéciale représentée par des capacités globales. Les PV et dégâts de base ne changent pas entre niveaux.';
@@ -22,7 +26,7 @@ export function ensureLogic(p:GameProject):void{
   behaviors.push(behavior);
  }
  p.logic={behaviors,variables:[]};for(const s of p.balance.plants)s.behaviorId=defender.id;
- for(const s of p.balance.enemies)s.behaviorId=behaviors.some(b=>b.id==='ai_'+s.id)?'ai_'+s.id:s.id==='thorn_knot'?fixed.id:ground.id;
+ for(const s of p.balance.enemies)s.behaviorId=s.id==='plastic_bag'?PLASTIC_BAG_BEHAVIOR.id:s.id==='cigarette'?CIGARETTE_BEHAVIOR.id:behaviors.some(b=>b.id==='ai_'+s.id)?'ai_'+s.id:s.id==='thorn_knot'?fixed.id:ground.id;
  for(const level of p.levels)level.events??=[];
  p.schemaVersion=3;
 }

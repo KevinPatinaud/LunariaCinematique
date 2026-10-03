@@ -5,14 +5,26 @@
 import { STAGE, type Actor, type MotionEffect, type MotionPreset, type ObjectMovement } from './model.js';
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const smooth = (value: number) => { const t = clamp01(value); return t * t * (3 - 2 * t); };
+/** Falling arrival: three diminishing rebounds, ending exactly at the authored pose. */
+const bounceOut = (value: number) => {
+  let t = clamp01(value);
+  if (t < 1 / 2.75) return 7.5625 * t * t;
+  if (t < 2 / 2.75) { t -= 1.5 / 2.75; return 7.5625 * t * t + 0.75; }
+  if (t < 2.5 / 2.75) { t -= 2.25 / 2.75; return 7.5625 * t * t + 0.9375; }
+  t -= 2.625 / 2.75; return 7.5625 * t * t + 0.984375;
+};
 export const motionLabels: Record<MotionPreset, string> = {
   none: 'Aucun effet', float: 'Flottement', sway: 'Balancement', pulse: 'Respiration',
   spin: 'Rotation continue', shake: 'Tremblement', bounce: 'Petit bond',
-  nod: 'Acquiescement', recoil: 'Recul · impact', heartbeat: 'Battement', flutter: 'Virevolte'
+  nod: 'Acquiescement', recoil: 'Recul · impact', heartbeat: 'Battement', flutter: 'Virevolte',
+  orbit: 'Orbite', figure8: 'Vol en huit', zigzag: 'Zigzag', tumble: 'Roulade',
+  surprise: 'Sursaut', jelly: 'Oscillation élastique'
 };
 export function newMotion(preset: MotionPreset = 'float'): MotionEffect {
-  const period = preset === 'spin' ? 8 : preset === 'recoil' ? 0.7 : preset === 'shake' ? 1 : preset === 'bounce' ? 1.8 : 3;
-  return { preset, intensity: 0.35, period, delay: 0, loop: preset !== 'recoil' && preset !== 'nod', reverse: false };
+  const period = preset === 'spin' ? 8 : preset === 'recoil' ? 0.7 : preset === 'surprise' ? 0.9 :
+    preset === 'shake' ? 1 : preset === 'bounce' ? 1.8 : preset === 'jelly' ? 1.6 : preset === 'tumble' ? 2 : 3;
+  return { preset, intensity: 0.35, period, delay: 0,
+    loop: !['recoil', 'nod', 'tumble', 'surprise'].includes(preset), reverse: false };
 }
 export function newMovement(actor: Pick<Actor, 'x' | 'width'>): ObjectMovement {
   return { enabled: true, dx: actor.x + actor.width / 2 > 0.55 ? -0.2 : 0.2, dy: 0,
@@ -52,6 +64,9 @@ export function actorPose(actor: Actor, elapsed: number): ActorPose {
     case 'top': pose.y += (-actor.height * STAGE.height - pose.y) * t; break;
     case 'bottom': pose.y += (STAGE.height - pose.y) * t; break;
     case 'shrink': pose.scale *= 1 - t; pose.opacity *= 1 - t; break;
+    case 'spiral': pose.rotation += 360 * t; pose.scale *= 1 - t; pose.opacity *= 1 - t; break;
+    case 'rise': pose.y -= 240 * t; pose.opacity *= 1 - t; break;
+    case 'fall': pose.y += 240 * t; pose.opacity *= 1 - t; break;
   }
   // Rotated silhouettes may still overlap the frame, so explicitly hide the completed exit.
   if (t >= 1) pose.opacity = 0;
@@ -74,6 +89,11 @@ function activePose(actor: Actor, time: number): ActorPose {
       pose.scale = Math.max(0, 1 + (c + 1) * u ** 3 + c * u ** 2);
       pose.opacity *= clamp01(raw * 4); break;
     }
+    case 'drop':
+      pose.y = -actor.height * STAGE.height + (pose.y + actor.height * STAGE.height) * bounceOut(raw);
+      pose.opacity *= clamp01(raw * 8); break;
+    case 'spiral': pose.rotation -= 360 * (1 - p); pose.scale = 0.15 + 0.85 * p; pose.opacity *= p; break;
+    case 'rise': pose.y += 100 * (1 - p); pose.scale = 0.25 + 0.75 * p; pose.opacity *= p; break;
   }
   const travel = travelOffset(actor, time);
   pose.x += travel.x; pose.y += travel.y;
@@ -103,6 +123,25 @@ function activePose(actor: Actor, time: number): ActorPose {
     }
     case 'heartbeat': pose.scale *= 1 + 0.22 * strength * sin ** 8; break;
     case 'flutter': pose.y -= 25 * strength * sin; pose.rotation += 15 * strength * Math.sin(phase * 3); break;
+    case 'orbit': pose.x += 65 * strength * sin; pose.y -= 40 * strength * (1 - Math.cos(phase)); break;
+    case 'figure8': pose.x += 75 * strength * sin; pose.y -= 35 * strength * Math.sin(phase * 2); break;
+    case 'zigzag':
+      pose.x += 70 * strength * (2 / Math.PI) * Math.asin(Math.sin(phase * 2));
+      pose.y -= 35 * strength * Math.sin(phase / 2) ** 2; break;
+    case 'tumble': {
+      // Roll out and back: even partial intensity returns to the original angle without a snap.
+      const roll = Math.sin(phase / 2) ** 2 * strength * (m.reverse ? -1 : 1);
+      pose.x += 120 * roll; pose.rotation += 360 * roll; break;
+    }
+    case 'surprise': {
+      const jump = Math.sin(phase / 2) ** 2 * strength;
+      pose.y -= 95 * jump; pose.scale *= 1 + 0.18 * jump;
+      pose.rotation += 16 * sin * jump; break;
+    }
+    case 'jelly': {
+      const elastic = Math.sin(phase * 3) * Math.sin(phase / 2) ** 2 * (1 - cycles % 1) * strength;
+      pose.scale *= 1 + 0.24 * elastic; pose.rotation += 14 * elastic; break;
+    }
   }
   return pose;
 }

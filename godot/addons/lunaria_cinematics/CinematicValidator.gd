@@ -113,7 +113,7 @@ static func validate(value: Variant, schema: Dictionary) -> Array[String]:
 		for actor: Dictionary in shot["actors"]:
 			images.append(actor["asset"])
 			if actor.has("animation") and (int(value.schemaVersion) < 4 or not value.has("presentationCatalog")): errors.append("Un acteur animé requiert le catalogue explicite et schemaVersion 4.")
-			if value["schemaVersion"] < 3 and (actor.has("exit") or actor["entry"]["preset"] in ["top", "pop", "zoom"] or str(actor.get("motion", {}).get("preset", "none")) in ["nod", "recoil", "heartbeat", "flutter"]):
+			if value["schemaVersion"] < 3 and (actor.has("exit") or actor["entry"]["preset"] in ["top", "pop", "zoom", "drop", "spiral", "rise"] or str(actor.get("motion", {}).get("preset", "none")) in ["nod", "recoil", "heartbeat", "flutter", "orbit", "figure8", "zigzag", "tumble", "surprise", "jelly"]):
 				errors.append("New actor animations require schemaVersion: 3.")
 			if value["schemaVersion"] == 1:
 				for field: String in ["role", "rotation", "pivot", "motion", "movement"]:

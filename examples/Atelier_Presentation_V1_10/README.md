@@ -1,15 +1,11 @@
-# Atelier V1.10 — une capacité, deux animations
+# Atelier de présentation — exemple isolé
 
-Ouvrir `atelier.game.json` dans le mode Niveaux. Relier la bibliothèque `game/LunariaArtLibrary` de l’archive du jeu. Choisir ce dossier `Atelier_Presentation_V1_10` comme dossier des cinématiques liées.
+Ouvrir `atelier.game.json` dans Lunaria Studio. Cet atelier montre profils partagés, animation de Radis, gestes de Rose, marqueurs et effets ; il ne constitue pas la campagne active de Lunaria. Ses paramètres d’équilibrage et catalogues anciens sont ceux de la démonstration V1.10, avec des identifiants historiques ; ils ne remplacent pas les règles du projet principal actuel, notamment Noisetier défensif.
 
-Le projet est indépendant de la campagne principale. Il contient une introduction de trois plans et un niveau. Radis et Rose utilisent tous deux `ab_basic_shot`, dont le slot demandé est `attack`. Radis résout son atlas original à quatre frames ; Rose résout son animation procédurale propre. La libération du tir vient du marqueur de la définition résolue.
+Connecter `C:/dev/Lunaria/LunariaArtLibrary` pour les médias courants. Les films autonomes du dossier restent importables par les chemins de compatibilité de l’éditeur. Si l’éditeur demande leur dossier autorisé, choisir ce dossier d’atelier. Enregistrer une copie du projet après import dans le document unique.
 
-Le son `sound_shoot` et le VFX `vfx_impact` sont placés dans les clips pour être réutilisables dans le film. Le son global de libération est volontairement retiré de cet atelier pour éviter un doublon. Le film ignore les marqueurs `release` : aucun projectile de combat, dégât, récompense ou avancement de campagne n’en découle.
+Publier uniquement vers une copie distincte du jeu : une publication remplace le parcours de destination. Pour le projet réel, utiliser `C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json`.
 
-Dans le film, le premier plan utilise deux profils d’espèce, le deuxième déplace un ennemi avec son slot move et une bulle attachée, le troisième associe une référence directe à `radish_throw` et une respiration par défaut. L’ennemi utilise son atlas réel et les slots attack/hit/death/spawn configurables dans sa fiche.
+Voir le guide courant du Studio et son contrat de présentation. Les anciens rapports V1.10 décrivent leur livraison d’époque ; la validation actuelle exige build, tests de publication, lecture Godot et inspection du rendu. Aucun exemple ou capture simulée ne prouve un essai Android physique.
 
-Publier sur une nouvelle extraction du jeu, puis relancer le moteur. Dans le niveau, placer Radis et Rose dans la voie centrale. Pour observer l’attaque ennemie, laisser au moins un Jeteur approcher d’une plante. Les paramètres de portée/dégâts de Rose et de PV/vitesse du Jeteur sont spécifiques à l’atelier ; ils n’ont pas été appliqués à la campagne principale.
-
-Vérification manuelle attendue : changer la durée d’une frame de Radis, enregistrer, prévisualiser, publier, retrouver le geste modifié en combat puis dans le film, sans toucher à un script Godot. Vérifier ensuite hit sans double libération, mort pendant préparation, pause/reprise, sons, points d’attache et disparition des effets.
-
-Publication Node avec les vrais fichiers : exécutée deux fois, 34 ressources uniques, une cinématique et un niveau. Lecture native et essai visuel : non exécutés dans l’environnement de réalisation. Voir `docs/TEST_REPORT_V1_10.md`.
+Références : [guide](../../docs/GUIDE_V1_10.md), [présentation](../../docs/ARCHITECTURE_V1_10.md), [validation](../../docs/VALIDATION.md).

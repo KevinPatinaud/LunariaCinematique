@@ -33,7 +33,7 @@ test('Plaque: choisir une case puis une zone, enregistrer et rouvrir le niveau',
   await page.getByRole('button',{name:'Vagues & ennemis'}).click();
   await page.getByLabel('Ennemi du groupe 1').selectOption('plaque');
   await expect(page.locator('.gd-plaque-placement p')).toContainText('Canette pressée');
-  await expect(page.locator('.gd-plaque-placement p')).toContainText('toutes les 10 secondes');
+  await expect(page.locator('.gd-plaque-placement p')).toContainText('toutes les 30 secondes');
   await expect(page.getByLabel('Mode d’apparition de la Plaque du groupe 1')).toHaveValue('cell');
   await page.getByLabel('Allée de départ').fill('4');await page.getByLabel('Allée de départ').press('Tab');
   await page.getByLabel('Colonne de départ').fill('3');await page.getByLabel('Colonne de départ').press('Tab');

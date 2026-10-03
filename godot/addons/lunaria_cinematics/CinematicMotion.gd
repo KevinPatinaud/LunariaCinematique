@@ -7,6 +7,19 @@ static func _smooth(value: float) -> float:
 	var t: float = clampf(value, 0.0, 1.0)
 	return t * t * (3.0 - 2.0 * t)
 
+static func _bounce_out(value: float) -> float:
+	var t: float = clampf(value, 0.0, 1.0)
+	if t < 1.0 / 2.75:
+		return 7.5625 * t * t
+	if t < 2.0 / 2.75:
+		t -= 1.5 / 2.75
+		return 7.5625 * t * t + 0.75
+	if t < 2.5 / 2.75:
+		t -= 2.25 / 2.75
+		return 7.5625 * t * t + 0.9375
+	t -= 2.625 / 2.75
+	return 7.5625 * t * t + 0.984375
+
 static func entry_end(actor: Dictionary) -> float:
 	var entry: Dictionary = actor["entry"]
 	return 0.0 if entry["preset"] == "none" else float(entry["delay"]) + float(entry["duration"])
@@ -40,6 +53,16 @@ static func pose(actor: Dictionary, elapsed: float, animated: bool = true) -> Di
 		"bottom": position.y = lerpf(position.y, LOGICAL.y, t)
 		"shrink":
 			result["scale"] = float(result["scale"]) * (1.0 - t)
+			result["opacity"] = float(result["opacity"]) * (1.0 - t)
+		"spiral":
+			result["rotation"] = float(result["rotation"]) + 360.0 * t
+			result["scale"] = float(result["scale"]) * (1.0 - t)
+			result["opacity"] = float(result["opacity"]) * (1.0 - t)
+		"rise":
+			position.y -= 240.0 * t
+			result["opacity"] = float(result["opacity"]) * (1.0 - t)
+		"fall":
+			position.y += 240.0 * t
 			result["opacity"] = float(result["opacity"]) * (1.0 - t)
 	result["position"] = position
 	if t >= 1.0:
@@ -76,6 +99,17 @@ static func _active_pose(actor: Dictionary, elapsed: float, animated: bool = tru
 			var u: float = raw - 1.0
 			result["scale"] = maxf(0.0, 1.0 + (c + 1.0) * pow(u, 3.0) + c * u * u)
 			result["opacity"] = float(result["opacity"]) * clampf(raw * 4.0, 0.0, 1.0)
+		"drop":
+			position.y = lerpf(-float(actor["height"]) * LOGICAL.y, position.y, _bounce_out(raw))
+			result["opacity"] = float(result["opacity"]) * clampf(raw * 8.0, 0.0, 1.0)
+		"spiral":
+			result["rotation"] = float(result["rotation"]) - 360.0 * (1.0 - p)
+			result["scale"] = 0.15 + 0.85 * p
+			result["opacity"] = float(result["opacity"]) * p
+		"rise":
+			position.y += 100.0 * (1.0 - p)
+			result["scale"] = 0.25 + 0.75 * p
+			result["opacity"] = float(result["opacity"]) * p
 	result["position"] = position + travel_offset(actor, time)
 	var effect: Dictionary = actor.get("motion", {})
 	var preset: String = str(effect.get("preset", "none"))
@@ -112,6 +146,28 @@ static func _active_pose(actor: Dictionary, elapsed: float, animated: bool = tru
 		"flutter":
 			position.y -= 25.0 * strength * wave
 			result["rotation"] = float(result["rotation"]) + 15.0 * strength * sin(phase * 3.0)
+		"orbit":
+			position.x += 65.0 * strength * wave
+			position.y -= 40.0 * strength * (1.0 - cos(phase))
+		"figure8":
+			position.x += 75.0 * strength * wave
+			position.y -= 35.0 * strength * sin(phase * 2.0)
+		"zigzag":
+			position.x += 70.0 * strength * (2.0 / PI) * asin(sin(phase * 2.0))
+			position.y -= 35.0 * strength * pow(sin(phase * 0.5), 2.0)
+		"tumble":
+			var roll: float = pow(sin(phase * 0.5), 2.0) * strength * (-1.0 if bool(effect["reverse"]) else 1.0)
+			position.x += 120.0 * roll
+			result["rotation"] = float(result["rotation"]) + 360.0 * roll
+		"surprise":
+			var jump: float = pow(sin(phase * 0.5), 2.0) * strength
+			position.y -= 95.0 * jump
+			result["scale"] = float(result["scale"]) * (1.0 + 0.18 * jump)
+			result["rotation"] = float(result["rotation"]) + 16.0 * wave * jump
+		"jelly":
+			var elastic: float = sin(phase * 3.0) * pow(sin(phase * 0.5), 2.0) * (1.0 - fmod(cycles, 1.0)) * strength
+			result["scale"] = float(result["scale"]) * (1.0 + 0.24 * elastic)
+			result["rotation"] = float(result["rotation"]) + 14.0 * elastic
 	result["position"] = position
 	return result
 

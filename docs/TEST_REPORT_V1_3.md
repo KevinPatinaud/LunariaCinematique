@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Validation V1.3 — résultats et limites
 
 Date de livraison : 18 septembre 2026. Base : sources V1.2 fournies dans la conversation. Les résultats ci-dessous concernent le code V1.3 ; les rapports V1.2/V1.1 du dossier sont historiques.

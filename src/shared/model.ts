@@ -4,12 +4,12 @@ import { actorAnchor } from './motion.js';
 /** Coordinates are relative to a fixed logical 1600 × 900 stage. All times are seconds. */
 export type AssetRef = `library://${string}`;
 export type CameraPreset = 'fixed' | 'zoom_in' | 'zoom_out' | 'pan_left' | 'pan_right' | 'pan_up' | 'pan_down';
-export type EntryPreset = 'none' | 'fade' | 'left' | 'right' | 'bottom' | 'top' | 'pop' | 'zoom';
-export type ExitPreset = 'none' | 'fade' | 'left' | 'right' | 'top' | 'bottom' | 'shrink';
+export type EntryPreset = 'none' | 'fade' | 'left' | 'right' | 'bottom' | 'top' | 'pop' | 'zoom' | 'drop' | 'spiral' | 'rise';
+export type ExitPreset = 'none' | 'fade' | 'left' | 'right' | 'top' | 'bottom' | 'shrink' | 'spiral' | 'rise' | 'fall';
 export interface ExitAnimation { preset: ExitPreset; start: number; duration: number }
 export type BubbleStyle = 'parchment' | 'plain' | 'simple' | 'ornate';
 export interface Box { x: number; y: number; width: number; height: number }
-export type MotionPreset = 'none' | 'float' | 'sway' | 'pulse' | 'spin' | 'shake' | 'bounce' | 'nod' | 'recoil' | 'heartbeat' | 'flutter';
+export type MotionPreset = 'none' | 'float' | 'sway' | 'pulse' | 'spin' | 'shake' | 'bounce' | 'nod' | 'recoil' | 'heartbeat' | 'flutter' | 'orbit' | 'figure8' | 'zigzag' | 'tumble' | 'surprise' | 'jelly';
 export type Pivot = 'center' | 'top' | 'bottom';
 /** A cinematic role, never a request to spawn a gameplay AI. */
 export type ActorRole = 'character' | 'enemy' | 'prop';
@@ -137,8 +137,8 @@ export function hasV2Features(cinematic: Cinematic): boolean {
 }
 export function hasV3Features(cinematic: Cinematic): boolean {
   return cinematic.shots.some(s => s.bubbles.some(b => Object.hasOwn(b, 'textAnimation') || Object.hasOwn(b, 'bubbleEntry')) || s.actors.some(a =>
-    Object.hasOwn(a, 'exit') || ['top', 'pop', 'zoom'].includes(a.entry.preset) ||
-    ['nod', 'recoil', 'heartbeat', 'flutter'].includes(a.motion?.preset ?? 'none')));
+    Object.hasOwn(a, 'exit') || ['top', 'pop', 'zoom', 'drop', 'spiral', 'rise'].includes(a.entry.preset) ||
+    ['nod', 'recoil', 'heartbeat', 'flutter', 'orbit', 'figure8', 'zigzag', 'tumble', 'surprise', 'jelly'].includes(a.motion?.preset ?? 'none')));
 }
 /** Upgrade only when needed; never silently downgrade a file written with newer semantics. */
 export function upgradeCinematicFormat(cinematic: Cinematic): void {

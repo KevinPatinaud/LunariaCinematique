@@ -1,5 +1,7 @@
 # Documentation officielle consultée
 
+**Registre de références historiques.** Les dates de consultation ci-dessous sont conservées. Pour les commandes et preuves actuelles du checkout, consulter l’[index](README.md) et la [validation courante](VALIDATION.md) ; le lockfile fait référence pour les dépendances installées.
+
 Consultation : 18 septembre 2026. Ces sources documentent les API et les précautions techniques ; elles ne constituent pas une preuve d'exécution des builds de cette livraison.
 
 - Electron, sécurité : https://www.electronjs.org/docs/latest/tutorial/security
@@ -15,7 +17,7 @@ Consultation : 18 septembre 2026. Ces sources documentent les API et les précau
 - Godot AudioStreamWAV : https://docs.godotengine.org/en/stable/classes/class_audiostreamwav.html
 - Godot, export des ressources et fichiers : https://docs.godotengine.org/en/stable/tutorials/export/exporting_projects.html
 
-Les dépendances déclarées dans package.json doivent être installées puis verrouillées par npm sur la machine de développement. Les versions du banc de test local et ce qui n'a pas été vérifié sont explicités dans TEST_REPORT.md.
+Les dépendances sont verrouillées dans `package-lock.json` et s’installent avec `npm ci`. Les versions et limitations des anciennes livraisons restent dans leurs rapports historiques ; les résultats actuels sont dans [VALIDATION.md](VALIDATION.md).
 
 ## API consultées pour la bibliothèque V1.1
 

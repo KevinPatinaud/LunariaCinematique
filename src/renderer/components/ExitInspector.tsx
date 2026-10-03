@@ -3,7 +3,13 @@ import type {Actor, ExitPreset} from '../../shared/model.js';
 import {NumberInput} from './NumberInput.js';
 import {Icon} from './Icon.js';
 const labels: Record<ExitPreset, string> = {none: 'Reste dans la scène', fade: 'Fondu', left: 'Vers la gauche',
-  right: 'Vers la droite', top: 'Vers le haut', bottom: 'Vers le bas', shrink: 'Rétrécissement'};
+  right: 'Vers la droite', top: 'Vers le haut', bottom: 'Vers le bas', shrink: 'Rétrécissement',
+  spiral: 'Tourbillon', rise: 'Envol en fondu', fall: 'Chute en fondu'};
+const descriptions: Partial<Record<ExitPreset, string>> = {
+  spiral: 'Tourne en rétrécissant jusqu’à disparaître.',
+  rise: 'S’élève en s’effaçant progressivement.',
+  fall: 'Tombe en s’effaçant progressivement.',
+};
 export function ExitInspector({actor, change, duration, preview}: {actor: Actor; change: (p: Partial<Actor>, key?: string) => void; duration: number; preview: () => void}) {
   const exit = actor.exit ?? {preset: 'none' as const, start: Math.max(0, duration - 1), duration: 0.8};
   return <section aria-label="Sortie de l’élément">
@@ -11,7 +17,9 @@ export function ExitInspector({actor, change, duration, preview}: {actor: Actor;
     <label className="field"><span>Sortie</span><select aria-label="Animation de sortie" value={exit.preset}
       onChange={e => change({exit: {...exit, preset: e.target.value as ExitPreset}})}>
       {Object.entries(labels).map(([key, text]) => <option key={key} value={key}>{text}</option>)}</select></label>
-    {exit.preset !== 'none' && <><div className="field-row">
+    {exit.preset !== 'none' && <>
+      {descriptions[exit.preset] && <p className="field-hint">{descriptions[exit.preset]}</p>}
+      <div className="field-row">
       <label className="field"><span>Durée (s)</span><NumberInput label="Durée de la sortie" min={0.1} max={10} value={exit.duration} onCommit={duration => change({exit: {...exit, duration}}, 'exit-duration')}/></label>
       <label className="field"><span>Délai de disparition (s)</span><NumberInput label="Délai de disparition" min={0} max={300} value={exit.start} onCommit={start => change({exit: {...exit, start}}, 'exit-start')}/></label>
     </div><p className="field-hint">Le délai commence au début du plan. Une fois sorti, l’élément reste invisible.</p>

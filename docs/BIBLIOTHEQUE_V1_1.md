@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Bibliothèque V1.1 — guide de mise à jour et d’utilisation
 
 Cette mise à jour améliore le panneau gauche du projet V1 fourni. Elle ne modifie ni les images, ni les cinématiques existantes, ni le contrat d’intégration Godot.

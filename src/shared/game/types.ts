@@ -21,11 +21,14 @@ export interface EnemyDefinition {archived?:boolean;animationProfileId?:string;v
 /** Archived enemies remain in saved projects and existing references. */
 export const activeEnemies=(enemies:EnemyDefinition[])=>enemies.filter(enemy=>!enemy.archived);
 export const enemyChoices=(enemies:EnemyDefinition[],selectedId='')=>enemies.filter(enemy=>!enemy.archived||enemy.id===selectedId);
-export const OBJECTIVES = ['defend','advance','invasive_foci','protect_cell','operation','rescue'] as const;
-export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',advance:'Conquérir les allées',invasive_foci:'Foyers invasifs',protect_cell:'Protéger une case',operation:'Opération',rescue:'Sauvetage'};
+export const OBJECTIVES = ['defend','advance','escort','invasive_foci','protect_cell','operation','rescue'] as const;
+export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',advance:'Conquérir les allées',escort:'Escorter les jeunes pousses',invasive_foci:'Foyers invasifs',protect_cell:'Protéger une case',operation:'Opération',rescue:'Sauvetage'};
 export interface ProtectedCell {row:number;col:number;image:`library://${string}`;maxHp:number;armor:number;resistances:Resistances}
+export interface EscortSettings {laneCounts:number[];speed:number;maxHp:number;departureInterval:number;image:`library://${string}`}
+export const defaultEscort=():EscortSettings=>({laneCounts:[0,0,1,0,0],speed:0.12,maxHp:120,departureInterval:8,image:'library://02_characters/pousses/individuals/Sprite végétal Lunaria en marche.png'});
+export const isConquest=(type:LevelDefinition['objective']['type'])=>type==='advance'||type==='escort';
 export interface InvasiveFoci {positions:{row:number;col:number}[];reinforcementEnemyId:string;interval:number}
-export const defaultInvasiveFoci=():InvasiveFoci=>({positions:[{row:1,col:5},{row:3,col:5}],reinforcementEnemyId:'runner',interval:10});
+export const defaultInvasiveFoci=():InvasiveFoci=>({positions:[{row:1,col:5},{row:3,col:5}],reinforcementEnemyId:'runner',interval:30});
 /** Inclusive board rectangle. A single cell has equal minimum and maximum coordinates. */
 export interface SpawnArea {rowMin:number;rowMax:number;colMin:number;colMax:number}
 export interface SpawnGroup {id:string;enemyId:string;count:number;lane:number;start:number;interval:number;placement?:SpawnArea}
@@ -37,7 +40,7 @@ export interface WaveDefinition {id:string;groups:SpawnGroup[];seedReward?:numbe
 export interface StoryLine {speaker:string;text:string}
 export interface LevelDefinition {
  events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;terrainImage?:`library://${string}`;startingEnergy:number;allowedPlants:string[];
- objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;tip:string;waves:WaveDefinition[];
+ objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;escort?:EscortSettings;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;tip:string;waves:WaveDefinition[];
  briefing:StoryLine[];outro:StoryLine[];midDialogue:StoryLine[];midWave:number;restoration:string;
 }
 export interface CampaignFilm {id:string;title:string;file:string;documentId:string}

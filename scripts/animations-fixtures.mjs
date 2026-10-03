@@ -13,7 +13,7 @@ for(const reveal of ['instant','typewriter','words','fade'])for(const effect of 
   text.push({bubble,units,unit:units[index],elapsed,completed,center,dimensions,expected:pose,fitted:fitGlyphPose(pose,center.x,center.y,24,28,500,100),intro:textIntroDuration(bubble),auto:autoDialogueDuration(bubble,completed?elapsed:undefined)});
  }
 }
-for(const role of ['character','enemy','prop'])for(const entry of ['none','fade','left','right','bottom','top','pop','zoom'])for(const exit of ['none','fade','left','right','top','bottom','shrink'])for(const elapsed of [0,.2,1.3,2,2.4,3,10]) {
+for(const role of ['character','enemy','prop'])for(const entry of ['none','fade','left','right','bottom','top','pop','zoom','drop','spiral','rise'])for(const exit of ['none','fade','left','right','top','bottom','shrink','spiral','rise','fall'])for(const elapsed of [0,.19999,.2,.3,.7,1,1.2,1.20001,2,2.4,3,10]) {
  const actor=newActor({name:'Test',ref:'library://07_props/panneau.png'},1,.2,.4,role);actor.id='fixture-actor';actor.entry={preset:entry,delay:.2,duration:1};actor.exit={preset:exit,start:2,duration:1};actor.motion={...newMotion(role==='prop'?'flutter':role==='enemy'?'recoil':'nod'),intensity:.6,period:2};actor.movement={...newMovement(actor),duration:3,dx:.3,dy:-.1};const pose=actorPose(actor,elapsed),anchor=actorAnchor(actor,elapsed,true,.3,.22);
  motion.push({actor,elapsed,expected:{x:pose.x,y:pose.y,opacity:pose.opacity,rotation:pose.rotation,scale:pose.scale,pivotX:pose.pivotX,pivotY:pose.pivotY,anchorX:anchor.x,anchorY:anchor.y}});
 }

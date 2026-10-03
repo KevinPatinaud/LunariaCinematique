@@ -51,7 +51,11 @@ export function gameIssues(input:unknown):GameIssue[]{
   if(l.allowedPlants.some(id=>!plants.has(id)))add('Une plante autorisée est absente du catalogue global.');
   if(l.midWave>l.waves.length)add('Le dialogue intermédiaire dépasse le nombre de vagues.');
   if(l.midDialogue.length&&l.midWave===0)add('Choisis une vague pour le dialogue intermédiaire.');
-  if(['defend','advance','invasive_foci','protect_cell'].includes(l.objective.type)&&l.objective.target!==0)add('Cet objectif utilise une cible automatique : sa cible doit être 0.');
+  if(['defend','advance','escort','invasive_foci','protect_cell'].includes(l.objective.type)&&l.objective.target!==0)add('Cet objectif utilise une cible automatique : sa cible doit être 0.');
+  if(l.objective.type==='escort'){
+   if(!l.escort)add('Configure les jeunes pousses à escorter.');
+   else if(l.escort.laneCounts.reduce((sum,count)=>sum+count,0)<1)add('Place au moins une jeune pousse sur une allée.');
+  }else if(l.escort)add('Les réglages des pousses sont réservés au niveau Escorte.');
   if(l.objective.type==='invasive_foci'){
    const f=l.invasiveFoci;
    if(!f)add('Place deux ou trois foyers invasifs et choisis leurs renforts.');

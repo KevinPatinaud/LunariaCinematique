@@ -256,7 +256,7 @@ export const GAME_SCHEMA:Rule = {
         "enemies": {
           "type": "array",
           "minItems": 13,
-          "maxItems": 14,
+          "maxItems": 15,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -290,7 +290,8 @@ export const GAME_SCHEMA:Rule = {
                   "corrupted_rose",
                   "furnace",
                   "thorn_knot",
-                  "plaque"
+                  "plaque",
+                  "cigarette"
                 ]
               },
               "name": {
@@ -465,6 +466,7 @@ export const GAME_SCHEMA:Rule = {
                 "enum": [
                   "defend",
                   "advance",
+                  "escort",
                   "invasive_foci",
                   "protect_cell",
                   "operation",
@@ -795,6 +797,11 @@ const effect=obj({...base,kind:enumeration('damage','heal','poison','regeneratio
 const projectile=obj({...base,speed:num(0,20),lifetime:num(.1,30),maxHits:num(1,16,true),hitRadius:num(.01,.5),splashRadius:num(0,4),rowRadius:num(0,4,true),color:{...str(7,7),pattern:'^#[0-9a-fA-F]{6}$'},size:num(.02,.3)});
 const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','nearest_right','rightmost','strongest','wounded','random'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
 ability.properties!.allowBehind={type:'boolean'};
+ability.properties!.attachToTarget={type:'boolean'};
+ability.properties!.blocksTargetAttack={type:'boolean'};
+GAME_SCHEMA.properties!.balance.properties!.enemies.maxItems=16;
+GAME_SCHEMA.properties!.balance.properties!.enemies.items!.properties!.id.enum!.push('plastic_bag');
+ability.properties!.forwardCells=num(1,8,true);
 ability.properties!.excludeSelf={type:'boolean'};
 ability.properties!.requiresActiveAttack={type:'boolean'};
 const array=(items:Rule,maxItems:number):Rule=>({type:'array',minItems:1,maxItems,items});
@@ -806,6 +813,12 @@ GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci=obj({
  positions:{type:'array',minItems:2,maxItems:3,items:obj({row:num(0,4,true),col:num(2,7,true)})},
  reinforcementEnemyId:idRule,
  interval:num(5,60),
+});
+
+GAME_SCHEMA.properties!.levels.items!.properties!.escort=obj({
+ laneCounts:{type:'array',minItems:5,maxItems:5,items:num(0,20,true)},
+ speed:num(0.03,0.23),maxHp:num(1,6000,true),departureInterval:num(1,60),
+ image:{...str(1000,1),pattern:'^library://.+\\.(png|webp)$'},
 });
 
 // V1.9: bounded behaviors, phases, variables and level events.

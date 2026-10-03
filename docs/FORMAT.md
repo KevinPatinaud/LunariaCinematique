@@ -1,6 +1,6 @@
-# Contrat de lecture · cinematic.json v1 / v2 / v3
+# Contrat de lecture · cinematic.json v1 à v4
 
-Le contrat exécutable est `cinematic.schema.json`, généré depuis `src/shared/schema.ts`. Exemple complet : `examples/serre.cinematic.json`. Les JSON esquissés pendant la conception ne constituaient pas un ancien format publié : le format implémenté utilise **schemaVersion**, et non `version`.
+Le contrat exécutable est [cinematic.schema.json](cinematic.schema.json), généré depuis `src/shared/schema.ts`. Ce guide est actualisé au 2 octobre 2026 ; les sections v1/v2/v3 décrivent les extensions encore lisibles, pas un lecteur limité à v3. Exemple complet : `examples/serre.cinematic.json`. Les JSON esquissés pendant la conception ne constituaient pas un ancien format publié : le format implémenté utilise **schemaVersion**, et non `version`.
 
 ## Racine et chemin des assets
 
@@ -24,7 +24,7 @@ library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.pn
 
 La racine Windows est uniquement dans les réglages locaux de l'éditeur. Les séparateurs JSON sont `/`, y compris sous Windows. Unicode, espaces et casse sont conservés. Les chemins absolus, `..`, `.` et liens symboliques sortant de la racine sont refusés. Les références sont sensibles à la casse sur les plateformes qui le sont ; éviter deux fichiers ne différant que par la casse.
 
-L'éditeur accepte PNG, JPG/JPEG, WebP pour les images ; WAV, OGG, MP3 pour l'audio. Une entrée animée déplace une image entière. Un GIF ou une spritesheet n'est pas interprété comme une animation de personnage.
+L'éditeur accepte PNG, JPG/JPEG, WebP pour les images ; WAV, OGG, MP3 pour l'audio. Une entrée animée déplace une image entière. Un GIF n’est pas interprété comme une animation de personnage. Une spritesheet se découpe par régions dans le catalogue d’animations ; l’image fixe d’un acteur n’est pas découpée automatiquement.
 
 ## Plan
 
@@ -81,7 +81,7 @@ Les rôles image et audio sont vérifiés séparément. L’ouverture conserve u
 
 ## Extension v2 : objets et mouvements (éditeur V1.4)
 
-La racine accepte `schemaVersion: 1` ou `2`. Les nouveaux champs d’acteur ci-dessous sont optionnels pour la compatibilité des anciennes scènes. Leur présence exige la version 2, même si l’effet est désactivé. Le format 1 n’est pas utilisé pour faire passer silencieusement des paramètres inconnus aux anciens lecteurs.
+L’extension v2 introduit `schemaVersion: 2` ; le lecteur courant accepte aussi 1, 3 et 4. Les nouveaux champs d’acteur ci-dessous sont optionnels pour la compatibilité des anciennes scènes. Leur présence exige la version 2, même si l’effet est désactivé. Le format 1 n’est pas utilisé pour faire passer silencieusement des paramètres inconnus aux anciens lecteurs.
 
 ```json
 {
@@ -146,3 +146,38 @@ Fragment ajouté à un acteur :
 `preset` : none/fade/left/right/top/bottom/shrink ; début absolu 0…300 s depuis le plan ; durée 0,1…10 s. Le mouvement sous-jacent est figé au début de sortie ; la pose de sortie est évaluée à partir de cet état. Après la durée, l’opacité vaut zéro. Avec `none`, le bloc n’a pas d’effet visuel.
 
 Les nouveaux presets de `motion` gardent exactement les bornes, pivots et délais existants. Le recul respecte le miroir de l’image. Les calculs sont déterministes et n’emploient aucun générateur aléatoire par image. Sources : `textSegments.ts`, `textAnimation.ts`, `motion.ts`, et leurs ports dans l’addon. Exemple complet : `examples/animations_texte.cinematic.json`.
+
+## Effets d’acteur supplémentaires — 2 octobre 2026
+
+Ces valeurs complètent les préréglages précédents pour les personnages, ennemis et objets et exigent `schemaVersion: 3` au minimum. Elles transforment l’image entière, y compris lorsqu’une animation de catalogue fournit l’image courante. Elles n’exigent aucun nouvel asset et conservent les réglages de durée, délai, intensité, sens et répétition existants.
+
+| Champ | Valeur JSON | Libellé dans le Studio | Mouvement |
+|---|---|---|---|
+| `motion.preset` | `orbit` | Orbite | Trajectoire elliptique depuis la position de repos |
+| `motion.preset` | `figure8` | Vol en huit | Trajectoire en huit |
+| `motion.preset` | `zigzag` | Zigzag | Allers-retours latéraux |
+| `motion.preset` | `tumble` | Roulade | Rotation avec déplacement puis retour au repos |
+| `motion.preset` | `surprise` | Sursaut | Saut bref, variation de taille et inclinaison |
+| `motion.preset` | `jelly` | Oscillation élastique | Oscillation amortie de taille et de rotation |
+| `entry.preset` | `drop` | Chute rebondie | Arrivée par le haut avec rebond |
+| `entry.preset` | `spiral` | Tourbillon | Apparition en rotation |
+| `entry.preset` | `rise` | Éclosion | Apparition ascendante |
+| `exit.preset` | `spiral` | Tourbillon | Disparition en rotation |
+| `exit.preset` | `rise` | Envol en fondu | Montée avec disparition progressive |
+| `exit.preset` | `fall` | Chute en fondu | Descente avec disparition progressive |
+
+Dans le Studio, **Roulade** et **Sursaut** sont proposés en lecture ponctuelle par défaut ; les quatre autres nouveaux effets de mouvement sont bouclés. L’auteur peut modifier `loop` et `reverse`. Les effets de mouvement commencent après l’entrée, utilisent `intensity` et se superposent à `movement`. Une sortie conserve la pose atteinte à son heure de début, puis anime cette pose jusqu’à l’opacité nulle, comme les sorties précédentes.
+
+Les copies du schéma et du lecteur doivent inclure ces nouvelles valeurs ; une ancienne énumération ne les accepte pas simplement parce que le numéro du schéma est reconnu. Voir le [guide courant](GUIDE_V1_10.md#animer-un-élément-dans-une-cinématique) pour les commandes de l’inspecteur.
+
+## Extensions courantes : bulles, fin de plan, audio et catalogue v4
+
+`bubbles[].bubbleEntry` contient un `preset` parmi none/pop/left/right/burst/shake/bounce et une `duration`, distincts de `textAnimation`. Sa présence relève de l’extension v3. Sans réglage, les anciennes bulles gardent l’entrée douce par défaut du lecteur.
+
+`shot.endAdvance` vaut auto ou click ; absent, le passage reste automatique lorsque durée minimale et dialogues sont terminés. La sortie visuelle `exitTransition` et les fondus sonores sont pris en compte avant de changer de plan.
+
+Le champ historique `shot.audio` redémarre sa piste par plan. Pour une continuité entre plans, utiliser `cinematic.musicTracks[]` avec `startShotId` et `endShotId`. Les événements `shot.sounds[]` utilisent `event`, `targetId`, `delay` et `duration`. Les deux portent les réglages de fichier, volume, boucle et fondus ; voir le [contrat audio complet](SON_CINEMATIQUES.md). Ces champs optionnels ne forcent pas à eux seuls le schéma 4.
+
+`presentationCatalog` référence `projectId` et `file`. `actors[].animation` choisit une animation directe ou une espèce/slot, avec vitesse. Ces références exigent **schemaVersion: 4** ; le projet correspondant et ses ressources doivent être disponibles. Les marqueurs son/VFX sont interprétés, `release` reste sans effet de gameplay. Le [contrat de présentation](ARCHITECTURE_V1_10.md) définit frames, régions, ancrages, poses et héritage.
+
+Dans un projet de jeu, les films complets sont stockés dans `cinematics[]`. Catégories et ordre du navigateur servent au montage ; le parcours jouable dépend de `campaign.steps[]`. Le publieur transforme les liens d’auteur en fichiers immuables de runtime et lie le catalogue à `content/design/game_content.json`. Voir le [contrat de campagne](ARCHITECTURE_CAMPAGNE.md).

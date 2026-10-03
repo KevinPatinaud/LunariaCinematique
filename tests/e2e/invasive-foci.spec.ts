@@ -33,6 +33,8 @@ test('a level authors and saves positioned invasive foci and timed reinforcement
  await page.getByLabel('Objectif du niveau').selectOption('invasive_foci');
  const editor=page.getByRole('region',{name:'Foyers invasifs'});
  await expect(editor).toBeVisible();
+ await expect(editor).toContainText('toutes les 30 secondes');
+ await expect(editor.getByLabel('Intervalle des renforts (secondes)')).toHaveValue('30');
  await expect(page.getByLabel('Consigne du niveau')).toHaveValue('Détruire tous les foyers invasifs et leurs derniers renforts.');
  await editor.getByRole('button',{name:'Allée 1, colonne 7'}).click();
  await editor.getByRole('button',{name:'+ Foyer'}).click();

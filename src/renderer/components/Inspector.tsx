@@ -2,7 +2,7 @@ import React from 'react';
 import type {GameProject} from '../../shared/game/types.js';
 import type {CatalogLink} from '../../shared/presentation/types.js';
 import {ActorBindingFields} from '../presentation/PresentationFields.js';
-import type { Actor, Asset, Bubble, Cinematic, Shot } from '../../shared/model.js';
+import type { Actor, Asset, Bubble, Cinematic, EntryPreset, Shot } from '../../shared/model.js';
 import { TextAnimationInspector } from './TextAnimationInspector.js';
 import { ExitInspector } from './ExitInspector.js';
 import { MotionInspector } from './MotionInspector.js';
@@ -13,7 +13,12 @@ import { bubbleEntryLabels, effectiveBubbleEntry } from '../../shared/bubbleEntr
 import type { Selection } from './Scene.js';
 import { Icon } from './Icon.js';
 export const cameraLabels = { fixed: 'Fixe', zoom_in: 'Zoom lent avant', zoom_out: 'Zoom lent arrière', pan_left: 'Travelling vers la gauche', pan_right: 'Travelling vers la droite', pan_up: 'Montée lente', pan_down: 'Descente lente' };
-const entryLabels = { none: 'Déjà présent', fade: 'Fondu', left: 'Depuis la gauche', right: 'Depuis la droite', bottom: 'Depuis le bas', top: 'Depuis le haut', pop: 'Pop · apparition rebondie', zoom: 'Grandissement doux' };
+const entryLabels: Record<EntryPreset, string> = { none: 'Déjà présent', fade: 'Fondu', left: 'Depuis la gauche', right: 'Depuis la droite', bottom: 'Depuis le bas', top: 'Depuis le haut', pop: 'Pop · apparition rebondie', zoom: 'Grandissement doux', drop: 'Chute rebondie', spiral: 'Tourbillon', rise: 'Éclosion' };
+const entryDescriptions: Partial<Record<EntryPreset, string>> = {
+  drop: 'Arrive depuis le haut du cadre et rebondit avant de se poser.',
+  spiral: 'Apparaît en tournant et en grandissant jusqu’à sa taille normale.',
+  rise: 'Émerge légèrement d’en bas en grandissant et en devenant visible.',
+};
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return <label className="field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
@@ -31,17 +36,26 @@ interface Props {
 }
 export function Inspector(p: Props) {
   const scrollArea = React.useRef<HTMLFieldSetElement>(null);
-  const pendingEntryScroll = React.useRef<number | null>(null);
+  const pendingAnimationScroll = React.useRef<number | null>(null);
   const selectedId = p.selection.kind === 'shot' ? null : p.selection.id;
   const actor = (p.multiCount??0)<=1 && p.selection.kind === 'actor' ? p.shot.actors.find(a => a.id === selectedId) : undefined;
   const bubble = (p.multiCount??0)<=1 && p.selection.kind === 'bubble' ? p.shot.bubbles.find(b => b.id === selectedId) : undefined;
   React.useLayoutEffect(() => {
-    if (pendingEntryScroll.current !== null && scrollArea.current) {
-      scrollArea.current.scrollTop = pendingEntryScroll.current;
-      pendingEntryScroll.current = null;
+    if (pendingAnimationScroll.current !== null && scrollArea.current) {
+      scrollArea.current.scrollTop = pendingAnimationScroll.current;
+      pendingAnimationScroll.current = null;
     }
-  }, [actor?.entry.preset]);
-  const changeActor = (patch: Partial<Actor>, key = '') => actor && p.updateObject('actor', actor.id, patch, key);
+  }, [actor?.entry.preset, actor?.motion?.preset, actor?.exit?.preset, actor?.movement?.enabled]);
+  const changeActor = (patch: Partial<Actor>, key = '') => {
+    if (!actor) return;
+    if ((patch.entry && patch.entry.preset !== actor.entry.preset)
+      || (patch.motion && patch.motion.preset !== actor.motion?.preset)
+      || (patch.exit && patch.exit.preset !== actor.exit?.preset)
+      || (patch.movement && patch.movement.enabled !== actor.movement?.enabled)) {
+      pendingAnimationScroll.current = scrollArea.current?.scrollTop ?? null;
+    }
+    p.updateObject('actor', actor.id, patch, key);
+  };
   const changeBubble = (patch: Partial<Bubble>, key = '') => bubble && p.updateObject('bubble', bubble.id, patch, key);
   function setStyle(style: Bubble['style']) {
     if (style === 'simple' || style === 'ornate') {
@@ -96,9 +110,10 @@ export function Inspector(p: Props) {
         </details>
         <MotionInspector actor={actor} change={changeActor} preview={p.previewMotion}/>
         <div className="section-label"><Icon name="actor" size={15}/> APPARITION</div>
-        <Field label="Entrée"><select value={actor.entry.preset} onChange={e => { pendingEntryScroll.current = scrollArea.current?.scrollTop ?? null; changeActor({ entry: { ...actor.entry, preset: e.target.value as Actor['entry']['preset'] } }); }}>{Object.entries(entryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+        <Field label="Entrée"><select value={actor.entry.preset} onChange={e => changeActor({ entry: { ...actor.entry, preset: e.target.value as EntryPreset } })}>{Object.entries(entryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+        {entryDescriptions[actor.entry.preset] && <p className="field-hint">{entryDescriptions[actor.entry.preset]}</p>}
         {actor.entry.preset !== 'none' && <div className="field-row"><Field label="Durée (s)"><NumberInput min={0.1} max={10} value={actor.entry.duration} onCommit={duration => changeActor({ entry: { ...actor.entry, duration } }, 'entry-duration')}/></Field><Field label="Délai d’apparition (s)"><NumberInput label="Délai d’apparition" min={0} max={300} value={actor.entry.delay} onCommit={delay => changeActor({ entry: { ...actor.entry, delay } }, 'entry-delay')}/></Field></div>}
-        <p className="field-hint">{actor.entry.preset === 'none' ? '« Déjà présent » affiche ce personnage dès le début du plan. Choisis une autre entrée pour régler un délai.' : 'Le délai commence au début du plan. La composition garde le personnage visible pour le placer ; teste les animations ou lis le plan pour voir son apparition réelle.'}</p>
+        <p className="field-hint">{actor.entry.preset === 'none' ? '« Déjà présent » affiche cet élément dès le début du plan. Choisis une autre entrée pour régler un délai.' : 'Le délai commence au début du plan. La composition garde l’élément visible pour le placer ; teste les animations ou lis le plan pour voir son apparition réelle.'}</p>
         <ExitInspector actor={actor} change={changeActor} duration={p.shot.duration} preview={p.previewMotion}/>
         <p className="field-hint">Les effets animent le PNG entier, pas une marche articulée. Ils fonctionnent aussi pour les ennemis et les objets.</p>
         <ActorBindingFields actor={actor} doc={p.doc} project={p.presentationProject} change={changeActor} setCatalog={p.setCatalog}/>

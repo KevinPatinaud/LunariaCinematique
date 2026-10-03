@@ -49,21 +49,21 @@ test('Plaque placement is authored per wave as a fixed cell or bounded random zo
  delete group.placement;assert.ok(errors(p).some(i=>i.message.includes('Plaque')));
  group.placement={rowMin:3,rowMax:1,colMin:2,colMax:5};assert.ok(errors(p).some(i=>i.message.includes('inversée')));
 });
-test('default invasive foci use the Plaque canette reinforcement every ten seconds',()=>{
+test('default invasive foci use the Plaque canette reinforcement every thirty seconds',()=>{
  const p=mainSeedProject(),level=newLevel(['radish'],'runner');p.levels=[level];
  level.objective={type:'invasive_foci',target:0};level.invasiveFoci=defaultInvasiveFoci();
  assert.deepEqual(errors(p),[]);
  assert.equal(level.invasiveFoci.reinforcementEnemyId,'runner');
- assert.equal(level.invasiveFoci.interval,10);
+ assert.equal(level.invasiveFoci.interval,30);
  assert.deepEqual(compileCampaign(p).levels[0].invasiveFoci,level.invasiveFoci);
 });
 test('one operation type covers the former work missions',()=>{
- const p=valid();assert.deepEqual(OBJECTIVES,['defend','advance','invasive_foci','protect_cell','operation','rescue']);
+ const p=valid();assert.deepEqual(OBJECTIVES,['defend','advance','escort','invasive_foci','protect_cell','operation','rescue']);
  assert.equal(p.levels.filter(level=>level.objective.type==='operation').length,30);
  const level=p.levels.find(level=>level.objective.type==='operation')!;
  assert.ok(level.objective.target>0);assert.ok(level.objectiveText.length>0);
  level.objective.target=0;assert.ok(errors(p).some(issue=>issue.message.includes('opération')));
- level.objective={type:'escort' as GameProject['levels'][number]['objective']['type'],target:60};
+ level.objective={type:'unknown_objective' as GameProject['levels'][number]['objective']['type'],target:60};
  assert.ok(errors(p).some(issue=>issue.path.includes('objective.type')));
 });
 test('advance objective is authored and published with an automatic five-lane target',()=>{

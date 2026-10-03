@@ -1,59 +1,29 @@
-# Architecture
+# Architecture de Lunaria Studio
 
-```text
-React + TypeScript + SVG
-    ↓ window.lunaria (API limitée)
-Preload Electron / contextBridge
-    ↓ IPC validé
-Node.js / processus principal Electron
-    ↓
-Bibliothèque partagée + cinematic.json
-    ↓
-Lecteur GDScript dans Godot
-```
+## Application et documents
 
-## Modules
+Le renderer React est sous `src/renderer/`, le processus Electron sous `src/main/` et le preload sous `src/preload/index.cts`. Le renderer utilise le pont exposé par le preload ; il ne lit pas directement le disque avec Node. Electron configure l’isolation du contexte, les protocoles d’assets et les autorisations de dossiers.
 
-`src/renderer/components/Scene.tsx` : composition SVG, sélection, glisser, poignées, queues, aperçu. La manipulation utilise les coordonnées du canevas via sa matrice SVG, indépendamment de la taille de la fenêtre.
+Le document `lunaria-game-project` contient catalogues globaux, niveaux, parcours et `cinematics[]`. Les modes **Cinématiques** et **Niveaux** éditent le même état ; les films ne sont plus dispersés dans des fichiers obligatoires par plan. Les documents cinématiques autonomes restent importables. Les services de document gèrent fichier enregistré, jetons, historique, sauvegarde atomique, récupération locale et projets récents. La récupération et les versions locales ne remplacent pas Git.
 
-`Library.tsx` : arbre, catégories, recherche et vignettes. `Inspector.tsx` : propriétés contextuelles. `App.tsx` : orchestration des plans, historique, fichiers et lecture. `browserBridge.ts` est un adaptateur facultatif de test/édition web ; les accès disque de référence passent par Electron.
+`GameEditor` coordonne les commandes d’édition. Les panneaux de niveaux, attaques, personnages, événements et présentation modifient les données d’auteur. Les aperçus utilisent les fonctions partagées de géométrie, texte, mouvement et animation, plutôt qu’un second format de rendu.
 
-`src/shared/model.ts` : types, création et duplication. `geometry.ts` : mouvements, dispositions, zones des cadres et préparation à l'export. `schema.ts` : validation et génération du JSON Schema. `playback.ts` : machine de lecture pure. `history.ts` : historique borné et regroupement des frappes.
+## Contrats partagés
 
-`src/main/index.ts` : fenêtres, cycle de vie, protocoles et handlers IPC. `files.ts` : confinement des chemins et sauvegarde. `library.ts` : scan et classification. `src/preload/index.cts` est compilé en CommonJS pour le preload sandboxé.
+`src/shared/game/` définit schéma et validation des niveaux, combat, événements et campagne. `src/shared/presentation/` définit profils, animations, ownership, audio, VFX et calcul des poses. `src/shared/model.ts`, `schema.ts`, `motion.ts`, `bubbleEntry.ts`, `textAnimation.ts` et `cinematicAudio.ts` définissent les films et leur lecture. Les documents de jeu et films acceptent les versions prévues par leurs validateurs ; le catalogue d’animation utilise le schéma cinématique 4.
 
-## Frontière locale de sécurité
+`npm run schema` compile et génère les schémas JSON. `scripts/sync-game-contract.mjs --game C:/dev/Lunaria/game` copie les modules partagés compilés et schémas vers le jeu. Ce script ne publie pas la campagne et ne remplace pas un port GDScript nécessaire à une nouvelle sémantique.
 
-Le renderer n'a pas d'accès Node direct : `nodeIntegration: false`, `contextIsolation: true`, sandbox activée. Le preload n'expose que les fonctions de l'éditeur, pas `ipcRenderer`, `fs`, `shell` ou `exec`. Chaque appel IPC vérifie son origine et sa fenêtre. La navigation externe, les nouvelles fenêtres et les permissions sont refusées.
+## Bibliothèque et publication
 
-`lunaria-asset://library/...` ne sert que des extensions d'images/audio autorisées sous la racine choisie, vérifiée par `realpath`. Le schéma `app://studio` sert le renderer empaqueté. Une CSP limite scripts et ressources. Le serveur Vite de développement n'écoute que 127.0.0.1 ; il n'y a pas de serveur HTTP métier en production.
+Les médias restent sous la racine autorisée de la bibliothèque. Le JSON conserve des `library://` relatifs, sans chemin Windows absolu. Les services vérifient chemins, références, rôles de fichier et dimensions réelles ; ils refusent la sortie de racine et les conflits de contenu. Les images d’atlas se découpent par régions, sans fabriquer une copie PNG pour chaque frame.
 
-Il s'agit de mesures de réduction de risque, **pas d'un audit de sécurité certifié**. Mettre à jour les dépendances et valider les versions avant distribution.
+`campaignPublisher.ts` construit une fermeture des ressources et films référencés. Son préflight est en lecture seule. La publication prépare films immuables et médias, réutilise les octets identiques et écrit `content/design/game_content.json` en dernier. Les données globales d’un ennemi archivé restent publiables pour les références existantes. Un conflit de fichier avec des octets différents bloque la publication ; les nouvelles versions artistiques doivent avoir un nouveau chemin.
 
-## Volumétrie
+Les fonctions de lancement et d’export réutilisent cette publication. Le jeu de test utilise une progression séparée. Les builds PC/Android utilisent les scripts du dépôt Godot ; l’éditeur n’assure pas à lui seul la signature de livraison ni les essais sur téléphone.
 
-Le scan ignore les liens symboliques et les dossiers techniques/cachés, limite la profondeur à 20 et le nombre d'assets à 10 000. Les résultats sont affichés progressivement par lots de 60. Les miniatures Electron sont réduites à 360 px et mises en cache en mémoire (200 entrées maximum) ; les PNG sources ne sont pas réécrits.
+## Validation et références
 
-Le lecteur aperçu conserve un petit cache d'images (24 entrées) et précharge les premiers plans à lire. Godot charge les textures du plan courant et du suivant. Ces limites ne constituent pas une garantie de fluidité sur téléphone : mesurer mémoire et performances sur les assets finaux.
+`npm test` compile et exécute les tests Node ; `npm run build` vérifie les types et construit main/preload/renderer. Playwright lance Electron sur des fichiers et profils isolés. Les tests Godot protègent aussi les ports du lecteur. Une validation navigateur seule ne prouve pas le fonctionnement du pont Electron.
 
-Le JSON seul ne suffit pas au build du jeu : les ressources référencées doivent être présentes et incluses dans l'export Godot, une seule fois dans sa bibliothèque commune.
-
-## Construction
-
-Le projet utilise deux compilations TypeScript (renderer et principal), Vite pour le frontend et electron-builder pour les sorties Windows. Le script `npm run schema` régénère le JSON Schema et doit rester synchronisé avec la copie utilisée par Godot. Les scripts, tests et configurations sont inclus ; les dépendances et les binaires ne sont pas fournis.
-
-
-## Cycle de document V1.2
-
-`src/main/documents.ts` isole le cycle des fichiers du runtime Electron : destination courante, empreinte disque, file d’opérations, jeton de document et récupération. Les opérations sont testables avec Node sans installer Electron. Le preload n’expose que les commandes nécessaires ; le jeton permet d’écarter les requêtes retardées d’un projet remplacé.
-
-`src/shared/assets.ts` centralise les catégories et extensions ; `editing.ts` regroupe les proportions et conversions de saisie ; `src/renderer/images.ts` possède le cache de décodage borné. Les images en cours de chargement ne peuvent pas remplacer un état historique du projet : App réapplique l’ajout dans l’état courant et dans son plan d’origine.
-
-Le lecteur Godot V1.2 possède un `CinematicLayout.gd` pour préparer les champs dérivés. Son exécution et la parité visuelle doivent encore être testées dans le moteur.
-
-
-## V1.4.3 — registre de projets récents
-
-`RecentProjects` est un registre de métadonnées local, distinct des JSON de cinématiques et des versions de récupération. `ProjectHistory` coordonne les ouvertures/enregistrements validés de `DocumentFiles` avec ce registre et la reconnexion de bibliothèque. Les commandes du preload utilisent des identifiants opaques déjà présents dans le registre ; le sélecteur de fichiers reste côté Node/Electron. Toutes les nouvelles routes IPC utilisent le contrôle d’émetteur existant.
-
-`RecentProjectsDialog` présente recherche, épingles, état des fichiers et actions. `App.tsx` réutilise le flux de confirmation/sauvegarde du document courant. Le retour au fichier déjà actif ne remplace pas le brouillon. Aucun des types `RecentProject` n’est sérialisé dans `cinematic.json`.
+Voir le [guide](GUIDE_V1_10.md), les contrats de [campagne](ARCHITECTURE_CAMPAGNE.md), de [présentation](ARCHITECTURE_V1_10.md), le [format](FORMAT.md), l’[intégration](INTEGRATION_GODOT.md) et les [preuves datées](VALIDATION.md).

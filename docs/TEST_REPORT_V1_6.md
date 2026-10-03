@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Validation — Lunaria Studio V1.6 et jeu alimenté par le Studio
 
 ## Périmètre et environnement

@@ -1,6 +1,9 @@
 import type { GameProject } from '../game/types.js';
 import { DEFAULT_ABILITY_PRESENTATION,type PresentationCatalog,type SpeciesVisual,type AnimationDefinition } from './types.js';
 import { newId } from '../game/types.js';
+import { CIGARETTE, CIGARETTE_ANIMATIONS, CIGARETTE_PROFILE, CIGARETTE_VFX } from '../game/cigarette.js';
+import {PLASTIC_BAG,PLASTIC_BAG_ANIMATIONS,PLASTIC_BAG_PROFILE} from '../game/plasticBag.js';
+import {POLLUTER_ANIMATIONS,POLLUTER_PROFILES,POLLUTER_VISUALS,PLAQUE_SLIME_PRESENTATION} from './polluterAnimations.js';
 export const DEFAULT_PRESENTATION:PresentationCatalog={
   "version": 1,
   "defaultProfileId": "default_profile",
@@ -404,74 +407,74 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "kind": "combined",
       "frames": [
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_combat_sheet_v02.png",
+          "duration": 0.07,
           "region": {
-            "x": 0,
-            "y": 0,
-            "width": 1024,
-            "height": 1536
+            "x": 170,
+            "y": 20,
+            "width": 470,
+            "height": 470
           },
           "anchor": {
-            "x": 0.5,
-            "y": 1
-          },
-          "duration": 0.07
+            "x": 0.5106382978723404,
+            "y": 0.9468085106382979
+          }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/expressions/Gardienne rose en garde de combat.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_combat_sheet_v02.png",
+          "duration": 0.11,
           "region": {
-            "x": 0,
-            "y": 0,
-            "width": 1024,
-            "height": 1536
+            "x": 935,
+            "y": 20,
+            "width": 470,
+            "height": 470
           },
           "anchor": {
-            "x": 0.5,
-            "y": 1
-          },
-          "duration": 0.11
+            "x": 0.48936170212765956,
+            "y": 0.9340425531914893
+          }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_combat_sheet_v02.png",
+          "duration": 0.07,
           "region": {
-            "x": 0,
-            "y": 0,
-            "width": 1024,
-            "height": 1536
+            "x": 170,
+            "y": 20,
+            "width": 470,
+            "height": 470
           },
           "anchor": {
-            "x": 0.5,
-            "y": 1
-          },
-          "duration": 0.07
+            "x": 0.5106382978723404,
+            "y": 0.9468085106382979
+          }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_palm_strike_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_combat_sheet_v02.png",
+          "duration": 0.14,
           "region": {
-            "x": 0,
-            "y": 0,
-            "width": 1024,
-            "height": 1536
+            "x": 170,
+            "y": 505,
+            "width": 470,
+            "height": 470
           },
           "anchor": {
-            "x": 0.5,
-            "y": 1
-          },
-          "duration": 0.14
+            "x": 0.5106382978723404,
+            "y": 0.9638297872340426
+          }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/expressions/Gardienne rose en garde de combat.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_combat_sheet_v02.png",
+          "duration": 0.06,
           "region": {
-            "x": 0,
-            "y": 0,
-            "width": 1024,
-            "height": 1536
+            "x": 935,
+            "y": 505,
+            "width": 470,
+            "height": 470
           },
           "anchor": {
-            "x": 0.5,
-            "y": 1
-          },
-          "duration": 0.06
+            "x": 0.44680851063829785,
+            "y": 0.9617021276595744
+          }
         }
       ],
       "duration": 0.45,
@@ -1488,87 +1491,87 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "kind": "frames",
       "frames": [
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v02.png",
           "duration": 0.14,
           "region": {
-            "x": 109,
-            "y": 62,
-            "width": 307,
-            "height": 399
+            "x": 97,
+            "y": 55,
+            "width": 330,
+            "height": 425
           },
           "anchor": {
-            "x": 0.5368340168046297,
-            "y": 0.9924812030075187
+            "x": 0.5870778439220088,
+            "y": 0.9835294117647059
           }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v02.png",
           "duration": 0.14,
           "region": {
-            "x": 621,
-            "y": 62,
-            "width": 307,
-            "height": 399
+            "x": 609,
+            "y": 55,
+            "width": 330,
+            "height": 425
           },
           "anchor": {
-            "x": 0.45960346256736784,
-            "y": 0.9899749373433584
+            "x": 0.5001457076447688,
+            "y": 0.9929411764705882
           }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v02.png",
           "duration": 0.14,
           "region": {
-            "x": 1133,
-            "y": 62,
-            "width": 307,
-            "height": 399
+            "x": 1121,
+            "y": 55,
+            "width": 330,
+            "height": 425
           },
           "anchor": {
-            "x": 0.43249598702404524,
-            "y": 0.9949874686716792
+            "x": 0.4019710168991514,
+            "y": 0.9952941176470588
           }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v02.png",
           "duration": 0.14,
           "region": {
-            "x": 109,
-            "y": 574,
-            "width": 307,
-            "height": 399
+            "x": 97,
+            "y": 567,
+            "width": 330,
+            "height": 425
           },
           "anchor": {
-            "x": 0.5576693036038036,
-            "y": 0.924812030075188
+            "x": 0.5895645492278778,
+            "y": 0.9341176470588235
           }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v02.png",
           "duration": 0.14,
           "region": {
-            "x": 621,
-            "y": 574,
-            "width": 307,
-            "height": 399
+            "x": 609,
+            "y": 567,
+            "width": 330,
+            "height": 425
           },
           "anchor": {
-            "x": 0.48379048515370865,
-            "y": 0.9273182957393483
+            "x": 0.4945987483405378,
+            "y": 0.9388235294117647
           }
         },
         {
-          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v01.png",
+          "asset": "library://02_characters/Rose/stage_01/animations/rose_walk_sheet_v02.png",
           "duration": 0.14,
           "region": {
-            "x": 1133,
-            "y": 574,
-            "width": 307,
-            "height": 399
+            "x": 1121,
+            "y": 567,
+            "width": 330,
+            "height": 425
           },
           "anchor": {
-            "x": 0.45521551001542526,
-            "y": 0.9273182957393483
+            "x": 0.41493599003269244,
+            "y": 0.9317647058823529
           }
         }
       ],
@@ -2365,7 +2368,22 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
     }
   ]
 };
+DEFAULT_PRESENTATION.animations.push(...structuredClone(PLASTIC_BAG_ANIMATIONS));
+DEFAULT_PRESENTATION.profiles.push(structuredClone(PLASTIC_BAG_PROFILE));
+DEFAULT_PRESENTATION.animations.push(...structuredClone(CIGARETTE_ANIMATIONS));
+DEFAULT_PRESENTATION.profiles.push(structuredClone(CIGARETTE_PROFILE));
+DEFAULT_PRESENTATION.vfx.push(structuredClone(CIGARETTE_VFX));
+for(const animation of POLLUTER_ANIMATIONS){
+ const index=DEFAULT_PRESENTATION.animations.findIndex(a=>a.id===animation.id);
+ if(index<0)DEFAULT_PRESENTATION.animations.push(structuredClone(animation));else DEFAULT_PRESENTATION.animations[index]=structuredClone(animation);
+}
+for(const profile of POLLUTER_PROFILES){
+ const index=DEFAULT_PRESENTATION.profiles.findIndex(p=>p.id===profile.id);
+ if(index<0)DEFAULT_PRESENTATION.profiles.push(structuredClone(profile));else DEFAULT_PRESENTATION.profiles[index]=structuredClone(profile);
+}
 export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
+  cigarette:structuredClone(CIGARETTE.visual!),
+  plastic_bag:structuredClone(PLASTIC_BAG.visual!),
   "radish": {
     "sprite": {
       "asset": "library://combat/animation/animation_radish.png",
@@ -2389,24 +2407,24 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
   },
   "rose": {
     "sprite": {
-      "asset": "library://02_characters/Rose/stage_01/animations/rose_stage_01_combat_idle_v01.png",
+      "asset": "library://02_characters/Rose/stage_01/animations/rose_combat_sheet_v02.png",
       "region": {
-        "x": 0,
-        "y": 0,
-        "width": 1024,
-        "height": 1536
+        "x": 170,
+        "y": 20,
+        "width": 470,
+        "height": 470
       },
       "anchor": {
-        "x": 0.5,
-        "y": 1
+        "x": 0.5106382978723404,
+        "y": 0.9468085106382979
       }
     },
     "width": 104,
-    "height": 112,
+    "height": 96,
     "baseline": 32,
     "mirror": false,
     "tint": "#ffffff",
-    "note": "Rose : repos d’origine, combo de coups conservé et déplacement en six poses."
+    "note": "Rose : repos et riposte peints, contours doux et verts naturels harmonisés avec Radis et Noisetier ; marche en six poses."
   },
   "hazel": {
     "sprite": {
@@ -3258,17 +3276,18 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "note": "Plaque fixe. La grille s’ouvre lors de l’apparition et crache du slime pendant le tir."
   }
 };
+Object.assign(INITIAL_VISUALS,structuredClone(POLLUTER_VISUALS));
 /** Authoring upgrade only. This function is never part of player save loading. */
 export function ensurePresentation(p:GameProject):void {
  if(!p.presentation){
   p.presentation=structuredClone(DEFAULT_PRESENTATION);
-  if(!p.balance.enemies.some(enemy=>enemy.id==='plaque')){
-   p.presentation.animations=p.presentation.animations.filter(animation=>animation.ownerSpeciesId!=='plaque');
-   p.presentation.profiles=p.presentation.profiles.filter(profile=>profile.id!=='profile_plaque');
+  for(const id of ['plaque','runner','cigarette','plastic_bag'])if(!p.balance.enemies.some(enemy=>enemy.id===id)){
+   p.presentation.animations=p.presentation.animations.filter(animation=>animation.ownerSpeciesId!==id);
+   p.presentation.profiles=p.presentation.profiles.filter(profile=>profile.id!=='profile_'+id);
   }
   for(const s of [...p.balance.plants,...p.balance.enemies]){s.animationProfileId='profile_'+s.id;s.visual=structuredClone(INITIAL_VISUALS[s.id]);}
   for(const a of p.combat?.abilities??[])a.presentation??=structuredClone(DEFAULT_ABILITY_PRESENTATION);
-  for(const q of p.combat?.projectiles??[])q.presentation={asset:'',animationId:'',trailVfxId:'',impact:{soundId:'',vfxId:'',attach:'center'}};
+  for(const q of p.combat?.projectiles??[])q.presentation=q.id==='proj_plaque_slime'&&p.balance.enemies.some(e=>e.id==='plaque')?structuredClone(PLAQUE_SLIME_PRESENTATION):{asset:'',animationId:'',trailVfxId:'',impact:{soundId:'',vfxId:'',attach:'center'}};
  }
  p.schemaVersion=4;
 }

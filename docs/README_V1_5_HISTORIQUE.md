@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Lunaria Cinematic Studio · V1.5
 
 Éditeur local de cinématiques **par plans**, en **React + TypeScript + Node.js + Electron**. Le canvas est rendu en SVG par React. Les images, bulles et sons restent dans ta bibliothèque commune ; `cinematic.json` ne contient que leurs références `library://`.

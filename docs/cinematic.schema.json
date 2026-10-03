@@ -289,7 +289,10 @@
                         "bottom",
                         "top",
                         "pop",
-                        "zoom"
+                        "zoom",
+                        "drop",
+                        "spiral",
+                        "rise"
                       ]
                     },
                     "duration": {
@@ -322,7 +325,10 @@
                         "right",
                         "top",
                         "bottom",
-                        "shrink"
+                        "shrink",
+                        "spiral",
+                        "rise",
+                        "fall"
                       ]
                     },
                     "start": {
@@ -380,7 +386,13 @@
                         "nod",
                         "recoil",
                         "heartbeat",
-                        "flutter"
+                        "flutter",
+                        "orbit",
+                        "figure8",
+                        "zigzag",
+                        "tumble",
+                        "surprise",
+                        "jelly"
                       ]
                     },
                     "intensity": {

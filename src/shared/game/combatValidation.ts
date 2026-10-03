@@ -24,6 +24,9 @@ export function combatIssues(p:GameProject):GameIssue[]{
   if(a.excludeSelf&&a.target!=='ally')error(path,'L’exclusion du porteur concerne uniquement une attaque sur allié.');
   if(a.requiresActiveAttack&&a.target!=='ally')error(path,'La cible en cours d’attaque concerne uniquement un soutien allié.');
   if(a.allowBehind&&(a.target!=='opponent'||a.delivery!=='projectile'))error(path,'Le tir dans les deux sens exige un projectile visant un adversaire.');
+  if(a.forwardCells!==undefined&&(a.target!=='opponent'||a.delivery!=='instant'||a.selection!=='all'||a.rowRadius!==0||a.allowBehind))error(path,'Un souffle par cases est immédiat et touche les adversaires devant le porteur, sur sa propre allée.');
+  if(a.attachToTarget&&(a.target!=='opponent'||a.delivery!=='instant'||a.selection!=='one'||a.priority!=='nearest'||a.rowRadius!==0||a.allowBehind||a.forwardCells!==undefined))error(path,'Se poser sur la cible exige un adversaire unique sur la même allée, sans projectile ni souffle.');
+  if(a.blocksTargetAttack&&!a.attachToTarget)error(path,'Le blocage des attaques exige de se poser sur la cible.');
   if(a.target==='opponent'&&a.priority==='wounded')error(path,'La priorité « allié blessé » ne s’applique pas à un adversaire.');
   for(const id of a.effects){const e=effects.get(id);if(!e){error(path,'Résultat absent : '+id);continue;}
    if(BENEFICIAL.includes(e.kind)===(a.target==='opponent'))error(path,`${e.name} : cible incompatible (soin/protection sur allié, dégâts/altérations sur adversaire).`);
@@ -33,6 +36,7 @@ export function combatIssues(p:GameProject):GameIssue[]{
   const path='balance.'+role+'.'+x.id;
   if(!Array.isArray(x.ability_ids)){error(path,'La liste des attaques est requise.');continue;}
   if(new Set(x.ability_ids).size!==x.ability_ids.length)error(path,'Attaque attribuée deux fois.');
+  if(role==='plants'&&x.ability_ids.some(id=>c.abilities.find(a=>a.id===id)?.attachToTarget))error(path,'Seuls les ennemis peuvent se poser sur une plante.');
   for(const id of x.ability_ids)if(!abilities.has(id))error(path,'Attaque inconnue : '+id);
   if(!x.ability_ids.length)error(path,'Aucune attaque : cette espèce ne combat pas (ses PV restent actifs).','warning');
  }

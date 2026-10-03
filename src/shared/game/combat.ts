@@ -11,11 +11,13 @@ export const INSTANT:EffectKind[]=['damage','heal','cleanse'];
 export const FRACTION:EffectKind[]=['slow','weaken','damage_boost','attack_speed_boost','protection'];
 export interface EffectDefinition {id:string;name:string;description:string;kind:EffectKind;valueSource:'fixed'|'attack'|'strength';amount:number;damageType:DamageType|'inherit';duration:number;tickInterval:number}
 export interface ProjectileDefinition {presentation?:ProjectilePresentation;id:string;name:string;description:string;speed:number;lifetime:number;maxHits:number;hitRadius:number;splashRadius:number;rowRadius:number;color:string;size:number}
-export interface AbilityDefinition {presentation?:AbilityPresentation;id:string;name:string;description:string;delivery:'instant'|'projectile';projectileId:string;target:'opponent'|'ally'|'self';excludeSelf?:boolean;requiresActiveAttack?:boolean;allowBehind?:boolean;selection:'one'|'all';priority:'nearest'|'nearest_right'|'rightmost'|'strongest'|'wounded'|'random';rangeSource:'species'|'fixed';range:number;rowRadius:number;cooldownSource:'species'|'fixed';cooldown:number;initialDelay:number;effects:string[]}
+export interface AbilityDefinition {presentation?:AbilityPresentation;id:string;name:string;description:string;delivery:'instant'|'projectile';projectileId:string;target:'opponent'|'ally'|'self';excludeSelf?:boolean;requiresActiveAttack?:boolean;allowBehind?:boolean;forwardCells?:number;attachToTarget?:boolean;blocksTargetAttack?:boolean;selection:'one'|'all';priority:'nearest'|'nearest_right'|'rightmost'|'strongest'|'wounded'|'random';rangeSource:'species'|'fixed';range:number;rowRadius:number;cooldownSource:'species'|'fixed';cooldown:number;initialDelay:number;effects:string[]}
 export interface CombatCatalog {abilities:AbilityDefinition[];effects:EffectDefinition[];projectiles:ProjectileDefinition[]}
 export type CombatSection='abilities'|'effects'|'projectiles';
 /** Plain-language summary used by the Studio. The storage contract stays normalized. */
 export function attackTypeLabel(ability:AbilityDefinition,catalog:CombatCatalog):string{
+ if(ability.attachToTarget)return "Étouffement au contact";
+ if(ability.forwardCells)return `Souffle sur ${ability.forwardCells} cases devant`;
  if(ability.target==='ally')return 'Soutien des alliés';
  if(ability.target==='self')return 'Soutien personnel';
  if(ability.delivery==='instant')return ability.selection==='all'?'Attaque de zone immédiate':'Attaque directe';
@@ -44,4 +46,4 @@ export function effectAmount(effect:EffectDefinition,stats:{attack:number;streng
  return Math.max(0,effect.amount*base)*(['damage','poison'].includes(effect.kind)?power:1);
 }
 export function abilityInterval(a:AbilityDefinition,stats:{rate:number}):number{return a.cooldownSource==='species'?stats.rate:a.cooldown;}
-export function abilityRange(a:AbilityDefinition,stats:{range:number}):number{return a.rangeSource==='species'?stats.range:a.range;}
+export function abilityRange(a:AbilityDefinition,stats:{range:number}):number{return a.forwardCells??(a.rangeSource==='species'?stats.range:a.range);}

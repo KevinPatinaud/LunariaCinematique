@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Lunaria V1.10 — rapport de validation
 
 Date : 21 septembre 2026. Ce rapport concerne les sources V1.10 jointes, pas les résultats des anciennes livraisons conservés dans les documents historiques.

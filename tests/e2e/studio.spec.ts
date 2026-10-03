@@ -32,6 +32,19 @@ async function saveCurrent(): Promise<Cinematic> {
   await expect(page.locator('.toast')).toContainText(/enregistr/i);
   return JSON.parse(await fs.readFile(target,'utf8')) as Cinematic;
 }
+async function openProjectFilm(film=fixture()) {
+  const projectFile=path.join(temp,'effects.game.json');
+  const project=seedProject();project.cinematics=[film];
+  await fs.writeFile(projectFile,JSON.stringify(project));
+  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},projectFile);
+  await page.getByRole('button',{name:'Ouvrir le projet',exact:true}).click();
+  await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');
+}
+async function saveProjectFilm():Promise<Cinematic> {
+  await page.getByRole('button',{name:'Enregistrer le projet',exact:true}).click();
+  await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
+  return JSON.parse(await fs.readFile(path.join(temp,'effects.game.json'),'utf8')).cinematics[0];
+}
 test.beforeEach(async()=>{
   errors=[];temp=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-electron-v14-'));library=path.join(temp,'library');target=path.join(temp,'saved.json');
   await fs.cp(path.join(ROOT,'example-library'),library,{recursive:true});
@@ -133,25 +146,25 @@ test('diagnostic d’asset absent et correction ciblée hors écran',async()=>{
 });
 
 test('objet animé : catégorie dédiée, poignée B, aperçu sans mutation et JSON v2',async()=>{
-  await openFixture();
+  await openProjectFilm();
   await page.getByRole('tab',{name:'Objets',exact:false}).click();
   await page.locator('.asset-card').first().dblclick();
   await expect(page.getByLabel('Type d’élément',{exact:true})).toHaveValue('prop');
   await page.getByLabel('Activer le déplacement A vers B',{exact:true}).check();
-  const before=await saveCurrent(), actor=before.shots[0].actors.at(-1)!;
+  const before=await saveProjectFilm(), actor=before.shots[0].actors.at(-1)!;
   const destination=await page.getByTestId('movement-destination').boundingBox();
   if(!destination)throw new Error('Poignée B absente');
   await page.mouse.move(destination.x+destination.width/2,destination.y+destination.height/2);
   await page.mouse.down();await page.mouse.move(destination.x+destination.width/2-35,destination.y+destination.height/2-20,{steps:6});await page.mouse.up();
-  const moved=await saveCurrent();expect(moved.shots[0].actors.at(-1)!.movement!.dx).not.toEqual(actor.movement!.dx);
+  const moved=await saveProjectFilm();expect(moved.shots[0].actors.at(-1)!.movement!.dx).not.toEqual(actor.movement!.dx);
   await page.getByLabel('Effet de mouvement',{exact:true}).selectOption('sway');
-  const configured=await saveCurrent();expect(configured.schemaVersion).toBe(2);expect(configured.shots[0].actors.at(-1)!.pivot).toBe('top');
+  const configured=await saveProjectFilm();expect(configured.schemaVersion).toBe(2);expect(configured.shots[0].actors.at(-1)!.pivot).toBe('top');
   const object=page.getByTestId(`actor-${actor.id}`),rest=await object.getAttribute('transform');
   await page.getByRole('button',{name:'Tester les mouvements',exact:true}).click();
   await expect.poll(()=>object.getAttribute('transform')).not.toBe(rest);
   await page.getByRole('button',{name:'Pause des mouvements',exact:true}).click();
   const paused=await object.getAttribute('transform');await page.waitForTimeout(120);expect(await object.getAttribute('transform')).toBe(paused);
-  expect(await saveCurrent()).toEqual(configured);
+  expect(await saveProjectFilm()).toEqual(configured);
   await page.getByRole('button',{name:'Retour au placement',exact:true}).click();expect(await object.getAttribute('transform')).toBe(rest);
 });
 
@@ -163,6 +176,59 @@ test('réouverture v2 et continuité de la destination du déplacement',async()=
   const result=await saveCurrent();expect(result.shots[1].actors[0].movement!.enabled).toBe(false);
   expect(result.shots[1].actors[0].x).toBeCloseTo(actor.x+.2);expect(result.shots[1].actors[0].motion).toEqual(actor.motion);
   await openFixture(result);expect(await saveCurrent()).toEqual(result);
+});
+
+test('nouveaux effets : choix, aperçu temporel, sauvegarde et réouverture pour les trois rôles',async({},info)=>{
+  test.setTimeout(90000);
+  const doc=fixture(),shot=doc.shots[0];shot.duration=12;shot.bubbles=[];
+  shot.actors.push(newActor({...asset,name:'Objet C'},1.5,.45,.48,'prop'));
+  shot.actors[1].role='enemy';
+  await openProjectFilm(prepareCinematic(doc));
+  const motions=['orbit','figure8','zigzag','tumble','surprise','jelly'];
+  const entries=['drop','spiral','rise'],exits=['spiral','rise','fall'];
+  for(let index=0;index<shot.actors.length;index++) {
+    const actor=shot.actors[index];
+    await page.getByRole('button',{name:`Sélectionner ${actor.name}`,exact:true}).click();
+    for(const preset of motions) {
+      await page.getByLabel('Effet de mouvement',{exact:true}).selectOption(preset);
+      await expect(page.getByLabel('Effet de mouvement',{exact:true})).toHaveValue(preset);
+    }
+    for(const preset of entries) await page.getByRole('combobox',{name:'Entrée',exact:true}).selectOption(preset);
+    for(const preset of exits) await page.getByLabel('Animation de sortie',{exact:true}).selectOption(preset);
+    await page.getByLabel('Effet de mouvement',{exact:true}).selectOption(motions[index]);
+    await page.getByRole('combobox',{name:'Entrée',exact:true}).selectOption(entries[index]);
+    await page.getByLabel('Animation de sortie',{exact:true}).selectOption(exits[index]);
+    await page.getByRole('textbox',{name:'Délai d’apparition',exact:true}).fill('0.5');
+    await page.getByRole('textbox',{name:'Délai de disparition',exact:true}).fill('7');
+    await page.getByRole('textbox',{name:'Durée de la sortie',exact:true}).fill('1');
+    await page.getByRole('textbox',{name:'Durée de la sortie',exact:true}).blur();
+  }
+  const configured=await saveProjectFilm();
+  for(let index=0;index<shot.actors.length;index++) {
+    const saved=configured.shots[0].actors[index];
+    expect(saved.motion?.preset).toBe(motions[index]);
+    expect(saved.entry).toMatchObject({preset:entries[index],delay:.5});
+    expect(saved.exit).toEqual({preset:exits[index],start:7,duration:1});
+  }
+  const objects=shot.actors.map(actor=>page.getByTestId(`actor-${actor.id}`));
+  const rest=await Promise.all(objects.map(object=>object.getAttribute('transform')));
+  await page.getByRole('button',{name:'Tester les animations de l’élément',exact:true}).click();
+  const clock=page.getByRole('slider',{name:'Temps de l’aperçu des mouvements',exact:true});
+  await clock.fill('0.25');
+  for(const object of objects)await expect(object).toHaveAttribute('opacity','0');
+  await clock.fill('2.1');
+  const moving=await Promise.all(objects.map(object=>object.getAttribute('transform')));
+  moving.forEach((transform,index)=>expect(transform).not.toBe(rest[index]));
+  await clock.fill('8.5');
+  for(const object of objects)await expect(object).toHaveAttribute('opacity','0');
+  await clock.fill('2.1');
+  expect(await Promise.all(objects.map(object=>object.getAttribute('transform')))).toEqual(moving);
+  await info.attach('nouveaux-effets-apercu',{body:await page.screenshot(),contentType:'image/png'});
+  expect(await saveProjectFilm()).toEqual(configured);
+  await page.getByRole('button',{name:'Retour au placement',exact:true}).click();
+  expect(await Promise.all(objects.map(object=>object.getAttribute('transform')))).toEqual(rest);
+  await openProjectFilm(configured);
+  expect(await saveProjectFilm()).toEqual(configured);
 });
 
 

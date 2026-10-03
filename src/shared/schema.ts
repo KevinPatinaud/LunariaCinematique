@@ -19,10 +19,10 @@ const nullableRef: Rule = { ...ref, type: ['string', 'null'] };
 const nullableId: Rule = { ...id, type: ['string', 'null'] };
 const box = { x: num(-1, 2), y: num(-1, 2), width: num(0.03, 2), height: num(0.03, 2) };
 const actor = obj({ ...box, animation:ACTOR_ANIMATION_SCHEMA as Rule,id, name: str(180), asset: ref, flipX: bool, opacity: num(0, 1),
-  entry: obj({ preset: en('none', 'fade', 'left', 'right', 'bottom', 'top', 'pop', 'zoom'), duration: num(0.1, 10), delay: num(0, 300) }),
-  exit: obj({ preset: en('none', 'fade', 'left', 'right', 'top', 'bottom', 'shrink'), start: num(0, 300), duration: num(0.1, 10) }),
+  entry: obj({ preset: en('none', 'fade', 'left', 'right', 'bottom', 'top', 'pop', 'zoom', 'drop', 'spiral', 'rise'), duration: num(0.1, 10), delay: num(0, 300) }),
+  exit: obj({ preset: en('none', 'fade', 'left', 'right', 'top', 'bottom', 'shrink', 'spiral', 'rise', 'fall'), start: num(0, 300), duration: num(0.1, 10) }),
   role: en('character', 'enemy', 'prop'), rotation: num(-180, 180), pivot: en('center', 'top', 'bottom'),
-  motion: obj({ preset: en('none', 'float', 'sway', 'pulse', 'spin', 'shake', 'bounce', 'nod', 'recoil', 'heartbeat', 'flutter'), intensity: num(0, 1),
+  motion: obj({ preset: en('none', 'float', 'sway', 'pulse', 'spin', 'shake', 'bounce', 'nod', 'recoil', 'heartbeat', 'flutter', 'orbit', 'figure8', 'zigzag', 'tumble', 'surprise', 'jelly'), intensity: num(0, 1),
     period: num(0.2, 60), delay: num(0, 300), loop: bool, reverse: bool }),
   movement: obj({ enabled: bool, dx: num(-3, 3), dy: num(-3, 3), duration: num(0.1, 300), delay: num(0, 300),
     easing: en('smooth', 'linear'), repeat: en('once', 'pingpong') })

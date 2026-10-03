@@ -1,6 +1,8 @@
+import {installPlasticBag} from './plasticBag.js';
 import { ensurePresentation } from '../presentation/defaults.js';
 import type { GameProject } from './types.js';
 import { defaultRewards } from './types.js';
+import { installCigarette } from './cigarette.js';
 /** Editable starter content, not a runtime fallback. */
 export const GAME_SEED:GameProject={
   rewards: defaultRewards(),
@@ -2884,4 +2886,6 @@ export const GAME_SEED:GameProject={
     "variables": []
   }
 };
+installCigarette(GAME_SEED);
+installPlasticBag(GAME_SEED);
 export function seedProject():GameProject{const p=structuredClone(GAME_SEED);ensurePresentation(p);return p;}

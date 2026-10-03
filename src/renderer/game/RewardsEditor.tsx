@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { defaultRewards, DEFAULT_WAVE_SEED_REWARD, type ComboReward, type GameProject } from '../../shared/game/types.js';
+import { defaultRewards, DEFAULT_WAVE_SEED_REWARD, isConquest, type ComboReward, type GameProject } from '../../shared/game/types.js';
 import type { Change } from '../presentation/PresentationEditor.js';
 import { Num } from './BalanceEditor.js';
 
@@ -25,7 +25,7 @@ export function RewardsEditor({project,change,initialLevelId}:{project:GameProje
    <h2>Récompenses du niveau</h2>
    {level?<>
     <label className="gd-field"><span>Niveau</span><select aria-label="Niveau pour les récompenses" value={level.id} onChange={event=>setLevelId(event.target.value)}>{project.levels.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
-    {level.objective.type==='advance'&&<div className="gd-callout"><h3>Conquête des allées</h3><Num label="Graines par allée capturée" value={level.laneCaptureSeedReward??0} max={10000} integer change={laneCaptureSeedReward=>change(p=>{p.levels.find(item=>item.id===level.id)!.laneCaptureSeedReward=laneCaptureSeedReward;},level.id+':laneCaptureSeedReward','Modifier les graines de capture')}/><p>Versées une seule fois par allée, y compris la dernière. Le décor progresse de 20 % à chaque capture. 0 désactive ce bonus.</p></div>}
+    {isConquest(level.objective.type)&&<div className="gd-callout"><h3>Conquête des allées</h3><Num label="Graines par allée capturée" value={level.laneCaptureSeedReward??0} max={10000} integer change={laneCaptureSeedReward=>change(p=>{p.levels.find(item=>item.id===level.id)!.laneCaptureSeedReward=laneCaptureSeedReward;},level.id+':laneCaptureSeedReward','Modifier les graines de capture')}/><p>Versées une seule fois par allée, y compris la dernière. Le décor progresse de 20 % à chaque capture. 0 désactive ce bonus.</p></div>}
     <h3>Fin de vague</h3><p>Versées une seule fois après l’élimination de la vague. Ces montants sont aussi accessibles dans « Niveaux → Vagues & ennemis ».</p>
     <div className="gd-form-grid">{level.waves.map((wave,index)=><Num key={wave.id} label={`Vague ${index+1} — graines`} value={wave.seedReward??DEFAULT_WAVE_SEED_REWARD} max={10000} integer change={seedReward=>change(p=>{p.levels.find(item=>item.id===level.id)!.waves.find(item=>item.id===wave.id)!.seedReward=seedReward;},wave.id+':seedReward','Modifier les graines de fin de vague')}/>)}</div>
     <p className="gd-note">0 désactive la récompense de cette vague. Les montants existants sont conservés.</p>

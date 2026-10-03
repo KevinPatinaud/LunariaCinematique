@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Installer la V1.2 sur la V1.1
 
 **Le correctif modifie aussi Node, le preload Electron et les modules partagés. Il faut arrêter complètement l’application, pas seulement attendre le rechargement React.**

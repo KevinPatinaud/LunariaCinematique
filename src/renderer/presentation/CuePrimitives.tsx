@@ -17,6 +17,7 @@ export class PreviewSoundPool {
 }
 export function VfxGlyph({definition:d,age,assets}:{definition:VfxDefinition;age:number;assets:Asset[]}){
  const u=Math.max(0,Math.min(1,age/d.duration)),size=d.size,opacity=(1-u)*d.intensity,image=assets.find(a=>a.ref===d.asset);
+ if(d.preset==='smoke')return <g fill={d.color} opacity={opacity*Math.min(1,u*10)}>{Array.from({length:Math.min(64,d.quantity)},(_,i)=>{const t=(i+.5)/Math.min(64,d.quantity),r=Math.min(image?18+30*t:7+15*t,size*Math.min(t,1-t)/1.3),x=-t*size,y=Math.sin(i*2.4+u*2)*r*.32;return image?<image key={i} href={image.url} x={x-r*1.3} y={y-r*.85} width={r*2.6} height={r*1.7} opacity={.9}/>:<ellipse key={i} cx={x} cy={y} rx={r*1.3} ry={r}/>;})}</g>;
  if(image)return <image href={image.url} x={-size*.5} y={-size*.5} width={size} height={size} opacity={opacity}/>;
  if(['halo','flash'].includes(d.preset))return <circle r={Math.max(1,size*(.25+u*.25))} fill="none" stroke={d.color} strokeWidth={Math.max(1,size*.06)} opacity={opacity}/>;
  return <g fill={d.color} opacity={opacity}>{Array.from({length:Math.min(64,d.quantity)},(_,i)=>{const a=i*2.399963,r=size*u*(.25+.5*(i*17%31)/31),x=Math.cos(a)*r,y=Math.sin(a)*r+(['dust','leaves'].includes(d.preset)?u*u*size*.4:0);return <circle key={i} cx={x} cy={y} r={Math.max(1,size*.05*(1-u))}/>;})}</g>;

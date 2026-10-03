@@ -1,3 +1,5 @@
+**Archive documentaire — livraison datée.** Ce document conserve ses instructions et résultats d’origine. Il ne décrit pas nécessairement le Studio courant. Pour travailler aujourd’hui, consulter l’[index maintenu](README.md), le [guide courant](GUIDE_V1_10.md) et la [validation datée](VALIDATION.md).
+
 # Audit et correctifs · Lunaria Cinematic Studio V1.2
 
 Livraison issue de l’archive V1.1 fournie dans cette conversation. Le périmètre couvre l’état du document, les fichiers, la bibliothèque, l’édition de scène, la lecture et le lecteur Godot livré en sources. Il ne couvre pas le reste du jeu ni une autre branche de Lunaria Studio.

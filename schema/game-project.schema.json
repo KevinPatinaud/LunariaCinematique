@@ -399,7 +399,7 @@
         "enemies": {
           "type": "array",
           "minItems": 13,
-          "maxItems": 14,
+          "maxItems": 16,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -433,7 +433,9 @@
                   "corrupted_rose",
                   "furnace",
                   "thorn_knot",
-                  "plaque"
+                  "plaque",
+                  "cigarette",
+                  "plastic_bag"
                 ]
               },
               "name": {
@@ -749,6 +751,7 @@
                 "enum": [
                   "defend",
                   "advance",
+                  "escort",
                   "invasive_foci",
                   "protect_cell",
                   "operation",
@@ -1089,6 +1092,52 @@
                 "type": "number",
                 "minimum": 5,
                 "maximum": 60
+              }
+            }
+          },
+          "escort": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "laneCounts",
+              "speed",
+              "maxHp",
+              "departureInterval",
+              "image"
+            ],
+            "properties": {
+              "laneCounts": {
+                "type": "array",
+                "minItems": 5,
+                "maxItems": 5,
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 20,
+                  "multipleOf": 1
+                }
+              },
+              "speed": {
+                "type": "number",
+                "minimum": 0.03,
+                "maximum": 0.23
+              },
+              "maxHp": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 6000,
+                "multipleOf": 1
+              },
+              "departureInterval": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 60
+              },
+              "image": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000,
+                "pattern": "^library://.+\\.(png|webp)$"
               }
             }
           },
@@ -1626,6 +1675,18 @@
               },
               "allowBehind": {
                 "type": "boolean"
+              },
+              "attachToTarget": {
+                "type": "boolean"
+              },
+              "blocksTargetAttack": {
+                "type": "boolean"
+              },
+              "forwardCells": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 8,
+                "multipleOf": 1
               },
               "excludeSelf": {
                 "type": "boolean"
@@ -3016,7 +3077,8 @@
                   "halo",
                   "flash",
                   "explosion",
-                  "trail"
+                  "trail",
+                  "smoke"
                 ]
               },
               "duration": {
@@ -3369,7 +3431,10 @@
                               "bottom",
                               "top",
                               "pop",
-                              "zoom"
+                              "zoom",
+                              "drop",
+                              "spiral",
+                              "rise"
                             ]
                           },
                           "duration": {
@@ -3402,7 +3467,10 @@
                               "right",
                               "top",
                               "bottom",
-                              "shrink"
+                              "shrink",
+                              "spiral",
+                              "rise",
+                              "fall"
                             ]
                           },
                           "start": {
@@ -3460,7 +3528,13 @@
                               "nod",
                               "recoil",
                               "heartbeat",
-                              "flutter"
+                              "flutter",
+                              "orbit",
+                              "figure8",
+                              "zigzag",
+                              "tumble",
+                              "surprise",
+                              "jelly"
                             ]
                           },
                           "intensity": {

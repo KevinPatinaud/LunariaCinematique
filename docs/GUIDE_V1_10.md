@@ -1,6 +1,6 @@
 # Lunaria V1.10 — installation et utilisation
 
-**Mise à jour du projet courant :** un seul fichier `lunaria.game.json` enregistre les niveaux, le parcours et les cinématiques complètes. Le projet démarre sans mission ; les 40 missions d’exemple ont été retirées. Les images restent dans la bibliothèque graphique. Les indications plus bas sur une campagne initiale de 40 niveaux décrivent l’ancienne livraison V1.10.
+**Guide courant, actualisé le 2 octobre 2026.** Un seul fichier `lunaria.game.json` enregistre les niveaux, le parcours et les cinématiques complètes. Un nouveau document démarre sans mission ; le projet Lunaria existant possède sa propre campagne. Les anciennes 40 missions d’exemple restent dans certaines fixtures, sans constituer le contenu actif. Les images restent dans la bibliothèque source.
 
 ## Prise en main du Studio courant
 
@@ -20,9 +20,11 @@ Dans **Niveaux → Paramètres → Type de niveau / objectif**, choisir **Conqu�
 
 Dans **Conquérir les allées**, **Aléatoire équilibré** répartit chaque série de cinq arrivées entre les cinq allées dans un ordre mélangé. Le nombre saisi correspond au maximum avec les cinq allées ouvertes. Une capture annule les arrivées encore prévues sur cette allée, sans les transférer ni rapprocher les autres arrivées. Les vagues suivantes et les renforts aléatoires appliquent la même réduction : il reste environ 80 %, 60 %, 40 %, puis 20 % des ennemis avec une, deux, trois, puis quatre allées conquises. Pour des groupes multiples de cinq, la proportion est exacte ; un petit groupe peut varier d’un ennemi par allée. Les groupes affectés à une allée précise gardent leur quantité sur cette allée tant qu’elle est ouverte. L’aperçu montre le planning maximal avec toutes les allées ouvertes ; les captures se produisent seulement pendant la partie.
 
-Chaque **Plaque**, quel que soit le type de niveau, fait arriver une **Canette pressée** dans sa propre allée toutes les **10 secondes de combat**. La première arrive après 10 secondes de présence ; chaque Plaque possède son compteur, conservé dans la sauvegarde. La génération fonctionne même sans plante à attaquer et s’arrête à la destruction de la Plaque. Les canettes entrent par le bord droit, avancent et rapportent leurs graines habituelles au recyclage. Il faut aussi les éliminer pour terminer la vague. L’aperçu des arrivées montre les groupes programmés ; le texte de la Plaque signale ses renforts continus.
+Choisir **Escorter les jeunes pousses** dans **Niveaux → Paramètres → Type de niveau / objectif** pour une variante de la conquête. Dans **Jeunes pousses à escorter**, régler le nombre par allée (0 à 20 ; au moins une pousse au total), leurs points de vie, leur vitesse, l’intervalle entre deux départs sur la même allée et leur image. Par défaut : une pousse sur l’allée 3, 120 PV, 0,12 case/s et 8 secondes entre deux départs sur une même allée. Chaque pousse part complètement à gauche ; elle avance seulement pendant les vagues et s’arrête au contact d’un ennemi. Pousses et alliés peuvent se dépasser dans les deux sens. Les alliés gardent les placements, contacts, captures, arrivées aléatoires et récompenses de la conquête. Une capture ne supprime pas les pousses : elles finissent leur trajet même sur une allée conquise. La victoire exige les cinq allées conquises **et toutes les pousses arrivées vivantes à droite**. Une pousse détruite ou un pollueur au refuge entraîne la défaite. La pluie soigne aussi les pousses encore en route. Les arrivées ennemies ne sont pas annoncées en jeu ; l’aperçu du planning reste un outil d’auteur dans le Studio. Les positions, PV, départs différés et arrivées des pousses sont sauvegardés avec la bataille.
 
-Choisir **Foyers invasifs** pour placer deux ou trois foyers sur la grille des paramètres. Sélectionner un foyer, puis cliquer sur sa case (colonnes 3 à 8). Les réglages par défaut, **Canette pressée / 10 secondes**, utilisent la génération normale de la Plaque sans la doubler. Un autre ennemi ou intervalle (5 à 60 secondes) ajoute les renforts du niveau. Les foyers utilisent la Plaque du catalogue global et occupent leurs cases dès la préparation ; ne pas ajouter de Plaques dans les vagues de ce niveau. Ils envoient chacun des renforts dans leur allée pendant les vagues, y compris après la dernière vague tant qu’ils survivent. La préparation et les pauses ne consomment pas le délai de génération. La victoire demande la destruction de tous les foyers puis des ennemis encore présents. Le bord gauche reste une défaite immédiate. Les vagues ordinaires se règlent toujours dans **Vagues & ennemis**.
+Chaque **Plaque**, quel que soit le type de niveau, fait arriver une **Canette pressée** dans sa propre allée toutes les **30 secondes de combat**. La première arrive après 30 secondes de présence ; chaque Plaque possède son compteur, conservé dans la sauvegarde. La génération fonctionne même sans plante à attaquer et s’arrête à la destruction de la Plaque. Les canettes entrent par le bord droit, avancent et rapportent leurs graines habituelles au recyclage. Il faut aussi les éliminer pour terminer la vague. L’aperçu des arrivées montre les groupes programmés ; le texte de la Plaque signale ses renforts continus.
+
+Choisir **Foyers invasifs** pour placer deux ou trois foyers sur la grille des paramètres. Sélectionner un foyer, puis cliquer sur sa case (colonnes 3 à 8). Les réglages par défaut, **Canette pressée / 30 secondes**, utilisent la génération normale de la Plaque sans la doubler. Un autre ennemi ou intervalle (5 à 60 secondes) ajoute les renforts du niveau. Les foyers utilisent la Plaque du catalogue global et occupent leurs cases dès la préparation ; ne pas ajouter de Plaques dans les vagues de ce niveau. Ils envoient chacun des renforts dans leur allée pendant les vagues, y compris après la dernière vague tant qu’ils survivent. La préparation et les pauses ne consomment pas le délai de génération. La victoire demande la destruction de tous les foyers puis des ennemis encore présents. Le bord gauche reste une défaite immédiate. Les vagues ordinaires se règlent toujours dans **Vagues & ennemis**.
 
 Dans **Cinématiques**, **Nouvelle cinématique** crée un film dans le projet et sélectionne son titre pour le renommer aussitôt. **Toutes les cinématiques** affiche les films du projet, leur nombre de plans et leur durée ; la recherche accepte le titre ou l’identifiant, avec ou sans accents. La même liste est accessible depuis **Vue du projet**. Les films restent enregistrés avec les niveaux dans le fichier unique du projet.
 
@@ -34,18 +36,18 @@ La même fenêtre permet de **renommer**, **monter ou descendre** et **supprimer
 
 La fenêtre **Vérifier le projet** se ferme avec **Échap**. Cliquer une erreur de nom de niveau ouvre ce niveau et place le curseur dans son champ de nom. Les recherches et filtres de niveaux sont effacés lors d’une création ou d’une duplication, pour que le nouveau niveau reste visible.
 
-## Contenu de la livraison V1.10
+## Sources maintenues
 
 Deux projets sources complets : Studio React/TypeScript/Node/Electron et jeu Godot/GDScript. La présentation de combat est désormais définie dans le document de jeu et interprétée par un lecteur générique. Les deux modes principaux restent **Cinématiques** et **Niveaux**.
 
-Les résultats de validation de la livraison V1.10 sont conservés dans `docs/TEST_REPORT_V1_10.md`. Ils précèdent la mise à jour du projet courant décrite ci-dessus.
+Les [preuves courantes et leurs limites](VALIDATION.md) sont distinctes du [rapport historique V1.10](TEST_REPORT_V1_10.md). Le numéro du Studio est 1.10.0 ; les versions du jeu et des schémas évoluent indépendamment.
 
 ## Installation du Studio
 
-Extraire les deux archives dans deux nouveaux dossiers voisins. Conserver les projets précédents. Le Studio déclare Node >= 22.12.0. Dans son dossier contenant `package.json` :
+Utiliser le dépôt `C:/dev/Lunaria cinematic studio` et Node >= 22.12.0. Dans son dossier contenant `package.json` et `package-lock.json` :
 
 ```powershell
-npm install
+npm ci
 npm test
 npm run typecheck
 npm run build
@@ -54,30 +56,30 @@ npm start
 
 Pour développer, utiliser `npm run dev` après l’installation des dépendances. `npm run dev:web` est un mode navigateur : ce n’est pas une validation de l’application Electron ni de ses permissions de fichiers.
 
-Les versions déclarées du projet initial ont été conservées : React/React DOM ^19.3.0, TypeScript ~5.9.3, Electron ^44.4.2, Vite ^7.3.0, types Node ^22.0.0. Leur installation et leur compatibilité ensemble restent à vérifier sur une machine disposant du registre npm. Il n’y a pas de nouveau serveur, de base de données, de Rust ou de Tauri.
+Le lockfile fixe les dépendances. `npm run build` inclut le typecheck et construit l’application Electron ; son succès et les tests sont consignés dans [VALIDATION.md](VALIDATION.md). Le mode navigateur ne vérifie pas les fonctions natives de publication et d’accès aux fichiers.
 
-En cas d’échec de `npm install`, ne pas considérer un démarrage partiel dans le navigateur comme un build réussi. En cas d’échec des tests ou du typecheck, conserver le journal avant toute publication.
+En cas d’échec de `npm ci`, ne pas considérer un démarrage partiel dans le navigateur comme un build réussi. En cas d’échec des tests ou du typecheck, conserver le journal avant toute publication.
 
 ## Ouvrir le jeu
 
-Le `project.godot` fourni déclare Godot 4.7. L’ouvrir avec le moteur correspondant, laisser l’import se terminer puis lancer le projet. Les scripts et ressources de présentation sont déjà intégrés au jeu ; aucune superposition de correctifs n’est nécessaire.
+Ouvrir `C:/dev/Lunaria/game/project.godot` avec Godot **4.7.2**, laisser l’import se terminer puis lancer le projet. Le lecteur de présentation et les ressources publiées y sont intégrés.
 
-Dans le dossier du jeu :
+Depuis la racine `C:/dev/Lunaria` :
 
 ```powershell
-node tools/test-game.mjs --static-only
-node tools/test-game.mjs --godot "C:/Outils/Godot/Godot_console.exe"
+node tools/test.mjs --suite node
+node tools/test.mjs --suite all --godot "C:/Program Files/Godot/Godot_v4.7.2-stable_win64_console.exe"
 ```
 
 Adapter uniquement le chemin de l’exécutable Godot. La première commande ne lance **aucun moteur**. La seconde lance les contrôles Node, l’import et les suites Godot, dont `presentation_runtime_smoke`. Elle doit être exécutée avant de déclarer ce runtime validé.
 
-Le contenu actif ne contient plus les 40 niveaux d’exemple. La publication remplace la campagne jouable par le parcours enregistré dans le projet.
+La publication remplace la campagne jouable par le parcours enregistré dans le projet. Pour travailler sur la campagne existante, ouvrir `C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json`, pas le JSON compilé du runtime.
 
 ## Relier la bibliothèque commune
 
-Dans le Studio, mode **Cinématiques**, choisir comme bibliothèque le dossier **`game/LunariaArtLibrary`** de l’archive du jeu. Cela donne accès aux images, atlas et sons réellement fournis. Ne pas choisir le dossier `assets` ni un sous-dossier `combat` : les références partent de la racine `LunariaArtLibrary`.
+Dans le Studio, choisir la bibliothèque source **`C:/dev/Lunaria/LunariaArtLibrary`**. Les références partent de sa racine, pas de `assets` ni d’un sous-dossier `combat`. La publication alimente son miroir `C:/dev/Lunaria/game/LunariaArtLibrary`, destiné au jeu. Ce miroir peut servir en lecture pour une démonstration isolée ; créer ou modifier les médias dans la bibliothèque source.
 
-`example-library` est conservée pour les anciens exemples autonomes du Studio et ses tests desktop. Elle ne contient pas le nouveau catalogue graphique de combat. Les nouvelles ressources de combat n’ont été ajoutées qu’à la bibliothèque du jeu, pas recopiées pour chaque espèce ou chaque animation.
+`example-library` est conservée pour les anciens exemples autonomes du Studio et ses tests desktop. Elle ne contient pas le nouveau catalogue graphique de combat. La bibliothèque source conserve les ressources communes ; la publication ne recopie pas un média par espèce ou par animation.
 
 Les sons déplacés depuis les anciens dossiers restent également utilisés par les effets d’interface et musiques historiques. `docs/ART_TRANSFER_V1_10.json` fournit la correspondance des déplacements.
 
@@ -87,11 +89,11 @@ Dans **Niveaux**, les anciens catalogues séparés sont réunis dans un seul ong
 
 Le bouton **Modifier cette attaque** ouvre sa fiche globale. Une modification s’applique donc à toutes les espèces qui utilisent cette attaque. Pour obtenir une variante indépendante, dupliquer l’attaque avant de l’attribuer à l’espèce concernée.
 
-Le catalogue de départ contient désormais **34 attaques**. Les attaques strictement identiques utilisent six modèles partagés : Tir simple, Régénération personnelle, Protection alliée, Tir enracinant, Tir traversant et Onde offensive. Les variantes dont la portée, la zone ou les résultats diffèrent restent séparées.
+Le catalogue de départ contient **38 capacités** au relevé du 1 octobre 2026 ; ce nombre peut évoluer avec les données d’auteur. Les attaques strictement identiques utilisent six modèles partagés : Tir simple, Régénération personnelle, Protection alliée, Tir enracinant, Tir traversant et Onde offensive. Les variantes dont la portée, la zone ou les résultats diffèrent restent séparées.
 
 ## Modifier l’attaque de Radis
 
-1. Passer en **Niveaux** et ouvrir `game/content/design/game_content.json`, ou `examples/lunaria.game.json` pour travailler sur une copie d’auteur.
+1. Ouvrir `C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json`, ou une copie de ce projet, puis passer en **Niveaux**.
 2. Ouvrir la fiche de **Radis**, puis **Animations de combat**. Le slot `attack` résout `radish_throw` dans le profil de Radis.
 3. Utiliser **Éditer** pour modifier l’animation partagée, ou **Dupliquer et personnaliser** pour isoler le réglage. Le Studio indique les références affectées par une modification.
 4. Dans l’éditeur, lire l’animation, régler les durées, réordonner les frames, modifier les rectangles d’atlas, les ancrages et le marqueur `release`. La séquence originale de quatre poses est conservée. Une grille crée des régions de découpe, jamais de nouveaux PNG.
@@ -110,6 +112,16 @@ Les sons proposent fichier, catégorie, volume, boucle, variation de hauteur et 
 
 Les VFX sont visuels : ils ne modifient ni les PV ni les vitesses. Les préréglages sont volontairement simples, rendus par des primitives ou une image ; ce n’est pas un éditeur de particules/shaders. Une traînée de projectile utilise les paramètres de la définition comme une trace directionnelle, pas comme une seconde émission de dégâts. Le réglage « mouvements réduits » du jeu diminue les effets et supprime les traînées projetées.
 
+## Animer un élément dans une cinématique
+
+Dans **Cinématiques**, sélectionner un personnage, un ennemi ou un objet. Dans l’inspecteur à droite, **Mouvements → Effet d’animation** propose notamment les nouveaux effets **Orbite**, **Vol en huit**, **Zigzag**, **Roulade**, **Sursaut** et **Oscillation élastique**. Ils transforment l’image entière : trajectoire autour de sa position, déplacement en huit ou en zigzag, rotation, réaction de surprise ou oscillation de taille. Ils peuvent se combiner avec **Déplacement A → B**.
+
+Régler l’intensité, la durée du cycle et le délai, puis choisir une lecture ponctuelle ou en boucle et inverser le sens si nécessaire. Le délai du mouvement commence après l’entrée. Une sortie peut interrompre l’effet à l’heure choisie dans le plan.
+
+Dans **Apparition → Entrée**, choisir aussi **Chute rebondie**, **Tourbillon** ou **Éclosion**. Dans **Disparition → Sortie**, choisir **Tourbillon**, **Envol en fondu** ou **Chute en fondu**. Les durées et délais restent réglables comme pour les autres entrées et sorties ; **Déjà présent** et **Reste dans la scène** conservent leur rôle.
+
+Utiliser **Tester les animations de l’élément** pour voir la combinaison, puis **Lire depuis ce plan** pour la vérifier avec le film. Enregistrer le projet pour conserver les réglages. Ces effets fonctionnent sur une image fixe et n’exigent pas de créer une planche d’animation ; une animation du catalogue reste utilisable en complément.
+
 ## Réutiliser dans une cinématique
 
 Conserver le bon projet de jeu ouvert dans **Niveaux**, puis passer en **Cinématiques**. Dans la fiche d’un acteur, choisir une animation du catalogue ou une espèce et un slot. Le film référence explicitement l’identifiant du projet de jeu ; il n’embarque pas une copie modifiable du catalogue.
@@ -122,14 +134,30 @@ Publier de préférence depuis **Publier la campagne**. La publication transform
 
 ## Atelier fourni
 
-Ouvrir `examples/Atelier_Presentation_V1_10/atelier.game.json`, choisir `examples/Atelier_Presentation_V1_10` comme dossier des cinématiques liées, et conserver `game/LunariaArtLibrary` comme bibliothèque.
+Ouvrir `examples/Atelier_Presentation_V1_10/atelier.game.json`, suivre le [README de l’atelier](../examples/Atelier_Presentation_V1_10/README.md) pour ses anciens films liés et choisir la bibliothèque source de Lunaria.
 
 Le film `animations.cinematic.json` et le niveau montrent Radis/Rose partageant `ab_basic_shot` avec deux gestes différents, le mouvement d’un ennemi, les images d’atlas originales, une respiration procédurale, des marqueurs son/VFX, une référence directe réutilisée dans un film et les valeurs par défaut.
 
-La portée/dégâts de Rose et les PV/vitesse du Jeteur sont ajustés **uniquement dans cet atelier**. Placer Radis et Rose dans la voie centrale ; laisser un ennemi approcher pour observer son attaque et ses réactions. Les autres slots peuvent être prévisualisés dans sa fiche. Publier l’atelier sur une nouvelle extraction du jeu : il remplace le parcours actif par le scénario de démonstration.
+La portée/dégâts de Rose et les PV/vitesse du Jeteur sont ajustés **uniquement dans cet atelier**. Placer Radis et Rose dans la voie centrale ; laisser un ennemi approcher pour observer son attaque et ses réactions. Les autres slots peuvent être prévisualisés dans sa fiche. Publier l’atelier sur une copie distincte du jeu : il remplace le parcours actif par le scénario de démonstration.
 
 ## Sauvegardes et limites de validation
 
-Le document de jeu est au schéma 4. Une cinématique animée utilise le schéma 4 ; les cinématiques statiques antérieures restent lisibles. La sauvegarde joueur courante est v16, isolée par l’empreinte du contenu. **Aucune migration d’ancienne sauvegarde joueur n’est développée.** Importer un ancien document d’auteur dans le Studio et lui ajouter les nouvelles données n’est pas une migration de sauvegarde joueur.
+Le document de jeu est au schéma 4. Une cinématique liée au catalogue d’animation utilise le schéma 4 ; les nouveaux effets de mouvement, entrées et sorties exigent au minimum le schéma 3. Le Studio adapte la version à l’enregistrement et conserve la lecture des anciens films. La sauvegarde joueur courante est v26, isolée par l’empreinte du contenu. **Aucune migration d’ancienne sauvegarde joueur n’est développée.** Importer un ancien document d’auteur dans le Studio et lui ajouter les nouvelles données n’est pas une migration de sauvegarde joueur.
 
-Les actions de préparation sont sérialisées avec leurs identifiants d’activation et temps restants ; la lecture native de ce mécanisme doit encore être éprouvée avec le moteur. Les tests livrés ne remplacent pas une vérification visuelle des atlas, ancrages, transitions, volumes et effets sur les appareils cibles.
+Les actions de préparation sont sérialisées avec leurs identifiants d’activation, cibles et temps restants. Les suites Godot exercent les activations et reprises ; leurs résultats datés sont distincts des essais visuels et sur appareil. Vérifier atlas, ancrages, transitions, volumes et effets sur les cibles réelles ; voir [VALIDATION.md](VALIDATION.md).
+
+## Compagnons, terrains et cibles
+
+Dans **Niveaux → Plantes disponibles**, cocher les espèces autorisées par l’histoire. **Toutes** active le catalogue entier pour ce niveau. Toutes les espèces cochées sont disponibles dès le début ; le joueur ne choisit pas une équipe de cinq et peut planter plusieurs exemplaires d’une même espèce. Les coûts et statistiques restent ceux du catalogue global.
+
+Dans **Paramètres → Terrain du niveau**, choisir ou importer l’image de ce niveau. Changer le terrain d’une mission ne change pas les autres. Pour **Protéger une case**, régler séparément case, image, PV, armure et résistances de la cible. Les coordonnées de l’interface commencent à un ; celles du JSON commencent à zéro.
+
+Le ciblage de Plaque sur sa propre allée compare la distance en premier ; à distance égale, il choisit la plante de droite. Un délai d’apparition se configure sur le groupe d’ennemis, indépendamment de la cadence de ses attaques. Noisetier reste défensif et se régénère sans tirer.
+
+Sac Plastique vole vers la première plante à gauche sur sa propre allée, se pose dessus et lui retire lentement des PV. **Ennemis → Sac Plastique → Modifier cette attaque →** propose **Se poser sur la cible** et **Empêcher la cible d’attaquer**. La destruction du sac libère la plante ; la mort de celle-ci fait repartir le sac. Ses huit animations dessinées se modifient depuis **Animations de Sac Plastique**. Il se choisit comme ennemi dans les groupes de vagues.
+
+Une nouvelle image publiée doit conserver un chemin de version distinct si les octets changent : le publieur refuse les conflits avec les fichiers déjà présents. En cas de renommage, corriger les références dans les films et projets d’auteur, puis vérifier et republier. Les schémas et modules partagés se synchronisent séparément de la publication de campagne ; voir [architecture](ARCHITECTURE.md).
+
+**Jouer ce niveau** publie un parcours de test dans le projet Godot sélectionné avant de le lancer. Le profil joueur utilisé pour ce test est séparé, mais le contenu publié de ce dossier Godot est remplacé. Choisir une copie du jeu pour conserver une autre campagne dans le dossier principal ; republier le projet complet pour retrouver son parcours normal.
+
+Les animations propres à un personnage apparaissent dans sa fiche ; le catalogue commun regroupe les animations partagées. Une ancienne animation utilisée par un seul profil d’espèce peut être reconnue comme personnelle. Une liaison modifiée sur un profil partagé crée un profil propre au personnage afin de préserver les autres utilisateurs. Modifier directement une définition d’animation partagée conserve son effet global.

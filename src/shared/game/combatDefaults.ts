@@ -825,7 +825,12 @@ export const DEFAULT_COMBAT:CombatCatalog={
     }
   ]
 };
+DEFAULT_COMBAT.abilities.push(structuredClone(PLASTIC_BAG_ABILITY));
+DEFAULT_COMBAT.effects.push(structuredClone(PLASTIC_BAG_EFFECT));
+DEFAULT_COMBAT.abilities.push(structuredClone(CIGARETTE_ABILITY));
+DEFAULT_COMBAT.effects.push(structuredClone(CIGARETTE_EFFECT));
 const assignments:Record<string,string[]>={
+  cigarette:['ab_cigarette_smoke'],
   "radish": [
     "ab_basic_shot"
   ],
@@ -961,6 +966,8 @@ const assignments:Record<string,string[]>={
   ]
 };
 export function ensureCombat(p:GameProject):void {
- if(!p.combat){p.combat=structuredClone(DEFAULT_COMBAT);for(const x of [...p.balance.plants,...p.balance.enemies])x.ability_ids=[...(assignments[x.id]??[])];}
+ if(!p.combat){assignments.plastic_bag=[PLASTIC_BAG_ABILITY.id];p.combat=structuredClone(DEFAULT_COMBAT);for(const x of [...p.balance.plants,...p.balance.enemies])x.ability_ids=[...(assignments[x.id]??[])];}
  if(p.schemaVersion<2)p.schemaVersion=2;
 }
+import {PLASTIC_BAG_ABILITY,PLASTIC_BAG_EFFECT} from './plasticBag.js';
+import { CIGARETTE_ABILITY, CIGARETTE_EFFECT } from './cigarette.js';

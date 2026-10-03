@@ -1,5 +1,7 @@
 # Musiques et sons des cinématiques
 
+Guide courant, actualisé le **1 octobre 2026**. Les réglages ci-dessous se conservent dans le document unique du projet ; les [preuves datées](VALIDATION.md) distinguent tests du lecteur, échecs Electron et essais sur appareil.
+
 Ouvre une cinématique puis clique sur **Son**, en haut, ou **Configurer le son** dans l’inspecteur. Tu peux aussi choisir un fichier dans l’onglet Audio de la bibliothèque et cliquer sur **Configurer ce son**. Les fichiers OGG, WAV et MP3 restent dans la bibliothèque commune.
 
 ## Une musique sur plusieurs slides

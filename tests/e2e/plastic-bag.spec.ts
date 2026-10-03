@@ -1,0 +1,48 @@
+import {test,expect,_electron,type ElectronApplication} from '@playwright/test';
+import {promises as fs} from 'node:fs';
+import path from 'node:path';import os from 'node:os';import {fileURLToPath} from 'node:url';
+import {seedProject} from '../../src/shared/game/seed.js';
+import {newLevel} from '../../src/shared/game/types.js';
+const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const FILE='C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json';
+test('Sac Plastique: actual art and drawn animations, editable attachment, wave save/reopen',async({},info)=>{
+ const before=await fs.readFile(FILE),temp=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-bag-e2e-')),profile=path.join(temp,'profile'),target=path.join(temp,'bag.game.json');
+ let app:ElectronApplication|undefined;
+ try{
+  await fs.mkdir(profile);await fs.writeFile(path.join(profile,'settings.json'),JSON.stringify({libraryRoot:'C:/dev/Lunaria/LunariaArtLibrary'}));
+  const project=seedProject();project.levels=[newLevel(['radish'],'plastic_bag')];project.campaign={steps:[{id:'step_bag_ui',kind:'level',levelId:project.levels[0].id}],cinematics:[]};await fs.writeFile(target,JSON.stringify(project));
+  const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>typeof e[1]==='string'));delete env.LUNARIA_DEV_URL;
+  app=await _electron.launch({args:[ROOT],env:{...env,LUNARIA_E2E:'1',LUNARIA_TEST_USER_DATA:profile}});
+  const page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
+  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},target);
+  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();
+  await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.locator('.gd-message button').click();
+  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();
+  await expect(page.getByLabel('Points de vie',{exact:true})).toHaveValue('600');
+  await page.getByRole('button',{name:'Modifier cette attaque →'}).click();
+  await expect(page.getByLabel('Se poser sur la cible')).toBeChecked();await expect(page.getByLabel('Empêcher la cible d’attaquer')).toBeChecked();
+  await page.getByLabel('Empêcher la cible d’attaquer').uncheck();
+  await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
+  await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).combat.abilities.find((a:any)=>a.id==='ab_plastic_bag_suffocate').blocksTargetAttack).toBe(false);
+  await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
+  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();await page.getByRole('button',{name:'Modifier cette attaque →'}).click();
+  await expect(page.getByLabel('Empêcher la cible d’attaquer')).not.toBeChecked();await expect(page.getByLabel('Se poser sur la cible')).toBeChecked();
+  expect(JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves[0].groups[0].enemyId).toBe('plastic_bag');
+  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},FILE);
+  await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.locator('.gd-message button').click();
+  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();
+  await expect(page.getByRole('region',{name:'Image principale de Sac Plastique'}).getByRole('img',{name:'Plastic bag combat · v1',exact:true})).toBeVisible();
+  await page.screenshot({path:info.outputPath('sac-plastique-studio-enemy.png')});
+  await page.getByRole('button',{name:'Animations de Sac Plastique',exact:true}).click();
+  await expect(page.locator('.lp-owned-list').getByRole('button')).toHaveCount(8);
+  await page.locator('.lp-owned-list').getByRole('button',{name:/^Sac Plastique — se pose/}).click();
+  await expect(page.getByLabel('Images de l’animation').getByRole('button')).toHaveCount(8);await page.getByLabel('Curseur temporel de l’animation').fill('0.35');
+  await expect(page.locator('.lp-owned-editor .lp-preview svg image').first()).toHaveAttribute('width','1774');
+  await page.locator('.lp-owned-editor .lp-preview').getByLabel('Ancrages',{exact:true}).uncheck();await page.locator('.lp-owned-editor .lp-preview').screenshot({path:info.outputPath('sac-plastique-studio-pose.png')});
+  await page.getByRole('button',{name:'Caractéristiques et attaques',exact:true}).click();await page.getByRole('button',{name:'Modifier cette attaque →'}).click();
+  await expect(page.getByLabel('Se poser sur la cible')).toBeChecked();await expect(page.getByLabel('Empêcher la cible d’attaquer')).toBeChecked();
+  await page.getByLabel('Se poser sur la cible').scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath('sac-plastique-studio-attack.png')});
+  expect(await fs.readFile(FILE)).toEqual(before);
+ }finally{if(app){await app.evaluate(({BrowserWindow})=>{for(const w of BrowserWindow.getAllWindows())w.destroy();}).catch(()=>undefined);await app.close();}await fs.rm(temp,{recursive:true,force:true});}
+});

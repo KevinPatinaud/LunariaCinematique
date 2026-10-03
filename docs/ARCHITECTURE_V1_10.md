@@ -8,7 +8,7 @@
 
 `src/main/presentationAssets.ts` lit les dimensions réelles PNG/JPEG/WebP avant publication. `presentationUsages.ts` lit les cinématiques liées avec l’autorisation de leur dossier. `campaignPublisher.ts` résout la fermeture des références, prépare les ressources et écrit le contenu actif en dernier. Le petit ancien point d’entrée `publishGameProject` délègue à ce même chemin.
 
-Côté Godot, `domain/presentation` est composé du registre, des calculs purs, de l’horloge d’animation et de la validation de l’état sauvegardé. `domain/combat/ability_runtime.gd` planifie les capacités sans texture ni callback graphique. `presentation/animation` dessine les images et effets ; `presentation/audio/catalog_audio.gd` gère les sons. Le pont cinématique réutilise ces lecteurs, sans dépendre d’une instance de combat.
+Côté Godot, dans le sous-projet `C:/dev/Lunaria/game`, `domain/presentation` est composé du registre, des calculs purs, de l’horloge d’animation et de la validation de l’état sauvegardé. `domain/combat/ability_runtime.gd` planifie les capacités sans texture ni callback graphique. `presentation/animation` dessine les images et effets ; `presentation/audio/catalog_audio.gd` gère les sons. Le pont cinématique réutilise ces lecteurs, sans dépendre d’une instance de combat.
 
 ## Espèce → profil → animation
 
@@ -18,7 +18,7 @@ balance.plants / balance.enemies
   visual              → sprite de repos + calibrage
 
 profil.slots[{slot, animationId}]
-  attack              → radish_throw, bramble_attack, …
+  attack              → radish_throw, rose_punch_combo, …
 
 combat.abilities[].presentation.slot
   attack              → résolution sur le porteur à l’activation
@@ -28,7 +28,7 @@ Les profils et animations ont des identifiants stables. Une espèce choisit son 
 
 Un slot explicitement présent est prioritaire, même si son animation est vide. S’il est absent, le profil par défaut est consulté. Les slots obligatoires sont idle, move, attack, hit, death et spawn. Les slots ponctuels d’action ne peuvent pas boucler. victory et les slots supplémentaires peuvent être optionnels. Un slot custom demandé par une capacité doit se résoudre chez chaque espèce susceptible de la porter, y compris les capacités de phases.
 
-Le seed comprend 41 profils d’espèces et un profil global, 22 définitions d’animation, trois sons existants et deux VFX. Ce sont des **données d’auteur initiales**, pas un comportement de secours par identifiant dans le rendu Godot. Les nouveaux documents les copient ; modifier un document existant ne réinitialise pas ses choix.
+Le seed comprend, au relevé du 1 octobre 2026, 44 profils et 29 définitions d’animation ; audio et VFX proviennent aussi de ses catalogues. La liste exécutable de `src/shared/presentation/defaults.ts` fait référence. Ce sont des **données d’auteur initiales**, pas un comportement de secours par identifiant dans le rendu Godot. Les nouveaux documents les copient ; modifier un document existant ne réinitialise pas ses choix.
 
 ## Images, temps et espace
 
@@ -58,9 +58,9 @@ Les activations simultanées sont indépendantes ; elles partagent un lecteur vi
 
 La mort est terminale et vide les préparations. L’entité cesse immédiatement d’être une cible active ; le contrôleur de présentation peut conserver une copie visuelle jusqu’à la fin du clip. Le hit est un overlay visuel : transformation et éventuelles frames de hit ne détruisent pas l’attaque en cours. Une transition de phase peut prendre la priorité visuelle sans créer une seconde libération.
 
-Une action ponctuelle revient au slot de base, idle ou move. Seul le système de déplacement change cette base ; les plantes restent idle. En fin de bataille les préparations restantes sont annulées, avec une animation victory lorsqu’elle est disponible. Les cadavres et VFX ne figurent pas dans la simulation active.
+Une action ponctuelle revient au slot de base, idle ou move. Seul le système de déplacement change cette base ; les plantes utilisent move lorsqu’elles avancent dans un objectif de conquête. Une régénération instantanée sur soi utilisant le geste générique conserve la base idle/move ; une animation dédiée reste autorisée. En fin de bataille les préparations restantes sont annulées, avec une animation victory lorsqu’elle est disponible. Les cadavres et VFX ne figurent pas dans la simulation active.
 
-L’état d’animation sauvegardé a sept champs : slot, elapsed, speed, base, serial, pending et hit_elapsed. Les formes et références sont strictement validées ; les préparations doivent référencer les timers de capacités autorisés du porteur. Sauvegarde courante v16 seulement, sans conversion d’anciennes sauvegardes joueur.
+L’état d’animation sauvegardé a huit champs : slot, elapsed, speed, base, serial, pending, hit_elapsed et current_ability_id. Les formes et références sont strictement validées ; les préparations doivent référencer les timers de capacités autorisés du porteur. Sauvegarde courante v25 seulement, sans conversion d’anciennes sauvegardes joueur.
 
 ## Sons et VFX
 
@@ -82,6 +82,6 @@ La fermeture publiée comprend le catalogue global unique (y compris les entrée
 
 Le préflight contrôle schémas, références, durées, slots, régions dans les dimensions réelles, chemins autorisés, liens symboliques et conflits. Les blobs de films sont adressés par contenu, les ressources identiques déjà présentes sont réutilisées et le document actif est écrit en dernier. Un conflit de fichier existant est refusé, pas écrasé silencieusement. Le CLI cinématique autonome vérifie la liaison au catalogue déjà actif, mais ne remplace pas le préflight graphique complet du Studio pour publier un projet de jeu modifié.
 
-## Validation restante
+## Validation
 
-Les suites Node et tests réels de publication sont consignés dans le rapport. Les fichiers Godot de test, dont le scheduler headless et 50 poses de référence calculées par TypeScript, sont fournis mais **non exécutés ici**. La présence de ces tests ne constitue ni un résultat natif ni une preuve de rendu identique. Les aperçus SVG, le pont Electron et les contrôles Godot doivent être essayés sur la machine de développement.
+Les commandes et preuves datées sont dans [VALIDATION.md](VALIDATION.md). Les suites du jeu exercent le scheduler, la reprise, les profils et la parité des poses dans Godot. Un test fonctionnel ne certifie pas le rendu, les volumes ni la fluidité sur téléphone. Les échecs Electron et captures incomplètes restent explicitement indiqués, sans transformer un build en validation de toute l’application.
