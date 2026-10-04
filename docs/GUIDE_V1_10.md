@@ -1,6 +1,6 @@
 # Lunaria V1.10 — installation et utilisation
 
-**Guide courant, actualisé le 2 octobre 2026.** Un seul fichier `lunaria.game.json` enregistre les niveaux, le parcours et les cinématiques complètes. Un nouveau document démarre sans mission ; le projet Lunaria existant possède sa propre campagne. Les anciennes 40 missions d’exemple restent dans certaines fixtures, sans constituer le contenu actif. Les images restent dans la bibliothèque source.
+**Guide courant, actualisé le 3 octobre 2026.** Un seul fichier `lunaria.game.json` enregistre les niveaux, le parcours, les cinématiques complètes et l’écran d’accueil. Un nouveau document démarre sans mission ; le projet Lunaria existant possède sa propre campagne. Les anciennes 40 missions d’exemple restent dans certaines fixtures, sans constituer le contenu actif. Les images restent dans la bibliothèque source.
 
 ## Prise en main du Studio courant
 
@@ -35,6 +35,14 @@ La même fenêtre permet de **renommer**, **monter ou descendre** et **supprimer
 **Exporter en JPG** demande un dossier puis crée un sous-dossier au titre de la cinématique. Il contient une image 1600 × 900 par plan, dans l’ordre du storyboard, nommée `01 - Titre de la cinématique.jpg`, `02 - Titre de la cinématique.jpg`, etc. L’image montre la composition fixe et toutes les bulles du plan, sans les poignées et repères de l’éditeur. Les animations et l’audio ne figurent pas dans ces images. Les caractères interdits dans un nom de fichier sont retirés du titre ; un nouvel export crée un autre sous-dossier pour conserver les JPG précédents.
 
 La fenêtre **Vérifier le projet** se ferme avec **Échap**. Cliquer une erreur de nom de niveau ouvre ce niveau et place le curseur dans son champ de nom. Les recherches et filtres de niveaux sont effacés lors d’une création ou d’une duplication, pour que le nouveau niveau reste visible.
+
+## Configurer l’écran d’accueil
+
+Ouvrir **Niveaux → Écran d’accueil**, ou **Vue du projet → Configurer l’accueil**. L’aperçu représente la composition de l’accueil : sélectionner un élément pour régler sa position, sa taille, son opacité et ses propriétés. Le décor, les panneaux, les textes, les personnages, les boutons et la barre de progression se configurent dans cette vue. Les éléments peuvent être ajoutés, dupliqués, masqués, supprimés et déplacés dans l’ordre d’affichage.
+
+Les boutons associent un libellé à une destination du jeu. Le bouton de continuation peut adapter son libellé à l’état du joueur ; le sélecteur **État du joueur dans l’aperçu** sert à vérifier ces variantes. Les textes peuvent inclure `{completed}`, `{total}` et `{version}` pour afficher la progression et la version réelles.
+
+**Enregistrer le projet** conserve les réglages dans le même `lunaria.game.json`. **Publier la campagne** les transmet au jeu avec les images de bibliothèque référencées ; relancer le jeu pour les charger. L’aperçu n’écrit pas dans une sauvegarde joueur. Le [guide de l’accueil](ACCUEIL.md) décrit les champs et le contrat.
 
 ## Sources maintenues
 

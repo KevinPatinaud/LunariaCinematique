@@ -1,6 +1,6 @@
 # Lunaria Studio
 
-Application Electron/React/TypeScript pour créer les **niveaux, le parcours, les cinématiques et la présentation de combat** de Lunaria. Version npm actuelle : **1.10.0**, Node **>= 22.12.0**. Le fichier `package-lock.json` fixe les dépendances reproductibles.
+Application Electron/React/TypeScript pour créer les **niveaux, le parcours, les cinématiques, l’écran d’accueil et la présentation de combat** de Lunaria. Version npm actuelle : **1.10.0**, Node **>= 22.12.0**. Le fichier `package-lock.json` fixe les dépendances reproductibles.
 
 ## Démarrer
 
@@ -22,6 +22,8 @@ Ouvrir **`C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.js
 Enregistrer puis utiliser **Niveaux → Publier et exporter → Publier la campagne**, vers **`C:/dev/Lunaria/game`**. Le JSON compilé `game/content/design/game_content.json` et le miroir `game/LunariaArtLibrary` sont des sorties de publication. Les médias restent des références exactes `library://...` ; tout renommage doit atteindre les projets et films concernés.
 
 Le jeu utilise toutes les plantes autorisées par le niveau dès son début, sans composition d’équipe. Les espèces et attaques se règlent globalement ; les terrains restent indépendants par niveau. Archiver un ennemi conserve ses données et références.
+
+Dans **Niveaux → Écran d’accueil**, régler le décor, les personnages, les textes, les panneaux, les boutons et la progression de l’accueil, avec un aperçu de la composition. Ces réglages sont enregistrés dans le même projet et publiés avec la campagne. Voir le [guide de l’accueil](docs/ACCUEIL.md).
 
 ## Documentation
 

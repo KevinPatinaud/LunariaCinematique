@@ -1,12 +1,13 @@
 # Documentation de Lunaria Studio
 
-Guides maintenus, actualisés le **2 octobre 2026**. Les versions du Studio, des schémas et du jeu sont distinctes.
+Guides maintenus, actualisés le **3 octobre 2026**. Les versions du Studio, des schémas et du jeu sont distinctes.
 
 | Document | Utilisation |
 |---|---|
 | [Guide d’utilisation](GUIDE_V1_10.md) | Installation, projet unique, niveaux, films, animations et publication |
 | [Architecture](ARCHITECTURE.md) | Renderer, pont Electron, services de fichiers et contrats partagés |
 | [Campagne](ARCHITECTURE_CAMPAGNE.md) | Document d’auteur, étapes et compilation |
+| [Écran d’accueil](ACCUEIL.md) | Composition, textes, images, boutons, états de reprise et publication |
 | [Présentation de combat](ARCHITECTURE_V1_10.md) | Profils, animations, activations, audio et VFX |
 | [Format cinématique](FORMAT.md) | Schémas 1 à 4 et extensions actuelles |
 | [Sons cinématiques](SON_CINEMATIQUES.md) | Musiques multi-plans, événements et écoute |

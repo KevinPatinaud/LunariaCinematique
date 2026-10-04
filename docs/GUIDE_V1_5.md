@@ -28,7 +28,7 @@ La bulle garde sa taille et ses retours à la ligne pendant toute l’animation.
 
 Sélectionner la bulle et cliquer **Cri !**. Le texte apparaît d’un coup : les lettres grossissent, s’écartent et tournent légèrement, puis retrouvent leur place. La bulle et le décor ne sont pas secoués. **Intensité** règle l’amplitude, **Durée du cri** règle le temps avant le retour à une lecture stable. La valeur par défaut est 0,65 seconde.
 
-Cet effet est **toujours ponctuel**, pas un clignotement permanent. Il ne supprime pas le texte et ne détruit pas la bulle. Les transformations sont limitées aux bords de la zone de texte pour éviter de couper les premières et dernières lettres. Un texte déjà trop long pour sa bulle reste signalé par les diagnostics : l’effet ne réduit pas automatiquement sa police pour le faire tenir.
+Cet effet est **toujours ponctuel**, pas un clignotement permanent. Il ne supprime pas le texte et ne détruit pas la bulle. Les transformations sont limitées aux bords de la zone de texte pour éviter de couper les premières et dernières lettres. Le rendu courant adapte d'abord la taille de police au texte complet : il la réduit si la bulle est trop petite et conserve sinon la taille configurée, puis applique l'effet sur cette disposition stable.
 
 Une réplique comme « ATTENTION ! » fonctionne bien avec **Tout le texte immédiatement + Cri**. L’éditeur ne détecte pas automatiquement les cris depuis les majuscules : c’est un choix de mise en scène.
 

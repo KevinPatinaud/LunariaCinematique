@@ -191,7 +191,7 @@ export function Scene(props: Props) {
             <rect width={l.width} height={l.height} rx={b.kind === 'narration' ? 10 : 26} fill={textured ? "transparent" : fill} stroke={stroke} strokeWidth={textured ? 0 : 3}/>
             {textured ? <Frame asset={frame!} style={b.style as 'simple' | 'ornate'} width={l.width} height={l.height}/>
               : b.style !== 'plain' && <rect x="7" y="7" width={l.width - 14} height={l.height - 14} rx={b.kind === 'narration' ? 6 : 20} fill="none" stroke="#bba677" strokeWidth="1" pointerEvents="none"/>}
-            <svg x={l.paddingX} y={l.paddingY - 2} width={Math.max(1, l.width - l.paddingX * 2)} height={Math.max(1, l.height - l.paddingY * 2 + 7)} pointerEvents="none" overflow="hidden">
+            <svg x={l.paddingX} y={l.paddingY} width={Math.max(1, l.width - l.paddingX * 2)} height={Math.max(1, l.height - l.paddingY * 2)} pointerEvents="none" overflow="hidden">
               <AnimatedBubbleText bubble={b} elapsed={bubbleTime} completed={playing && props.textCompleted}/>
             </svg>
           </g>

@@ -2,7 +2,7 @@
 
 ## Projet d’auteur
 
-Le document `kind: lunaria-game-project`, schéma courant **4**, contient `balance`, `combat`, `presentation`, `logic`, `rewards`, `levels`, `cinematics` et `campaign` selon leurs contrats et options. `cinematics[]` conserve les films complets. Un document neuf n’a pas de niveau ; le seed fournit les catalogues globaux. Les formats anciens sont traités par les chemins d’import, sans promettre la migration des sauvegardes joueur.
+Le document `kind: lunaria-game-project`, schéma courant **4**, contient `balance`, `combat`, `presentation`, `logic`, `rewards`, `levels`, `cinematics`, `campaign` et `homeScreen` selon leurs contrats et options. `cinematics[]` conserve les films complets. Un document neuf n’a pas de niveau ; le seed fournit les catalogues globaux. Les formats anciens sont traités par les chemins d’import, sans promettre la migration des sauvegardes joueur.
 
 Pour Lunaria, éditer `C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json` avec la bibliothèque source `C:/dev/Lunaria/LunariaArtLibrary`. Le JSON sous `game/content/design/` est compilé, pas le fichier principal de montage.
 
@@ -17,6 +17,8 @@ Les niveaux peuvent utiliser défense, case protégée, opération, sauvetage, c
 Pour `objective.type: "escort"`, `objective.target` reste 0 (cible calculée). Le champ `escort` contient `laneCounts` (cinq entiers 0–20), `speed` (0,03–0,23 case/s), `maxHp` (1–6000), `departureInterval` (1–60 secondes) et `image` (PNG/WebP `library://`). Le total doit être positif. Le champ est réservé à ce mode ; l’image appartient à la fermeture de publication. La cible calculée vaut cinq captures plus le nombre de pousses. Les acteurs de mission sont distincts des plantes de combat : ils ne bloquent pas leurs mouvements. Le format de sauvegarde 26 conserve des enregistrements bornés `escort_sprouts`, vérifiés contre la mission avant restauration ; les paramètres et l’image sont reconstruits depuis la campagne.
 
 ## Publication et références
+
+`homeScreen` conserve la composition de l’accueil (fond, libellés de continuation et éléments ordonnés en coordonnées 1280 × 720). Le Studio fournit les réglages sous **Écran d’accueil**. La compilation conserve ce contrat et ajoute les images qu’il référence à la fermeture de médias ; Godot associe les actions des boutons aux destinations existantes et calcule les textes et la barre de progression depuis le profil joueur. Voir [ACCUEIL.md](ACCUEIL.md) pour les types, les tokens de texte et les conditions d’affichage.
 
 Le préflight résout les films atteignables par le parcours, les événements et comportements, valide schémas et références, puis examine fichiers et régions d’atlas. Les films inutilisés restent dans le document d’auteur. Le catalogue global conserve ses entrées d’auteur, y compris les ennemis archivés encore référencés.
 

@@ -18,6 +18,7 @@ interface Props {
   onCreateLevel(): void;
   onCampaign(): void;
   onCharacters(): void;
+  onHome(): void;
   onChecks(): void;
 }
 
@@ -35,6 +36,7 @@ export function ProjectOverview(props: Props) {
       </section>
       <p className="project-overview-intro">Un seul projet pour raconter l’histoire, construire les niveaux et préparer le parcours du joueur.</p>
       <div className="project-overview-actions">
+        <button disabled={disabled} onClick={props.onHome}><span className="project-action-icon" aria-hidden="true">⌂</span><strong>Configurer l’accueil</strong><span>Composer l’écran d’accueil, ses textes, décors et boutons.</span><small>Aperçu et réglages de chaque élément</small></button>
         <button disabled={disabled} onClick={props.onCreateFilm}><span className="project-action-icon" aria-hidden="true">▶</span><strong>Créer une cinématique</strong><span>Assembler des plans, personnages et dialogues.</span><small>{films} cinématique{films > 1 ? 's' : ''} dans le projet</small></button>
         <button disabled={disabled || project.levels.length >= 200} onClick={props.onCreateLevel}><span className="project-action-icon" aria-hidden="true">⚑</span><strong>Créer un niveau</strong><span>Choisir les plantes, les ennemis et les vagues.</span><small>{project.levels.length} niveau{project.levels.length > 1 ? 'x' : ''} dans le projet</small></button>
         <button disabled={disabled} onClick={props.onCampaign}><span className="project-action-icon" aria-hidden="true">⇢</span><strong>Organiser la campagne</strong><span>Choisir dans quel ordre les films et niveaux se jouent.</span><small>{steps} étape{steps > 1 ? 's' : ''} dans le parcours</small></button>

@@ -4114,6 +4114,521 @@
           }
         }
       }
+    },
+    "homeScreen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "continueLabels",
+        "elements"
+      ],
+      "properties": {
+        "background": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "chapter",
+            "color",
+            "image",
+            "fit",
+            "opacity",
+            "overlayColor",
+            "overlayOpacity"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "garden",
+                "image",
+                "color"
+              ]
+            },
+            "chapter": {
+              "type": "number",
+              "minimum": -1,
+              "maximum": 4,
+              "multipleOf": 1
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+            },
+            "image": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 1000,
+              "pattern": "^(|library://.+[.]([Pp][Nn][Gg]|[Jj][Pp][Ee]?[Gg]|[Ww][Ee][Bb][Pp]))$"
+            },
+            "fit": {
+              "type": "string",
+              "enum": [
+                "cover",
+                "contain",
+                "stretch"
+              ]
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "overlayColor": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+            },
+            "overlayOpacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "continueLabels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "start",
+            "continue",
+            "battle",
+            "outro",
+            "epilogue",
+            "unavailable",
+            "suffix"
+          ],
+          "properties": {
+            "start": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            },
+            "continue": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            },
+            "battle": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            },
+            "outro": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            },
+            "epilogue": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            },
+            "unavailable": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            },
+            "suffix": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 160
+            }
+          }
+        },
+        "elements": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kind",
+              "visible",
+              "rect",
+              "opacity"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[a-zA-Z0-9_-]+$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "panel",
+                  "text",
+                  "button",
+                  "image",
+                  "plant",
+                  "line",
+                  "progress",
+                  "halo"
+                ]
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "rect": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y",
+                  "w",
+                  "h"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": -2560,
+                    "maximum": 2560
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": -1440,
+                    "maximum": 1440
+                  },
+                  "w": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5120
+                  },
+                  "h": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 2880
+                  }
+                }
+              },
+              "opacity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "showIfPlantUnlocked": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 120,
+                "pattern": "^[a-zA-Z0-9_-]*$"
+              },
+              "hideIfPlantUnlocked": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 120,
+                "pattern": "^[a-zA-Z0-9_-]*$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 2000
+              },
+              "font": {
+                "type": "string",
+                "enum": [
+                  "body",
+                  "bold",
+                  "title"
+                ]
+              },
+              "fontSize": {
+                "type": "number",
+                "minimum": 8,
+                "maximum": 240,
+                "multipleOf": 1
+              },
+              "lineHeight": {
+                "type": "number",
+                "minimum": 8,
+                "maximum": 320
+              },
+              "maxLines": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 30,
+                "multipleOf": 1
+              },
+              "align": {
+                "type": "string",
+                "enum": [
+                  "left",
+                  "center",
+                  "right"
+                ]
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+              },
+              "fill": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+              },
+              "textColor": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+              },
+              "borderColor": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+              },
+              "borderWidth": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 32,
+                "multipleOf": 1
+              },
+              "radius": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 500,
+                "multipleOf": 1
+              },
+              "shadow": {
+                "type": "boolean"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "continue",
+                  "map",
+                  "collection",
+                  "journal",
+                  "options"
+                ]
+              },
+              "image": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 1000,
+                "pattern": "^(|library://.+[.]([Pp][Nn][Gg]|[Jj][Pp][Ee]?[Gg]|[Ww][Ee][Bb][Pp]))$"
+              },
+              "fit": {
+                "type": "string",
+                "enum": [
+                  "cover",
+                  "contain",
+                  "stretch"
+                ]
+              },
+              "flipH": {
+                "type": "boolean"
+              },
+              "plantId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[a-zA-Z0-9_-]+$"
+              },
+              "scale": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 12
+              },
+              "animated": {
+                "type": "boolean"
+              },
+              "lineWidth": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 64
+              },
+              "trackColor": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+              },
+              "startAngle": {
+                "type": "number",
+                "minimum": -6.283185307179586,
+                "maximum": 6.283185307179586
+              },
+              "endAngle": {
+                "type": "number",
+                "minimum": -6.283185307179586,
+                "maximum": 6.283185307179586
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "panel"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "fill",
+                    "borderColor",
+                    "borderWidth",
+                    "radius",
+                    "shadow"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "text"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "text",
+                    "font",
+                    "fontSize",
+                    "lineHeight",
+                    "maxLines",
+                    "align",
+                    "color"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "button"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "text",
+                    "action",
+                    "fill",
+                    "textColor",
+                    "borderColor",
+                    "borderWidth",
+                    "radius",
+                    "shadow",
+                    "font",
+                    "fontSize"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "image"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "image",
+                    "fit",
+                    "flipH"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "plant"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "plantId",
+                    "scale",
+                    "animated"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "line"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "color",
+                    "lineWidth"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "progress"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "fill",
+                    "trackColor",
+                    "radius"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "halo"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "fill",
+                    "borderColor",
+                    "borderWidth",
+                    "startAngle",
+                    "endAngle"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
     }
   }
 }

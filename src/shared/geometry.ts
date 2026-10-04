@@ -24,8 +24,9 @@ export function charWidth(char: string, size: number) {
   if (/[MW@%&]/.test(char)) return size * 0.90;
   return size * (char.charCodeAt(0) > 0x2fff ? 1 : /[A-Z]/.test(char) ? 0.68 : 0.56);
 }
-export function wrapText(text: string, maxWidth: number, fontSize: number): string[] {
-  const measure = (s: string) => [...s].reduce((n, c) => n + charWidth(c, fontSize), 0);
+export function wrapText(text: string, maxWidth: number, fontSize: number,
+  options: {measure?: (text: string, fontSize: number) => number} = {}): string[] {
+  const measure = (s: string) => options.measure?.(s, fontSize) ?? [...s].reduce((n, c) => n + charWidth(c, fontSize), 0);
   const lines: string[] = [];
   for (const paragraph of text.replace(/\r/g, '').split('\n')) {
     let line = '';
@@ -46,11 +47,29 @@ export function bubbleLayout(bubble: Bubble) {
   const textured = bubble.style === 'simple' || bubble.style === 'ornate';
   const paddingX = textured ? 58 : 28, paddingY = textured ? 48 : 22;
   const width = bubble.width * STAGE.width;
-  const lines = wrapText(bubble.text, Math.max(20, width - paddingX * 2), bubble.fontSize);
-  const lineHeight = bubble.fontSize * 1.32;
-  const required = lines.length * lineHeight + paddingY * 2;
+  const contentWidth = width - paddingX * 2;
+  const layoutAt = (fontSize: number) => {
+    const lines = wrapText(bubble.text, Math.max(1, contentWidth), fontSize);
+    return { lines, fontSize, lineHeight: fontSize * 1.32 };
+  };
+  let text = layoutAt(bubble.fontSize);
+  // Automatic height follows the authored size; fitting never changes the bubble's box.
+  const required = wrapText(bubble.text, Math.max(20, contentWidth), bubble.fontSize).length * bubble.fontSize * 1.32 + paddingY * 2;
   const height = bubble.autoHeight ? Math.min(STAGE.height * 2, Math.max(textured ? 156 : 98, required)) : bubble.height * STAGE.height;
-  return { width, height, lines, paddingX, paddingY, lineHeight, overflow: required > height + 0.5 };
+  const contentHeight = height - paddingY * 2;
+  const fits = (candidate: typeof text) => candidate.lines.length * candidate.lineHeight <= contentHeight + 1e-7 &&
+    candidate.lines.every(line => [...line].reduce((n, char) => n + charWidth(char, candidate.fontSize), 0) <= contentWidth + 1e-7);
+  if (!fits(text)) {
+    // Largest fitting integer size, retaining all text and hard paragraph breaks.
+    text = layoutAt(1);
+    let low = 1, high = Math.ceil(bubble.fontSize) - 1;
+    while (low <= high) {
+      const size = Math.floor((low + high) / 2), candidate = layoutAt(size);
+      if (fits(candidate)) { text = candidate; low = size + 1; }
+      else high = size - 1;
+    }
+  }
+  return { width, height, ...text, paddingX, paddingY, overflow: !fits(text) };
 }
 export function prepareCinematic(input: Cinematic): Cinematic {
   const cinematic = copy(input);

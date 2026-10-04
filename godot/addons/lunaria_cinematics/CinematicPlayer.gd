@@ -466,20 +466,50 @@ func _camera(shot: Dictionary) -> Dictionary:
 func _actor_pose(actor: Dictionary) -> Dictionary:
 	return Motion.pose(_motion_actor(actor), _elapsed)
 
-func _draw_background(shot: Dictionary) -> void:
+func _is_extended_background(ref: Variant, dimensions: Vector2) -> bool:
+	return ref != null and str(ref).contains("_wide_v01.") and dimensions.x / maxf(1.0, dimensions.y) > 2.0
+
+func _background_bounds(shot: Dictionary, visible_bounds: Rect2) -> Rect2:
+	var ref: Variant = shot["background"]["asset"]
+	if ref == null or not _textures.has(ref):
+		return Rect2(Vector2.ZERO, LOGICAL)
+	var dimensions: Vector2 = _textures[ref].get_size()
+	if not _is_extended_background(ref, dimensions) or visible_bounds.size.x <= LOGICAL.x:
+		return Rect2(Vector2.ZERO, LOGICAL)
+	# The extended assets keep the original 1672x941 composition untouched in
+	# their centre and add 209 pixels on each side. Reveal only the extra width
+	# available on the device, while keeping the authored 1600x900 coordinates.
+	var core_width: float = dimensions.y * (1672.0 / 941.0)
+	var maximum_width: float = LOGICAL.x * dimensions.x / core_width
+	var target_width: float = minf(visible_bounds.size.x, maximum_width)
+	return Rect2(Vector2((LOGICAL.x - target_width) * 0.5, 0.0), Vector2(target_width, LOGICAL.y))
+
+func _draw_background(shot: Dictionary, bounds: Rect2) -> void:
 	var ref: Variant = shot["background"]["asset"]
 	if ref == null or not _textures.has(ref):
 		return
 	var texture: Texture2D = _textures[ref]
 	var dimensions: Vector2 = texture.get_size()
+	if _is_extended_background(ref, dimensions):
+		# Crop from the symmetric centre. At 16:9 this selects the untouched
+		# original image; at 20:9 it reveals both generated extensions.
+		var core_width: float = dimensions.y * (1672.0 / 941.0)
+		var scale: float = LOGICAL.x / core_width
+		var source_width: float = core_width + maxf(0.0, bounds.size.x - LOGICAL.x) / scale
+		var source_height: float = bounds.size.y / scale
+		var source := Rect2((dimensions - Vector2(source_width, source_height)) * 0.5, Vector2(source_width, source_height))
+		draw_texture_rect_region(texture, bounds, source)
+		return
+	# The background shares the authored 1600x900 frame with actors and dialogue.
+	# Fitting it to the device separately would shift scenery relative to actors.
 	if shot["background"]["fit"] == "contain":
-		var ratio: float = minf(1600.0 / dimensions.x, 900.0 / dimensions.y)
+		var ratio: float = minf(bounds.size.x / dimensions.x, bounds.size.y / dimensions.y)
 		var target: Vector2 = dimensions * ratio
-		draw_texture_rect(texture, Rect2((LOGICAL - target) / 2.0, target), false)
+		draw_texture_rect(texture, Rect2(bounds.position + (bounds.size - target) / 2.0, target), false)
 	else:
-		var ratio: float = maxf(1600.0 / dimensions.x, 900.0 / dimensions.y)
-		var visible_size: Vector2 = LOGICAL / ratio
-		draw_texture_rect_region(texture, Rect2(Vector2.ZERO, LOGICAL), Rect2((dimensions - visible_size) / 2.0, visible_size))
+		var ratio: float = maxf(bounds.size.x / dimensions.x, bounds.size.y / dimensions.y)
+		var visible_size: Vector2 = bounds.size / ratio
+		draw_texture_rect_region(texture, bounds, Rect2((dimensions - visible_size) / 2.0, visible_size))
 
 func _draw_frame(style: String, texture: Texture2D, rect: Rect2) -> void:
 	var s: Dictionary = FRAME_SPECS[style]
@@ -563,23 +593,59 @@ func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> v
 			inner.set_corner_radius_all(6 if bubble["kind"] == "narration" else 20)
 			draw_style_box(inner, rect.grow(-7.0))
 	var font: Font = dialogue_font if dialogue_font != null else ThemeDB.fallback_font
-	var font_size: int = int(bubble["fontSize"])
-	var padding: Vector2 = Vector2(58, 48) if textured else Vector2(28, 22)
-	var line_height: float = float(font_size) * 1.32
-	var lines: Array = bubble.get("lines", [])
-	if lines.is_empty():
-		# Save from the editor to include deterministic, shared line breaks.
-		lines = Array(str(bubble["text"]).split("\n"))
+	var padding: Vector2 = Vector2(58, 48) if bubble["style"] in ["simple", "ornate"] else Vector2(28, 22)
+	var text_layout: Dictionary = _text_layout(bubble, font, padding, rect.size)
+	var font_size: int = int(text_layout["font_size"])
+	var line_height: float = float(text_layout["line_height"])
+	var lines: Array = text_layout["lines"]
 	if bubble.has("textAnimation"):
-		_draw_animated_text(bubble, rect, font, font_size, padding, line_height, center, entry_offset, entry_scale, entry_rotation)
+		_draw_animated_text(bubble, rect, font, text_layout, padding, center, entry_offset, entry_scale, entry_rotation)
 		draw_set_transform(origin, 0.0, Vector2.ONE * factor)
 		return
 	for index: int in range(lines.size()):
-		var baseline: float = padding.y - 2.0 + float(font_size) + float(index) * line_height
+		var baseline: float = padding.y + float(text_layout["baseline"]) + float(index) * line_height
 		if baseline > rect.size.y - padding.y + 7.0:
 			break
 		draw_string(font, rect.position + Vector2(padding.x, baseline), str(lines[index]), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - padding.x * 2.0, font_size, Color("342e24"))
 	draw_set_transform(origin, 0.0, Vector2.ONE * factor)
+
+func _text_layout(bubble: Dictionary, font: Font, padding: Vector2, dimensions: Vector2) -> Dictionary:
+	var font_size: int = maxi(1, int(bubble["fontSize"]))
+	var key: String = str(font.get_instance_id()) + ":" + str(font_size) + ":" + str(dimensions) + ":" + str(padding) + ":" + str(bubble["text"])
+	if bubble.get("_rendered_text_key", "") == key:
+		return bubble["_rendered_text_layout"]
+	var available: Vector2 = dimensions - padding * 2.0
+	var lines: Array[String] = []
+	var text_height: float = 0.0
+	# Try the authored size with real wrapping first. Freezing approximate line
+	# breaks before shrinking wastes space and can make the font too small.
+	while true:
+		lines = Layout.wrap_text(str(bubble["text"]), maxf(1.0, available.x), float(font_size), font)
+		text_height = font.get_height(font_size) + maxf(0.0, lines.size() - 1.0) * float(font_size) * 1.32
+		var fits: bool = text_height <= available.y + 0.0000001
+		for line: String in lines:
+			if font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x > available.x + 0.0000001:
+				fits = false
+		if fits or font_size <= 1:
+			break
+		font_size -= 1
+	var offset_y: float = maxf(0.0, (available.y - text_height) * 0.5)
+	var render_units: Array = TextAnimation.units_for_lines(lines)
+	var reading_units: Array = []
+	for unit: Dictionary in TextAnimation.units(bubble):
+		if not str(unit["text"]).strip_edges().is_empty(): reading_units.append(unit)
+	var reading_index: int = 0
+	for unit: Dictionary in render_units:
+		if str(unit["text"]).strip_edges().is_empty(): continue
+		if reading_index < reading_units.size():
+			unit["index"] = reading_units[reading_index]["index"]
+			unit["word"] = reading_units[reading_index]["word"]
+		reading_index += 1
+	var result: Dictionary = {"font_size":font_size, "line_height":float(font_size) * 1.32, "lines":lines,
+		"height":text_height, "offset_y":offset_y, "baseline":offset_y + font.get_ascent(font_size), "units":render_units}
+	bubble["_rendered_text_key"] = key
+	bubble["_rendered_text_layout"] = result
+	return result
 
 func _draw_burst_rays(rect: Rect2, strength: float) -> void:
 	var center: Vector2 = rect.get_center()
@@ -595,13 +661,15 @@ func _draw_burst_rays(rect: Rect2, strength: float) -> void:
 		draw_line(ray_start, ray_end, outline, 13.0, true)
 		draw_line(ray_start, ray_end, ink, 7.0, true)
 
-func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, font_size: int, padding: Vector2, line_height: float, bubble_center: Vector2, entry_offset: Vector2, entry_scale: float, entry_rotation: float) -> void:
-	var text_units: Array = TextAnimation.units(bubble)
+func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, text_layout: Dictionary, padding: Vector2, bubble_center: Vector2, entry_offset: Vector2, entry_scale: float, entry_rotation: float) -> void:
+	var text_units: Array = text_layout["units"]
+	var font_size: int = int(text_layout["font_size"])
+	var line_height: float = float(text_layout["line_height"])
 	var factor: float = minf(size.x / LOGICAL.x, size.y / LOGICAL.y)
 	var origin: Vector2 = (size - LOGICAL * factor) / 2.0
-	var dimensions: Vector2 = Vector2(maxf(1.0, rect.size.x - padding.x * 2.0), bubble["lines"].size() * line_height)
+	var dimensions: Vector2 = Vector2(maxf(1.0, rect.size.x - padding.x * 2.0), maxf(1.0, rect.size.y - padding.y * 2.0))
 	var metrics: Array = bubble.get("_text_metrics", [])
-	var font_key: String = str(font.get_instance_id()) + ":" + str(font_size)
+	var font_key: String = str(font.get_instance_id()) + ":" + str(font_size) + ":" + str(text_layout["baseline"]) + ":" + str(text_layout["lines"])
 	if metrics.size() != text_units.size() or bubble.get("_font_key", "") != font_key:
 		metrics = []
 		var prefix: String = ""
@@ -612,7 +680,7 @@ func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, font_size:
 				prefix = ""
 			var width: float = font.get_string_size(str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
 			var end: float = font.get_string_size(prefix + str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
-			metrics.append({"x":end - width, "width":width, "y":float(font_size) + float(row) * line_height})
+			metrics.append({"x":end - width, "width":width, "y":float(text_layout["baseline"]) + float(row) * line_height})
 			prefix += str(unit["text"])
 		bubble["_text_metrics"] = metrics
 		bubble["_font_key"] = font_key
@@ -629,7 +697,7 @@ func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, font_size:
 		var point: Vector2 = center + Vector2(float(pose["dx"]), float(pose["dy"]))
 		if float(m["y"]) > rect.size.y - padding.y * 2.0 + 9.0 or point.x < 0.0 or point.x > dimensions.x:
 			continue
-		var glyph_origin: Vector2 = rect.position + padding + Vector2(0.0, -2.0) + point
+		var glyph_origin: Vector2 = rect.position + padding + point
 		var animated_origin: Vector2 = bubble_center + entry_offset + ((glyph_origin - bubble_center) * entry_scale).rotated(entry_rotation)
 		draw_set_transform(origin + animated_origin * factor, entry_rotation + deg_to_rad(float(pose["rotation"])), Vector2.ONE * factor * entry_scale * float(pose["scale"]))
 		draw_string(font, Vector2(-float(m["width"]) / 2.0, float(font_size) * 0.35), str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, Color(0.204, 0.18, 0.141, float(pose["opacity"])))
@@ -642,11 +710,13 @@ func _draw() -> void:
 	var origin: Vector2 = (size - LOGICAL * factor) / 2.0
 	var shot: Dictionary = _current_shot()
 	var camera: Dictionary = _camera(shot)
+	var visible_bounds := Rect2(-origin / factor, size / factor)
+	var frame_bounds := _background_bounds(shot, visible_bounds)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	draw_rect(Rect2(Vector2.ZERO, size), Color.BLACK)
 	draw_set_transform(origin + camera["offset"] * factor, 0.0, Vector2.ONE * factor * float(camera["zoom"]))
-	draw_rect(Rect2(Vector2.ZERO, LOGICAL), Color("121a18"))
-	_draw_background(shot)
+	draw_rect(frame_bounds, Color("121a18"))
+	_draw_background(shot, frame_bounds)
 	for actor: Dictionary in shot["actors"]:
 		if not _textures.has(actor["asset"]):
 			continue
@@ -667,15 +737,19 @@ func _draw() -> void:
 		_draw_bubble(shot["bubbles"][_dialogue_index], shot, camera)
 	if shot["transition"]["type"] == "fade" and _elapsed < float(shot["transition"]["duration"]):
 		var opacity: float = 1.0 - _elapsed / maxf(0.01, float(shot["transition"]["duration"]))
-		draw_rect(Rect2(Vector2.ZERO, LOGICAL), Color(0, 0, 0, opacity))
+		draw_rect(frame_bounds, Color(0, 0, 0, opacity))
 	if _exit_elapsed >= 0.0 and str(shot.get("exitTransition", {}).get("type", "cut")) == "fade":
 		var exit_opacity: float = minf(1.0, _exit_elapsed / maxf(0.01, float(shot["exitTransition"]["duration"])))
-		draw_rect(Rect2(Vector2.ZERO, LOGICAL), Color(0, 0, 0, exit_opacity))
-	# Mask everything outside the logical frame on other screen ratios.
+		draw_rect(frame_bounds, Color(0, 0, 0, exit_opacity))
+	# Mask everything outside the available scenery. Actors and dialogue stay in
+	# the central authored frame, while panoramic scenery may reach the sides.
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if origin.x > 0.0:
-		draw_rect(Rect2(0.0, 0.0, origin.x, size.y), Color.BLACK)
-		draw_rect(Rect2(size.x - origin.x, 0.0, origin.x, size.y), Color.BLACK)
-	if origin.y > 0.0:
-		draw_rect(Rect2(0.0, 0.0, size.x, origin.y), Color.BLACK)
-		draw_rect(Rect2(0.0, size.y - origin.y, size.x, origin.y), Color.BLACK)
+	var visible_screen := Rect2(origin + frame_bounds.position * factor, frame_bounds.size * factor)
+	if visible_screen.position.x > 0.0:
+		draw_rect(Rect2(0.0, 0.0, visible_screen.position.x, size.y), Color.BLACK)
+	if visible_screen.end.x < size.x:
+		draw_rect(Rect2(visible_screen.end.x, 0.0, size.x - visible_screen.end.x, size.y), Color.BLACK)
+	if visible_screen.position.y > 0.0:
+		draw_rect(Rect2(0.0, 0.0, size.x, visible_screen.position.y), Color.BLACK)
+	if visible_screen.end.y < size.y:
+		draw_rect(Rect2(0.0, visible_screen.end.y, size.x, size.y - visible_screen.end.y), Color.BLACK)

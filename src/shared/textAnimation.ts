@@ -18,7 +18,7 @@ export function newTextAnimation(reveal: TextReveal = 'typewriter', effect: Text
 }
 const unitsCache = new WeakMap<Bubble, { key: string; units: TextUnit[] }>();
 export function bubbleTextUnits(bubble: Bubble): TextUnit[] {
-  const key = JSON.stringify([bubble.text, bubble.width, bubble.fontSize, bubble.style]);
+  const key = JSON.stringify([bubble.text, bubble.width, bubble.fontSize, bubble.style, bubble.height, bubble.autoHeight]);
   const cached = unitsCache.get(bubble);
   if (cached?.key === key) return cached.units;
   const units = unitsForLines(bubbleLayout(bubble).lines);

@@ -3,6 +3,7 @@ import type { LogicCatalog, LevelEvent } from './logic.js';
 import type { CombatCatalog } from './combat.js';
 import type { OpenResult } from '../model.js';
 import type { Cinematic } from '../model.js';
+import type { HomeScreen } from './homeScreen.js';
 /** Game authoring contract. Level records contain references, never combat-stat overrides. */
 export const DAMAGE_TYPES = ['physical','piercing','toxic','pure'] as const;
 export type DamageType = typeof DAMAGE_TYPES[number];
@@ -48,7 +49,7 @@ export interface ImportedCampaignFilm {film:CampaignFilm;cinematic:Cinematic}
 export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean};
 export interface CampaignSequence {steps:CampaignStep[];cinematics:CampaignFilm[]}
 export interface CampaignCheck {films:number;assets:number;steps:number;levels:number;warnings:string[]}
-export interface GameProject {schemaVersion:1|2|3|4;rewards?:RewardSettings;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
+export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;rewards?:RewardSettings;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
 export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean}
 export interface GameRecent {path:string;title:string;updatedAt:string}
 export interface GameBootstrap {recovery:GameProject|null;recent:GameRecent[]}

@@ -832,3 +832,5 @@ extendPresentationSchema(GAME_SCHEMA);
 GAME_SCHEMA.properties!.cinematics={type:'array',minItems:0,maxItems:500,items:cinematicSchema as Rule};
 GAME_SCHEMA.properties!.rewards=obj({combo:obj({enabled:{type:'boolean'},seedsPerStep:num(0,10000,true),maxSeeds:num(0,10000,true)})});
 GAME_SCHEMA.properties!.levels.items!.properties!.laneCaptureSeedReward=num(0,10000,true);
+import { HOME_SCREEN_SCHEMA } from './homeScreenSchema.js';
+GAME_SCHEMA.properties!.homeScreen=HOME_SCREEN_SCHEMA;

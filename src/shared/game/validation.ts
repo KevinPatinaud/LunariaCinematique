@@ -6,6 +6,7 @@ import { logicFilmIds } from './logic.js';
 import { combatIssues } from './combatValidation.js';
 import { ensureCombat } from './combatDefaults.js';
 import { safeMoviePath } from './campaign.js';
+import { homeScreenIssues } from './homeScreenValidation.js';
 import { validationIssues as cinematicIssues } from '../schema.js';
 import { GAME_SCHEMA, type Rule } from './schema.js';
 import { defaultRewards, totalEnemies, type GameProject } from './types.js';
@@ -115,7 +116,7 @@ export function gameIssues(input:unknown):GameIssue[]{
   for(const id of logicFilmIds(p))usedFilms.add(id);
   const unusedFilms=cinematics.filter(f=>!usedFilms.has(f.id)).length;if(unusedFilms)add('campaign.cinematics',`${unusedFilms} film(s) du catalogue ne sont pas utilisés et ne seront pas publiés.`,'warning');
  }
- issues.push(...combatIssues(p),...logicIssues(p),...presentationIssues(p));
+ issues.push(...combatIssues(p),...logicIssues(p),...presentationIssues(p),...homeScreenIssues(p));
  return issues;
 }
 function withoutLegacyBonusGoals(value:unknown):unknown {

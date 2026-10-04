@@ -702,6 +702,7 @@ export default function App() {
       onBrowseFilms={()=>{setStudioModal('films');setStudioMode('cinematics');}}
       onCreateLevel={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.createLevel();}}
       onCampaign={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.navigate('campaign');}}
+      onHome={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.navigate('home');}}
       onCharacters={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.navigate('plants');}}
       onChecks={()=>{setStudioModal(null);setStudioMode('levels');gameEditor.current?.showChecks();}}/>}
     {studioModal==='films'&&<CinematicsBrowser films={presentationProject.cinematics??[]} activeId={activeFilmId.current} disabled={locked} references={filmReferences} onClose={()=>setStudioModal(null)} onSelect={id=>{selectFilm(id);setStudioModal(null);}} onCreate={()=>{setStudioModal(null);void createDocument();}} onDuplicate={id=>{void duplicateFilm(id);}} onRename={(id,title)=>updateFilm(id,{title})} onCategory={(id,category)=>updateFilm(id,{category})} onMove={(id,targetId)=>gameEditor.current?.moveCinematic(id,targetId)} onDelete={id=>{void deleteFilm(id);}} onBackupProject={()=>{void backupProject();}}/>}

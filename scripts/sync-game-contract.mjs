@@ -18,6 +18,7 @@ async function main(){
   if(file.endsWith('.js'))await fs.writeFile(path.join(root,'tools/design',file),`// Generated forwarding module; edit Studio shared sources only.\nexport * from './shared/game/${file}';\n`);
  }
  await fs.copyFile(path.join(studio,'schema/game-project.schema.json'),path.join(root,'content/design/game-project.schema.json'));
+ await fs.copyFile(path.join(studio,'schema/home-screen.defaults.json'),path.join(root,'content/design/home_screen.defaults.json'));
  console.log('Contrat copié. Le projet game_content.json n’a pas été modifié. Exécuter les tests Node et Godot avant publication.');
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1;});

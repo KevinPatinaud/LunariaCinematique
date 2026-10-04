@@ -1,0 +1,542 @@
+{
+  "background": {
+    "mode": "garden",
+    "chapter": -1,
+    "color": "#183e37",
+    "image": "",
+    "fit": "cover",
+    "opacity": 1,
+    "overlayColor": "#183e37",
+    "overlayOpacity": 0.1
+  },
+  "continueLabels": {
+    "start": "Commencer l'aventure",
+    "continue": "Continuer le voyage",
+    "battle": "Reprendre la bataille",
+    "outro": "Découvrir la suite",
+    "epilogue": "Retrouver la troupe",
+    "unavailable": "Aucune mission publiée",
+    "suffix": "  →"
+  },
+  "elements": [
+    {
+      "id": "navigation_panel",
+      "name": "Panneau de navigation",
+      "kind": "panel",
+      "visible": true,
+      "rect": {
+        "x": 40,
+        "y": 35,
+        "w": 548,
+        "h": 650
+      },
+      "opacity": 1,
+      "fill": "#183e37f6",
+      "borderColor": "#86aa8c",
+      "borderWidth": 2,
+      "radius": 32,
+      "shadow": true
+    },
+    {
+      "id": "navigation_inset",
+      "name": "Contour intérieur",
+      "kind": "panel",
+      "visible": true,
+      "rect": {
+        "x": 52,
+        "y": 47,
+        "w": 524,
+        "h": 626
+      },
+      "opacity": 1,
+      "fill": "#345a492e",
+      "borderColor": "#d0e3bb1f",
+      "borderWidth": 1,
+      "radius": 25,
+      "shadow": false
+    },
+    {
+      "id": "badge_panel",
+      "name": "Fond du bandeau",
+      "kind": "panel",
+      "visible": true,
+      "rect": {
+        "x": 78,
+        "y": 68,
+        "w": 256,
+        "h": 32
+      },
+      "opacity": 1,
+      "fill": "#d0e3bb",
+      "borderColor": "#00000000",
+      "borderWidth": 0,
+      "radius": 10,
+      "shadow": false
+    },
+    {
+      "id": "badge_text",
+      "name": "Bandeau",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 78,
+        "y": 73.44,
+        "w": 256,
+        "h": 24
+      },
+      "opacity": 1,
+      "text": "LES GRAINES DU VOYAGE",
+      "font": "bold",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "maxLines": 1,
+      "align": "center",
+      "color": "#183e37"
+    },
+    {
+      "id": "title",
+      "name": "Titre",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 73,
+        "y": 112,
+        "w": 480,
+        "h": 90
+      },
+      "opacity": 1,
+      "text": "LUNARIA",
+      "font": "title",
+      "fontSize": 82,
+      "lineHeight": 90,
+      "maxLines": 1,
+      "align": "left",
+      "color": "#f6c864"
+    },
+    {
+      "id": "subtitle",
+      "name": "Sous-titre",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 79,
+        "y": 209,
+        "w": 472,
+        "h": 38
+      },
+      "opacity": 1,
+      "text": "La révolte des racines",
+      "font": "bold",
+      "fontSize": 30,
+      "lineHeight": 38,
+      "maxLines": 1,
+      "align": "left",
+      "color": "#fff5de"
+    },
+    {
+      "id": "intro",
+      "name": "Introduction",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 80,
+        "y": 263,
+        "w": 458,
+        "h": 96
+      },
+      "opacity": 1,
+      "text": "Un jardin à sauver. Des compagnons à rencontrer. Un monde à faire refleurir.",
+      "font": "body",
+      "fontSize": 23,
+      "lineHeight": 32,
+      "maxLines": 3,
+      "align": "left",
+      "color": "#d0e3bb"
+    },
+    {
+      "id": "divider",
+      "name": "Séparateur",
+      "kind": "line",
+      "visible": true,
+      "rect": {
+        "x": 80,
+        "y": 363,
+        "w": 468,
+        "h": 0
+      },
+      "opacity": 1,
+      "color": "#d0e3bb47",
+      "lineWidth": 2
+    },
+    {
+      "id": "continue",
+      "name": "Bouton principal",
+      "kind": "button",
+      "visible": true,
+      "rect": {
+        "x": 78,
+        "y": 383,
+        "w": 472,
+        "h": 70
+      },
+      "opacity": 1,
+      "text": "{continue}",
+      "action": "continue",
+      "fill": "#f6c864",
+      "textColor": "#183e37",
+      "borderColor": "#ba874a",
+      "borderWidth": 2,
+      "radius": 15,
+      "shadow": true,
+      "font": "bold",
+      "fontSize": 26
+    },
+    {
+      "id": "map",
+      "name": "Carnet de voyage",
+      "kind": "button",
+      "visible": true,
+      "rect": {
+        "x": 78,
+        "y": 472,
+        "w": 228,
+        "h": 54
+      },
+      "opacity": 1,
+      "text": "Carnet de voyage",
+      "action": "map",
+      "fill": "#fff5de",
+      "textColor": "#183e37",
+      "borderColor": "#6e8970",
+      "borderWidth": 2,
+      "radius": 15,
+      "shadow": true,
+      "font": "bold",
+      "fontSize": 21
+    },
+    {
+      "id": "collection",
+      "name": "La troupe",
+      "kind": "button",
+      "visible": true,
+      "rect": {
+        "x": 322,
+        "y": 472,
+        "w": 228,
+        "h": 54
+      },
+      "opacity": 1,
+      "text": "La troupe",
+      "action": "collection",
+      "fill": "#fff5de",
+      "textColor": "#183e37",
+      "borderColor": "#6e8970",
+      "borderWidth": 2,
+      "radius": 15,
+      "shadow": true,
+      "font": "bold",
+      "fontSize": 21
+    },
+    {
+      "id": "journal",
+      "name": "Cinématiques",
+      "kind": "button",
+      "visible": true,
+      "rect": {
+        "x": 78,
+        "y": 540,
+        "w": 228,
+        "h": 54
+      },
+      "opacity": 1,
+      "text": "Cinématiques",
+      "action": "journal",
+      "fill": "#fff5de",
+      "textColor": "#183e37",
+      "borderColor": "#6e8970",
+      "borderWidth": 2,
+      "radius": 15,
+      "shadow": true,
+      "font": "bold",
+      "fontSize": 21
+    },
+    {
+      "id": "options",
+      "name": "Paramètres",
+      "kind": "button",
+      "visible": true,
+      "rect": {
+        "x": 322,
+        "y": 540,
+        "w": 228,
+        "h": 54
+      },
+      "opacity": 1,
+      "text": "Paramètres",
+      "action": "options",
+      "fill": "#fff5de",
+      "textColor": "#183e37",
+      "borderColor": "#6e8970",
+      "borderWidth": 2,
+      "radius": 15,
+      "shadow": true,
+      "font": "bold",
+      "fontSize": 21
+    },
+    {
+      "id": "progress_label",
+      "name": "Libellé progression",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 79,
+        "y": 612,
+        "w": 350,
+        "h": 22
+      },
+      "opacity": 1,
+      "text": "PROGRESSION",
+      "font": "bold",
+      "fontSize": 14,
+      "lineHeight": 22,
+      "maxLines": 1,
+      "align": "left",
+      "color": "#d0e3bb"
+    },
+    {
+      "id": "progress_count",
+      "name": "Compteur progression",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 507,
+        "y": 610,
+        "w": 68,
+        "h": 24
+      },
+      "opacity": 1,
+      "text": "{completed} / {total}",
+      "font": "bold",
+      "fontSize": 16,
+      "lineHeight": 24,
+      "maxLines": 1,
+      "align": "left",
+      "color": "#fff5de"
+    },
+    {
+      "id": "progress_bar",
+      "name": "Barre de progression",
+      "kind": "progress",
+      "visible": true,
+      "rect": {
+        "x": 79,
+        "y": 642,
+        "w": 471,
+        "h": 9
+      },
+      "opacity": 1,
+      "fill": "#f6c864",
+      "trackColor": "#102e29",
+      "radius": 5
+    },
+    {
+      "id": "hero_halo",
+      "name": "Halo des héros",
+      "kind": "halo",
+      "visible": true,
+      "rect": {
+        "x": 718,
+        "y": 174,
+        "w": 432,
+        "h": 432
+      },
+      "opacity": 1,
+      "fill": "#fff5de13",
+      "borderColor": "#d0e3bb4d",
+      "borderWidth": 0,
+      "startAngle": -2.55,
+      "endAngle": 0.45
+    },
+    {
+      "id": "hero_arc",
+      "name": "Arc des héros",
+      "kind": "halo",
+      "visible": true,
+      "rect": {
+        "x": 705,
+        "y": 161,
+        "w": 458,
+        "h": 458
+      },
+      "opacity": 1,
+      "fill": "#00000000",
+      "borderColor": "#d0e3bb4d",
+      "borderWidth": 2,
+      "startAngle": -2.55,
+      "endAngle": 0.45
+    },
+    {
+      "id": "hero_rose",
+      "name": "Rose",
+      "kind": "plant",
+      "visible": true,
+      "rect": {
+        "x": 938.5,
+        "y": 290.5,
+        "w": 265,
+        "h": 265
+      },
+      "opacity": 1,
+      "plantId": "rose",
+      "scale": 2.65,
+      "animated": true
+    },
+    {
+      "id": "hero_radish",
+      "name": "Radis",
+      "kind": "plant",
+      "visible": true,
+      "rect": {
+        "x": 624.5,
+        "y": 276.5,
+        "w": 365,
+        "h": 365
+      },
+      "opacity": 1,
+      "plantId": "radish",
+      "scale": 3.65,
+      "animated": true
+    },
+    {
+      "id": "hero_baobab",
+      "name": "Baobab débloqué",
+      "kind": "plant",
+      "visible": true,
+      "rect": {
+        "x": 920,
+        "y": 433,
+        "w": 210,
+        "h": 210
+      },
+      "opacity": 1,
+      "plantId": "baobab",
+      "scale": 2.1,
+      "animated": true,
+      "showIfPlantUnlocked": "baobab"
+    },
+    {
+      "id": "hero_hazel",
+      "name": "Noisetier débloqué",
+      "kind": "plant",
+      "visible": true,
+      "rect": {
+        "x": 938,
+        "y": 445,
+        "w": 210,
+        "h": 210
+      },
+      "opacity": 1,
+      "plantId": "hazel",
+      "scale": 2.1,
+      "animated": true,
+      "showIfPlantUnlocked": "hazel",
+      "hideIfPlantUnlocked": "baobab"
+    },
+    {
+      "id": "tagline_panel",
+      "name": "Panneau de signature",
+      "kind": "panel",
+      "visible": true,
+      "rect": {
+        "x": 664,
+        "y": 584,
+        "w": 552,
+        "h": 91
+      },
+      "opacity": 1,
+      "fill": "#183e37e6",
+      "borderColor": "#d0e3bb8c",
+      "borderWidth": 1,
+      "radius": 23,
+      "shadow": true
+    },
+    {
+      "id": "tagline_accent",
+      "name": "Accent de signature",
+      "kind": "panel",
+      "visible": true,
+      "rect": {
+        "x": 688,
+        "y": 601,
+        "w": 5,
+        "h": 55
+      },
+      "opacity": 1,
+      "fill": "#f6c864",
+      "borderColor": "#d0e3bb",
+      "borderWidth": 0,
+      "radius": 0,
+      "shadow": false
+    },
+    {
+      "id": "tagline",
+      "name": "Signature",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 703,
+        "y": 594.5,
+        "w": 493,
+        "h": 33
+      },
+      "opacity": 1,
+      "text": "Petites plantes. Grande rébellion.",
+      "font": "bold",
+      "fontSize": 25,
+      "lineHeight": 33,
+      "maxLines": 1,
+      "align": "center",
+      "color": "#f6c864"
+    },
+    {
+      "id": "tagline_detail",
+      "name": "Détail de signature",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 703,
+        "y": 632.28,
+        "w": 493,
+        "h": 25
+      },
+      "opacity": 1,
+      "text": "Une aventure botanique à travers cinq continents",
+      "font": "body",
+      "fontSize": 17,
+      "lineHeight": 25,
+      "maxLines": 1,
+      "align": "center",
+      "color": "#fff5de"
+    },
+    {
+      "id": "version",
+      "name": "Version",
+      "kind": "text",
+      "visible": true,
+      "rect": {
+        "x": 1171,
+        "y": 691,
+        "w": 109,
+        "h": 22
+      },
+      "opacity": 1,
+      "text": "Lunaria · {version}",
+      "font": "body",
+      "fontSize": 14,
+      "lineHeight": 22,
+      "maxLines": 1,
+      "align": "left",
+      "color": "#fff5de"
+    }
+  ]
+}

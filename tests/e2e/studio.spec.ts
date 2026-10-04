@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import {newTextAnimation} from '../../src/shared/textAnimation.js';
+import {bubbleTextUnits, newTextAnimation} from '../../src/shared/textAnimation.js';
 import { prepareCinematic } from '../../src/shared/geometry.js';
 import { newActor, newBubble, newCinematic, newShot, type Asset, type Cinematic } from '../../src/shared/model.js';
 import { seedProject } from '../../src/shared/game/seed.js';
@@ -438,6 +438,90 @@ test('texte progressif : premier clic complète, second clic avance via le vrai 
   await page.getByRole('button',{name:/Cliquer pour continuer/}).click();
   await expect(page.getByTestId('bubble-'+second.id)).toBeVisible();
   await expect(page.getByRole('button',{name:/Afficher tout le texte/})).toBeVisible();
+});
+test('texte des bulles : taille maximale, marges verticales équilibrées et apparition stable',async({},testInfo)=>{
+  const document=fixture(),shot=document.shots[0],normal=newBubble(),long=newBubble(),wide=newBubble();
+  shot.dialogueStart=0;shot.transition={type:'cut',duration:0};
+  Object.assign(normal,{text:'La serre s’éveille.',fontSize:32,autoHeight:false,x:.04,y:.08,width:.43,height:.16});
+  Object.assign(long,{text:'Chaque plante retrouve sa place dans le jardin de Lunaria. '.repeat(8),
+    fontSize:48,autoHeight:false,x:.52,y:.08,width:.43,height:.2,textAnimation:{...newTextAnimation(),speed:2}});
+  // Georgia's real Q is wider than the deterministic fallback: exercise font measurement.
+  Object.assign(wide,{text:'QQQQQQQQQQQQ',fontSize:48,autoHeight:false,x:.04,y:.33,width:447.68/1600,height:.13});
+  shot.bubbles=[normal,long,wide];
+  await openProjectFilm(prepareCinematic(document));
+  const normalText=page.getByTestId('bubble-'+normal.id).getByTestId('bubble-text');
+  const longText=page.getByTestId('bubble-'+long.id).getByTestId('bubble-text');
+  const wideText=page.getByTestId('bubble-'+wide.id).getByTestId('bubble-text');
+  await expect(normalText).toHaveAttribute('font-size','32');
+  const reducedSize=Number(await longText.getAttribute('font-size'));
+  expect(reducedSize).toBeGreaterThan(0);expect(reducedSize).toBeLessThan(48);
+  expect(Number(await wideText.getAttribute('font-size'))).toBeLessThan(48);
+  for(const text of [normalText,longText,wideText]) {
+    const bounds=await text.evaluate(element=>{
+      const box=(element as unknown as SVGGraphicsElement).getBBox(),area=element.parentElement!;
+      return {x:box.x,y:box.y,right:box.x+box.width,bottom:box.y+box.height,
+        width:Number(area.getAttribute('width')),height:Number(area.getAttribute('height'))};
+    });
+    expect(bounds.x,JSON.stringify(bounds)).toBeGreaterThanOrEqual(-.1);expect(bounds.y,JSON.stringify(bounds)).toBeGreaterThanOrEqual(-.1);
+    expect(bounds.right).toBeLessThanOrEqual(bounds.width+.1);expect(bounds.bottom).toBeLessThanOrEqual(bounds.height+.1);
+    const ink=await text.evaluate(element=>{
+      const canvas=document.createElement('canvas').getContext('2d')!,size=Number(element.getAttribute('font-size'));
+      canvas.font=`${size}px Georgia, serif`;
+      const rows=Array.from(element.children).map(row=>{const metrics=canvas.measureText(row.textContent||'Hg'),baseline=Number(row.getAttribute('y'));
+        return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent};});
+      return {top:Math.min(...rows.map(row=>row.top)),bottom:Math.max(...rows.map(row=>row.bottom)),height:Number(element.parentElement!.getAttribute('height'))};
+    });
+    expect(Math.abs(ink.top-(ink.height-ink.bottom)),JSON.stringify(ink)).toBeLessThan(.1);
+  }
+  // The next integer size must overflow after rewrapping with the actual font.
+  const larger=await longText.evaluate((element,text)=>{
+    const size=Number(element.getAttribute('font-size'))+1,area=element.parentElement!,width=Number(area.getAttribute('width')),height=Number(area.getAttribute('height'));
+    const canvas=document.createElement('canvas').getContext('2d')!;canvas.font=`${size}px Georgia, serif`;
+    const lines:string[]=[];let line='';
+    for(const word of text.trim().split(/\s+/)) {
+      if(line&&canvas.measureText(line+' '+word).width<=width){line+=' '+word;continue;}
+      if(line)lines.push(line);line=word;
+    }
+    lines.push(line);
+    const boxes=lines.map((row,index)=>{const m=canvas.measureText(row);return {top:index*size*1.32-m.actualBoundingBoxAscent,bottom:index*size*1.32+m.actualBoundingBoxDescent,width:Math.max(m.width,m.actualBoundingBoxLeft+m.actualBoundingBoxRight)};});
+    return Math.max(...boxes.map(box=>box.width))>width+1e-7||Math.max(...boxes.map(box=>box.bottom))-Math.min(...boxes.map(box=>box.top))>height+1e-7;
+  },long.text);
+  expect(larger).toBe(true);
+  const screenshot=testInfo.outputPath('bubble-text-fit.png');
+  await page.getByTestId('scene').screenshot({path:screenshot});
+  await testInfo.attach('texte complet ajusté et texte court à sa taille',{path:screenshot,contentType:'image/png'});
+  if(process.env.LUNARIA_TEXT_FIT_CAPTURE) {
+    await fs.mkdir(path.dirname(process.env.LUNARIA_TEXT_FIT_CAPTURE),{recursive:true});
+    await fs.copyFile(screenshot,process.env.LUNARIA_TEXT_FIT_CAPTURE);
+  }
+  const saved=await saveProjectFilm();
+  expect(saved.shots[0].bubbles.map(b=>b.fontSize)).toEqual([32,48,48]);
+  expect(saved.shots[0].bubbles.map(b=>b.text)).toEqual(shot.bubbles.map(b=>b.text));
+  await page.getByRole('button',{name:'Lire depuis ce plan',exact:true}).first().click();
+  await page.getByRole('button',{name:/Cliquer pour continuer/}).click();
+  const letters=page.getByTestId('bubble-'+long.id).getByTestId('animated-text').locator('text');
+  await expect(letters.first()).toHaveAttribute('font-size',String(reducedSize));
+  await page.getByRole('button',{name:/Afficher tout le texte/}).click();
+  expect(await letters.evaluateAll(elements=>Array.from(new Set(elements.map(element=>element.getAttribute('font-size')))))).toEqual([String(reducedSize)]);
+  expect(await letters.evaluateAll(elements=>elements.map(element=>Number(element.parentElement!.getAttribute('data-text-unit')))))
+    .toEqual(bubbleTextUnits(long).filter(unit=>/\S/u.test(unit.text)).map(unit=>unit.index));
+  expect((await letters.allTextContents()).join('')).toBe(long.text.replace(/\s/gu,''));
+  await expect(page.getByTestId('bubble-'+long.id)).toBeVisible();
+  const animatedBounds=await page.getByTestId('animated-text').evaluate(element=>{
+    const box=(element as unknown as SVGGraphicsElement).getBBox(),area=element.parentElement!;
+    return {x:box.x,y:box.y,right:box.x+box.width,bottom:box.y+box.height,
+      width:Number(area.getAttribute('width')),height:Number(area.getAttribute('height'))};
+  });
+  expect(animatedBounds.x).toBeGreaterThanOrEqual(-.1);expect(animatedBounds.y).toBeGreaterThanOrEqual(-.1);
+  expect(animatedBounds.right).toBeLessThanOrEqual(animatedBounds.width+.1);
+  expect(animatedBounds.bottom).toBeLessThanOrEqual(animatedBounds.height+.1);
+  const animatedInk=await letters.evaluateAll(elements=>{
+    const canvas=document.createElement('canvas').getContext('2d')!,size=Number(elements[0].getAttribute('font-size'));canvas.font=`${size}px Georgia, serif`;
+    const rows=elements.map(element=>{const metrics=canvas.measureText(element.textContent||''),baseline=Number(element.getAttribute('y'));
+      return {top:baseline-metrics.actualBoundingBoxAscent,bottom:baseline+metrics.actualBoundingBoxDescent};});
+    return {top:Math.min(...rows.map(row=>row.top)),bottom:Math.max(...rows.map(row=>row.bottom)),height:Number(elements[0].parentElement!.parentElement!.parentElement!.getAttribute('height'))};
+  });
+  expect(Math.abs(animatedInk.top-(animatedInk.height-animatedInk.bottom)),JSON.stringify(animatedInk)).toBeLessThan(.1);
 });
 test('préréglage Cri et réglages texte sauvegardés sans images dupliquées',async()=>{
   await openFixture();await page.locator('.layer-row').first().click();

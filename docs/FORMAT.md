@@ -4,6 +4,8 @@ Le contrat exécutable est [cinematic.schema.json](cinematic.schema.json), gén�
 
 ## Racine et chemin des assets
 
+Ce document décrit les films. La composition du menu d’accueil est un contrat distinct, `homeScreen` dans `lunaria.game.json`, documenté dans [Écran d’accueil](ACCUEIL.md) ; elle ne nécessite pas de cinématique.
+
 ```json
 {
   "schemaVersion": 1,
@@ -58,9 +60,9 @@ Audio : `null` ou `{asset, volume, loop}`. La piste commence à l'entrée du pla
 
 `tail.mode` : `auto`, `manual`, `none`. Automatique exige un personnage valide. Manuel utilise les coordonnées relatives `tail.x` et `tail.y`. Une narration n'affiche pas de queue. Une pointe située dans la bulle n'est pas dessinée.
 
-`autoHeight` adapte la hauteur à la largeur et au texte. Le redimensionnement direct désactive cette option ; on peut la réactiver dans l'inspecteur. La V1 n'ajuste pas silencieusement la taille de police pour faire rentrer un texte trop long : elle affiche un avertissement.
+`autoHeight` adapte la hauteur à la largeur et au texte. Le redimensionnement direct désactive cette option ; on peut la réactiver dans l'inspecteur. Si le texte complet dépasse l'espace intérieur de la bulle, le rendu réduit sa police jusqu'à ce qu'il tienne. Sinon, il conserve la taille configurée. Cette adaptation ne modifie pas `fontSize` dans le document et reste stable pendant la révélation du texte.
 
-À l'enregistrement, `lines` contient les lignes calculées et `height` la hauteur effective. Le lecteur Godot V1.2 régénère ces champs dérivés avec le même algorithme déterministe, y compris si un fichier manuel omet les lignes ou en conserve une ancienne version. Le calcul utilise des métriques approximatives déterministes ; il ne remplace pas la vérification de la police et de la lisibilité dans le jeu.
+À l'enregistrement, `lines` contient les lignes calculées et `height` la hauteur effective. Le lecteur Godot régénère ces champs dérivés avec le même algorithme déterministe, y compris si un fichier manuel omet les lignes ou en conserve une ancienne version. Au rendu, la taille configurée est essayée avec les mesures réelles de la police ; si nécessaire, les lignes sont recomposées à chaque taille inférieure jusqu'à trouver la plus grande taille qui tient. Le bloc complet est centré verticalement dans l'espace intérieur de la bulle. Cette disposition reste stable durant la révélation et les glyphes conservent leurs indices et mots de lecture, même si les retours à la ligne diffèrent du calcul partagé. La taille adaptée vaut pour le texte fixe comme pour le texte animé ; elle ne garantit pas la lisibilité d'un texte très long dans une petite bulle.
 
 ## Validation et sauvegarde
 
@@ -75,7 +77,7 @@ Aucun script arbitraire ni commande système n'est exécuté depuis le JSON. Les
 
 ## Précisions V1.2
 
-Le nombre de lignes dérivées autorisé est porté à 1501 pour couvrir le texte maximal de 1500 caractères, y compris les sauts de ligne. La hauteur automatique est bornée à 1800 pixels logiques et un dépassement est signalé ; le texte n’est pas tronqué. Cela autorise l’enregistrement d’un brouillon à corriger, pas une garantie de lisibilité de 1500 lignes.
+Le nombre de lignes dérivées autorisé est porté à 1501 pour couvrir le texte maximal de 1500 caractères, y compris les sauts de ligne. La hauteur automatique est bornée à 1800 pixels logiques ; si cette borne est atteinte, la police est réduite pour faire tenir le texte. La taille de rendu minimale est de 1 pixel logique. Une bulle dont les marges ne laissent aucun espace utile conserve un avertissement invitant à l'agrandir.
 
 Les rôles image et audio sont vérifiés séparément. L’ouverture conserve une empreinte du fichier lu ; une modification externe détectée demande Enregistrer sous au lieu d’écraser le fichier. Cette vérification n’est pas un mécanisme de coédition multi-processus.
 
