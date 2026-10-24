@@ -1,29 +1,276 @@
-import React,{useState} from 'react';
-import type { GameProject } from '../../shared/game/types.js';
-import { newId } from '../../shared/game/types.js';
-import { newBehavior,newPhase,newRule,behaviorReferences,possibleAbilities,selectPhase,chooseRule,MOVEMENTS,type BehaviorDefinition,type LogicContext } from '../../shared/game/logic.js';
-import { ActionEditor,ConditionEditor,Select } from './LogicFields.js';
-import { Num } from './BalanceEditor.js';
-interface Props{project:GameProject;id:string;select:(id:string)=>void;change:(edit:(p:GameProject)=>void,key?:string,label?:string)=>void;report:(s:string)=>void}
-export function BehaviorEditor({project,id,select,change,report}:Props){
- const list=project.logic!.behaviors,b=list.find(b=>b.id===id)??list[0];
- const [health,setHealth]=useState(100),[ready,setReady]=useState(true),[target,setTarget]=useState(true);
- const update=(patch:Partial<BehaviorDefinition>,key='')=>change(p=>Object.assign(p.logic!.behaviors.find(x=>x.id===b.id)!,patch),key?'ai:'+b.id+':'+key:'','Modifier le comportement');
- const refs=behaviorReferences(project,b.id);
- const owner=project.balance[b.team].find(x=>x.behaviorId===b.id);
- const phaseIndex=selectPhase(b,health),phase=b.phases[phaseIndex];
- const candidates=[...new Set([...(phase.inheritAbilities?owner?.ability_ids??[]:[]),...phase.abilityIds])];
- const ctx:LogicContext={health,time:20,wave:1,enemies:3,energy:100,variables:Object.fromEntries(project.logic!.variables.map(v=>[v.id,v.initial])),ready:()=>ready,target:()=>target,hostile:id=>project.combat!.abilities.find(a=>a.id===id)?.target==='opponent'};
- const decision=chooseRule(b,ctx,candidates);
- return <div className="gd-balance"><aside className="gd-catalog"><button className="gd-primary" onClick={()=>{const item=newBehavior();change(p=>p.logic!.behaviors.push(item),'','Créer un comportement');select(item.id);}}>+ Comportement</button>{list.map(x=><button key={x.id} className={x.id===b.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{x.team==='plants'?'Plantes':'Ennemis'} · {x.phases.length} phase(s)</small></button>)}</aside>
- <main className="gd-scroll gd-balance-form" key={b.id}><div className="gd-section-heading"><div><div className="gd-kicker">COMPORTEMENT GLOBAL · IA / BOSS</div><h1>{b.name}</h1></div><div className="gd-inline"><button onClick={()=>{const copy=structuredClone(b);copy.id=newId('ai');copy.name=(copy.name+' — copie').slice(0,120);copy.rules.forEach(r=>r.id=newId('rule'));copy.phases.forEach(f=>f.id=newId('phase'));change(p=>p.logic!.behaviors.push(copy),'','Dupliquer le comportement');select(copy.id);}}>Dupliquer</button><button disabled={list.length<=1} onClick={()=>{if(refs.length){report('Encore utilisé par : '+refs.join(', '));return;}change(p=>{p.logic!.behaviors=p.logic!.behaviors.filter(x=>x.id!==b.id);},'','Supprimer le comportement');select('');}}>Supprimer</button></div></div>
- <p className="gd-callout">Utilisé par : {refs.join(', ')||'aucune espèce pour le moment'}. Les phases sont identiques dans tous les niveaux ; elles ne sont pas des évolutions de plante.</p>
- <div className="gd-form-grid"><label className="gd-field"><span>Nom du comportement</span><input aria-label="Nom du comportement" maxLength={120} value={b.name} onChange={e=>update({name:e.target.value},'name')}/></label><Select label="Camp du comportement" value={b.team} change={team=>{if(refs.length){report('Détache les espèces avant de changer le camp.');return;}update({team:team as BehaviorDefinition['team'],fallback:team==='plants'?'hold':'advance',rules:[]});}} options={[{id:'plants',name:'Plantes alliées'},{id:'enemies',name:'Ennemis'}]}/><Select label="Utilisation des attaques" value={b.mode} change={mode=>update({mode:mode as BehaviorDefinition['mode'],rules:mode==='priority'&&!b.rules.length?[newRule()]:b.rules})} options={[{id:'automatic',name:'Automatique — toutes les attaques disponibles'},{id:'priority',name:'Règles — première action exécutable'}]}/><Select label="Déplacement par défaut" value={b.fallback} change={fallback=>update({fallback:fallback as BehaviorDefinition['fallback']})} options={Object.entries(MOVEMENTS).filter(([k])=>b.team==='enemies'||k==='hold').map(([id,name])=>({id,name}))}/></div>
- <label className="logic-check"><input type="checkbox" checked={b.stopToAttack} onChange={e=>update({stopToAttack:e.target.checked})}/>S’arrêter quand une cible adverse est à portée</label>
- {b.mode==='priority'&&<section><h2>Règles par priorité</h2><p>La première règle dont les conditions et l’action sont exécutables gagne. Une attaque sans cible ou en recharge laisse essayer la suivante.</p>{b.rules.map((r,i)=><section className="logic-card" key={r.id}><div className="logic-row"><b>Règle {i+1}</b><input aria-label={'Nom règle '+(i+1)} maxLength={120} value={r.name} onChange={e=>update({rules:b.rules.map(x=>x.id===r.id?{...x,name:e.target.value}:x)},r.id+'name')}/><button disabled={i===0} onClick={()=>{const rs=[...b.rules];[rs[i-1],rs[i]]=[rs[i],rs[i-1]];update({rules:rs});}}>↑</button><button disabled={i===b.rules.length-1} onClick={()=>{const rs=[...b.rules];[rs[i+1],rs[i]]=[rs[i],rs[i+1]];update({rules:rs});}}>↓</button><button aria-label={'Supprimer règle '+(i+1)} onClick={()=>update({rules:b.rules.filter(x=>x.id!==r.id)})}>×</button></div><ConditionEditor project={project} actor value={r.conditions} onChange={conditions=>update({rules:b.rules.map(x=>x.id===r.id?{...x,conditions}:x)})}/><div className="gd-form-grid"><Select label={'Action de règle '+(i+1)} value={r.action} change={action=>update({rules:b.rules.map(x=>x.id===r.id?{...x,action:action as typeof r.action,abilityId:''}:x)})} options={[{id:'ability',name:'Utiliser une attaque'},...Object.entries(MOVEMENTS).filter(([k])=>b.team==='enemies'||k==='hold').map(([id,name])=>({id,name}))]}/>{r.action==='ability'&&<Select label={'Attaque de règle '+(i+1)} value={r.abilityId} change={abilityId=>update({rules:b.rules.map(x=>x.id===r.id?{...x,abilityId}:x)})} options={[{id:'',name:'Première attaque active et prête'},...project.combat!.abilities]}/>}</div></section>)}<button disabled={b.rules.length>=32} onClick={()=>update({rules:[...b.rules,newRule()]})}>+ Règle</button></section>}
- <h2>Phases de combat</h2><p>Les phases sont évaluées pendant le combat, lorsque l’entité est active sur le plateau. Les suivantes s’activent lorsque les PV franchissent leur seuil. Un soin ne fait pas revenir à la phase précédente.</p>
- {b.phases.map((f,i)=><details className="logic-card" key={f.id} open={undefined}><summary><b>{i+1}. {f.name}</b><span>PV ≤ {f.healthBelow} % · vitesse ×{f.speedFactor} · cadence ×{f.attackFactor}</span></summary><div className="gd-form-grid"><label className="gd-field"><span>Nom phase {i+1}</span><input aria-label={'Nom phase '+(i+1)} maxLength={120} value={f.name} onChange={e=>update({phases:b.phases.map(x=>x.id===f.id?{...x,name:e.target.value}:x)},f.id+'name')}/></label>{i>0&&<Num label={'Seuil PV phase '+(i+1)+' (%)'} value={f.healthBelow} max={99.99} change={healthBelow=>update({phases:b.phases.map(x=>x.id===f.id?{...x,healthBelow}:x)})}/>}<Num label={'Vitesse phase '+(i+1)+' (×)'} value={f.speedFactor} max={3} change={speedFactor=>update({phases:b.phases.map(x=>x.id===f.id?{...x,speedFactor}:x)})}/><Num label={'Cadence phase '+(i+1)+' (×)'} value={f.attackFactor} min={.1} max={3} change={attackFactor=>update({phases:b.phases.map(x=>x.id===f.id?{...x,attackFactor}:x)})}/></div><label className="logic-check"><input type="checkbox" checked={f.inheritAbilities} onChange={e=>update({phases:b.phases.map(x=>x.id===f.id?{...x,inheritAbilities:e.target.checked}:x)})}/>Conserver les attaques attribuées à l’espèce</label><div className="logic-tags">{f.abilityIds.map(a=><button key={a} onClick={()=>update({phases:b.phases.map(x=>x.id===f.id?{...x,abilityIds:x.abilityIds.filter(id=>id!==a)}:x)})}>{project.combat!.abilities.find(x=>x.id===a)?.name??a} ×</button>)}</div><Select label={'Ajouter attaque phase '+(i+1)} value="" change={id=>{if(id&&f.abilityIds.length<8)update({phases:b.phases.map(x=>x.id===f.id?{...x,abilityIds:[...x.abilityIds,id]}:x)});}} options={[{id:'',name:'Ajouter une attaque spécifique à cette phase…'},...project.combat!.abilities.filter(a=>!f.abilityIds.includes(a.id))]}/><h3>À l’entrée de la phase (une seule fois)</h3><ActionEditor project={project} self value={f.onEnter} onChange={onEnter=>update({phases:b.phases.map(x=>x.id===f.id?{...x,onEnter}:x)})}/>{i>0&&<button onClick={()=>update({phases:b.phases.filter(x=>x.id!==f.id)})}>Supprimer cette phase</button>}</details>)}
- <button disabled={b.phases.length>=8||b.phases.at(-1)!.healthBelow<=0} onClick={()=>{const f=newPhase(b.phases.length);f.healthBelow=Math.max(0,b.phases.at(-1)!.healthBelow-25);update({phases:[...b.phases,f]});}}>+ Phase</button>
- <section className="logic-probe"><h2>Essayer une décision</h2><p>Évaluation isolée, sans lancer de combat. Temps fixé à 20 s, vague 1, 3 ennemis et valeurs initiales des variables. Porteur : {owner?.name??'aucun — attribue ce comportement à une espèce'}.</p><Num label="PV de test (%)" value={health} max={100} change={setHealth}/><label className="logic-check"><input type="checkbox" checked={ready} onChange={e=>setReady(e.target.checked)}/>Attaques prêtes</label><label className="logic-check"><input type="checkbox" checked={target} onChange={e=>setTarget(e.target.checked)}/>Cible à portée</label><output aria-label="Décision du comportement">Phase : {phase.name}<br/>Mouvement : {MOVEMENTS[decision.movement]}<br/>Attaques : {decision.abilities.map(id=>project.combat!.abilities.find(a=>a.id===id)?.name??id).join(', ')||'aucune'}<br/>Règle : {b.rules.find(r=>r.id===decision.ruleId)?.name??(b.mode==='automatic'?'automatique':'repli')}</output></section>
- </main></div>;
+import { useEffect, useState } from "react";
+import type { GameProject } from "../../shared/game/types.js";
+import {
+  BEHAVIOR_TEMPLATES,
+  assignBehavior,
+  behaviorUsers,
+  duplicateBehavior,
+  createBehavior,
+  removeBehavior,
+  type BehaviorTemplate,
+} from "../../shared/game/behaviorAuthoring.js";
+import type { Team } from "../../shared/game/logic.js";
+import { BehaviorForm } from "./behaviors/BehaviorForm.js";
+import { BehaviorModelDialog } from "./behaviors/BehaviorModelDialog.js";
+import { Select } from "./LogicFields.js";
+interface Props {
+  project: GameProject;
+  id: string;
+  select: (id: string) => void;
+  change: (
+    edit: (p: GameProject) => void,
+    key?: string,
+    label?: string,
+  ) => void;
+  report: (s: string) => void;
+  openSpecies: (id: string) => void;
+}
+export function BehaviorEditor({
+  project,
+  id,
+  select,
+  change,
+  report,
+  openSpecies,
+}: Props) {
+  const list = project.logic!.behaviors,
+    b = list.find((b) => b.id === id) ?? list[0],
+    users = behaviorUsers(project, b.id);
+  const [query, setQuery] = useState(""),
+    [team, setTeam] = useState("all"),
+    [unlocked, setUnlocked] = useState(false),
+    [ownerId, setOwnerId] = useState(""),
+    [assign, setAssign] = useState(false),
+    [newTeam, setNewTeam] = useState<Team>("enemies"),
+    [template, setTemplate] = useState<BehaviorTemplate>("automatic");
+  useEffect(() => {
+    setUnlocked(false);
+    setOwnerId("");
+  }, [b.id]);
+  const owner = project.balance[b.team].find((s) => s.id === ownerId);
+  const normalize = (v: string) =>
+    v
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("fr");
+  const filtered = list.filter(
+    (b) =>
+      (team === "all" || b.team === team) &&
+      normalize(
+        b.name +
+          " " +
+          behaviorUsers(project, b.id)
+            .map((s) => s.name)
+            .join(" "),
+      ).includes(normalize(query)),
+  );
+  function apply(
+    edit: (p: GameProject) => void,
+    key = "",
+    label = "Modifier un modèle de comportement",
+  ) {
+    try {
+      change(edit, key, label);
+    } catch (error) {
+      report(error instanceof Error ? error.message : String(error));
+    }
+  }
+  return (
+    <div className="gd-balance behavior-library">
+      <aside className="gd-catalog">
+        <label className="gd-field">
+          <span>Trouver un modèle</span>
+          <input
+            aria-label="Rechercher un comportement"
+            placeholder="Nom ou personnage…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        <Select
+          label="Camp des modèles"
+          value={team}
+          change={setTeam}
+          options={[
+            { id: "all", name: "Tous les modèles" },
+            { id: "plants", name: "Plantes alliées" },
+            { id: "enemies", name: "Ennemis" },
+          ]}
+        />
+        {filtered.map((item) => (
+          <button
+            key={item.id}
+            className={item.id === b.id ? "selected" : ""}
+            onClick={() => select(item.id)}
+          >
+            <b>{item.name}</b>
+            <small>
+              {item.phases.length} phase(s) ·{" "}
+              {behaviorUsers(project, item.id).length} personnage(s)
+            </small>
+          </button>
+        ))}
+        <details className="behavior-create">
+          <summary>Créer un modèle</summary>
+          <Select
+            label="Camp du nouveau modèle"
+            value={newTeam}
+            change={(value) => {
+              setNewTeam(value as Team);
+              if (value === "plants" && template === "retreat")
+                setTemplate("automatic");
+            }}
+            options={[
+              { id: "plants", name: "Plantes alliées" },
+              { id: "enemies", name: "Ennemis" },
+            ]}
+          />
+          <Select
+            label="Point de départ du comportement"
+            value={template}
+            change={(value) => setTemplate(value as BehaviorTemplate)}
+            options={Object.entries(BEHAVIOR_TEMPLATES)
+              .filter(([id]) => newTeam === "enemies" || id !== "retreat")
+              .map(([id, name]) => ({ id, name }))}
+          />
+          <button
+            className="gd-primary"
+            disabled={list.length >= 128}
+            onClick={() => {
+              let created = "";
+              apply(
+                (p) => {
+                  created = createBehavior(p, newTeam, template).id;
+                },
+                "",
+                "Créer un modèle de comportement",
+              );
+              if (created) select(created);
+            }}
+          >
+            + Comportement
+          </button>
+        </details>
+      </aside>
+      <main className="gd-scroll gd-balance-form">
+        <div className="behavior-heading">
+          <div>
+            <div className="gd-kicker">
+              BIBLIOTHÈQUE DE MODÈLES ·{" "}
+              {b.team === "plants" ? "PLANTES" : "ENNEMIS"}
+            </div>
+            <h1>{b.name}</h1>
+          </div>
+          <div className="gd-inline">
+            <button onClick={() => setAssign(true)}>
+              Appliquer à un personnage…
+            </button>
+            <button
+              disabled={list.length >= 128}
+              onClick={() => {
+                let created = "";
+                apply(
+                  (p) => {
+                    created = duplicateBehavior(p, b.id).id;
+                  },
+                  "",
+                  "Dupliquer un modèle",
+                );
+                if (created) select(created);
+              }}
+            >
+              Dupliquer
+            </button>
+            <button
+              disabled={list.length <= 1 || !!users.length}
+              onClick={() => {
+                apply(
+                  (p) => removeBehavior(p, b.id),
+                  "",
+                  "Supprimer un modèle inutilisé",
+                );
+                select("");
+              }}
+            >
+              Supprimer
+            </button>
+          </div>
+        </div>
+        <div
+          className={"behavior-scope " + (users.length ? "shared" : "personal")}
+        >
+          <strong>
+            {users.length
+              ? "Modèle utilisé par " + users.length + " personnages"
+              : "Modèle libre · aucun personnage lié"}
+          </strong>
+          <div className="behavior-users">
+            {users.map((s) => (
+              <button key={s.id} onClick={() => openSpecies(s.id)}>
+                {s.name} →
+              </button>
+            ))}
+          </div>
+          {!!users.length && (
+            <p>
+              Pour régler un seul personnage, ouvre sa fiche. Modifier ce modèle
+              concerne tous ses utilisateurs.
+            </p>
+          )}
+          {!!users.length && !unlocked && (
+            <button onClick={() => setUnlocked(true)}>
+              Modifier pour les {users.length} personnages
+            </button>
+          )}
+          {unlocked && (
+            <button onClick={() => setUnlocked(false)}>
+              Verrouiller le modèle partagé
+            </button>
+          )}
+        </div>
+        <Select
+          label="Porteur de l’essai du modèle"
+          value={owner?.id ?? ""}
+          change={setOwnerId}
+          options={[
+            { id: "", name: "Choisir un personnage pour le test…" },
+            ...project.balance[b.team],
+          ]}
+        />
+        <BehaviorForm
+          key={b.id}
+          project={project}
+          behavior={b}
+          ownerId={owner?.id}
+          disabled={!!users.length && !unlocked}
+          edit={(edit, key, label) =>
+            apply(
+              (p) => edit(p.logic!.behaviors.find((x) => x.id === b.id)!),
+              key ? "behavior-model:" + b.id + ":" + key : "",
+              label ?? "Modifier un modèle partagé",
+            )
+          }
+        />
+        {assign && (
+          <BehaviorModelDialog
+            project={project}
+            modelId={b.id}
+            onClose={() => setAssign(false)}
+            onApply={(owner, model, shared) => {
+              change(
+                (p) => {
+                  assignBehavior(p, owner, model, shared);
+                },
+                "",
+                shared
+                  ? "Attribuer un modèle partagé"
+                  : "Attribuer une copie personnelle",
+              );
+              setAssign(false);
+            }}
+          />
+        )}
+      </main>
+    </div>
+  );
 }

@@ -13,8 +13,8 @@
     "start": "Commencer l'aventure",
     "continue": "Continuer le voyage",
     "battle": "Reprendre la bataille",
-    "outro": "Découvrir la suite",
-    "epilogue": "Retrouver la troupe",
+    "cinematic": "Découvrir la suite",
+    "finished": "Retrouver la troupe",
     "unavailable": "Aucune mission publiée",
     "suffix": "  →"
   },
@@ -238,37 +238,14 @@
       "fontSize": 21
     },
     {
-      "id": "journal",
-      "name": "Cinématiques",
-      "kind": "button",
-      "visible": true,
-      "rect": {
-        "x": 78,
-        "y": 540,
-        "w": 228,
-        "h": 54
-      },
-      "opacity": 1,
-      "text": "Cinématiques",
-      "action": "journal",
-      "fill": "#fff5de",
-      "textColor": "#183e37",
-      "borderColor": "#6e8970",
-      "borderWidth": 2,
-      "radius": 15,
-      "shadow": true,
-      "font": "bold",
-      "fontSize": 21
-    },
-    {
       "id": "options",
       "name": "Paramètres",
       "kind": "button",
       "visible": true,
       "rect": {
-        "x": 322,
+        "x": 78,
         "y": 540,
-        "w": 228,
+        "w": 472,
         "h": 54
       },
       "opacity": 1,
@@ -510,7 +487,7 @@
         "h": 25
       },
       "opacity": 1,
-      "text": "Une aventure botanique à travers cinq continents",
+      "text": "Le premier chapitre de votre aventure botanique",
       "font": "body",
       "fontSize": 17,
       "lineHeight": 25,

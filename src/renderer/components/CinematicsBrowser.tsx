@@ -1,17 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Cinematic } from '../../shared/model.js';
+import type { CinematicPlacement } from '../../shared/game/cinematicManagement.js';
 import { StudioDialog } from './StudioDialog.js';
 import './cinematicsBrowser.css';
 
 interface Props {
   films: Cinematic[]; activeId: string; disabled: boolean; references: Record<string, string[]>;
+  onBackupCampaign(): void;
   onClose(): void; onSelect(id: string): void; onCreate(): void; onDuplicate(id: string): void;
   onRename(id: string, title: string): void; onCategory(id: string, category: string): void;
-  onMove(id: string, targetId: string): void; onDelete(id: string): void; onBackupProject(): void;
+  onMove(id: string, targetId: string, placement: CinematicPlacement): void; onDelete(id: string): void; onBackupProject(): void;
 }
 const searchText = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
+const filmDragType = 'application/x-lunaria-cinematic';
+type DropTarget = { id: string; placement: CinematicPlacement };
 
-export function CinematicsBrowser({ films, activeId, disabled, references, onClose, onSelect, onCreate, onDuplicate, onRename, onCategory, onMove, onDelete, onBackupProject }: Props) {
+export function CinematicsBrowser({ films, activeId, disabled, references, onClose, onSelect, onCreate, onDuplicate, onRename, onCategory, onMove, onDelete, onBackupProject, onBackupCampaign }: Props) {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('*');
   const [editingId, setEditingId] = useState('');
@@ -20,13 +24,71 @@ export function CinematicsBrowser({ films, activeId, disabled, references, onClo
   const [categoryDraft, setCategoryDraft] = useState('');
   const [formError, setFormError] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const dragId = useRef('');
+  const [draggedId, setDraggedId] = useState('');
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const scrollFrame = useRef<number | undefined>(undefined);
+  const pointerY = useRef(0);
+  const canReorder = !disabled && !query.trim() && films.length > 1;
   useEffect(() => { searchRef.current?.focus(); }, []);
+  useEffect(() => () => stopScroll(), []);
+  useEffect(() => { if (!canReorder) clearDrag(); }, [canReorder]);
   const categories = useMemo(() => [...new Set(films.map(film => film.category?.trim()).filter((value): value is string => !!value))].sort((a, b) => a.localeCompare(b, 'fr')), [films]);
   const visible = useMemo(() => {
     const term = searchText(query.trim());
     return films.filter(film => (categoryFilter === '*' || (film.category ?? '') === categoryFilter)
       && (!term || searchText(`${film.title} ${film.id} ${film.category ?? ''}`).includes(term)));
   }, [films, query, categoryFilter]);
+  function stopScroll() {
+    if (scrollFrame.current !== undefined) cancelAnimationFrame(scrollFrame.current);
+    scrollFrame.current = undefined;
+  }
+  function clearDrag() {
+    stopScroll(); dragId.current = ''; setDraggedId(''); setDropTarget(null);
+  }
+  function targetAt(y: number): DropTarget | null {
+    const rows = Array.from(listRef.current?.querySelectorAll<HTMLElement>('.cinematics-browser-row') ?? []);
+    const row = rows.find(row => y <= row.getBoundingClientRect().bottom) ?? rows.at(-1);
+    if (!row || row.dataset.filmId === dragId.current) return null;
+    const rect = row.getBoundingClientRect();
+    return { id: row.dataset.filmId!, placement: y < rect.top + rect.height / 2 ? 'before' : 'after' };
+  }
+  function showTarget(target: DropTarget | null) {
+    setDropTarget(previous => previous?.id === target?.id && previous?.placement === target?.placement ? previous : target);
+  }
+  function autoScroll() {
+    const list = listRef.current;
+    if (!list || !dragId.current) { stopScroll(); return; }
+    const rect = list.getBoundingClientRect(), y = pointerY.current;
+    const edge = 48;
+    const speed = y < rect.top + edge ? -Math.min(12, (rect.top + edge - y) / 4)
+      : y > rect.bottom - edge ? Math.min(12, (y - rect.bottom + edge) / 4) : 0;
+    if (!speed) { stopScroll(); return; }
+    list.scrollTop += speed;
+    showTarget(targetAt(y));
+    scrollFrame.current = requestAnimationFrame(autoScroll);
+  }
+  function startDrag(event: React.DragEvent, id: string) {
+    if (!canReorder) { event.preventDefault(); return; }
+    dragId.current = id; setDraggedId(id);
+    event.dataTransfer.setData(filmDragType, id);
+    event.dataTransfer.effectAllowed = 'move';
+  }
+  function dragOver(event: React.DragEvent) {
+    if (!canReorder || !dragId.current || !event.dataTransfer.types.includes(filmDragType)) return;
+    event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'move';
+    pointerY.current = event.clientY;
+    showTarget(targetAt(event.clientY));
+    if (scrollFrame.current === undefined) autoScroll();
+  }
+  function drop(event: React.DragEvent) {
+    if (!canReorder || !dragId.current || event.dataTransfer.getData(filmDragType) !== dragId.current) return;
+    event.preventDefault(); event.stopPropagation();
+    const source = dragId.current, target = targetAt(event.clientY);
+    clearDrag();
+    if (target) onMove(source, target.id, target.placement);
+  }
   function saveTitle(id: string) {
     const title = titleDraft.trim();
     if (!title) { setFormError('Saisis un titre.'); return; }
@@ -41,16 +103,17 @@ export function CinematicsBrowser({ films, activeId, disabled, references, onClo
     <div className="cinematics-browser">
       <div className="cinematics-browser-intro"><p>{films.length} cinématique{films.length > 1 ? 's' : ''} dans ce projet. L’ordre ici sert à les retrouver ; l’ordre de lecture se règle dans Campagne.</p><button className="button primary" disabled={disabled || films.length >= 500} onClick={onCreate}>+ Nouvelle cinématique</button></div>
       <div className="cinematics-browser-filters"><label className="cinematics-browser-search">Rechercher une cinématique<input ref={searchRef} value={query} onChange={event => setQuery(event.target.value)} placeholder="Titre, identifiant ou catégorie" /></label><label>Catégorie<select aria-label="Filtrer par catégorie" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)}><option value="*">Toutes les catégories</option><option value="">Sans catégorie</option>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label></div>
+      <p className="cinematics-browser-reorder-hint">{query.trim() ? 'Efface la recherche pour réordonner les cinématiques.' : 'Fais glisser une cinématique par son titre ou sa poignée ⋮⋮, puis dépose-la au niveau du repère. Les flèches ↑ ↓ restent disponibles.'}</p>
       {formError && <p className="cinematics-browser-error" role="alert">{formError}</p>}
-      <div className="cinematics-browser-list" aria-label="Cinématiques du projet">
+      <div ref={listRef} className="cinematics-browser-list" aria-label="Cinématiques du projet" onDragOver={dragOver} onDrop={drop} onDragLeave={event => { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) { stopScroll(); setDropTarget(null); } }}>
         {visible.map((film, index) => {
           const active = film.id === activeId, links = references[film.id] ?? [];
           const duration = film.shots.reduce((total, shot) => total + shot.duration, 0);
-          return <div key={film.id} className="cinematics-browser-row">
-            <button className={`cinematics-browser-film${active ? ' active' : ''}`} disabled={disabled} aria-current={active ? 'true' : undefined} onClick={() => onSelect(film.id)}><span className="cinematics-browser-number">{String(films.indexOf(film) + 1).padStart(2, '0')}</span><span className="cinematics-browser-description"><strong>{film.title}</strong><small>{film.category || 'Sans catégorie'} · {film.id}</small></span><span className="cinematics-browser-details">{film.shots.length} plan{film.shots.length > 1 ? 's' : ''} · {duration.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} s</span><span className="cinematics-browser-open">{active ? 'Ouvert' : 'Ouvrir →'}</span></button>
+          return <div key={film.id} data-film-id={film.id} className={`cinematics-browser-row${draggedId === film.id ? ' dragging' : ''}${dropTarget?.id === film.id ? ` drop-${dropTarget.placement}` : ''}`}>
+            <button className={`cinematics-browser-film${active ? ' active' : ''}`} disabled={disabled} aria-current={active ? 'true' : undefined} draggable={canReorder} title={canReorder ? 'Glisser pour réordonner · Cliquer pour ouvrir' : undefined} onDragStart={event => startDrag(event, film.id)} onDragEnd={clearDrag} onClick={() => { if (!dragId.current) onSelect(film.id); }}><span className="cinematics-browser-grip" aria-hidden="true">⋮⋮</span><span className="cinematics-browser-number">{String(films.indexOf(film) + 1).padStart(2, '0')}</span><span className="cinematics-browser-description"><strong>{film.title}</strong><small>{film.category || 'Sans catégorie'} · {film.id}</small></span><span className="cinematics-browser-details">{film.shots.length} plan{film.shots.length > 1 ? 's' : ''} · {duration.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} s</span><span className="cinematics-browser-open">{active ? 'Ouvert' : 'Ouvrir →'}</span></button>
             <div className="cinematics-browser-tools">
-              <button className="button subtle" disabled={disabled || !!query.trim() || index === 0} aria-label={`Monter ${film.title}`} title={query.trim() ? 'Efface la recherche pour changer l’ordre' : 'Monter'} onClick={() => onMove(film.id, visible[index - 1].id)}>↑</button>
-              <button className="button subtle" disabled={disabled || !!query.trim() || index === visible.length - 1} aria-label={`Descendre ${film.title}`} title={query.trim() ? 'Efface la recherche pour changer l’ordre' : 'Descendre'} onClick={() => onMove(film.id, visible[index + 1].id)}>↓</button>
+              <button className="button subtle" disabled={disabled || !!query.trim() || index === 0} aria-label={`Monter ${film.title}`} title={query.trim() ? 'Efface la recherche pour changer l’ordre' : 'Monter'} onClick={() => onMove(film.id, visible[index - 1].id, 'before')}>↑</button>
+              <button className="button subtle" disabled={disabled || !!query.trim() || index === visible.length - 1} aria-label={`Descendre ${film.title}`} title={query.trim() ? 'Efface la recherche pour changer l’ordre' : 'Descendre'} onClick={() => onMove(film.id, visible[index + 1].id, 'after')}>↓</button>
               <button className="button subtle" disabled={disabled} aria-label={`Renommer ${film.title}`} onClick={() => { setEditingId(film.id); setTitleDraft(film.title); setFormError(''); }}>Renommer</button>
               <button className="button subtle" disabled={disabled || films.length >= 500} aria-label={`Dupliquer la cinématique ${film.title}`} onClick={() => onDuplicate(film.id)}>Dupliquer</button>
               <button className="button subtle danger" disabled={disabled} aria-label={`Supprimer ${film.title}`} title={links.length ? `Liée à : ${links.join(', ')}` : 'Supprimer cette cinématique'} onClick={() => onDelete(film.id)}>Supprimer</button>
@@ -63,7 +126,8 @@ export function CinematicsBrowser({ films, activeId, disabled, references, onClo
         })}
         {!visible.length && <div className="cinematics-browser-empty">{films.length ? 'Aucune cinématique ne correspond à cette recherche.' : 'Ce projet ne contient encore aucune cinématique.'}</div>}
       </div>
-      <div className="cinematics-browser-backup"><p>Pour garder une sauvegarde dans un autre fichier, copie le projet complet (niveaux et cinématiques).</p><button className="button subtle" disabled={disabled} onClick={onBackupProject}>Créer une copie du projet…</button></div>
+      <div className="cinematics-browser-backup"><p>Conserve toute la campagne avec ses images et ses sons dans un dossier daté.</p><button className="button subtle" disabled={disabled} onClick={onBackupCampaign}>Sauvegarder la campagne…</button></div>
+      <div className="cinematics-browser-backup"><p>Pour travailler dans un autre fichier avec la bibliothèque actuelle, crée une copie du projet.</p><button className="button subtle" disabled={disabled} onClick={onBackupProject}>Créer une copie du projet…</button></div>
     </div>
   </StudioDialog>;
 }

@@ -41,9 +41,11 @@ test('a level can author and save the five-lane advance objective',async()=>{
  await expect(page.getByLabel('Graines par allée capturée')).toHaveValue('0');
  await page.getByLabel('Graines par allée capturée').fill('37');
  await page.getByRole('button',{name:'Récompenses',exact:true}).click();
+ await expect(page.getByRole('table')).toContainText('37');
+ await page.getByRole('table').getByRole('button',{name:/^Modifier l’objectif/}).first().click();
  await expect(page.getByLabel('Graines par allée capturée')).toHaveValue('37');
  await page.getByLabel('Graines par allée capturée').fill('53');
- await expect(page.getByText(/Le décor progresse de 20 % à chaque capture/)).toBeVisible();
+ await expect(page.getByRole('region',{name:'Place du niveau dans la campagne'})).toContainText('Niveau 1');
  await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
  await expect.poll(async()=>{
   try {return JSON.parse(await fs.readFile(target,'utf8')).levels[0].objective.type;} catch {return '';}

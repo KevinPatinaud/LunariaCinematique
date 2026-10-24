@@ -1,4 +1,4 @@
-/** Native renderer + preload + IPC scenarios. Supplied, not executed in the build container. */
+/** Native renderer, preload and IPC regression scenarios. */
 import {test,expect,_electron,type ElectronApplication,type Page} from '@playwright/test';
 import {promises as fs} from 'node:fs';import path from 'node:path';import os from 'node:os';import {fileURLToPath} from 'node:url';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -11,17 +11,16 @@ test.beforeEach(async()=>{
  await app.evaluate(({dialog},target)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:target});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},target);
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  const navigation=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
- await expect(navigation.getByRole('button',{name:/^Attaque/})).toBeVisible();
+ await expect(navigation.getByRole('button',{name:/^Bibliothèque/})).toBeVisible();
  await expect(navigation.getByRole('button',{name:'Capacités',exact:true})).toHaveCount(0);
  await expect(navigation.getByRole('button',{name:'Effets',exact:true})).toHaveCount(0);
  await expect(navigation.getByRole('button',{name:'Projectiles',exact:true})).toHaveCount(0);
- await navigation.getByRole('button',{name:/^Attaque/}).click();
+ await navigation.getByRole('button',{name:/^Bibliothèque/}).click();
 });
 test.afterEach(async({},info)=>{if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('combat',{body:await page.screenshot(),contentType:'image/png'});if(app){const child=app.process();try{await app.evaluate(({app})=>{setTimeout(()=>app.exit(0),0);});}catch{}await Promise.race([app.close().catch(()=>{}),new Promise<void>(resolve=>setTimeout(resolve,5000))]);if(child.exitCode===null)child.kill();}await fs.rm(dir,{recursive:true,force:true,maxRetries:15,retryDelay:200});});
 async function save(){await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');return JSON.parse(await fs.readFile(target,'utf8'));}
 test('catalogs persist with v4 and global references',async()=>{
- await expect(page.getByLabel('Nom de l’attaque')).toHaveValue('Tir simple');
- await page.getByLabel('Cadence',{exact:true}).selectOption('fixed');
+ await expect(page.getByLabel('Nom de la capacité')).toHaveValue('Tir simple');
  await page.getByLabel('Intervalle entre utilisations (s)',{exact:true}).fill('2,5');await page.getByLabel('Intervalle entre utilisations (s)',{exact:true}).press('Tab');
  const doc=await save();expect(doc.schemaVersion).toBe(4);expect(doc.combat.abilities[0].cooldown).toBe(2.5);expect(doc.balance.plants[0].ability_ids).toContain('ab_radish_ricochet');
 });
@@ -31,14 +30,14 @@ test('incompatible targets block publishing and referenced definitions are prote
  await page.keyboard.press('Escape');await page.getByLabel('Cible',{exact:true}).selectOption('opponent');await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeEnabled();
 });
 test('empty effect chain remains recoverable as a draft',async()=>{
- await page.getByRole('button',{name:'Retirer résultat 1',exact:true}).click();await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Retirer effet 1',exact:true}).click();await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:'Publier la campagne',exact:true})).toBeDisabled();
  await expect.poll(async()=>{try{const p=JSON.parse(await fs.readFile(path.join(dir,'profile/game-recovery.json'),'utf8'));return p.combat.abilities[0].effects.length;}catch{return -1;}}).toBe(0);
- await page.getByLabel('Ajouter un résultat existant',{exact:true}).selectOption('fx_attack');expect((await save()).combat.abilities[0].effects).toEqual(['fx_attack']);
+ await page.getByLabel('Ajouter un effet',{exact:true}).selectOption('damage');const doc=await save();const effect=doc.combat.effects.find((e:any)=>e.id===doc.combat.abilities[0].effects[0]);expect(effect.kind).toBe('damage');
 });
 test('same ability can be assigned to an enemy without copying its definition',async()=>{
  await page.getByRole('navigation',{name:'Sections du mode Niveaux'}).getByRole('button',{name:/^Ennemis/}).click();
- await page.getByLabel('Type d’attaque principal').selectOption('ab_basic_shot');
- const doc=await save();expect(doc.balance.enemies[0].ability_ids[0]).toBe('ab_basic_shot');expect(doc.combat.abilities.filter((a:{id:string})=>a.id==='ab_basic_shot')).toHaveLength(1);
+ await page.getByRole('button',{name:'Capacités',exact:true}).click();await page.getByText('+ Ajouter une capacité',{exact:true}).click();await page.getByLabel('Réutiliser une capacité existante').selectOption('ab_basic_shot');await page.getByLabel('Partager les réglages avec le modèle commun').check();await page.getByRole('button',{name:'Ajouter le modèle partagé'}).click();
+ const doc=await save();expect(doc.balance.enemies[0].ability_ids).toContain('ab_basic_shot');expect(doc.combat.abilities.filter((a:{id:string})=>a.id==='ab_basic_shot')).toHaveLength(1);
 });
 test('an enemy can be archived and restored without losing its level use',async()=>{
  const navigation=page.getByRole('navigation',{name:'Sections du mode Niveaux'});

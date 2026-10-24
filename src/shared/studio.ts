@@ -1,4 +1,4 @@
-import { copy, duplicateShot, newBubble, newShot, removeActor, uid, STAGE, type Actor, type Box, type Bubble, type Shot } from './model.js';
+import { copy, duplicateShot, newBubble, newShot, removeActor, uid, STAGE, DEFAULT_SHOT_DURATION, type Actor, type Box, type Bubble, type Shot } from './model.js';
 import { autoDialogueDuration } from './textAnimation.js';
 import { actorAnchor, travelOffset } from './motion.js';
 import { bubbleLayout, clamp } from './geometry.js';
@@ -159,6 +159,7 @@ export function createTemplate(source: Shot, template: ShotTemplate, speakerIds:
   if (template === 'blank') return newShot(source.background.asset);
   if (template === 'establishing') { const s=newShot(source.background.asset); s.name='Vue d’ensemble'; s.camera={preset:'zoom_in',intensity:.3}; return s; }
   const shot = smartDuplicate(source,{dialogues:false,entrances:false,audio:true});
+  shot.duration=DEFAULT_SHOT_DURATION;
   shot.endAdvance='auto';
   shot.transition={type:'cut',duration:0}; shot.dialogueStart=.4;
   const sourceIndices = speakerIds.map(id=>source.actors.findIndex(a=>a.id===id)).filter(i=>i>=0);

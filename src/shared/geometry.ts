@@ -28,7 +28,10 @@ export function wrapText(text: string, maxWidth: number, fontSize: number,
   options: {measure?: (text: string, fontSize: number) => number} = {}): string[] {
   const measure = (s: string) => options.measure?.(s, fontSize) ?? [...s].reduce((n, c) => n + charWidth(c, fontSize), 0);
   const lines: string[] = [];
-  for (const paragraph of text.replace(/\r/g, '').split('\n')) {
+  // Outer blank paragraphs carry no visible text, but reserving line boxes for
+  // them would shrink the font and move the visible dialogue off centre.
+  // Keep internal paragraph breaks and leave the authored text untouched.
+  for (const paragraph of text.replace(/\r/g, '').trim().split('\n')) {
     let line = '';
     for (const word of paragraph.trim().split(/\s+/).filter(Boolean)) {
       if (line && measure(line + ' ' + word) <= maxWidth) { line += ' ' + word; continue; }

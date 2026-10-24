@@ -1,0 +1,45 @@
+.background-correction-dialog{width:min(1060px,calc(100vw - 32px));max-height:calc(100dvh - 36px);overflow:auto;background:#202c23;color:#d7e0cf;border:1px solid #71865b;border-radius:12px;padding:24px;box-shadow:0 25px 90px #0008}
+.background-correction-dialog::backdrop{background:#09110bba}
+.background-correction-heading{display:flex;justify-content:space-between;align-items:start;gap:15px}
+.background-correction-heading h2{font-size:22px;margin:6px 0 12px}
+.background-correction-dialog>p{font-size:12px;line-height:1.65;color:#b6c8a6}
+.background-comparison{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:18px 0}
+.background-comparison figure{margin:0;min-width:0}
+.background-comparison figcaption{font-size:12px;color:#d4e4c1;margin-bottom:8px}
+.background-comparison figure>div{aspect-ratio:20/9;background:#0a130d;border:1px solid #475b3e;border-radius:7px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.background-comparison img{width:100%;height:100%;object-fit:contain}
+.background-comparison span{display:flex;align-items:center;gap:10px;text-align:center;font-size:12px;color:#b4c8a0;padding:12px}
+.background-correction-dialog textarea{min-height:80px;font-size:12px}
+.background-correction-options{display:flex;align-items:center;gap:24px;margin:16px 0}
+.background-correction-options .field{margin:0;max-width:380px}
+.background-model-options{display:flex;align-items:end;gap:16px;flex-wrap:wrap;margin:16px 0 8px}
+.background-model-options .field{margin:0;flex:1 1 230px;min-width:0}
+.background-model-options .field{max-width:640px}
+.background-model-status:empty{display:none}
+.background-model-used,.background-job-model{overflow-wrap:anywhere}
+.background-preparation svg{width:100%;height:100%;display:block}
+.background-comparison .panorama-guide{display:flex;background:repeating-linear-gradient(45deg,#263929,#263929 8px,#324735 8px,#324735 16px)}
+.panorama-guide svg{width:80%;height:100%;flex:0 0 80%;background:#0a130d}
+.background-comparison .panorama-guide span{width:10%;padding:0;justify-content:center;font-size:11px}
+.panorama-position{display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.panorama-position>span{grid-column:1/-1}.panorama-position input{width:100%}
+.panorama-help{font-size:12px;color:#b6c8a6;line-height:1.6}
+.background-correction-dialog .background-correction-error{color:#f6c4a5;background:#573c2d;padding:12px;border-radius:6px}
+.background-replacement-note{padding:10px 12px;border-left:3px solid #aac681;background:#2b3d27}
+.background-correction-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px}
+.background-correction-status{padding:6px 14px;border-top:1px solid #4e643f;background:#233320;font-size:11px;color:#d4e7bb;flex-shrink:0;min-width:0}
+.background-jobs-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.background-jobs-heading .button{font-size:10px;padding:5px 8px}
+.background-jobs-list{list-style:none;padding:0;margin:4px 0 0;max-height:154px;overflow:auto;scrollbar-gutter:stable}
+.background-job{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid #4e643f66}
+.background-job>img{width:70px;aspect-ratio:20/9;object-fit:cover;border-radius:4px;flex-shrink:0}
+.background-job-description{min-width:0;flex:1;display:grid;gap:5px}
+.background-job-description>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.background-job-description>span{display:flex;align-items:center;gap:6px;color:#acbe9e;font-size:10px}
+.background-job-description .spinner{width:10px;height:10px;flex-shrink:0}
+.background-job-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.background-job-actions .button{font-size:10px;padding:6px 8px}
+.background-running-note{background:#2b3d27;border-radius:6px;padding:8px 12px}
+.canvas-topline .background-correction-trigger{font-size:10px;padding:5px 8px;margin-right:auto}
+@media(max-width:750px){.background-comparison{grid-template-columns:1fr}.background-correction-options{flex-wrap:wrap;gap:12px}.background-correction-dialog{padding:16px}}
+@media(max-width:1200px){.background-job{flex-wrap:wrap}.background-job-actions{margin-left:auto}.background-job>img{width:52px}.background-jobs-list{max-height:138px}}

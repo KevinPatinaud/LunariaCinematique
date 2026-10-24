@@ -8,6 +8,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { seedProject } from '../fixtures/seed40.js';
 import { fixturePresentation, PIXEL_PNG } from '../presentation-fixture.js';
+import {OBJECTIVE_LABELS} from '../../src/shared/game/types.js';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 let app:ElectronApplication,page:Page,temp:string,target:string,library:string,profile:string,errors:string[];
 test.beforeEach(async()=>{
@@ -25,14 +26,14 @@ test.beforeEach(async()=>{
   dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});
  },target);
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
- await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
  await expect(page.getByLabel('Titre du projet de niveaux')).toBeVisible();
  await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
 });
 test.afterEach(async({},info)=>{
  if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('niveaux',{body:await page.screenshot(),contentType:'image/png'});
- if(app)await app.close();await fs.rm(temp,{recursive:true,force:true});expect(errors).toEqual([]);
+ if(app){await app.evaluate(({BrowserWindow})=>{for(const window of BrowserWindow.getAllWindows())window.destroy();}).catch(()=>undefined);await app.close();}await fs.rm(temp,{recursive:true,force:true});expect(errors).toEqual([]);
 });
 async function save(){
  await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
@@ -63,6 +64,25 @@ test('choisir une image de terrain différente pour chaque niveau',async()=>{
  await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).levels[0].terrainImage).toBeUndefined();
  expect((await fs.readFile(target,'utf8'))).toContain('library://second.png');
 });
+
+test('choisir, enregistrer, rouvrir et retirer le décor restauré',async()=>{
+ await page.getByRole('button',{name:'Paramètres',exact:true}).click();
+ const terrain=page.getByRole('region',{name:'Terrain du niveau'});
+ await terrain.getByRole('button',{name:'Choisir ou importer le décor restauré'}).click();
+ const browser=page.getByRole('dialog',{name:'Bibliothèque d’images pour Décor restauré'});
+ await browser.getByRole('button',{name:'Second',exact:true}).click();
+ await browser.getByRole('button',{name:'Utiliser cette image',exact:true}).click();
+ expect((await save()).levels[0].restoredTerrainImage).toBe('library://second.png');
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();
+ await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
+ await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
+ await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.gd-level-items button').first().click();
+ await page.getByRole('button',{name:'Paramètres',exact:true}).click();
+ await expect(terrain).toContainText('second.png');
+ await terrain.getByRole('button',{name:'Retirer le décor restauré'}).click();
+ expect((await save()).levels[0].restoredTerrainImage).toBeUndefined();
+});
 test('configurer et enregistrer un niveau qui protège une case',async()=>{
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();
  await page.getByLabel('Objectif du niveau').selectOption('protect_cell');
@@ -81,24 +101,20 @@ test('configurer et enregistrer un niveau qui protège une case',async()=>{
  expect(data.levels[0].objective).toEqual({type:'protect_cell',target:0});
  expect(data.levels[0].protectedCell).toMatchObject({row:1,col:2,image:'library://pixel.png',maxHp:450,armor:.25});
 });
-test('regrouper les anciens travaux dans un objectif opération',async()=>{
+test('les objectifs abandonnés ne sont plus proposés',async()=>{
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();
  const objective=page.getByLabel('Objectif du niveau');
- await expect(objective.locator('option')).toHaveText(['Repousser les vagues','Protéger une case','Opération','Sauvetage']);
- await objective.selectOption('operation');
- await page.getByLabel('Travail à accomplir').fill('75');
- await page.getByLabel('Travail à accomplir').press('Tab');
- await page.getByLabel('Consigne du niveau').fill('Protégez le chantier pendant les vagues.');
- const data=await save();
- expect(data.levels[0].objective).toEqual({type:'operation',target:75});
- expect(data.levels[0].objectiveText).toBe('Protégez le chantier pendant les vagues.');
+ await expect(objective.locator('option')).toHaveText(Object.values(OBJECTIVE_LABELS));
+ await expect(objective.locator('option[value="operation"],option[value="rescue"]')).toHaveCount(0);
 });
 test('catalogue global enregistré une seule fois et conservation entre modes',async()=>{
  await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
- await page.getByLabel('Dégâts par attaque',{exact:true}).fill('47');
- await page.getByLabel('Dégâts par attaque',{exact:true}).press('Tab');
+ await page.getByRole('button',{name:'Capacités',exact:true}).click();
+ await page.getByText('Organisation du combat et valeurs de référence',{exact:true}).click();
+ await page.getByLabel('Référence d’attaque (PV)',{exact:true}).fill('47');
+ await page.getByLabel('Référence d’attaque (PV)',{exact:true}).press('Tab');
  await page.locator('.studio-modebar').getByRole('button',{name:/^Cinématiques/}).click();
- await expect(page.getByTestId('play-from-current')).toBeVisible();
+ await expect(page.locator('.studio-modebar').getByRole('button',{name:/^Cinématiques/})).toHaveAttribute('aria-pressed','true');
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  const data=await save();expect(data.balance.plants[0].damage).toBe(47);expect(data.levels).toEqual(seedProject().levels);
 });
@@ -114,7 +130,8 @@ test('image du personnage et animations par planche ou fichiers séparés',async
  await expect(characterBrowser.getByRole('button',{name:'Second',exact:true})).toHaveCount(0);
  await characterBrowser.getByRole('button',{name:'Sheet',exact:true}).click();
  await characterBrowser.getByRole('button',{name:'Utiliser cette image',exact:true}).click();
- await page.getByRole('button',{name:'Animations de Radis',exact:true}).click();
+ await page.getByRole('button',{name:'Animations et sons de Radis',exact:true}).click();
+   await page.getByRole('button',{name:/^Ses animations \(/}).click();
  await page.getByLabel('Créer une animation pour Radis').selectOption('attack');
  await page.getByLabel('Style de l’animation').selectOption('frames');
  await page.getByRole('button',{name:'Une planche de frames'}).click();
@@ -150,7 +167,8 @@ test('une planche transparente est découpée automatiquement et reste corrigeab
  const spriteSheet=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAA60lEQVR42u3doRWAMAxAwZRZmArNEKgKFEOgmaq7wAIg+lCBO9uavF9XkQgAAKBPeTpo83RmHmzcj9Jzv63J56338w7e+LcJLDACIzACIzACI7DACIzACIzACIzAAiMwAiMwAiMwAiOwwAiMwAiMwAiMwAIjMAIjMAIjMAILjMAIjMAIjMAIjMACAwAAAAAAxJvdhUvy3YVb5+7C5PPWze7C8F2IwAiMwAiMwAgsMAIjMAIjMAIjMAILjMAIjMAIjMAILDACIzACIzACIzACC4zACIzACIzACCwwAiMwAiMwAiOwwAgMAADwCxe8WxC/YWj0ugAAAABJRU5ErkJggg==','base64');
  await fs.writeFile(path.join(library,'auto-sheet.png'),spriteSheet);
  await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
- await page.getByRole('button',{name:'Animations de Radis',exact:true}).click();
+ await page.getByRole('button',{name:'Animations et sons de Radis',exact:true}).click();
+   await page.getByRole('button',{name:/^Ses animations \(/}).click();
  await page.getByLabel('Créer une animation pour Radis').selectOption('attack');
  await page.getByLabel('Style de l’animation').selectOption('frames');
  await page.getByRole('button',{name:'Une planche de frames'}).click();
@@ -228,22 +246,33 @@ test('effectif de vague et roster sont enregistrés sans recopier les statistiqu
 test('interface simplifiée sans récit ni objectifs bonus',async()=>{
  await expect(page.getByRole('button',{name:'Récit & objectifs bonus',exact:true})).toHaveCount(0);
  await expect(page.getByText(/Objectifs bonus/)).toHaveCount(0);
- await page.getByRole('button',{name:'Événements & dialogue',exact:true}).click();
- await expect(page.getByRole('heading',{name:'Dialogue pendant la mission'})).toBeVisible();
+ await page.getByRole('button',{name:'Événements',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Dialogue pendant la mission'})).toHaveCount(0);
  const data=await save();expect(Object.hasOwn(data.levels[0],'optionalGoals')).toBe(false);
 });
-test('le niveau sélectionné est publié et lancé avec un profil de test isolé',async()=>{
+for(const changedAsset of [false,true])test(`le niveau sélectionné est lancé dans une copie isolée${changedAsset?' malgré un décor déjà publié différent':''}`,async()=>{
  const game=path.join(temp,'preview-game'),godot=path.join(temp,'fake-godot.exe');
  for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});
  for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,...marker.split('/')),'marker');
  await fs.writeFile(path.join(game,'content/design/game_content.json'),'{}');await fs.writeFile(godot,'fake');
+ if(changedAsset){await fs.mkdir(path.join(game,'LunariaArtLibrary'));await fs.writeFile(path.join(game,'LunariaArtLibrary/pixel.png'),'previous image');}
  await app.evaluate(({dialog},{game,godot})=>{dialog.showOpenDialog=async(...args:any[])=>{const options=args.at(-1);return{canceled:false,filePaths:[options.title?.includes('Godot pour lancer')?godot:game]};};},{game,godot});
  const title=(await page.locator('.gd-section-heading h1').first().textContent())?.trim()??'';
  expect(title).not.toBe('');
  await page.getByRole('button',{name:/Jouer ce niveau/}).click();
  await expect(page.locator('.gd-message')).toContainText(`Lunaria lancé sur « ${title} »`);
- const published=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));
+ const snapshots=await fs.readdir(path.join(profile,'level-previews'));expect(snapshots).toHaveLength(1);
+ const preview=path.join(profile,'level-previews',snapshots[0]);
+ expect(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8')).toBe('{}');
+ const published=JSON.parse(await fs.readFile(path.join(preview,'content/design/game_content.json'),'utf8'));
  expect(published.levels.some((level:any)=>level.title===title)).toBe(true);
+ if(changedAsset){
+  const ref=published.balance.plants[0].visual.sprite.asset;
+  expect(ref).toMatch(/^library:\/\/studio_versions\/[a-f0-9]{64}\.png$/);
+  expect(await fs.readFile(path.join(preview,'LunariaArtLibrary',ref.slice(10)))).toEqual(PIXEL_PNG);
+  expect(await fs.readFile(path.join(game,'LunariaArtLibrary/pixel.png'),'utf8')).toBe('previous image');
+  expect(JSON.parse(await fs.readFile(target,'utf8')).balance.plants[0].visual.sprite.asset).toBe('library://pixel.png');
+ }
  const settings=JSON.parse(await fs.readFile(path.join(profile,'game-preview.json'),'utf8'));
  expect(settings.gameRoot).toBe(await fs.realpath(game));expect(typeof settings.godotPath).toBe('string');
 });

@@ -1,0 +1,228 @@
+.image-tasks {
+  padding: 0 24px 20px;
+  max-height: calc(90vh - 100px);
+  overflow: auto;
+}
+.image-tasks-intro,
+.image-tasks-help {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.image-task-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin: 18px 0;
+}
+.image-task-toolbar label {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+  min-width: 150px;
+}
+.image-task-workspace {
+  display: grid;
+  grid-template-columns: minmax(210px, 29%) minmax(0, 1fr);
+  gap: 20px;
+  min-height: 350px;
+}
+.image-task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  max-height: 55vh;
+}
+.image-task-card {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  text-align: left;
+  padding: 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+.image-task-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft, #b3c98220);
+}
+.image-task-card img {
+  width: 66px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+.image-task-card > span {
+  display: grid;
+  gap: 5px;
+  overflow: hidden;
+}
+.image-task-card strong,
+.image-task-metadata dd {
+  overflow-wrap: anywhere;
+}
+.image-task-card small {
+  color: var(--muted);
+}
+.image-task-state {
+  font-size: 11px;
+  color: var(--muted);
+}
+.image-task-state.ready {
+  color: #c9e699;
+}
+.image-task-state.failed,
+.image-task-state.interrupted {
+  color: #e9b68b;
+}
+.image-task-title {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.image-task-title h3 {
+  margin: 0;
+}
+.image-task-detail {
+  min-width: 0;
+}
+.image-task-detail > p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.image-task-previews {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.image-task-previews figure {
+  margin: 0;
+  min-width: 0;
+}
+.image-task-previews:has(img[alt="Terrain nettoyé de la tâche"]) { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.image-task-previews figcaption {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+.image-task-previews img {
+  width: 100%;
+  max-height: 210px;
+  aspect-ratio: 16/9;
+  object-fit: contain;
+  background: #101813;
+  border-radius: 6px;
+  display: block;
+}
+.image-task-candidate {
+  position: relative;
+}
+.image-task-candidate > img {
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+}
+.image-task-technical {
+  margin: 14px 0;
+  font-size: 12px;
+}
+.image-task-candidate > p {
+  min-height: 100px;
+  display: grid;
+  place-content: center;
+  padding: 12px;
+  background: #101813;
+  font-size: 12px;
+  color: var(--muted);
+}
+.image-task-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template: repeat(5, 1fr) / repeat(8, 1fr);
+  pointer-events: none;
+}
+.image-task-grid span {
+  border: 1px solid #e3ffc066;
+}
+.image-task-metadata {
+  display: grid;
+  grid-template-columns: 115px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 11px;
+  margin: 20px 0;
+}
+.image-task-metadata dt {
+  color: var(--muted);
+}
+.image-task-metadata dd {
+  margin: 0;
+}
+.image-task-instructions {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.image-task-destination {
+  display: grid;
+  gap: 8px;
+  margin: 15px 0;
+}
+.image-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.image-task-error {
+  color: #f2b59c;
+  font-size: 12px;
+}
+.image-task-empty {
+  color: var(--muted);
+  padding: 26px 12px;
+  line-height: 1.7;
+  font-size: 12px;
+}
+.image-tasks-help {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 12px;
+}
+@media (max-width: 1050px) {
+  .image-tasks {
+    padding: 0 16px 16px;
+  }
+  .image-task-workspace {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .image-task-card {
+    padding: 9px;
+  }
+  .image-task-card img {
+    width: 40px;
+  }
+  .image-task-previews, .image-task-previews:has(img[alt="Terrain nettoyé de la tâche"]) {
+    grid-template-columns: 1fr;
+  }
+}
+.studio-dialog.wide:has(.image-tasks) {
+  width: min(1120px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+}
+@media (max-width: 720px) {
+  .image-task-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .image-task-list {
+    max-height: 180px;
+  }
+}

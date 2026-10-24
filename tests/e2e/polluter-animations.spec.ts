@@ -15,7 +15,7 @@ test('actual Plaque and Canette project loads drawn attacks without missing art 
   const page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},FILE);
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
-  await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
   await page.locator('.gd-message button').click();
   await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
@@ -23,7 +23,8 @@ test('actual Plaque and Canette project loads drawn attacks without missing art 
    await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:new RegExp('^'+name)}).click();
    const art=page.getByRole('region',{name:'Image principale de '+name}).getByRole('img',{name:(key==='plaque'?'Plaque':'Canette')+' combat · v1',exact:true});
    await expect(art).toBeVisible();await expect(art.locator('svg image')).toHaveAttribute('width','1254');
-   await page.getByRole('button',{name:'Animations de '+name,exact:true}).click();
+   await page.getByRole('button',{name:'Animations et sons de '+name,exact:true}).click();
+   await page.getByRole('button',{name:/^Ses animations \(/}).click();
    await expect(page.locator('.lp-owned-list').getByRole('button')).toHaveCount(count);
    await page.locator('.lp-owned-list').getByRole('button',{name:new RegExp('^'+attack)}).click();
    await expect(page.getByLabel('Style de l’animation')).toHaveValue('frames');
@@ -33,7 +34,7 @@ test('actual Plaque and Canette project loads drawn attacks without missing art 
    await page.locator('.lp-owned-editor .lp-preview').getByLabel('Ancrages',{exact:true}).uncheck();
    await page.locator('.lp-owned-editor .lp-preview').screenshot({path:info.outputPath(key+'-studio-preview.png')});
    await page.getByLabel('Images de l’animation').screenshot({path:info.outputPath(key+'-studio-eight-frames.png')});
-   await page.getByRole('button',{name:'Caractéristiques et attaques',exact:true}).click();
+   await page.getByRole('button',{name:'Caractéristiques',exact:true}).click();
   }
   expect(await fs.readFile(FILE)).toEqual(before);
  }finally{

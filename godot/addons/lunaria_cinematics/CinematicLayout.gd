@@ -24,7 +24,9 @@ static func wrap_text(text: String, max_width: float, font_size: float, font: Fo
 	var lines: Array[String] = []
 	var whitespace: RegEx = RegEx.new()
 	whitespace.compile("\\s+")
-	for paragraph: String in text.replace("\r", "").split("\n", true):
+	# Ignore outer blank paragraphs when fitting/centring, without changing the
+	# authored text. Internal paragraph breaks still reserve their own lines.
+	for paragraph: String in text.replace("\r", "").strip_edges().split("\n", true):
 		var line: String = ""
 		for word: String in whitespace.sub(paragraph.strip_edges(), " ", true).split(" ", false):
 			if not line.is_empty() and _measure(line + " " + word, font_size, font) <= max_width:

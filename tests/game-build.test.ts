@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { promises as fs } from 'node:fs';
+import { promises as fs, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { gameBuildPaths, godotForBuild, simulateGameBuild } from '../src/main/gameBuild.js';
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
+import type { ChildProcess } from 'node:child_process';
+import { gameBuildPaths, godotForBuild, runGameBuild, simulateGameBuild } from '../src/main/gameBuild.js';
 
 async function temp(run:(root:string)=>Promise<void>){const root=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-build-'));try{await run(root);}finally{await fs.rm(root,{recursive:true,force:true});}}
 async function fakeGame(root:string){const game=path.join(root,'game');for(const folder of ['app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,...marker.split('/')),'marker');return game;}
@@ -25,4 +28,61 @@ test('simulated native build returns a nonempty artifact and its SHA-256',()=>te
 test('Windows builds prefer the adjacent Godot console executable',()=>temp(async root=>{
  const windowed=path.join(root,'Godot_v4.7.2-stable_win64.exe'),consolePath=path.join(root,'Godot_v4.7.2-stable_win64_console.exe');await fs.writeFile(windowed,'');await fs.writeFile(consolePath,'');
  assert.equal(await godotForBuild(windowed),process.platform==='win32'?await fs.realpath(consolePath):await fs.realpath(windowed));
+}));
+
+test('native build reports streamed phases, including split chunks, before it finishes',{skip:process.platform!=='win32'},()=>temp(async root=>{
+ const game=await fakeGame(root),paths=gameBuildPaths(game,'android'),godot=path.join(root,'Godot_console.exe');
+ await fs.mkdir(path.dirname(paths.script),{recursive:true});await fs.writeFile(paths.script,'fixture');await fs.writeFile(godot,'fixture');
+ await fs.mkdir(path.dirname(paths.artifact),{recursive:true});await fs.writeFile(paths.artifact,'APK');
+ const messages:string[]=[],child=Object.assign(new EventEmitter(),{stdout:new PassThrough(),stderr:new PassThrough(),kill:()=>true});
+ const result=runGameBuild(game,godot,'android',()=>{
+  setImmediate(()=>{
+   child.stdout.write('LUNARIA_BUILD_STA');
+   child.stderr.write('ordinary diagnostic\n');
+   child.stdout.write('GE import\r\nGodot output\nLUNARIA_BUILD_STAGE compress\nLUNARIA_BUILD_STAGE unknown\n');
+   assert.deepEqual(messages,['Import des images et des sons…','Compression des images…']);
+   child.stdout.write('LUNARIA_BUILD_STAGE android-export\n');writeFileSync(paths.artifact,'fresh APK');child.emit('close',0);
+  });
+  return child as unknown as ChildProcess;
+ },message=>messages.push(message));
+ assert.equal((await result).bytes,9);
+ assert.deepEqual(messages,['Import des images et des sons…','Compression des images…','Création et signature de l’APK Android…']);
+}));
+
+test('import crash reports its native exit code and correct log without burying it in progress output',{skip:process.platform!=='win32'},()=>temp(async root=>{
+ const game=await fakeGame(root),paths=gameBuildPaths(game,'android'),godot=path.join(root,'Godot_console.exe');
+ await fs.mkdir(path.dirname(paths.script),{recursive:true});await fs.writeFile(paths.script,'fixture');await fs.writeFile(godot,'fixture');
+ const child=Object.assign(new EventEmitter(),{stdout:new PassThrough(),stderr:new PassThrough(),kill:()=>true});
+ await assert.rejects(runGameBuild(game,godot,'android',()=>{
+  setImmediate(()=>{
+   child.stdout.write('LUNARIA_BUILD_STAGE import\n');
+   child.stdout.write('reimport progress\n'.repeat(15000));
+   child.stdout.write('LUNARIA_BUILD_FAILURE lunaria-import.log -1073741819\n');
+   child.emit('close',1);
+  });return child as unknown as ChildProcess;
+ }),error=>{
+  assert.match(String(error),/0xC0000005/);assert.match(String(error),/lunaria-import\.log/);assert.match(String(error),/lunaria-android-build\.log/);
+  assert.doesNotMatch(String(error),/reimport progress|lunaria-android-export\.log/);return true;
+ });
+ const log=await fs.readFile(path.join(path.dirname(paths.logPath),'lunaria-android-build.log'),'utf8');
+ assert.ok(log.length>120000);assert.match(log,/LUNARIA_BUILD_STAGE import/);assert.match(log,/LUNARIA_BUILD_FAILURE/);
+}));
+
+test('script errors before a long import cannot become a successful build even with an existing APK',{skip:process.platform!=='win32'},()=>temp(async root=>{
+ const game=await fakeGame(root),paths=gameBuildPaths(game,'android'),godot=path.join(root,'Godot_console.exe');
+ await fs.mkdir(path.dirname(paths.script),{recursive:true});await fs.writeFile(paths.script,'fixture');await fs.writeFile(godot,'fixture');
+ await fs.mkdir(path.dirname(paths.artifact),{recursive:true});await fs.writeFile(paths.artifact,'old APK');
+ const child=Object.assign(new EventEmitter(),{stdout:new PassThrough(),stderr:new PassThrough(),kill:()=>true});
+ await assert.rejects(runGameBuild(game,godot,'android',()=>{
+  setImmediate(()=>{child.stderr.write('SCRIPT ERROR: earliest failure\n');child.stdout.write('reimport progress\n'.repeat(15000));child.emit('close',0);});return child as unknown as ChildProcess;
+ }),/earliest failure/);
+}));
+
+test('zero exit without rebuilding cannot validate an old APK',{skip:process.platform!=='win32'},()=>temp(async root=>{
+ const game=await fakeGame(root),paths=gameBuildPaths(game,'android'),godot=path.join(root,'Godot_console.exe');
+ await fs.mkdir(path.dirname(paths.script),{recursive:true});await fs.writeFile(paths.script,'fixture');await fs.writeFile(godot,'fixture');
+ await fs.mkdir(path.dirname(paths.artifact),{recursive:true});await fs.writeFile(paths.artifact,'old APK');
+ const child=Object.assign(new EventEmitter(),{stdout:new PassThrough(),stderr:new PassThrough(),kill:()=>true});
+ await assert.rejects(runGameBuild(game,godot,'android',()=>{setImmediate(()=>child.emit('close',0));return child as unknown as ChildProcess;}),/pas remplacé l’ancienne application/);
+ assert.equal(await fs.readFile(paths.artifact,'utf8'),'old APK');
 }));

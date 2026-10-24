@@ -98,3 +98,26 @@ test('real font wrapping measures each candidate and preserves complete grapheme
   assert.ok(sizes.includes(10));
   assert.ok(sizes.includes(18));
 });
+
+test('outer blank lines do not shrink or displace dialogue, even with measured wrapping', () => {
+  const text = 'Malheureusement mes racines ont étaient contaminées, \nJe crains que mes minutes ne soient comptées,';
+  const measure = (value: string, size: number) => Array.from(value).length * size * .5;
+  for (const padding of ['', '\n', '\r\n \t\n', '\n'.repeat(20)]) {
+    const decorated = padding + text + padding;
+    assert.deepEqual(wrapText(decorated, 620, 28), wrapText(text, 620, 28));
+    assert.deepEqual(wrapText(decorated, 620, 28, {measure}), wrapText(text, 620, 28, {measure}));
+    for (const autoHeight of [false, true]) for (const fontSize of [28, 48]) {
+      const b = newBubble();
+      Object.assign(b, {style:'simple', width:.46015670112984397, height:.20132755012325945, fontSize, autoHeight, text});
+      const expected = bubbleLayout(b);
+      b.text = decorated;
+      assert.deepEqual(bubbleLayout(b), expected);
+      const document = newCinematic(); document.shots[0].bubbles = [b];
+      const saved = prepareCinematic(document).shots[0].bubbles[0];
+      assert.equal(saved.text, decorated);
+      assert.equal(saved.fontSize, fontSize);
+    }
+  }
+  assert.deepEqual(wrapText('\nPremier\n \nSecond\n', 620, 28), ['Premier', '', 'Second']);
+  assert.deepEqual(wrapText('\r\n \t\n', 620, 28), ['']);
+});

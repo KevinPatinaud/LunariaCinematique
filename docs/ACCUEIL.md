@@ -25,7 +25,7 @@ Le fond peut utiliser le **jardin du jeu**, une **image de bibliothèque** ou un
 
 ## Boutons et progression
 
-Les destinations disponibles sont **Continuer l’aventure**, **Carnet de voyage**, **La troupe**, **Cinématiques** et **Paramètres**. Modifier le texte d’un bouton ne modifie pas sa destination ; celle-ci se règle séparément. Les destinations restent les écrans et le parcours déjà gérés par le jeu.
+Les destinations disponibles sont **Continuer l’aventure**, **Carnet de voyage**, **La troupe** et **Paramètres**. Les films découverts se retrouvent dans l’onglet **Cinématiques** du Carnet de voyage. Modifier le texte d’un bouton ne modifie pas sa destination ; celle-ci se règle séparément. Les destinations restent les écrans et le parcours déjà gérés par le jeu.
 
 Les libellés du bouton principal couvrent le début d’aventure, la continuation, la reprise d’une bataille, la suite narrative, la fin du parcours et l’absence de mission publiée. Un suffixe commun permet par exemple d’ajouter une flèche. Le sélecteur **État du joueur dans l’aperçu** montre les variantes sans modifier une sauvegarde joueur.
 
@@ -44,7 +44,7 @@ Le contrat est défini dans `src/shared/game/homeScreen.ts` et validé par le sc
 | Champ | Contenu |
 |---|---|
 | `background` | `mode`, `chapter` (`-1` automatique, `0` à `4` continent fixé), `color`, `image`, `fit`, `opacity`, `overlayColor`, `overlayOpacity` |
-| `continueLabels` | `start`, `continue`, `battle`, `outro`, `epilogue`, `unavailable`, `suffix` |
+| `continueLabels` | `start`, `continue`, `battle`, `cinematic`, `finished`, `unavailable`, `suffix` |
 | `elements` | Liste ordonnée d’éléments, chacun avec `id`, `name`, `kind`, `visible`, `rect: {x, y, w, h}`, `opacity`, puis les propriétés du type |
 
 Les identifiants des éléments sont uniques. Les couleurs acceptent les formes hexadécimales `#RRGGBB` et `#RRGGBBAA`. Les propriétés facultatives `showIfPlantUnlocked` et `hideIfPlantUnlocked` référencent des espèces du catalogue. Les propriétés propres à un type sont contrôlées à la validation ; le JSON ne contient ni script ni destination arbitraire.

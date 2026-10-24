@@ -22,7 +22,7 @@ test.beforeEach(async()=>{
 });
 
 test.afterEach(async()=>{
- if(app)await app.close();
+ if(app){await app.evaluate(({BrowserWindow})=>{for(const w of BrowserWindow.getAllWindows())w.destroy();}).catch(()=>{});await app.close();}
  await fs.rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200});
 });
 
@@ -33,7 +33,7 @@ test('a level authors and saves positioned invasive foci and timed reinforcement
  await page.getByLabel('Objectif du niveau').selectOption('invasive_foci');
  const editor=page.getByRole('region',{name:'Foyers invasifs'});
  await expect(editor).toBeVisible();
- await expect(editor).toContainText('toutes les 30 secondes');
+ await expect(editor).toContainText('remplacent le cycle personnel');
  await expect(editor.getByLabel('Intervalle des renforts (secondes)')).toHaveValue('30');
  await expect(page.getByLabel('Consigne du niveau')).toHaveValue('Détruire tous les foyers invasifs et leurs derniers renforts.');
  await editor.getByRole('button',{name:'Allée 1, colonne 7'}).click();
@@ -46,7 +46,7 @@ test('a level authors and saves positioned invasive foci and timed reinforcement
  }).toBe(3);
  const saved=JSON.parse(await fs.readFile(target,'utf8'));
  expect(saved.levels[0].objective).toEqual({type:'invasive_foci',target:0});
- expect(saved.levels[0].invasiveFoci).toEqual({positions:[{row:0,col:6},{row:3,col:5},{row:2,col:5}],reinforcementEnemyId:'runner',interval:7.5});
+ expect(saved.levels[0].invasiveFoci).toEqual({focusEnemyId:'plaque',positions:[{row:0,col:6},{row:3,col:5},{row:2,col:5}],reinforcementEnemyId:'runner',interval:7.5});
  await expect(page.locator('.gd-footer')).not.toContainText('erreur(s)');
  await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
  await fs.mkdir(path.join(ROOT,'work'),{recursive:true});

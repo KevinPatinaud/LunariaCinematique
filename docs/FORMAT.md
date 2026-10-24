@@ -62,13 +62,15 @@ Audio : `null` ou `{asset, volume, loop}`. La piste commence à l'entrée du pla
 
 `autoHeight` adapte la hauteur à la largeur et au texte. Le redimensionnement direct désactive cette option ; on peut la réactiver dans l'inspecteur. Si le texte complet dépasse l'espace intérieur de la bulle, le rendu réduit sa police jusqu'à ce qu'il tienne. Sinon, il conserve la taille configurée. Cette adaptation ne modifie pas `fontSize` dans le document et reste stable pendant la révélation du texte.
 
+Les lignes vides au début et à la fin du dialogue ne réservent aucun espace au rendu : elles ne réduisent donc pas inutilement la police et ne décalent pas le texte visible hors du centre. Les sauts de paragraphe internes restent respectés. Le texte source est conservé intégralement à l'enregistrement.
+
 À l'enregistrement, `lines` contient les lignes calculées et `height` la hauteur effective. Le lecteur Godot régénère ces champs dérivés avec le même algorithme déterministe, y compris si un fichier manuel omet les lignes ou en conserve une ancienne version. Au rendu, la taille configurée est essayée avec les mesures réelles de la police ; si nécessaire, les lignes sont recomposées à chaque taille inférieure jusqu'à trouver la plus grande taille qui tient. Le bloc complet est centré verticalement dans l'espace intérieur de la bulle. Cette disposition reste stable durant la révélation et les glyphes conservent leurs indices et mots de lecture, même si les retours à la ligne diffèrent du calcul partagé. La taille adaptée vaut pour le texte fixe comme pour le texte animé ; elle ne garantit pas la lisibilité d'un texte très long dans une petite bulle.
 
 ## Validation et sauvegarde
 
 Les propriétés inconnues, versions futures, identifiants répétés, nombres hors limites et liens de personnages incohérents sont refusés. La limite est 5 Mio pour le JSON sérialisé. Les références inexistantes peuvent être conservées dans un brouillon, mais bloquent la prévisualisation. La vérification de présence ne certifie pas le contenu ou la qualité artistique du PNG.
 
-L'enregistrement passe par un fichier temporaire frère, écriture/synchronisation, puis remplacement ; la version précédente est conservée en `.bak`. Une récupération distincte est enregistrée dans les données utilisateur de l'application, après environ 300 ms sans modification. La V1.2 utilise une file d’écriture et des jetons de document ; la fermeture explicite peut demander une récupération immédiate du dernier état. Ce n’est pas un système de versions : conserver aussi les cinématiques dans Git.
+Le format décrit ici est celui des films intégrés dans `cinematics[]` du projet et des fichiers internes publiés pour Godot. L’enregistrement, le fichier `.bak`, la récupération et les conflits portent sur le projet entier ; voir [SESSION_PROJET.md](SESSION_PROJET.md). Il n’existe plus d’ouverture ou d’enregistrement d’un film seul dans le Studio.
 
 Les IDs sont stables au fil des sauvegardes. La duplication d'un plan recrée ses IDs et recâble ses liens de bulles. La suppression d'un personnage détache ses bulles.
 

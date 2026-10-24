@@ -28,32 +28,56 @@ test.afterEach(async()=>{
  await fs.rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200});
 });
 
-test('combo and wave seed rewards can be configured and saved in Studio',async()=>{
+test('les graines se règlent dans les niveaux sans page de récompenses ni bonus de combo',async()=>{
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  await page.getByRole('button',{name:'Créer un premier niveau'}).click();
- await page.getByRole('button',{name:'Récompenses',exact:true}).click();
- const toggle=page.getByLabel('Activer le bonus de combo');
- await expect(toggle).not.toBeChecked();
- await page.getByLabel('Graines supplémentaires par palier').fill('2');
- await page.getByLabel('Bonus de combo maximal (graines)').fill('5');
- await page.getByLabel('Vague 1 — graines',{exact:true}).fill('73');
- await toggle.check();
- await expect(page.getByText('Graines ajoutées : 3e élimination +2, 4e +4, 5e +5. Plafond : +5.',{exact:true})).toBeVisible();
- await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
- await expect.poll(async()=>{
-  try {return JSON.parse(await fs.readFile(target,'utf8')).rewards;} catch {return null;}
- }).toEqual({combo:{enabled:true,seedsPerStep:2,maxSeeds:5}});
- expect(JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves[0].seedReward).toBe(73);
  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
- await page.getByRole('button',{name:'Vagues & ennemis'}).click();
- await expect(page.getByLabel('Graines pour la vague éliminée')).toHaveValue('73');
- await page.getByRole('button',{name:'Récompenses',exact:true}).click();
- await expect(toggle).toBeChecked();
- await toggle.uncheck();
+ await expect(page.locator('.gd-sections').getByRole('button',{name:'Récompenses',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'Comparer les graines',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Graines des niveaux'})).toBeVisible();
+ await expect(page.getByLabel('Activer le bonus de combo')).toHaveCount(0);
+ await page.getByRole('table').getByRole('button',{name:/^Modifier les vagues/}).first().click();
+ await page.getByLabel('Graines pour la vague éliminée').fill('73');
+ await page.getByLabel('Graines pour la vague éliminée').press('Tab');
+ await page.getByRole('button',{name:'Comparer les graines',exact:true}).click();
+ await expect(page.getByRole('table')).toContainText('73');
  await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
- await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).rewards.combo.enabled).toBe(false);
- await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
- await page.setViewportSize({width:1440,height:1200});
- await fs.mkdir(path.join(ROOT,'work'),{recursive:true});
- await page.screenshot({path:path.join(ROOT,'work','rewards-studio.png')});
+ await expect.poll(async()=>{try{return JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves[0].seedReward;}catch{return null;}}).toBe(73);
+ expect(JSON.parse(await fs.readFile(target,'utf8')).rewards).toBeUndefined();
+ await page.setViewportSize({width:1280,height:900});
+ await fs.mkdir(path.join(ROOT,'work/simplification-v2'),{recursive:true});
+ await page.screenshot({path:path.join(ROOT,'work/simplification-v2/graines.png')});
+ await page.getByRole('button',{name:'← Fiches des niveaux',exact:true}).click();
+ await page.getByRole('button',{name:'Paramètres',exact:true}).click();
+ await expect(page.getByLabel('Objectif du niveau').locator('option[value="operation"],option[value="rescue"]')).toHaveCount(0);
+ await page.getByRole('button',{name:'Événements',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Dialogue pendant la mission'})).toHaveCount(0);
+});
+
+test('les fiches regroupent les outils du personnage et les modèles restent avancés',async()=>{
+ await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ const main=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
+ await expect(main.getByRole('button',{name:/Modèles|Bibliothèque|Comportements|Récompenses/})).toHaveCount(0);
+ await main.getByRole('button',{name:/^Plantes alliées/}).click();
+ const sheet=page.getByRole('navigation',{name:'Fiche de Radis'});
+ for(const tab of ['Capacités','Comportement','Animations et sons de Radis','Caractéristiques']){
+  await sheet.getByRole('button',{name:tab,exact:true}).click();
+  await expect(sheet.getByRole('button',{name:tab,exact:true})).toHaveClass(/active/);
+ }
+ await sheet.getByRole('button',{name:'Capacités',exact:true}).click();
+ await page.getByLabel('Nom de la capacité',{exact:true}).fill('Graine du voyage');
+ await page.getByLabel('Nom de la capacité',{exact:true}).press('Tab');
+ await sheet.getByRole('button',{name:'Comportement',exact:true}).click();
+ await sheet.getByRole('button',{name:'Capacités',exact:true}).click();
+ await expect(page.getByLabel('Nom de la capacité',{exact:true})).toHaveValue('Graine du voyage');
+ await page.setViewportSize({width:1280,height:900});
+ await fs.mkdir(path.join(ROOT,'work/simplification-v2'),{recursive:true});
+ await page.screenshot({path:path.join(ROOT,'work/simplification-v2/personnage.png')});
+ await expect(page.locator('.gd-tools')).not.toHaveAttribute('open','');
+ await page.locator('.gd-tools > summary').click();
+ for(const name of ['Modèles de capacités','Modèles de comportements','Profils avancés'])await expect(page.getByRole('button',{name:new RegExp('^'+name)})).toBeVisible();
+ await page.getByRole('button',{name:/^Modèles de capacités/}).click();
+ await expect(page.locator('.gd-tools')).toHaveAttribute('open','');
+ await page.setViewportSize({width:980,height:820});
+ await page.screenshot({path:path.join(ROOT,'work/simplification-v2/options-avancees.png')});
 });

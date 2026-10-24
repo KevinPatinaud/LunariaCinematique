@@ -1542,6 +1542,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1585,6 +1596,17 @@
           "mirror": false,
           "tint": "#ffd68f",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1628,6 +1650,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1671,6 +1704,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1715,6 +1759,17 @@
           "mirror": false,
           "tint": "#e7bdff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1758,6 +1813,17 @@
           "mirror": false,
           "tint": "#b0ffed",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1801,6 +1867,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1844,6 +1921,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1887,6 +1975,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1930,6 +2029,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1973,6 +2083,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -2016,6 +2137,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -2059,6 +2191,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 6.8
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": true,
+          "boss": false
         }
       }
     ]

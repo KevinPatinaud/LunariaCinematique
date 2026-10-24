@@ -5,7 +5,7 @@
  */
 export const HOME_ELEMENT_KINDS=['panel','text','button','image','plant','line','progress','halo'] as const;
 export type HomeElementKind=typeof HOME_ELEMENT_KINDS[number];
-export const HOME_ACTIONS=['continue','map','collection','journal','options'] as const;
+export const HOME_ACTIONS=['continue','map','collection','options'] as const;
 export type HomeAction=typeof HOME_ACTIONS[number];
 export type HomeFont='body'|'bold'|'title';
 export type HomeFit='cover'|'contain'|'stretch';
@@ -24,11 +24,11 @@ export interface HomeElement {
 }
 export interface HomeScreen {
  background:{mode:'garden'|'image'|'color';chapter:number;color:string;image:string;fit:HomeFit;opacity:number;overlayColor:string;overlayOpacity:number};
- continueLabels:{start:string;continue:string;battle:string;outro:string;epilogue:string;unavailable:string;suffix:string};
+ continueLabels:{start:string;continue:string;battle:string;cinematic:string;finished:string;unavailable:string;suffix:string};
  elements:HomeElement[];
 }
 export const HOME_ELEMENT_LABELS:Record<HomeElementKind,string>={panel:'Panneau',text:'Texte',button:'Bouton',image:'Image',plant:'Plante',line:'Ligne',progress:'Progression',halo:'Halo'};
-export const HOME_ACTION_LABELS:Record<HomeAction,string>={continue:'Continuer l’aventure',map:'Carnet de voyage',collection:'La troupe',journal:'Cinématiques',options:'Paramètres'};
+export const HOME_ACTION_LABELS:Record<HomeAction,string>={continue:'Continuer l’aventure',map:'Carnet de voyage',collection:'La troupe',options:'Paramètres'};
 const INK='#183e37',FOREST='#345a49',CREAM='#fff5de',GOLD='#f6c864',MINT='#d0e3bb';
 export function newHomeElement(kind:HomeElementKind,id=`home_${globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12)}`):HomeElement {
  const base:HomeElement={id,name:HOME_ELEMENT_LABELS[kind],kind,visible:true,rect:{x:640,y:300,w:240,h:80},opacity:1};
@@ -48,7 +48,7 @@ export function defaultHomeScreen():HomeScreen {
  const text=(id:string,name:string,value:string,x:number,baseline:number,w:number,size:number,color:string,font:HomeFont='body',fields:Partial<HomeElement>={})=>e(id,name,'text',x,baseline-size,w,size+8,{text:value,fontSize:size,lineHeight:size+8,maxLines:1,color,font,...fields});
  return {
   background:{mode:'garden',chapter:-1,color:INK,image:'',fit:'cover',opacity:1,overlayColor:INK,overlayOpacity:.1},
-  continueLabels:{start:"Commencer l'aventure",continue:'Continuer le voyage',battle:'Reprendre la bataille',outro:'Découvrir la suite',epilogue:'Retrouver la troupe',unavailable:'Aucune mission publiée',suffix:'  →'},
+  continueLabels:{start:"Commencer l'aventure",continue:'Continuer le voyage',battle:'Reprendre la bataille',cinematic:'Découvrir la suite',finished:'Retrouver la troupe',unavailable:'Aucune mission publiée',suffix:'  →'},
   elements:[
    e('navigation_panel','Panneau de navigation','panel',40,35,548,650,{fill:'#183e37f6',radius:32,borderColor:'#86aa8c',borderWidth:2}),
    e('navigation_inset','Contour intérieur','panel',52,47,524,626,{fill:'#345a492e',radius:25,borderColor:'#d0e3bb1f',borderWidth:1,shadow:false}),
@@ -61,8 +61,7 @@ export function defaultHomeScreen():HomeScreen {
    e('continue','Bouton principal','button',78,383,472,70,{text:'{continue}',action:'continue',fill:GOLD,borderColor:'#ba874a',fontSize:26}),
    e('map','Carnet de voyage','button',78,472,228,54,{text:'Carnet de voyage',action:'map'}),
    e('collection','La troupe','button',322,472,228,54,{text:'La troupe',action:'collection'}),
-   e('journal','Cinématiques','button',78,540,228,54,{text:'Cinématiques',action:'journal'}),
-   e('options','Paramètres','button',322,540,228,54,{text:'Paramètres',action:'options'}),
+   e('options','Paramètres','button',78,540,472,54,{text:'Paramètres',action:'options'}),
    text('progress_label','Libellé progression','PROGRESSION',79,626,350,14,MINT,'bold'),
    text('progress_count','Compteur progression','{completed} / {total}',507,626,68,16,CREAM,'bold'),
    e('progress_bar','Barre de progression','progress',79,642,471,9),
@@ -75,7 +74,7 @@ export function defaultHomeScreen():HomeScreen {
    e('tagline_panel','Panneau de signature','panel',664,584,552,91,{fill:'#183e37e6',radius:23,borderColor:'#d0e3bb8c',borderWidth:1}),
    e('tagline_accent','Accent de signature','panel',688,601,5,55,{fill:GOLD,radius:0,borderWidth:0,shadow:false}),
    text('tagline','Signature','Petites plantes. Grande rébellion.',703,619.5,493,25,GOLD,'bold',{align:'center'}),
-   text('tagline_detail','Détail de signature','Une aventure botanique à travers cinq continents',703,649.28,493,17,CREAM,'body',{align:'center'}),
+   text('tagline_detail','Détail de signature','Le premier chapitre de votre aventure botanique',703,649.28,493,17,CREAM,'body',{align:'center'}),
    text('version','Version','Lunaria · {version}',1171,705,109,14,CREAM),
   ],
  };

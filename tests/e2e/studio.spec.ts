@@ -37,7 +37,7 @@ async function openProjectFilm(film=fixture()) {
   const project=seedProject();project.cinematics=[film];
   await fs.writeFile(projectFile,JSON.stringify(project));
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},projectFile);
-  await page.getByRole('button',{name:'Ouvrir le projet',exact:true}).click();
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');
 }
 async function saveProjectFilm():Promise<Cinematic> {
@@ -77,7 +77,7 @@ test('délai d’apparition, défilement stable et champs de sortie cohérents',
   project.cinematics=[fixture()];
   await fs.writeFile(source,JSON.stringify(project));
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},source);
-  await page.getByRole('button',{name:'Ouvrir le projet'}).click();
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');
   await page.getByRole('button',{name:'Sélectionner Objet A',exact:true}).click();
   const entry=page.getByRole('combobox',{name:'Entrée',exact:true});
@@ -439,6 +439,42 @@ test('texte progressif : premier clic complète, second clic avance via le vrai 
   await expect(page.getByTestId('bubble-'+second.id)).toBeVisible();
   await expect(page.getByRole('button',{name:/Afficher tout le texte/})).toBeVisible();
 });
+test('retours vides périphériques : taille et centrage identiques au dialogue visible',async({},testInfo)=>{
+  const document=fixture(),shot=document.shots[0];
+  const text='Malheureusement mes racines ont étaient contaminées, \nJe crains que mes minutes ne soient comptées,';
+  shot.dialogueStart=0;shot.transition={type:'cut',duration:0};
+  shot.bubbles=[28,48].flatMap((fontSize,row)=>[false,true].map((padded,column)=>{
+    const b=newBubble();
+    Object.assign(b,{text:padded?'\n \t\n'+text+' \r\n\n':text,fontSize,style:'simple',
+      frameAsset:'library://06_ui/dialogues/dialogue_panel_simple_v01.png',autoHeight:false,
+      x:.02+column*.5,y:.08+row*.3,width:.46015670112984397,height:.20132755012325945,
+      textAnimation:newTextAnimation('typewriter')});
+    return b;
+  }));
+  await openProjectFilm(prepareCinematic(document));
+  const rendered=await Promise.all(shot.bubbles.map(b=>page.getByTestId('bubble-'+b.id).getByTestId('bubble-text').evaluate(element=>({
+    size:Number(element.getAttribute('font-size')),rows:Array.from(element.children).map(row=>({text:row.textContent,x:row.getAttribute('x'),y:row.getAttribute('y')}))
+  }))));
+  expect(rendered[1]).toEqual(rendered[0]);expect(rendered[3]).toEqual(rendered[2]);
+  expect(rendered[0].size).toBeGreaterThan(0);expect(rendered[0].size).toBeLessThanOrEqual(28);
+  expect(rendered[2].size).toBeGreaterThanOrEqual(rendered[0].size);expect(rendered[2].size).toBeLessThan(48);
+  expect(rendered[0].rows).toHaveLength(2);
+  await testInfo.attach('dialogues avec et sans retours périphériques',{body:await page.getByTestId('scene').screenshot(),contentType:'image/png'});
+  const saved=await saveProjectFilm();
+  expect(saved.shots[0].bubbles.map(b=>b.text)).toEqual(shot.bubbles.map(b=>b.text));
+  expect(saved.shots[0].bubbles.map(b=>b.fontSize)).toEqual([28,28,48,48]);
+  await page.getByRole('button',{name:'Lire depuis ce plan',exact:true}).first().click();
+  const first=page.getByTestId('bubble-'+shot.bubbles[0].id).getByTestId('animated-text');
+  await expect(first.locator('text').first()).toHaveAttribute('font-size',String(rendered[0].size));
+  await page.getByRole('button',{name:/Afficher tout le texte/}).click();
+  const coordinates=await first.locator('text').evaluateAll(elements=>elements.map(el=>({text:el.textContent,x:el.getAttribute('x'),y:el.getAttribute('y')})));
+  await page.getByRole('button',{name:/Cliquer pour continuer/}).click();
+  const second=page.getByTestId('bubble-'+shot.bubbles[1].id).getByTestId('animated-text');
+  await expect(second.locator('text').first()).toHaveAttribute('font-size',String(rendered[1].size));
+  await page.getByRole('button',{name:/Afficher tout le texte/}).click();
+  expect(await second.locator('text').evaluateAll(elements=>elements.map(el=>({text:el.textContent,x:el.getAttribute('x'),y:el.getAttribute('y')})))).toEqual(coordinates);
+});
+
 test('texte des bulles : taille maximale, marges verticales équilibrées et apparition stable',async({},testInfo)=>{
   const document=fixture(),shot=document.shots[0],normal=newBubble(),long=newBubble(),wide=newBubble();
   shot.dialogueStart=0;shot.transition={type:'cut',duration:0};

@@ -14,6 +14,12 @@ export function previewAbility(p:GameProject,ability:AbilityDefinition,sourceId:
  for(const [order,id] of ability.effects.entries()){
   const e=p.combat?.effects.find(x=>x.id===id);if(!e){notes.push('Effet absent : '+id);continue;}
   const amount=effectAmount(e,stats),type=e.damageType==='inherit'?source.damage_type:e.damageType;
+  if(e.binding){
+   notes.push(`Fronde : déplacements et attaques ralentis de ${Math.round(e.amount*100)} % (préparation, animation et recharge), libération entre ${e.duration*e.binding.minimumDurationRatio} et ${e.duration} s. Le tableau montre la durée maximale sans intervention alliée.`);
+   notes.push(`Un coup d’une autre plante interrompt la fronde : ${stats.attack*e.binding.burstPower} dégâts bruts sur le porteur et ${stats.attack*e.binding.splashPower} sur les voisins à ${e.binding.radius.toLocaleString('fr-FR')} case. Les explosions ne déclenchent pas d’autres frondes.`);
+   for(let i=1;i*e.tickInterval<=e.duration+1e-8;i++)events.push({at:i*e.tickInterval,order,label:'Étreinte de la fronde',amount:stats.attack*e.binding.tickPower,type,kind:'poison',duration:e.duration});
+   continue;
+  }
   if(['damage','heal','armor_break'].includes(e.kind))events.push({at:0,order,label:e.name,amount,type,kind:e.kind,duration:e.duration});
   else if(['poison','regeneration'].includes(e.kind))for(let i=1;i*e.tickInterval<=e.duration+1e-8;i++)events.push({at:i*e.tickInterval,order,label:e.name,amount,type,kind:e.kind,duration:e.duration});
   else notes.push(`${e.name} : ${e.duration} s`);

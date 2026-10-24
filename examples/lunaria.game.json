@@ -168,9 +168,9 @@
       {
         "id": "fern",
         "name": "Fougère",
-        "role": "Ralentissement",
-        "description": "Ralentit les pollueurs et fragilise leur protection.",
-        "ability": "Frondes humides",
+        "role": "Entrave et explosion alliée",
+        "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
+        "ability": "Crosse de rosée",
         "personality": "Discrète et attentive. L'eau lui indique des chemins insoupçonnés.",
         "cost": 125,
         "cooldown": 4.5,
@@ -1542,6 +1542,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1585,6 +1596,17 @@
           "mirror": false,
           "tint": "#ffd68f",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1628,6 +1650,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1671,6 +1704,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1715,6 +1759,17 @@
           "mirror": false,
           "tint": "#e7bdff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1758,6 +1813,17 @@
           "mirror": false,
           "tint": "#b0ffed",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -1801,6 +1867,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1844,6 +1921,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1887,6 +1975,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1930,6 +2029,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -1973,6 +2083,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       },
       {
@@ -2016,6 +2137,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 8.45
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": true
         }
       },
       {
@@ -2059,6 +2191,17 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Atlas existant et dimensions visuelles conservés. Pas de séquence de sprites dédiée fournie ; mouvements procéduraux."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "arrival",
+            "x": 6.8
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": false,
+          "contact": "normal",
+          "rescueTarget": true,
+          "boss": false
         }
       },
       {
@@ -2096,6 +2239,73 @@
           "mirror": false,
           "tint": "#ffffff",
           "note": "Plaque fixe. La grille s’ouvre lors de l’apparition et crache du slime pendant le tir."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "placement",
+            "x": 6.5
+          },
+          "blocksEnemies": false,
+          "blocksPlanting": true,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false,
+          "reinforcements": {
+            "enemyId": "runner",
+            "interval": 30
+          }
+        }
+      },
+      {
+        "id": "poubelle",
+        "name": "Poubelle",
+        "hp": 320,
+        "speed": 0,
+        "attack": 0,
+        "reward": 10,
+        "reach": 0,
+        "damage_type": "physical",
+        "armor": 0.2,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [],
+        "behaviorId": "ai_fixed",
+        "animationProfileId": "profile_poubelle",
+        "visual": {
+          "sprite": {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 8,
+              "y": 0,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4713375796178344,
+              "y": 0.9872611464968153
+            }
+          },
+          "width": 110,
+          "height": 116,
+          "baseline": 33,
+          "mirror": false,
+          "tint": "#ffffff",
+          "note": "Poubelle fixe, posée au sol ; 16 poses dessinées (attente, apparition, impact, destruction). Bloque les ennemis de son allée et laisse passer leurs projectiles."
+        },
+        "rules": {
+          "spawn": {
+            "mode": "placement",
+            "x": 6.5
+          },
+          "blocksEnemies": true,
+          "blocksPlanting": true,
+          "contact": "normal",
+          "rescueTarget": false,
+          "boss": false
         }
       }
     ]
@@ -19049,7 +19259,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_root_shot",
@@ -19090,7 +19301,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_personal_regeneration",
@@ -19130,14 +19342,15 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_fern",
-        "name": "Frondes humides",
-        "description": "",
+        "name": "Crosse de rosée",
+        "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
         "delivery": "projectile",
-        "projectileId": "proj_seed",
+        "projectileId": "proj_fern_frond",
         "target": "opponent",
         "selection": "one",
         "priority": "nearest",
@@ -19148,9 +19361,8 @@
         "cooldown": 1,
         "initialDelay": 0.35,
         "effects": [
-          "fx_armor_break",
-          "fx_attack",
-          "fx_slow"
+          "fx_fern_impact",
+          "fx_fern_bind"
         ],
         "presentation": {
           "slot": "attack",
@@ -19172,7 +19384,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_dandelion",
@@ -19211,6 +19424,12 @@
             "soundId": "",
             "vfxId": "",
             "attach": "center"
+          }
+        },
+        "mechanics": {
+          "rainBloom": {
+            "range": 0.8,
+            "power": 0.45
           }
         }
       },
@@ -19253,6 +19472,14 @@
             "vfxId": "",
             "attach": "center"
           }
+        },
+        "mechanics": {
+          "guard": {
+            "power": 0.5,
+            "maxStacks": 3,
+            "rows": 1,
+            "poisonEffectId": "fx_poison_light"
+          }
         }
       },
       {
@@ -19293,7 +19520,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_ally_protection",
@@ -19333,7 +19561,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_aloe",
@@ -19374,7 +19603,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_papyrus",
@@ -19415,7 +19645,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_hibiscus",
@@ -19455,7 +19686,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_hibiscus_aura",
@@ -19495,7 +19727,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_lavender",
@@ -19535,7 +19768,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_lotus",
@@ -19576,7 +19810,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_ginger",
@@ -19616,6 +19851,9 @@
             "vfxId": "",
             "attach": "center"
           }
+        },
+        "mechanics": {
+          "boostCue": true
         }
       },
       {
@@ -19658,7 +19896,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_coconut",
@@ -19699,7 +19938,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_pandanus",
@@ -19740,7 +19980,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_eucalyptus",
@@ -19781,7 +20022,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_banksia",
@@ -19822,7 +20064,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_mushroom",
@@ -19863,7 +20106,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_sequoia_protection",
@@ -19903,7 +20147,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_cactus",
@@ -19943,7 +20188,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_agave",
@@ -19984,7 +20230,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_dahlia",
@@ -20024,7 +20271,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_dahlia_aura",
@@ -20064,7 +20312,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_passionflower",
@@ -20106,7 +20355,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_enemy_contact",
@@ -20146,6 +20396,9 @@
             "vfxId": "",
             "attach": "center"
           }
+        },
+        "mechanics": {
+          "contact": true
         }
       },
       {
@@ -20186,7 +20439,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_collector_special",
@@ -20227,7 +20481,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_pump_special",
@@ -20268,7 +20523,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_boss_wave",
@@ -20308,7 +20564,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_corrupted_bramble_special",
@@ -20349,7 +20606,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_furnace_special",
@@ -20389,7 +20647,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "mechanics": {}
       },
       {
         "id": "ab_plaque_spit",
@@ -20430,6 +20689,9 @@
             "vfxId": "",
             "attach": "center"
           }
+        },
+        "mechanics": {
+          "lockProjectileTarget": true
         }
       }
     ],
@@ -20509,7 +20771,8 @@
         "amount": 4,
         "damageType": "toxic",
         "duration": 3.5,
-        "tickInterval": 1
+        "tickInterval": 1,
+        "counterStacking": true
       },
       {
         "id": "fx_heal",
@@ -20697,6 +20960,35 @@
         "damageType": "physical",
         "duration": 1,
         "tickInterval": 1
+      },
+      {
+        "id": "fx_fern_impact",
+        "name": "Impact de la fronde",
+        "description": "Dégâts légers à l’accrochage.",
+        "kind": "damage",
+        "valueSource": "attack",
+        "amount": 0.2,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_fern_bind",
+        "name": "Fronde enroulée",
+        "description": "Ralentit les déplacements et les attaques de 80 %. Inflige 25 % de l’attaque par seconde. Libération entre la moitié et la totalité de la durée. Une autre plante déclenche 100 % de dégâts sur le porteur et 65 % sur ses voisins à 1,25 case.",
+        "kind": "slow",
+        "valueSource": "fixed",
+        "amount": 0.8,
+        "damageType": "inherit",
+        "duration": 6,
+        "tickInterval": 1,
+        "binding": {
+          "minimumDurationRatio": 0.5,
+          "tickPower": 0.25,
+          "burstPower": 1,
+          "splashPower": 0.65,
+          "radius": 1.25
+        }
       }
     ],
     "projectiles": [
@@ -20721,7 +21013,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "visualStyle": "auto"
       },
       {
         "id": "proj_piercing",
@@ -20744,7 +21037,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "visualStyle": "lance"
       },
       {
         "id": "proj_splash",
@@ -20767,7 +21061,8 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "visualStyle": "bud"
       },
       {
         "id": "proj_plaque_slime",
@@ -20790,7 +21085,32 @@
             "vfxId": "",
             "attach": "center"
           }
-        }
+        },
+        "visualStyle": "slime"
+      },
+      {
+        "id": "proj_fern_frond",
+        "name": "Fronde en spirale",
+        "description": "Petite fronde humide enroulée, qui s’accroche au premier pollueur.",
+        "speed": 4.8,
+        "lifetime": 3,
+        "maxHits": 1,
+        "hitRadius": 0.18,
+        "splashRadius": 0,
+        "rowRadius": 0,
+        "color": "#4fba85",
+        "size": 0.12,
+        "presentation": {
+          "asset": "",
+          "animationId": "",
+          "trailVfxId": "",
+          "impact": {
+            "soundId": "",
+            "vfxId": "",
+            "attach": "center"
+          }
+        },
+        "visualStyle": "frond"
       }
     ]
   },
@@ -22635,6 +22955,430 @@
             "attach": "launch"
           }
         ]
+      },
+      {
+        "id": "poubelle_idle",
+        "name": "Poubelle — veille et clignement",
+        "ownerSpeciesId": "poubelle",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 8,
+              "y": 0,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4713375796178344,
+              "y": 0.9872611464968153
+            },
+            "duration": 1.1
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 326,
+              "y": 0,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.46337579617834396,
+              "y": 0.9840764331210191
+            },
+            "duration": 0.55
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 642,
+              "y": 0,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.445859872611465,
+              "y": 0.9872611464968153
+            },
+            "duration": 0.12
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 940,
+              "y": 0,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.49522292993630573,
+              "y": 0.9840764331210191
+            },
+            "duration": 0.65
+          }
+        ],
+        "duration": 2.42,
+        "loop": true,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 2.42
+        },
+        "attachments": [
+          {
+            "id": "feet",
+            "x": 0.47,
+            "y": 0.98
+          },
+          {
+            "id": "center",
+            "x": 0.47,
+            "y": 0.55
+          },
+          {
+            "id": "head",
+            "x": 0.47,
+            "y": 0.33
+          },
+          {
+            "id": "launch",
+            "x": 0.25,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "poubelle_spawn",
+        "name": "Poubelle — ouverture du couvercle",
+        "ownerSpeciesId": "poubelle",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 8,
+              "y": 312,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4697452229299363,
+              "y": 0.9745222929936306
+            },
+            "duration": 0.14
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 326,
+              "y": 312,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4570063694267516,
+              "y": 0.9713375796178344
+            },
+            "duration": 0.12
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 642,
+              "y": 312,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.43630573248407645,
+              "y": 0.9713375796178344
+            },
+            "duration": 0.18
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 940,
+              "y": 312,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.49203821656050956,
+              "y": 0.9745222929936306
+            },
+            "duration": 0.2
+          }
+        ],
+        "duration": 0.64,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 0.64
+        },
+        "attachments": [
+          {
+            "id": "feet",
+            "x": 0.47,
+            "y": 0.98
+          },
+          {
+            "id": "center",
+            "x": 0.47,
+            "y": 0.55
+          },
+          {
+            "id": "head",
+            "x": 0.47,
+            "y": 0.33
+          },
+          {
+            "id": "launch",
+            "x": 0.25,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "poubelle_hit",
+        "name": "Poubelle — choc sur le métal",
+        "ownerSpeciesId": "poubelle",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 8,
+              "y": 624,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4729299363057325,
+              "y": 0.9681528662420382
+            },
+            "duration": 0.05
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 326,
+              "y": 624,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.44745222929936307,
+              "y": 0.9681528662420382
+            },
+            "duration": 0.11
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 642,
+              "y": 624,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.44904458598726116,
+              "y": 0.9745222929936306
+            },
+            "duration": 0.12
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 940,
+              "y": 624,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4968152866242038,
+              "y": 0.9745222929936306
+            },
+            "duration": 0.12
+          }
+        ],
+        "duration": 0.4,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 0.4
+        },
+        "attachments": [
+          {
+            "id": "feet",
+            "x": 0.47,
+            "y": 0.98
+          },
+          {
+            "id": "center",
+            "x": 0.47,
+            "y": 0.55
+          },
+          {
+            "id": "head",
+            "x": 0.47,
+            "y": 0.33
+          },
+          {
+            "id": "launch",
+            "x": 0.25,
+            "y": 0.4
+          }
+        ],
+        "markers": []
+      },
+      {
+        "id": "poubelle_death",
+        "name": "Poubelle — écrasement",
+        "ownerSpeciesId": "poubelle",
+        "kind": "frames",
+        "frames": [
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 8,
+              "y": 936,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.48089171974522293,
+              "y": 0.9140127388535032
+            },
+            "duration": 0.16
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 326,
+              "y": 936,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4554140127388535,
+              "y": 0.8949044585987261
+            },
+            "duration": 0.22
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 642,
+              "y": 936,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.4570063694267516,
+              "y": 0.89171974522293
+            },
+            "duration": 0.24
+          },
+          {
+            "asset": "library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png",
+            "region": {
+              "x": 940,
+              "y": 936,
+              "width": 314,
+              "height": 314
+            },
+            "anchor": {
+              "x": 0.49363057324840764,
+              "y": 0.9076433121019108
+            },
+            "duration": 0.38
+          }
+        ],
+        "duration": 1,
+        "loop": false,
+        "anchor": {
+          "x": 0.5,
+          "y": 1
+        },
+        "transform": {
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "opacity": 1
+        },
+        "motion": {
+          "preset": "none",
+          "amplitude": 0,
+          "period": 1
+        },
+        "attachments": [
+          {
+            "id": "feet",
+            "x": 0.47,
+            "y": 0.98
+          },
+          {
+            "id": "center",
+            "x": 0.47,
+            "y": 0.55
+          },
+          {
+            "id": "head",
+            "x": 0.47,
+            "y": 0.33
+          },
+          {
+            "id": "launch",
+            "x": 0.25,
+            "y": 0.4
+          }
+        ],
+        "markers": []
       }
     ],
     "profiles": [
@@ -23027,6 +23771,41 @@
           {
             "slot": "attack",
             "animationId": "plaque_attack"
+          }
+        ],
+        "events": []
+      },
+      {
+        "id": "profile_poubelle",
+        "name": "Poubelle fixe",
+        "slots": [
+          {
+            "slot": "idle",
+            "animationId": "poubelle_idle"
+          },
+          {
+            "slot": "move",
+            "animationId": "poubelle_idle"
+          },
+          {
+            "slot": "attack",
+            "animationId": "poubelle_spawn"
+          },
+          {
+            "slot": "spawn",
+            "animationId": "poubelle_spawn"
+          },
+          {
+            "slot": "hit",
+            "animationId": "poubelle_hit"
+          },
+          {
+            "slot": "death",
+            "animationId": "poubelle_death"
+          },
+          {
+            "slot": "victory",
+            "animationId": "poubelle_idle"
           }
         ],
         "events": []

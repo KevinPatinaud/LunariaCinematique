@@ -49,6 +49,19 @@ test('Plaque placement is authored per wave as a fixed cell or bounded random zo
  delete group.placement;assert.ok(errors(p).some(i=>i.message.includes('Plaque')));
  group.placement={rowMin:3,rowMax:1,colMin:2,colMax:5};assert.ok(errors(p).some(i=>i.message.includes('inversée')));
 });
+test('Poubelle is a stationary, unarmed obstacle with a fixed authored position',()=>{
+ const p=mainSeedProject(),bin=p.balance.enemies.find(e=>e.id==='poubelle')!;
+ assert.equal(bin.speed,0);assert.equal(bin.attack,0);assert.deepEqual(bin.ability_ids,[]);
+ assert.equal(bin.visual?.sprite.asset,'library://03_enemies/poubelle/animations/poubelle_combat_sheet_v01.png');
+ const level=newLevel(['radish'],'poubelle'),group=level.waves[0].groups[0];
+ group.placement={rowMin:2,rowMax:2,colMin:5,colMax:5};p.levels=[level];
+ assert.deepEqual(errors(p),[]);
+ assert.deepEqual(compileCampaign(p).levels[0].waves[0].groups[0].placement,group.placement);
+ delete group.placement;assert.ok(errors(p).some(i=>i.message.includes('Poubelle')));
+ group.placement={rowMin:1,rowMax:3,colMin:5,colMax:6};assert.deepEqual(errors(p),[]);
+ level.objective={type:'invasive_foci',target:0};level.invasiveFoci={...defaultInvasiveFoci(),reinforcementEnemyId:'poubelle'};
+ assert.ok(errors(p).some(i=>i.message.includes('mobile')));
+});
 test('default invasive foci use the Plaque canette reinforcement every thirty seconds',()=>{
  const p=mainSeedProject(),level=newLevel(['radish'],'runner');p.levels=[level];
  level.objective={type:'invasive_foci',target:0};level.invasiveFoci=defaultInvasiveFoci();
@@ -57,14 +70,12 @@ test('default invasive foci use the Plaque canette reinforcement every thirty se
  assert.equal(level.invasiveFoci.interval,30);
  assert.deepEqual(compileCampaign(p).levels[0].invasiveFoci,level.invasiveFoci);
 });
-test('one operation type covers the former work missions',()=>{
- const p=valid();assert.deepEqual(OBJECTIVES,['defend','advance','escort','invasive_foci','protect_cell','operation','rescue']);
- assert.equal(p.levels.filter(level=>level.objective.type==='operation').length,30);
- const level=p.levels.find(level=>level.objective.type==='operation')!;
- assert.ok(level.objective.target>0);assert.ok(level.objectiveText.length>0);
- level.objective.target=0;assert.ok(errors(p).some(issue=>issue.message.includes('opération')));
- level.objective={type:'unknown_objective' as GameProject['levels'][number]['objective']['type'],target:60};
- assert.ok(errors(p).some(issue=>issue.path.includes('objective.type')));
+test('retired operation and rescue objectives are rejected',()=>{
+ const p=valid();assert.deepEqual(OBJECTIVES,['defend','occupied_board','advance','escort','invasive_foci','protect_cell','repel_boss']);
+ for(const type of ['operation','rescue','unknown_objective']){
+  (p.levels[0].objective as any).type=type;
+  assert.ok(errors(p).some(issue=>issue.path.includes('objective.type')));
+ }
 });
 test('advance objective is authored and published with an automatic five-lane target',()=>{
  const p=valid(),level=p.levels[0];
@@ -78,14 +89,18 @@ test('advance objective is authored and published with an automatic five-lane ta
 test('official companion name is Rose everywhere in the authored campaign',()=>{const p=valid();assert.equal(p.balance.plants.find(x=>x.id==='rose')?.name,'Rose');assert.equal(p.balance.enemies.find(x=>x.id==='corrupted_rose')?.name,'Rose contaminée');assert.doesNotMatch(JSON.stringify(p),/\bRonce\b/);assert.doesNotMatch(JSON.stringify(p),/\bronce\b/);});
 test('seed returns independent deep clones',()=>{const a=valid();a.balance.plants[0].damage=500;assert.notEqual(valid().balance.plants[0].damage,500);});
 test('new level contains references, not embedded stats',()=>{const l=newLevel(['radish','rose'],'litterer');assert.deepEqual(l.allowedPlants,['radish','rose']);assert.equal(totalEnemies(l),5);assert.equal('damage' in l,false);good(p=>p.levels=[l]);});
-test('each level keeps its own terrain image and publication tracks both assets',()=>{
+test('each level keeps its original and restored terrain images as publication dependencies',()=>{
  const p=valid(),first=p.levels[0],second=p.levels[1];
  first.terrainImage='library://terrains/jardin.png';second.terrainImage='library://terrains/riviere.webp';
+ first.restoredTerrainImage='library://terrains/jardin-restaure.png';
  assert.equal(errors(p).length,0);
- assert.deepEqual(presentationAssets(p).filter(ref=>ref.startsWith('library://terrains/')).sort(),['library://terrains/jardin.png','library://terrains/riviere.webp']);
+ assert.deepEqual(presentationAssets(p).filter(ref=>ref.startsWith('library://terrains/')).sort(),['library://terrains/jardin-restaure.png','library://terrains/jardin.png','library://terrains/riviere.webp']);
  const copy=cloneLevel(first);assert.equal(copy.terrainImage,first.terrainImage);
+ assert.equal(copy.restoredTerrainImage,first.restoredTerrainImage);
  copy.terrainImage='library://terrains/copie.jpg';assert.equal(first.terrainImage,'library://terrains/jardin.png');
  assert.equal(parseGameProject(p).levels[1].terrainImage,second.terrainImage);
+ first.restoredTerrainImage='library://terrains/invalid.svg';assert.ok(errors(p).length>0);
+ delete first.restoredTerrainImage;
  first.terrainImage='library://terrains/invalid.svg';assert.ok(errors(p).length>0);
 });
 test('a protected cell is authored, validated, duplicated and published as an image dependency',()=>{
@@ -147,9 +162,6 @@ test('publisher validates before writing',()=>fixture(async root=>{await game(ro
 test('publisher refuses destination symlinks',t=>fixture(async root=>{await game(root);await writeFile(path.join(root,'keep.json'),'untouched');try{await symlink(path.join(root,'keep.json'),path.join(root,'content/design/game_content.json'));}catch(error){if(process.platform==='win32'&&['EPERM','EACCES'].includes((error as NodeJS.ErrnoException).code??'')){t.skip('Création de liens symboliques non autorisée sur cet hôte Windows.');return;}throw error;}await assert.rejects(publishGameProject(fixturePresentation(valid(),'library://pixel.png'),root),/non régulière/);assert.equal(await readFile(path.join(root,'keep.json'),'utf8'),'untouched');}));
 test('publisher does not copy or modify cinematics or images',()=>fixture(async root=>{await game(root);await writeFile(path.join(root,'image.png'),'KEEP');await mkdir(path.join(root,'content/cinematics'));await writeFile(path.join(root,'content/cinematics/scene.json'),'KEEP');await publishGameProject(fixturePresentation(valid(),'library://pixel.png'),root);assert.equal(await readFile(path.join(root,'image.png'),'utf8'),'KEEP');assert.equal(await readFile(path.join(root,'content/cinematics/scene.json'),'utf8'),'KEEP');}));
 
-test('mid-scene stays on its wave when a preceding wave is inserted',()=>{const l=valid().levels[0];l.midWave=2;const w=cloneLevel(l).waves[0];const result=replaceWaves(l,[w,...l.waves]);assert.equal(result.midWave,3);assert.equal(l.midWave,2);});
-test('mid-scene stays on its wave when a preceding wave is removed',()=>{const l=valid().levels[0];l.midWave=2;assert.equal(replaceWaves(l,l.waves.slice(1)).midWave,1);});
-test('removing the mid-scene wave disables the trigger instead of attaching it elsewhere',()=>{const l=valid().levels[0];l.midWave=1;assert.equal(replaceWaves(l,l.waves.slice(1)).midWave,0);l.midWave=0;assert.equal(replaceWaves(l,l.waves).midWave,0);});
 test('negative source damage is clamped exactly as in Godot',()=>{const t={armor:0,resistances:{physical:0,piercing:0,toxic:0}};for(const k of ['physical','piercing','toxic','pure'] as const)assert.equal(damageAfterProtection(-10,k,t),0);});
 
 test('empty roster and temporary empty name remain recoverable but not publishable',()=>fixture(async root=>{const d=new GameDocuments(root),p=valid();p.title='';p.balance.plants[0].name='';p.levels[0].allowedPlants=[];await d.recover(p);assert.deepEqual((await new GameDocuments(root).bootstrap()).recovery,p);assert.throws(()=>parseGameProject(p));}));

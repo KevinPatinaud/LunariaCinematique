@@ -1,0 +1,251 @@
+.studio-root > .studio-modebar {
+  flex-wrap: wrap;
+  min-height: 46px;
+  height: auto;
+  flex-shrink: 0;
+  gap: 6px !important;
+  position: relative;
+  z-index: 30;
+  padding-block: 7px !important;
+}
+.project-history-actions {
+  display: flex;
+  gap: 3px;
+  margin-left: 12px;
+  border-left: 1px solid var(--border, #3e503a);
+  padding-left: 12px;
+}
+.project-history-actions button:first-child,
+.project-history-actions button:nth-child(2) {
+  min-width: 30px;
+  font-size: 20px;
+  line-height: 1;
+}
+.studio-modebar .project-history-actions button {
+  padding: 7px 9px;
+}
+.studio-modebar .project-history-actions button:first-child,
+.studio-modebar .project-history-actions button:nth-child(2) {
+  padding: 5px 7px;
+}
+.studio-project-state {
+  min-width: 130px;
+  max-width: 330px;
+  flex: 1;
+  margin-left: auto !important;
+}
+.studio-project-state small {
+  display: block !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.studio-project-state small > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.studio-project-state .project-draft-status {
+  color: #b8cda4;
+  font-size: 9px;
+}
+.studio-save {
+  white-space: nowrap;
+}
+.project-file-actions {
+  position: relative;
+}
+.project-file-actions > button {
+  font-size: 12px;
+  min-width: 58px;
+}
+.project-file-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 320px;
+  max-width: 90vw;
+  background: #202f22;
+  border: 1px solid #61784c;
+  border-radius: 8px;
+  padding: 7px;
+  box-shadow: 0 10px 30px #0009;
+  z-index: 42;
+  display: grid;
+  gap: 3px;
+}
+.project-file-menu button {
+  text-align: left;
+  padding: 10px !important;
+  white-space: normal;
+}
+.project-menu-dismiss {
+  position: fixed;
+  inset: 0;
+  border: 0 !important;
+  background: transparent !important;
+  cursor: default;
+  z-index: 40;
+}
+.project-history-list {
+  max-height: 52vh;
+  overflow: auto;
+  display: grid;
+  gap: 6px;
+  margin-block: 20px;
+}
+.project-history-list > div {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  background: #1d2b20;
+  border: 1px solid #3d5038;
+  border-radius: 6px;
+}
+.project-history-list > div.current {
+  border-color: #9bac70;
+}
+.project-history-list span {
+  flex: 1;
+  display: grid;
+  gap: 5px;
+}
+.project-history-list small,
+.project-session-note {
+  opacity: 0.7;
+  font-size: 12px;
+}
+.project-files-list {
+  display: grid;
+  gap: 8px;
+  max-height: 50vh;
+  overflow: auto;
+  margin-block: 16px;
+}
+.project-files-list button {
+  display: grid;
+  text-align: left;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid #43583c;
+  border-radius: 6px;
+  background: #1e2e21;
+  color: inherit;
+}
+.project-files-list small {
+  overflow-wrap: anywhere;
+  opacity: 0.7;
+}
+.project-file-search {
+  width: 100%;
+  padding: 10px;
+}
+.project-conflict-path {
+  font-family: monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  opacity: 0.7;
+}
+.project-conflict-list {
+  max-height: 48vh;
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+}
+.project-conflict-list fieldset {
+  border: 1px solid #586b49;
+  border-radius: 6px;
+}
+.project-conflict-list legend {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.project-conflict-list fieldset > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.project-conflict-list label {
+  min-width: 0;
+}
+.project-conflict-list label > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+.project-conflict-list pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 10px;
+  background: #101b14;
+}
+.project-merge-ok {
+  padding: 12px;
+  background: #304428;
+  border-radius: 6px;
+}
+.project-conflict-list input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  accent-color: #b5c99f;
+}
+.studio-dialog:has(.project-conflict-list) > footer,
+.studio-dialog:has(.project-history-list) > footer,
+.studio-dialog:has(.project-files-list) > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.project-recovery {
+  flex: none;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  display: flex;
+  gap: 12px;
+  padding: 10px 18px !important;
+  align-items: center;
+}
+.project-recovery span {
+  flex: 1;
+}
+@media (max-width: 1100px) {
+  .studio-modebar > b {
+    display: none;
+  }
+  .project-history-actions {
+    margin-left: 0;
+    padding-left: 6px;
+  }
+  .studio-project-state {
+    max-width: 220px;
+  }
+}
+@media (max-width: 780px) {
+  .studio-project-state {
+    order: 2;
+    max-width: none;
+    flex-basis: 50%;
+  }
+  .studio-save {
+    order: 3;
+  }
+  .project-file-actions {
+    order: 4;
+  }
+  .project-recovery {
+    flex-wrap: wrap;
+  }
+  .project-recovery span {
+    flex-basis: 100%;
+  }
+}

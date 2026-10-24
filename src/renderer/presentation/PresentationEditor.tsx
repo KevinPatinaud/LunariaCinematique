@@ -1,156 +1,1773 @@
-import {VfxGlyph} from './CuePrimitives.js';
-import {gameAPI} from '../game/bridge.js';
-import React,{useEffect,useRef,useState} from 'react';
-import type {Asset} from '../../shared/model.js';
-import type {GameProject} from '../../shared/game/types.js';
-import {enemyChoices,newId} from '../../shared/game/types.js';
-import {DEFAULT_PRESENTATION,newAnimation} from '../../shared/presentation/defaults.js';
-import {animationUsages,duration} from '../../shared/presentation/runtime.js';
-import {animationOwnerId} from '../../shared/presentation/ownership.js';
-import {BASE_SLOTS,MOTIONS,EMPTY_CUE,SLOT_LABELS,type PresentationSection,type AnimationDefinition,type AnimationFrame,type AnimationProfile,type SoundDefinition,type VfxDefinition,type EventCue} from '../../shared/presentation/types.js';
-import {AnimationPreview,useImageSize} from './AnimationPreview.js';
-import {ImagePicker,ImagePreview} from './ImagePicker.js';
-import {detectSheetGrid,sheetGrid,type SheetGrid} from './sheetGrid.js';
-import {Choose,AssetChoice,CueFields} from './PresentationFields.js';
-import {Num} from '../game/BalanceEditor.js';
-import {api} from '../browserBridge.js';
-import './presentation.css';
-const TITLES={animations:'Animations communes',profiles:'Profils avancés',audio:'Sons',vfx:'Effets visuels'};
-const SECTION_UI={
- animations:{icon:'▶',create:'+ Animation commune',hint:'Ces mouvements sont réutilisables par tous. Les animations propres à un personnage se règlent sur sa fiche.'},
- profiles:{icon:'♟',create:'+ Nouveau profil',hint:'Associe les animations aux actions d’une plante ou d’un ennemi.'},
- audio:{icon:'♪',create:'+ Nouveau son',hint:'Prépare les sons utilisés par les attaques et les personnages.'},
- vfx:{icon:'✦',create:'+ Nouvel effet visuel',hint:'Crée les impacts, traînées, halos et particules.'}
+import { VfxGlyph } from "./CuePrimitives.js";
+import { gameAPI } from "../game/bridge.js";
+import React, { useEffect, useState } from "react";
+import type { Asset } from "../../shared/model.js";
+import type { GameProject } from "../../shared/game/types.js";
+import { enemyChoices, newId } from "../../shared/game/types.js";
+import { newAnimation } from "../../shared/presentation/defaults.js";
+import {
+  animationUsages,
+  duration,
+} from "../../shared/presentation/runtime.js";
+import { animationOwnerId } from "../../shared/presentation/ownership.js";
+import {
+  BASE_SLOTS,
+  MOTIONS,
+  EMPTY_CUE,
+  SLOT_LABELS,
+  type PresentationSection,
+  type AnimationDefinition,
+  type AnimationFrame,
+  type AnimationProfile,
+  type SoundDefinition,
+  type VfxDefinition,
+  type EventCue,
+} from "../../shared/presentation/types.js";
+import { AnimationPreview, useImageSize } from "./AnimationPreview.js";
+import { ImagePicker, ImagePreview } from "./ImagePicker.js";
+import { detectSheetGrid, sheetGrid, type SheetGrid } from "./sheetGrid.js";
+import { replaceAnimationSheet } from "../../shared/presentation/sheetReplacement.js";
+import { Choose, AssetChoice, CueFields } from "./PresentationFields.js";
+import { Num } from "../game/CombatFields.js";
+import { api } from "../browserBridge.js";
+import { SoundPreview } from "./SoundPreview.js";
+import "./presentation.css";
+const TITLES = {
+  animations: "Animations communes",
+  profiles: "Profils avancés",
+  audio: "Sons",
+  vfx: "Effets visuels",
+};
+const SECTION_UI = {
+  animations: {
+    icon: "▶",
+    create: "+ Animation commune",
+    hint: "Ces mouvements sont réutilisables par tous. Les animations propres à un personnage se règlent sur sa fiche.",
+  },
+  profiles: {
+    icon: "♟",
+    create: "+ Nouveau profil",
+    hint: "Associe les animations aux actions d’une plante ou d’un ennemi.",
+  },
+  audio: {
+    icon: "♪",
+    create: "+ Nouveau son",
+    hint: "Prépare les sons utilisés par les attaques et les personnages.",
+  },
+  vfx: {
+    icon: "✦",
+    create: "+ Nouvel effet visuel",
+    hint: "Crée les impacts, traînées, halos et particules.",
+  },
 } as const;
-const MOTION_LABELS:Record<string,string>={none:'Aucun mouvement',breath:'Respiration',sway:'Balancement',bounce:'Rebond',shake:'Tremblement',recoil:'Recul',spin:'Rotation',pulse:'Pulsation',fade_in:'Apparition',fade_out:'Disparition'};
-const MARKER_LABELS={release:'Impact de l’attaque',sound:'Jouer un son',vfx:'Afficher un effet visuel'} as const;
-const ATTACH_LABELS={center:'Centre',feet:'Pieds',head:'Tête',launch:'Point de tir'} as const;
-export type Change=(edit:(p:GameProject)=>void,key?:string,label?:string)=>void;
-interface Props{project:GameProject;section:PresentationSection;id:string;select:(id:string)=>void;assets:Asset[];change:Change;report:(s:string)=>void;run:(fn:()=>Promise<void>)=>Promise<void>;openAnimation:(id:string)=>void;externalUsages?:Record<string,string[]>}
-export function PresentationEditor({project,section,id,select,assets,change,report,run,openAnimation,externalUsages={}}:Props){
- const [query,setQuery]=useState(''),c=project.presentation!,list=section==='animations'?c.animations.filter(animation=>!animationOwnerId(project,animation)):c[section],item=list.find(x=>x.id===id)??list[0];
- const [filmUses,setFilmUses]=useState<{references:Record<string,string[]>;errors:string[]}>({references:{},errors:[]}),[checking,setChecking]=useState(false);
- const refreshUses=async()=>{setChecking(true);try{setFilmUses(await gameAPI.presentationUsages(project));}catch(e){setFilmUses({references:{},errors:[String(e)]});}finally{setChecking(false);}};
- const filmKey=JSON.stringify(project.campaign?.cinematics??[]);
- useEffect(()=>{let live=true;setChecking(true);void gameAPI.presentationUsages(project).then(r=>{if(live)setFilmUses(r);},e=>{if(live)setFilmUses({references:{},errors:[String(e)]});}).finally(()=>{if(live)setChecking(false);});return()=>{live=false;};},[project.id,filmKey]);
- const refs=item?[...animationUsages(project,section,item.id),...(externalUsages[item.id]??[]),...(filmUses.references[item.id]??[])]:[];
- const patch=(data:Record<string,unknown>,key='')=>item&&change(p=>Object.assign(p.presentation![section].find(x=>x.id===item.id)!,data),`${item.id}:${key}`,'Modifier '+TITLES[section]);
- function create(){let value:AnimationDefinition|AnimationProfile|SoundDefinition|VfxDefinition;if(section==='animations')value={...newAnimation(),ownerSpeciesId:''};else if(section==='profiles')value={id:newId('profile'),name:'Nouveau profil',slots:[],events:[]};else if(section==='audio'){const asset=assets.find(x=>/\.(wav|ogg|mp3)$/i.test(x.path));if(!asset){report('Relie la bibliothèque contenant les sons dans le mode Cinématiques. Aucun fichier audio n’a été inventé.');return;}value={id:newId('sound'),name:'Nouveau son',asset:asset.ref,bus:'sfx',volume:.6,loop:false,pitchVariation:0,maxInstances:4};}else value={id:newId('vfx'),name:'Nouvel effet visuel',preset:'impact',duration:.35,size:32,color:'#b0db90',intensity:.7,quantity:8,asset:'',attach:'center',maxInstances:12};change(p=>(p.presentation![section] as typeof list).push(value as never),'','Créer '+TITLES[section]);select(value.id);}
- function duplicate(){if(!item)return;const value=structuredClone(item);value.id=newId(section);value.name=(item.name+' — copie').slice(0,160);if(section==='animations')(value as AnimationDefinition).ownerSpeciesId='';change(p=>(p.presentation![section] as typeof list).push(value as never),'','Dupliquer '+item.name);select(value.id);}
- async function remove(){if(!item)return;if(refs.length){report('Suppression impossible : '+refs.join(', '));return;}await run(async()=>{const fresh=await gameAPI.presentationUsages(project);setFilmUses(fresh);if(fresh.errors.length)throw Error('Suppression bloquée : les usages des films liés ne peuvent pas être vérifiés. '+fresh.errors.join('; '));if((fresh.references[item.id]??[]).length)throw Error('Cette animation est utilisée par '+fresh.references[item.id].join(', '));if(!await api.confirmDelete(item.name))return;change(p=>{const current=animationUsages(p,section,item.id);if(current.length)throw Error('La définition est encore utilisée.');(p.presentation![section] as typeof list).splice(p.presentation![section].findIndex(x=>x.id===item.id),1);},'','Supprimer '+item.name);});}
- const meta=SECTION_UI[section];
- return <div className="gd-balance lp-editor">
-  <aside className="gd-catalog lp-catalog">
-   <div className="lp-catalog-heading"><span aria-hidden="true">{meta.icon}</span><div><b>{TITLES[section]}</b><small>{list.length} élément{list.length>1?'s':''}</small></div></div>
-   <input aria-label="Rechercher une présentation" placeholder={'Rechercher dans '+TITLES[section].toLocaleLowerCase()+'…'} value={query} onChange={e=>setQuery(e.target.value)}/>
-   <button className="gd-primary" onClick={create}>{meta.create}</button>
-   <div className="lp-catalog-items">{list.filter(x=>(x.name+' '+x.id).toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(x=><button key={x.id} className={x.id===item?.id?'selected':''} onClick={()=>select(x.id)}><span className="lp-catalog-icon" aria-hidden="true">{meta.icon}</span><span><b>{x.name}</b><small>{section==='animations'&&'frames' in x?(x.kind==='procedural'?'Mouvement du personnage':`${x.frames.length} image${x.frames.length>1?'s':''}`):section==='profiles'&&'slots' in x?`${x.slots.length} action${x.slots.length>1?'s':''}`:section==='audio'&&'bus' in x?x.bus:section==='vfx'&&'preset' in x?x.preset:''}</small></span></button>)}</div>
-  </aside>
-  <main className="gd-scroll gd-balance-form lp-editor-main" key={item?.id??section}>
-   {item?<>
-    <header className="lp-editor-heading"><div><div className="gd-kicker">ANIMATIONS DE COMBAT · {TITLES[section].toLocaleUpperCase()}</div><h1>{item.name}</h1><p>{meta.hint}</p></div><div className="gd-inline"><button onClick={duplicate}>Dupliquer</button><button disabled={checking||filmUses.errors.length>0||refs.length>0||(section==='profiles'&&c.profiles.length===1)} onClick={()=>void remove()}>Supprimer</button></div></header>
-    <section className="lp-identity"><label className="gd-field"><span>Nom affiché dans le Studio</span><input aria-label="Nom de la présentation" value={item.name} maxLength={160} onChange={e=>patch({name:e.target.value},'name')}/></label><details className="lp-technical"><summary>Informations techniques et utilisations <b>{refs.length}</b></summary><code>{item.id}</code>{refs.length?<div className="lp-reference-list">{refs.map((r,i)=><span key={i}>{r}</span>)}</div>:<p>Cet élément n’est encore utilisé nulle part.</p>}<button disabled={checking} onClick={()=>void refreshUses()}>Vérifier les films liés</button>{filmUses.errors.map((e,i)=><p key={'error'+i} role="alert">{e} — suppression bloquée.</p>)}</details></section>
-    {section==='animations'?<AnimationFields value={item as AnimationDefinition} project={project} assets={assets} patch={patch}/>:section==='profiles'?<ProfileFields value={item as AnimationProfile} project={project} assets={assets} patch={patch} openAnimation={openAnimation}/>:section==='audio'?<AudioFields value={item as SoundDefinition} assets={assets} patch={patch}/>:<VfxFields value={item as VfxDefinition} assets={assets} patch={patch}/>}
-   </>:<div className="lp-empty"><span aria-hidden="true">{meta.icon}</span><h1>{TITLES[section]}</h1><p>Ce catalogue est vide. Commence par créer un premier élément.</p><button className="gd-primary" onClick={create}>{meta.create}</button></div>}
-  </main>
- </div>;
+const MOTION_LABELS: Record<string, string> = {
+  roll: "Roulement mécanique",
+  press: "Poussée mécanique",
+  walk: "Marche articulée",
+  none: "Aucun mouvement",
+  breath: "Respiration",
+  sway: "Balancement",
+  bounce: "Rebond",
+  shake: "Tremblement",
+  recoil: "Recul",
+  spin: "Rotation",
+  pulse: "Pulsation",
+  fade_in: "Apparition",
+  fade_out: "Disparition",
+};
+const MARKER_LABELS = {
+  release: "Départ de l’attaque",
+  sound: "Jouer un son",
+  vfx: "Afficher un effet visuel",
+} as const;
+const ATTACH_LABELS = {
+  center: "Centre",
+  feet: "Pieds",
+  head: "Tête",
+  launch: "Point de tir",
+} as const;
+export type Change = (
+  edit: (p: GameProject) => void,
+  key?: string,
+  label?: string,
+) => void;
+interface Props {
+  project: GameProject;
+  section: PresentationSection;
+  id: string;
+  select: (id: string) => void;
+  assets: Asset[];
+  change: Change;
+  report: (s: string) => void;
+  run: (fn: () => Promise<void>) => Promise<void>;
+  openAnimation: (id: string) => void;
+  externalUsages?: Record<string, string[]>;
 }
-export function AnimationFields({value:a,project,assets,patch,previewSpeciesId}:{value:AnimationDefinition;project:GameProject;assets:Asset[];patch:(p:Record<string,unknown>,key?:string)=>void;previewSpeciesId?:string}){
- const existingSheet=a.frames.length>1&&a.frames.every(frame=>frame.asset===a.frames[0].asset&&frame.region)?a.frames[0].asset:'';
- type SheetFormat={atlas:string;grid:SheetGrid|null;manual:SheetGrid|null;status:'loading'|'saved'|'detected'|'uncertain'};
- const [frameIndex,setFrameIndex]=useState(0),[atlas,setAtlas]=useState<string>(existingSheet),[imageMode,setImageMode]=useState<'sheet'|'files'>(existingSheet?'sheet':'files'),[previewSpecies,setPreviewSpecies]=useState(previewSpeciesId??project.balance.plants[0].id),[fps,setFps]=useState(12),[advanced,setAdvanced]=useState(false);
- const [sheetFormat,setSheetFormat]=useState<SheetFormat>(()=>({atlas:existingSheet,grid:existingSheet?sheetGrid(a.frames):null,manual:null,status:existingSheet?'saved':'loading'}));
-  const selected=a.frames[frameIndex],all=[...project.balance.plants,...enemyChoices(project.balance.enemies,previewSpeciesId??previewSpecies)],visual=all.find(x=>x.id===previewSpecies)?.visual,atlasAsset=assets.find(x=>x.ref===atlas),atlasSize=useImageSize(atlasAsset?.url??'');
- useEffect(()=>{
-  if(!atlas){setSheetFormat({atlas:'',grid:null,manual:null,status:'loading'});return;}
-  if(atlas===existingSheet){setSheetFormat({atlas,grid:sheetGrid(a.frames),manual:null,status:'saved'});return;}
-  if(!atlasAsset?.url){setSheetFormat({atlas,grid:null,manual:null,status:'loading'});return;}
-  let live=true;
-  setSheetFormat({atlas,grid:null,manual:null,status:'loading'});
-  void detectSheetGrid(atlasAsset.url).then(grid=>{if(live)setSheetFormat({atlas,grid,manual:grid?null:{columns:1,rows:1},status:grid?'detected':'uncertain'});},()=>{if(live)setSheetFormat({atlas,grid:null,manual:{columns:1,rows:1},status:'uncertain'});});
-  return()=>{live=false;};
- },[atlas,atlasAsset?.url]);
- const activeFormat:SheetFormat=sheetFormat.atlas===atlas?sheetFormat:{atlas,grid:null,manual:null,status:'loading'};
- const grid=activeFormat.manual??activeFormat.grid,columns=grid?.columns??1,rows=grid?.rows??1;
- const updateFrame=(data:Record<string,unknown>)=>patch({frames:a.frames.map((f,i)=>i===frameIndex?{...f,...data}:f)},'frame'+frameIndex);
- const addImages=(refs:string[])=>{const images=refs.slice(0,512-a.frames.length);if(!images.length)return;patch({frames:[...a.frames,...images.map(asset=>({asset:asset as `library://${string}`,duration:1/fps}))]},'images');setFrameIndex(a.frames.length);};
- const sheetFrames=():AnimationFrame[]=>{if(!atlasSize||!atlas)return[];const frames:AnimationFrame[]=[];for(let y=0;y<rows;y++)for(let x=0;x<columns;x++){const left=Math.floor(x*atlasSize.width/columns),top=Math.floor(y*atlasSize.height/rows);frames.push({asset:atlas as `library://${string}`,duration:1/fps,region:{x:left,y:top,width:Math.floor((x+1)*atlasSize.width/columns)-left,height:Math.floor((y+1)*atlasSize.height/rows)-top}});}return frames;};
- const regions=atlasSize&&grid&&columns*rows<=512?sheetFrames():[];
- const move=(by:number)=>{const to=frameIndex+by;if(to<0||to>=a.frames.length)return;const frames=structuredClone(a.frames);[frames[frameIndex],frames[to]]=[frames[to],frames[frameIndex]];patch({frames});setFrameIndex(to);};
- const total=Math.max(.01,duration(a));
- const addMarker=(type:'release'|'sound'|'vfx')=>patch({markers:[...a.markers,{id:newId('marker'),type,at:total*.5,ref:'',attach:'launch'}]});
- return <>
-  <div className="lp-workflow" aria-label="Étapes de création de l’animation">
-   <span><b>1</b><strong>Mouvement</strong><small>Style et rythme</small></span>
-   <i aria-hidden="true">›</i>
-   <span><b>2</b><strong>Images</strong><small>{a.kind==='procedural'?'Sprite du personnage':`${a.frames.length} frame${a.frames.length>1?'s':''}`}</small></span>
-   <i aria-hidden="true">›</i>
-   <span><b>3</b><strong>Synchronisation</strong><small>{a.markers.length} repère{a.markers.length>1?'s':''}</small></span>
-   <button className={advanced?'active':''} aria-pressed={advanced} onClick={()=>setAdvanced(!advanced)}>{advanced?'Masquer':'Afficher'} les réglages avancés</button>
-  </div>
-
-  <div className="lp-animation-workspace">
-   <section className="lp-step-card">
-    <div className="lp-step-heading"><b>1</b><div><h2>Mouvement</h2><p>Choisis simplement l’allure générale. L’aperçu se met à jour immédiatement.</p></div></div>
-    <Choose label="Style de l’animation" value={a.kind} options={[{id:'procedural',name:'Mouvement simple du personnage'},{id:'frames',name:'Suite d’images'},{id:'combined',name:'Suite d’images + mouvement'}]} change={kind=>patch({kind,frames:kind==='procedural'?[]:a.frames})}/>
-    {previewSpeciesId?<p className="lp-owner-preview">Aperçu avec {all.find(species=>species.id===previewSpeciesId)?.name??previewSpeciesId}</p>:<Choose label="Personnage affiché dans l’aperçu" value={previewSpecies} options={all} change={setPreviewSpecies}/>}
-    <Choose label="Mouvement" value={a.motion.preset} options={MOTIONS.map(id=>({id,name:MOTION_LABELS[id]??id}))} change={preset=>patch({motion:{...a.motion,preset}})}/>
-    <div className="gd-form-grid"><Num label="Intensité du mouvement" value={a.motion.amplitude} max={5} change={amplitude=>patch({motion:{...a.motion,amplitude}})}/><Num label="Vitesse du mouvement (s)" value={a.motion.period} min={.05} max={120} change={period=>patch({motion:{...a.motion,period}})}/></div>
-    <label className="lp-check"><input type="checkbox" checked={a.loop} onChange={e=>patch({loop:e.target.checked})}/><span><b>Jouer en boucle</b><small>À utiliser surtout pour l’attente et le déplacement.</small></span></label>
-    {a.kind==='procedural'&&<Num label="Durée totale (s)" value={a.duration} min={.01} max={120} change={duration=>patch({duration})}/>}
-   </section>
-   <aside className="lp-preview-sticky"><div className="lp-preview-label"><span className="gd-kicker">APERÇU EN DIRECT</span><small>{total.toFixed(2)} s</small></div><AnimationPreview catalog={project.presentation} animation={a} visual={visual} assets={assets}/></aside>
-  </div>
-
-  {a.kind!=='procedural'&&<section className="lp-step-card lp-images-step">
-   <div className="lp-step-heading"><b>2</b><div><h2>Images</h2><p>Ajoute les poses dans l’ordre où elles doivent être jouées.</p></div></div>
-   <div className="lp-image-source-tabs" role="group" aria-label="Source des images"><button className={imageMode==='sheet'?'active':''} aria-pressed={imageMode==='sheet'} onClick={()=>setImageMode('sheet')}>Une planche de frames</button><button className={imageMode==='files'?'active':''} aria-pressed={imageMode==='files'} onClick={()=>setImageMode('files')}>Plusieurs images</button></div>
-   {imageMode==='sheet'?<div className="lp-sheet-layout">
-    <div className="lp-sheet-controls">
-     <ImagePicker label="Planche à découper" value={atlas?[atlas]:[]} assets={assets} change={refs=>setAtlas(refs[0]??'')} buttonLabel="Choisir ou importer une planche"/>
-      {atlas&&<div className="lp-sheet-format" role="status"><span>{activeFormat.status==='loading'?'Analyse du format de la planche…':activeFormat.status==='uncertain'?'Format non détecté : indique les colonnes et les lignes.':`${activeFormat.status==='saved'?'Format retrouvé':'Format détecté'} : ${activeFormat.grid!.columns} colonne${activeFormat.grid!.columns>1?'s':''} × ${activeFormat.grid!.rows} ligne${activeFormat.grid!.rows>1?'s':''}`}</span>{activeFormat.grid&&(activeFormat.manual?<button onClick={()=>setSheetFormat(current=>({...current,manual:null}))}>Utiliser le format détecté</button>:<button onClick={()=>setSheetFormat(current=>({...current,manual:{...current.grid!}}))}>Corriger manuellement</button>)}</div>}
-      {activeFormat.manual&&<div className="gd-form-grid"><Num label="Colonnes" value={columns} min={1} max={64} integer change={value=>setSheetFormat(current=>({...current,manual:{...current.manual!,columns:value}}))}/><Num label="Lignes" value={rows} min={1} max={64} integer change={value=>setSheetFormat(current=>({...current,manual:{...current.manual!,rows:value}}))}/></div>}
-      {atlasSize&&grid&&<p>{atlasSize.width} × {atlasSize.height} pixels · {columns*rows} frame{columns*rows>1?'s':''}</p>}
-      <button disabled={!atlasSize||!grid||columns*rows>512||columns>atlasSize.width||rows>atlasSize.height||a.frames.length+columns*rows>512} onClick={()=>{const frames=sheetFrames();patch({frames:[...a.frames,...frames]},'sheet');setFrameIndex(a.frames.length);}}>Ajouter les {columns*rows} frames</button>
+export function PresentationEditor({
+  project,
+  section,
+  id,
+  select,
+  assets,
+  change,
+  report,
+  run,
+  openAnimation,
+  externalUsages = {},
+}: Props) {
+  const [query, setQuery] = useState(""),
+    c = project.presentation!,
+    list =
+      section === "animations"
+        ? c.animations.filter(
+            (animation) => !animationOwnerId(project, animation),
+          )
+        : c[section],
+    item = list.find((x) => x.id === id) ?? list[0];
+  const [filmUses, setFilmUses] = useState<{
+      references: Record<string, string[]>;
+      errors: string[];
+    }>({ references: {}, errors: [] }),
+    [checking, setChecking] = useState(false);
+  const refreshUses = async () => {
+    setChecking(true);
+    try {
+      setFilmUses(await gameAPI.presentationUsages(project));
+    } catch (e) {
+      setFilmUses({ references: {}, errors: [String(e)] });
+    } finally {
+      setChecking(false);
+    }
+  };
+  const filmKey = JSON.stringify(project.campaign?.cinematics ?? []);
+  useEffect(() => {
+    let live = true;
+    setChecking(true);
+    void gameAPI
+      .presentationUsages(project)
+      .then(
+        (r) => {
+          if (live) setFilmUses(r);
+        },
+        (e) => {
+          if (live) setFilmUses({ references: {}, errors: [String(e)] });
+        },
+      )
+      .finally(() => {
+        if (live) setChecking(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [project.id, filmKey]);
+  const refs = item
+    ? [
+        ...animationUsages(project, section, item.id),
+        ...(externalUsages[item.id] ?? []),
+        ...(filmUses.references[item.id] ?? []),
+      ]
+    : [];
+  const patch = (data: Record<string, unknown>, key = "") =>
+    item &&
+    change(
+      (p) =>
+        Object.assign(
+          p.presentation![section].find((x) => x.id === item.id)!,
+          data,
+        ),
+      `${item.id}:${key}`,
+      "Modifier " + TITLES[section],
+    );
+  function create() {
+    let value:
+      | AnimationDefinition
+      | AnimationProfile
+      | SoundDefinition
+      | VfxDefinition;
+    if (section === "animations")
+      value = { ...newAnimation(), ownerSpeciesId: "" };
+    else if (section === "profiles")
+      value = {
+        id: newId("profile"),
+        name: "Nouveau profil",
+        slots: [],
+        events: [],
+      };
+    else if (section === "audio") {
+      const asset = assets.find((x) => /\.(wav|ogg|mp3)$/i.test(x.path));
+      if (!asset) {
+        report(
+          "Relie la bibliothèque contenant les sons dans le mode Cinématiques. Aucun fichier audio n’a été inventé.",
+        );
+        return;
+      }
+      value = {
+        id: newId("sound"),
+        name: "Nouveau son",
+        asset: asset.ref,
+        bus: "sfx",
+        volume: 0.6,
+        loop: false,
+        pitchVariation: 0,
+        maxInstances: 4,
+      };
+    } else
+      value = {
+        id: newId("vfx"),
+        name: "Nouvel effet visuel",
+        preset: "impact",
+        duration: 0.35,
+        size: 32,
+        color: "#b0db90",
+        intensity: 0.7,
+        quantity: 8,
+        asset: "",
+        attach: "center",
+        maxInstances: 12,
+      };
+    change(
+      (p) => (p.presentation![section] as typeof list).push(value as never),
+      "",
+      "Créer " + TITLES[section],
+    );
+    select(value.id);
+  }
+  function duplicate() {
+    if (!item) return;
+    const value = structuredClone(item);
+    value.id = newId(section);
+    value.name = (item.name + " — copie").slice(0, 160);
+    if (section === "animations")
+      (value as AnimationDefinition).ownerSpeciesId = "";
+    change(
+      (p) => (p.presentation![section] as typeof list).push(value as never),
+      "",
+      "Dupliquer " + item.name,
+    );
+    select(value.id);
+  }
+  async function remove() {
+    if (!item) return;
+    if (refs.length) {
+      report("Suppression impossible : " + refs.join(", "));
+      return;
+    }
+    await run(async () => {
+      const fresh = await gameAPI.presentationUsages(project);
+      setFilmUses(fresh);
+      if (fresh.errors.length)
+        throw Error(
+          "Suppression bloquée : les usages des films liés ne peuvent pas être vérifiés. " +
+            fresh.errors.join("; "),
+        );
+      if ((fresh.references[item.id] ?? []).length)
+        throw Error(
+          "Cette animation est utilisée par " +
+            fresh.references[item.id].join(", "),
+        );
+      if (!(await api.confirmDelete(item.name))) return;
+      change(
+        (p) => {
+          const current = animationUsages(p, section, item.id);
+          if (current.length) throw Error("La définition est encore utilisée.");
+          (p.presentation![section] as typeof list).splice(
+            p.presentation![section].findIndex((x) => x.id === item.id),
+            1,
+          );
+        },
+        "",
+        "Supprimer " + item.name,
+      );
+    });
+  }
+  const meta = SECTION_UI[section];
+  return (
+    <div className="gd-balance lp-editor">
+      <aside className="gd-catalog lp-catalog">
+        <div className="lp-catalog-heading">
+          <span aria-hidden="true">{meta.icon}</span>
+          <div>
+            <b>{TITLES[section]}</b>
+            <small>
+              {list.length} élément{list.length > 1 ? "s" : ""}
+            </small>
+          </div>
+        </div>
+        <input
+          aria-label="Rechercher une présentation"
+          placeholder={
+            "Rechercher dans " + TITLES[section].toLocaleLowerCase() + "…"
+          }
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button className="gd-primary" onClick={create}>
+          {meta.create}
+        </button>
+        <div className="lp-catalog-items">
+          {list
+            .filter((x) =>
+              (x.name + " " + x.id)
+                .toLocaleLowerCase()
+                .includes(query.toLocaleLowerCase()),
+            )
+            .map((x) => (
+              <button
+                key={x.id}
+                className={x.id === item?.id ? "selected" : ""}
+                onClick={() => select(x.id)}
+              >
+                <span className="lp-catalog-icon" aria-hidden="true">
+                  {meta.icon}
+                </span>
+                <span>
+                  <b>{x.name}</b>
+                  <small>
+                    {section === "animations" && "frames" in x
+                      ? x.kind === "procedural"
+                        ? "Mouvement du personnage"
+                        : `${x.frames.length} image${x.frames.length > 1 ? "s" : ""}`
+                      : section === "profiles" && "slots" in x
+                        ? `${x.slots.length} action${x.slots.length > 1 ? "s" : ""}`
+                        : section === "audio" && "bus" in x
+                          ? x.bus
+                          : section === "vfx" && "preset" in x
+                            ? x.preset
+                            : ""}
+                  </small>
+                </span>
+              </button>
+            ))}
+        </div>
+      </aside>
+      <main
+        className="gd-scroll gd-balance-form lp-editor-main"
+        key={item?.id ?? section}
+      >
+        {item ? (
+          <>
+            <header className="lp-editor-heading">
+              <div>
+                <div className="gd-kicker">
+                  ANIMATIONS DE COMBAT · {TITLES[section].toLocaleUpperCase()}
+                </div>
+                <h1>{item.name}</h1>
+                <p>{meta.hint}</p>
+              </div>
+              <div className="gd-inline">
+                <button onClick={duplicate}>Dupliquer</button>
+                <button
+                  disabled={
+                    checking ||
+                    filmUses.errors.length > 0 ||
+                    refs.length > 0 ||
+                    (section === "profiles" && c.profiles.length === 1)
+                  }
+                  onClick={() => void remove()}
+                >
+                  Supprimer
+                </button>
+              </div>
+            </header>
+            <section className="lp-identity">
+              <label className="gd-field">
+                <span>Nom affiché dans le Studio</span>
+                <input
+                  aria-label="Nom de la présentation"
+                  value={item.name}
+                  maxLength={160}
+                  onChange={(e) => patch({ name: e.target.value }, "name")}
+                />
+              </label>
+              <details className="lp-technical">
+                <summary>
+                  Informations techniques et utilisations <b>{refs.length}</b>
+                </summary>
+                <code>{item.id}</code>
+                {refs.length ? (
+                  <div className="lp-reference-list">
+                    {refs.map((r, i) => (
+                      <span key={i}>{r}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p>Cet élément n’est encore utilisé nulle part.</p>
+                )}
+                <button disabled={checking} onClick={() => void refreshUses()}>
+                  Vérifier les films liés
+                </button>
+                {filmUses.errors.map((e, i) => (
+                  <p key={"error" + i} role="alert">
+                    {e} — suppression bloquée.
+                  </p>
+                ))}
+              </details>
+            </section>
+            {section === "animations" ? (
+              <AnimationFields
+                value={item as AnimationDefinition}
+                project={project}
+                assets={assets}
+                patch={patch}
+              />
+            ) : section === "profiles" ? (
+              <ProfileFields
+                value={item as AnimationProfile}
+                project={project}
+                assets={assets}
+                patch={patch}
+                openAnimation={openAnimation}
+              />
+            ) : section === "audio" ? (
+              <AudioFields
+                value={item as SoundDefinition}
+                assets={assets}
+                patch={patch}
+              />
+            ) : (
+              <VfxFields
+                value={item as VfxDefinition}
+                assets={assets}
+                patch={patch}
+              />
+            )}
+          </>
+        ) : (
+          <div className="lp-empty">
+            <span aria-hidden="true">{meta.icon}</span>
+            <h1>{TITLES[section]}</h1>
+            <p>Ce catalogue est vide. Commence par créer un premier élément.</p>
+            <button className="gd-primary" onClick={create}>
+              {meta.create}
+            </button>
+          </div>
+        )}
+      </main>
     </div>
-    {regions.length>0&&<div className="lp-sheet-preview" aria-label="Aperçu des découpes" style={{gridTemplateColumns:`repeat(${Math.min(columns,4)},minmax(0,1fr))`}}>{regions.slice(0,16).map((frame,i)=><div key={i}><ImagePreview asset={atlasAsset} region={frame.region}/><small>{i+1}</small></div>)}</div>}
-   </div>:<ImagePicker label="Images séparées dans l’ordre" value={[]} assets={assets} multiple change={addImages} buttonLabel="Sélectionner ou importer plusieurs images"/>}
-   <div className="lp-image-tools"><Num label="Vitesse globale (images/s)" value={fps} min={1} max={100} change={setFps}/><button disabled={!a.frames.length} onClick={()=>patch({frames:a.frames.map(f=>({...f,duration:1/fps}))})}>Appliquer la vitesse</button></div>
-   {a.frames.length?<div className="lp-frame-strip" aria-label="Images de l’animation">{a.frames.map((f,i)=><button key={i} className={i===frameIndex?'selected':''} onClick={()=>setFrameIndex(i)}><span><ImagePreview asset={assets.find(asset=>asset.ref===f.asset)} region={f.region}/></span><b>{i+1}</b><small>{Math.round(f.duration*1000)} ms</small></button>)}</div>:<div className="lp-inline-empty">Ajoute une première image pour construire la séquence.</div>}
-   {selected&&<div className="lp-frame-editor"><div className="lp-frame-editor-heading"><div><span className="gd-kicker">IMAGE {frameIndex+1} SUR {a.frames.length}</span><strong>Réglage de la pose sélectionnée</strong></div><div className="gd-inline"><button aria-label="Déplacer l’image vers la gauche" disabled={frameIndex===0} onClick={()=>move(-1)}>←</button><button aria-label="Déplacer l’image vers la droite" disabled={frameIndex>=a.frames.length-1} onClick={()=>move(1)}>→</button><button onClick={()=>{patch({frames:a.frames.filter((_,i)=>i!==frameIndex)});setFrameIndex(Math.max(0,frameIndex-1));}}>Retirer</button></div></div><div className="gd-form-grid"><ImagePicker label="Image de cette frame" value={[selected.asset]} assets={assets} region={selected.region} change={refs=>{if(refs[0])updateFrame({asset:refs[0],region:undefined});}}/><Num label="Temps d’affichage (s)" value={selected.duration} min={.01} max={60} change={duration=>updateFrame({duration})}/></div>
-    {advanced&&<details className="lp-advanced-panel" open><summary>Découpe et point d’ancrage de cette image</summary><label className="lp-check"><input type="checkbox" checked={!!selected.region} onChange={e=>updateFrame({region:e.target.checked?{x:0,y:0,width:64,height:64}:undefined})}/><span><b>Découper une zone de la planche</b><small>L’image originale n’est jamais modifiée.</small></span></label>{selected.region&&<div className="gd-form-grid">{(['x','y','width','height'] as const).map(k=><Num key={k} label={{x:'Décalage horizontal',y:'Décalage vertical',width:'Largeur',height:'Hauteur'}[k]} value={selected.region![k]} min={k==='width'||k==='height'?1:0} max={32768} integer change={v=>updateFrame({region:{...selected.region,[k]:v}})}/>)}</div>}<label className="lp-check"><input type="checkbox" checked={!!selected.anchor} onChange={e=>updateFrame({anchor:e.target.checked?{...a.anchor}:undefined})}/><span><b>Position des pieds propre à cette image</b><small>Utile seulement si le personnage saute entre les poses.</small></span></label>{selected.anchor&&<div className="gd-form-grid"><Num label="Pieds — horizontal" value={selected.anchor.x} min={-2} max={3} change={x=>updateFrame({anchor:{...selected.anchor!,x}})}/><Num label="Pieds — vertical" value={selected.anchor.y} min={-2} max={3} change={y=>updateFrame({anchor:{...selected.anchor!,y}})}/></div>}</details>}
-   </div>}
-  </section>}
+  );
+}
+export function AnimationFields({
+  value: a,
+  project,
+  assets,
+  patch,
+  previewSpeciesId,
+}: {
+  value: AnimationDefinition;
+  project: GameProject;
+  assets: Asset[];
+  patch: (p: Record<string, unknown>, key?: string) => void;
+  previewSpeciesId?: string;
+}) {
+  const existingSheet =
+    a.frames.length > 1 &&
+    a.frames.every((frame) => frame.asset === a.frames[0].asset && frame.region)
+      ? a.frames[0].asset
+      : "";
+  type SheetFormat = {
+    atlas: string;
+    grid: SheetGrid | null;
+    manual: SheetGrid | null;
+    status: "loading" | "saved" | "detected" | "uncertain";
+  };
+  const [frameIndex, setFrameIndex] = useState(0),
+    [atlas, setAtlas] = useState<string>(existingSheet),
+    [imageMode, setImageMode] = useState<"sheet" | "files">(
+      existingSheet ? "sheet" : "files",
+    ),
+    [previewSpecies, setPreviewSpecies] = useState(
+      previewSpeciesId ?? project.balance.plants[0].id,
+    ),
+    [fps, setFps] = useState(12),
+    [advanced, setAdvanced] = useState(false);
+  const [sheetFormat, setSheetFormat] = useState<SheetFormat>(() => ({
+    atlas: existingSheet,
+    grid: existingSheet ? sheetGrid(a.frames) : null,
+    manual: null,
+    status: existingSheet ? "saved" : "loading",
+  }));
+  const selected = a.frames[frameIndex],
+    all = [
+      ...project.balance.plants,
+      ...enemyChoices(
+        project.balance.enemies,
+        previewSpeciesId ?? previewSpecies,
+      ),
+    ],
+    visual = all.find((x) => x.id === previewSpecies)?.visual,
+    atlasAsset = assets.find((x) => x.ref === atlas),
+    atlasSize = useImageSize(atlasAsset?.url ?? "");
+  useEffect(() => {
+    if (!atlas) {
+      setSheetFormat({
+        atlas: "",
+        grid: null,
+        manual: null,
+        status: "loading",
+      });
+      return;
+    }
+    if (atlas === existingSheet) {
+      setSheetFormat({
+        atlas,
+        grid: sheetGrid(a.frames),
+        manual: null,
+        status: "saved",
+      });
+      return;
+    }
+    if (!atlasAsset?.url) {
+      setSheetFormat({ atlas, grid: null, manual: null, status: "loading" });
+      return;
+    }
+    let live = true;
+    setSheetFormat({ atlas, grid: null, manual: null, status: "loading" });
+    void detectSheetGrid(atlasAsset.url).then(
+      (grid) => {
+        if (live)
+          setSheetFormat({
+            atlas,
+            grid,
+            manual: grid ? null : { columns: 1, rows: 1 },
+            status: grid ? "detected" : "uncertain",
+          });
+      },
+      () => {
+        if (live)
+          setSheetFormat({
+            atlas,
+            grid: null,
+            manual: { columns: 1, rows: 1 },
+            status: "uncertain",
+          });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [atlas, atlasAsset?.url]);
+  const activeFormat: SheetFormat =
+    sheetFormat.atlas === atlas
+      ? sheetFormat
+      : { atlas, grid: null, manual: null, status: "loading" };
+  const grid = activeFormat.manual ?? activeFormat.grid,
+    columns = grid?.columns ?? 1,
+    rows = grid?.rows ?? 1;
+  const updateFrame = (data: Record<string, unknown>) =>
+    patch(
+      {
+        frames: a.frames.map((f, i) =>
+          i === frameIndex ? { ...f, ...data } : f,
+        ),
+      },
+      "frame" + frameIndex,
+    );
+  const addImages = (refs: string[]) => {
+    const images = refs.slice(0, 512 - a.frames.length);
+    if (!images.length) return;
+    patch(
+      {
+        frames: [
+          ...a.frames,
+          ...images.map((asset) => ({
+            asset: asset as `library://${string}`,
+            duration: 1 / fps,
+          })),
+        ],
+      },
+      "images",
+    );
+    setFrameIndex(a.frames.length);
+  };
+  const sheetFrames = (): AnimationFrame[] => {
+    if (!atlasSize || !atlas) return [];
+    const frames: AnimationFrame[] = [];
+    for (let y = 0; y < rows; y++)
+      for (let x = 0; x < columns; x++) {
+        const left = Math.floor((x * atlasSize.width) / columns),
+          top = Math.floor((y * atlasSize.height) / rows);
+        frames.push({
+          asset: atlas as `library://${string}`,
+          duration: 1 / fps,
+          region: {
+            x: left,
+            y: top,
+            width: Math.floor(((x + 1) * atlasSize.width) / columns) - left,
+            height: Math.floor(((y + 1) * atlasSize.height) / rows) - top,
+          },
+        });
+      }
+    return frames;
+  };
+  const regions =
+    atlas === existingSheet
+      ? a.frames
+      : atlasSize && grid && columns * rows <= 512
+        ? sheetFrames()
+        : [];
+  const replacement =
+    atlasSize && atlas
+      ? replaceAnimationSheet(
+          a.frames,
+          atlas as `library://${string}`,
+          atlasSize,
+        )
+      : null;
+  const move = (by: number) => {
+    const to = frameIndex + by;
+    if (to < 0 || to >= a.frames.length) return;
+    const frames = structuredClone(a.frames);
+    [frames[frameIndex], frames[to]] = [frames[to], frames[frameIndex]];
+    patch({ frames });
+    setFrameIndex(to);
+  };
+  const total = Math.max(0.01, duration(a));
+  const addMarker = (type: "release" | "sound" | "vfx") =>
+    patch({
+      markers: [
+        ...a.markers,
+        {
+          id: newId("marker"),
+          type,
+          at: total * 0.5,
+          ref: "",
+          attach: "launch",
+        },
+      ],
+    });
+  return (
+    <>
+      <div
+        className="lp-workflow"
+        aria-label="Étapes de création de l’animation"
+      >
+        <span>
+          <b>1</b>
+          <strong>Mouvement</strong>
+          <small>Style et rythme</small>
+        </span>
+        <i aria-hidden="true">›</i>
+        <span>
+          <b>2</b>
+          <strong>Images</strong>
+          <small>
+            {a.kind === "procedural"
+              ? "Sprite du personnage"
+              : `${a.frames.length} frame${a.frames.length > 1 ? "s" : ""}`}
+          </small>
+        </span>
+        <i aria-hidden="true">›</i>
+        <span>
+          <b>3</b>
+          <strong>Synchronisation</strong>
+          <small>
+            {a.markers.length} repère{a.markers.length > 1 ? "s" : ""}
+          </small>
+        </span>
+        <button
+          className={advanced ? "active" : ""}
+          aria-pressed={advanced}
+          onClick={() => setAdvanced(!advanced)}
+        >
+          {advanced ? "Masquer" : "Afficher"} les réglages avancés
+        </button>
+      </div>
 
-  <section className="lp-step-card lp-sync-step">
-   <div className="lp-step-heading"><b>3</b><div><h2>Synchronisation</h2><p>Place le moment de l’impact, puis ajoute éventuellement un son ou un effet visuel.</p></div></div>
-   <div className="lp-quick-markers"><button disabled={a.markers.some(m=>m.type==='release')||a.markers.length>=64} onClick={()=>addMarker('release')}>+ Impact</button><button disabled={a.markers.length>=64} onClick={()=>addMarker('sound')}>+ Son</button><button disabled={a.markers.length>=64} onClick={()=>addMarker('vfx')}>+ Effet visuel</button></div>
-   {a.markers.length?<div className="lp-marker-list">{a.markers.map((m,i)=><article className={'lp-marker-card '+m.type} key={m.id}><header><span>{m.type==='release'?'●':m.type==='sound'?'♪':'✦'}</span><div><b>{MARKER_LABELS[m.type]}</b><small>à {m.at.toFixed(2)} seconde{m.at>=2?'s':''}</small></div><button aria-label={'Retirer '+MARKER_LABELS[m.type]} onClick={()=>patch({markers:a.markers.filter((_,j)=>j!==i)})}>×</button></header><input aria-label={'Moment de '+MARKER_LABELS[m.type]} type="range" min={0} max={total} step={.001} value={Math.min(m.at,total)} onChange={e=>patch({markers:a.markers.map((x,j)=>j===i?{...x,at:+e.target.value}:x)},m.id)}/><div className="gd-form-grid"><Num label="Moment précis (s)" value={m.at} min={0} max={total} change={at=>patch({markers:a.markers.map((x,j)=>j===i?{...x,at}:x)})}/>{m.type!=='release'&&<Choose label={m.type==='sound'?'Son à jouer':'Effet à afficher'} value={m.ref} options={m.type==='sound'?project.presentation!.audio:project.presentation!.vfx} empty change={ref=>patch({markers:a.markers.map((x,j)=>j===i?{...x,ref}:x)})}/>}</div>{advanced&&<Choose label="Position sur le personnage" value={m.attach} options={Object.entries(ATTACH_LABELS).map(([id,name])=>({id,name}))} change={attach=>patch({markers:a.markers.map((x,j)=>j===i?{...x,attach}:x)})}/>}</article>)}</div>:<div className="lp-inline-empty">Aucun repère. Pour une attaque, ajoute au minimum le moment de l’impact.</div>}
-  </section>
+      <div className="lp-animation-workspace">
+        <section className="lp-step-card">
+          <div className="lp-step-heading">
+            <b>1</b>
+            <div>
+              <h2>Mouvement</h2>
+              <p>
+                Choisis simplement l’allure générale. L’aperçu se met à jour
+                immédiatement.
+              </p>
+            </div>
+          </div>
+          <Choose
+            label="Style de l’animation"
+            value={a.kind}
+            options={[
+              { id: "procedural", name: "Mouvement simple du personnage" },
+              { id: "frames", name: "Suite d’images" },
+              { id: "combined", name: "Suite d’images + mouvement" },
+            ]}
+            change={(kind) =>
+              patch({ kind, frames: kind === "procedural" ? [] : a.frames })
+            }
+          />
+          {previewSpeciesId ? (
+            <p className="lp-owner-preview">
+              Aperçu avec{" "}
+              {all.find((species) => species.id === previewSpeciesId)?.name ??
+                previewSpeciesId}
+            </p>
+          ) : (
+            <Choose
+              label="Personnage affiché dans l’aperçu"
+              value={previewSpecies}
+              options={all}
+              change={setPreviewSpecies}
+            />
+          )}
+          <Choose
+            label="Mouvement"
+            value={a.motion.preset}
+            options={MOTIONS.map((id) => ({
+              id,
+              name: MOTION_LABELS[id] ?? id,
+            }))}
+            change={(preset) => patch({ motion: { ...a.motion, preset } })}
+          />
+          <div className="gd-form-grid">
+            <Num
+              label="Intensité du mouvement"
+              value={a.motion.amplitude}
+              max={5}
+              change={(amplitude) =>
+                patch({ motion: { ...a.motion, amplitude } })
+              }
+            />
+            <Num
+              label="Vitesse du mouvement (s)"
+              value={a.motion.period}
+              min={0.05}
+              max={120}
+              change={(period) => patch({ motion: { ...a.motion, period } })}
+            />
+          </div>
+          <label className="lp-check">
+            <input
+              type="checkbox"
+              checked={a.loop}
+              onChange={(e) => patch({ loop: e.target.checked })}
+            />
+            <span>
+              <b>Jouer en boucle</b>
+              <small>
+                À utiliser surtout pour l’attente et le déplacement.
+              </small>
+            </span>
+          </label>
+          {a.kind === "procedural" && (
+            <Num
+              label="Durée totale (s)"
+              value={a.duration}
+              min={0.01}
+              max={120}
+              change={(duration) => patch({ duration })}
+            />
+          )}
+        </section>
+        <aside className="lp-preview-sticky">
+          <div className="lp-preview-label">
+            <span className="gd-kicker">APERÇU EN DIRECT</span>
+            <small>{total.toFixed(2)} s</small>
+          </div>
+          <AnimationPreview
+            catalog={project.presentation}
+            animation={a}
+            visual={visual}
+            assets={assets}
+          />
+        </aside>
+      </div>
 
-  {advanced&&<details className="lp-advanced-panel lp-global-advanced" open><summary>Position, taille et points d’attache avancés</summary><div className="gd-form-grid"><Num label="Ancrage horizontal" value={a.anchor.x} min={-2} max={3} change={x=>patch({anchor:{...a.anchor,x}})}/><Num label="Ancrage vertical" value={a.anchor.y} min={-2} max={3} change={y=>patch({anchor:{...a.anchor,y}})}/>{(['x','y','rotation','scaleX','scaleY','opacity'] as const).map(k=><Num key={k} label={{x:'Décalage horizontal',y:'Décalage vertical',rotation:'Rotation',scaleX:'Échelle horizontale',scaleY:'Échelle verticale',opacity:'Opacité'}[k]} value={a.transform[k]} min={k==='opacity'?0:k.startsWith('scale')?.01:k==='rotation'?-720:-200} max={k==='opacity'?1:k.startsWith('scale')?5:k==='rotation'?720:200} change={v=>patch({transform:{...a.transform,[k]:v}})}/>)}</div><h3>Points d’attache</h3>{a.attachments.map((point,i)=><div className="lp-attachment-row" key={point.id}><b>{ATTACH_LABELS[point.id as keyof typeof ATTACH_LABELS]??point.id}</b><Num label="Horizontal" value={point.x} min={-2} max={3} change={x=>patch({attachments:a.attachments.map((q,j)=>j===i?{...q,x}:q)})}/><Num label="Vertical" value={point.y} min={-2} max={3} change={y=>patch({attachments:a.attachments.map((q,j)=>j===i?{...q,y}:q)})}/></div>)}</details>}
- </>;
+      {a.kind !== "procedural" && (
+        <section className="lp-step-card lp-images-step">
+          <div className="lp-step-heading">
+            <b>2</b>
+            <div>
+              <h2>Images</h2>
+              <p>
+                Une planche peut contenir toutes les poses d’une seule
+                animation. Leur ordre et leur durée se règlent ci-dessous.
+              </p>
+            </div>
+          </div>
+          <div
+            className="lp-image-source-tabs"
+            role="group"
+            aria-label="Source des images"
+          >
+            <button
+              className={imageMode === "sheet" ? "active" : ""}
+              aria-pressed={imageMode === "sheet"}
+              onClick={() => setImageMode("sheet")}
+            >
+              Une planche de frames
+            </button>
+            <button
+              className={imageMode === "files" ? "active" : ""}
+              aria-pressed={imageMode === "files"}
+              onClick={() => setImageMode("files")}
+            >
+              Plusieurs images
+            </button>
+          </div>
+          {imageMode === "sheet" ? (
+            <div className="lp-sheet-layout">
+              <div className="lp-sheet-controls">
+                <ImagePicker
+                  label="Planche à découper"
+                  value={atlas ? [atlas] : []}
+                  assets={assets}
+                  change={(refs) => setAtlas(refs[0] ?? "")}
+                  buttonLabel="Choisir ou importer une planche"
+                />
+                {existingSheet && (
+                  <p
+                    className="lp-sheet-current"
+                    aria-label="Planche utilisée par l’animation"
+                  >
+                    Planche utilisée :{" "}
+                    <strong>{existingSheet.split("/").at(-1)}</strong>
+                  </p>
+                )}
+                {atlas && existingSheet && atlas !== existingSheet && (
+                  <div className="lp-sheet-replacement">
+                    <button
+                      disabled={!replacement}
+                      onClick={() => {
+                        if (replacement) {
+                          patch({ frames: replacement }, "sheet");
+                          setSheetFormat({
+                            atlas,
+                            grid: sheetGrid(replacement),
+                            manual: null,
+                            status: "saved",
+                          });
+                        }
+                      }}
+                    >
+                      Remplacer la planche
+                    </button>
+                    <p>
+                      {replacement
+                        ? "Les poses, durées, ancrages et repères actuels seront conservés."
+                        : "Cette image ne contient pas toutes les découpes actuelles. Choisis une planche de dimensions compatibles."}
+                    </p>
+                  </div>
+                )}
+                {atlas && (
+                  <div className="lp-sheet-format" role="status">
+                    <span>
+                      {activeFormat.status === "loading"
+                        ? "Analyse du format de la planche…"
+                        : activeFormat.status === "uncertain"
+                          ? "Format non détecté : indique les colonnes et les lignes."
+                          : `${activeFormat.status === "saved" ? "Format retrouvé" : "Format détecté"} : ${activeFormat.grid!.columns} colonne${activeFormat.grid!.columns > 1 ? "s" : ""} × ${activeFormat.grid!.rows} ligne${activeFormat.grid!.rows > 1 ? "s" : ""}`}
+                    </span>
+                    {activeFormat.grid &&
+                      (activeFormat.manual ? (
+                        <button
+                          onClick={() =>
+                            setSheetFormat((current) => ({
+                              ...current,
+                              manual: null,
+                            }))
+                          }
+                        >
+                          Utiliser le format détecté
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            setSheetFormat((current) => ({
+                              ...current,
+                              manual: { ...current.grid! },
+                            }))
+                          }
+                        >
+                          Corriger manuellement
+                        </button>
+                      ))}
+                  </div>
+                )}
+                {activeFormat.manual && (
+                  <div className="gd-form-grid">
+                    <Num
+                      label="Colonnes"
+                      value={columns}
+                      min={1}
+                      max={64}
+                      integer
+                      change={(value) =>
+                        setSheetFormat((current) => ({
+                          ...current,
+                          manual: { ...current.manual!, columns: value },
+                        }))
+                      }
+                    />
+                    <Num
+                      label="Lignes"
+                      value={rows}
+                      min={1}
+                      max={64}
+                      integer
+                      change={(value) =>
+                        setSheetFormat((current) => ({
+                          ...current,
+                          manual: { ...current.manual!, rows: value },
+                        }))
+                      }
+                    />
+                  </div>
+                )}
+                {atlasSize && grid && (
+                  <p>
+                    {atlasSize.width} × {atlasSize.height} pixels ·{" "}
+                    {columns * rows} frame{columns * rows > 1 ? "s" : ""}
+                  </p>
+                )}
+                <button
+                  disabled={
+                    !atlasSize ||
+                    !grid ||
+                    columns * rows > 512 ||
+                    columns > atlasSize.width ||
+                    rows > atlasSize.height ||
+                    a.frames.length + columns * rows > 512
+                  }
+                  onClick={() => {
+                    const frames = sheetFrames();
+                    patch({ frames: [...a.frames, ...frames] }, "sheet");
+                    setFrameIndex(a.frames.length);
+                  }}
+                >
+                  Ajouter les {columns * rows} frames
+                </button>
+              </div>
+              {regions.length > 0 && (
+                <div
+                  className="lp-sheet-preview"
+                  aria-label="Aperçu des découpes"
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.min(columns, 4)},minmax(0,1fr))`,
+                  }}
+                >
+                  {regions.slice(0, 16).map((frame, i) => (
+                    <div key={i}>
+                      <ImagePreview asset={atlasAsset} region={frame.region} />
+                      <small>{i + 1}</small>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <ImagePicker
+              label="Images séparées dans l’ordre"
+              value={[]}
+              assets={assets}
+              multiple
+              change={addImages}
+              buttonLabel="Sélectionner ou importer plusieurs images"
+            />
+          )}
+          <div className="lp-image-tools">
+            <Num
+              label="Vitesse globale (images/s)"
+              value={fps}
+              min={1}
+              max={100}
+              change={setFps}
+            />
+            <button
+              disabled={!a.frames.length}
+              onClick={() =>
+                patch({
+                  frames: a.frames.map((f) => ({ ...f, duration: 1 / fps })),
+                })
+              }
+            >
+              Appliquer la vitesse
+            </button>
+          </div>
+          {a.frames.length ? (
+            <div className="lp-frame-strip" aria-label="Images de l’animation">
+              {a.frames.map((f, i) => (
+                <button
+                  key={i}
+                  className={i === frameIndex ? "selected" : ""}
+                  onClick={() => setFrameIndex(i)}
+                >
+                  <span>
+                    <ImagePreview
+                      asset={assets.find((asset) => asset.ref === f.asset)}
+                      region={f.region}
+                    />
+                  </span>
+                  <b>{i + 1}</b>
+                  <small>{Math.round(f.duration * 1000)} ms</small>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="lp-inline-empty">
+              Ajoute une première image pour construire la séquence.
+            </div>
+          )}
+          {selected && (
+            <div className="lp-frame-editor">
+              <div className="lp-frame-editor-heading">
+                <div>
+                  <span className="gd-kicker">
+                    IMAGE {frameIndex + 1} SUR {a.frames.length}
+                  </span>
+                  <strong>Réglage de la pose sélectionnée</strong>
+                </div>
+                <div className="gd-inline">
+                  <button
+                    aria-label="Déplacer l’image vers la gauche"
+                    disabled={frameIndex === 0}
+                    onClick={() => move(-1)}
+                  >
+                    ←
+                  </button>
+                  <button
+                    aria-label="Déplacer l’image vers la droite"
+                    disabled={frameIndex >= a.frames.length - 1}
+                    onClick={() => move(1)}
+                  >
+                    →
+                  </button>
+                  <button
+                    onClick={() => {
+                      patch({
+                        frames: a.frames.filter((_, i) => i !== frameIndex),
+                      });
+                      setFrameIndex(Math.max(0, frameIndex - 1));
+                    }}
+                  >
+                    Retirer
+                  </button>
+                </div>
+              </div>
+              <div className="gd-form-grid">
+                <ImagePicker
+                  label="Image de cette frame"
+                  value={[selected.asset]}
+                  assets={assets}
+                  region={selected.region}
+                  change={(refs) => {
+                    if (refs[0])
+                      updateFrame({ asset: refs[0], region: undefined });
+                  }}
+                />
+                <Num
+                  label="Temps d’affichage (s)"
+                  value={selected.duration}
+                  min={0.01}
+                  max={60}
+                  change={(duration) => updateFrame({ duration })}
+                />
+              </div>
+              {advanced && (
+                <details className="lp-advanced-panel" open>
+                  <summary>Découpe et point d’ancrage de cette image</summary>
+                  <label className="lp-check">
+                    <input
+                      type="checkbox"
+                      checked={!!selected.region}
+                      onChange={(e) =>
+                        updateFrame({
+                          region: e.target.checked
+                            ? { x: 0, y: 0, width: 64, height: 64 }
+                            : undefined,
+                        })
+                      }
+                    />
+                    <span>
+                      <b>Découper une zone de la planche</b>
+                      <small>L’image originale n’est jamais modifiée.</small>
+                    </span>
+                  </label>
+                  {selected.region && (
+                    <div className="gd-form-grid">
+                      {(["x", "y", "width", "height"] as const).map((k) => (
+                        <Num
+                          key={k}
+                          label={
+                            {
+                              x: "Décalage horizontal",
+                              y: "Décalage vertical",
+                              width: "Largeur",
+                              height: "Hauteur",
+                            }[k]
+                          }
+                          value={selected.region![k]}
+                          min={k === "width" || k === "height" ? 1 : 0}
+                          max={32768}
+                          integer
+                          change={(v) =>
+                            updateFrame({
+                              region: { ...selected.region, [k]: v },
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <label className="lp-check">
+                    <input
+                      type="checkbox"
+                      checked={!!selected.anchor}
+                      onChange={(e) =>
+                        updateFrame({
+                          anchor: e.target.checked
+                            ? { ...a.anchor }
+                            : undefined,
+                        })
+                      }
+                    />
+                    <span>
+                      <b>Position des pieds propre à cette image</b>
+                      <small>
+                        Utile seulement si le personnage saute entre les poses.
+                      </small>
+                    </span>
+                  </label>
+                  {selected.anchor && (
+                    <div className="gd-form-grid">
+                      <Num
+                        label="Pieds — horizontal"
+                        value={selected.anchor.x}
+                        min={-2}
+                        max={3}
+                        change={(x) =>
+                          updateFrame({ anchor: { ...selected.anchor!, x } })
+                        }
+                      />
+                      <Num
+                        label="Pieds — vertical"
+                        value={selected.anchor.y}
+                        min={-2}
+                        max={3}
+                        change={(y) =>
+                          updateFrame({ anchor: { ...selected.anchor!, y } })
+                        }
+                      />
+                    </div>
+                  )}
+                </details>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="lp-step-card lp-sync-step">
+        <div className="lp-step-heading">
+          <b>3</b>
+          <div>
+            <h2>Synchronisation</h2>
+            <p>
+              Place le départ de l’attaque (tir ou coup direct), puis les sons
+              et effets. Un projectile touche sa cible plus tard, selon son
+              trajet.
+            </p>
+          </div>
+        </div>
+        <div className="lp-quick-markers">
+          <button
+            disabled={
+              a.markers.some((m) => m.type === "release") ||
+              a.markers.length >= 64
+            }
+            onClick={() => addMarker("release")}
+          >
+            + Départ de l’attaque
+          </button>
+          <button
+            disabled={a.markers.length >= 64}
+            onClick={() => addMarker("sound")}
+          >
+            + Son
+          </button>
+          <button
+            disabled={a.markers.length >= 64}
+            onClick={() => addMarker("vfx")}
+          >
+            + Effet visuel
+          </button>
+        </div>
+        {a.markers.length ? (
+          <div className="lp-marker-list">
+            {a.markers.map((m, i) => (
+              <article className={"lp-marker-card " + m.type} key={m.id}>
+                <header>
+                  <span>
+                    {m.type === "release"
+                      ? "●"
+                      : m.type === "sound"
+                        ? "♪"
+                        : "✦"}
+                  </span>
+                  <div>
+                    <b>{MARKER_LABELS[m.type]}</b>
+                    <small>
+                      à {m.at.toFixed(2)} seconde{m.at >= 2 ? "s" : ""}
+                    </small>
+                  </div>
+                  <button
+                    aria-label={"Retirer " + MARKER_LABELS[m.type]}
+                    onClick={() =>
+                      patch({ markers: a.markers.filter((_, j) => j !== i) })
+                    }
+                  >
+                    ×
+                  </button>
+                </header>
+                <input
+                  aria-label={"Moment de " + MARKER_LABELS[m.type]}
+                  type="range"
+                  min={0}
+                  max={total}
+                  step={0.001}
+                  value={Math.min(m.at, total)}
+                  onChange={(e) =>
+                    patch(
+                      {
+                        markers: a.markers.map((x, j) =>
+                          j === i ? { ...x, at: +e.target.value } : x,
+                        ),
+                      },
+                      m.id,
+                    )
+                  }
+                />
+                <div className="gd-form-grid">
+                  <Num
+                    label="Moment précis (s)"
+                    value={m.at}
+                    min={0}
+                    max={total}
+                    change={(at) =>
+                      patch({
+                        markers: a.markers.map((x, j) =>
+                          j === i ? { ...x, at } : x,
+                        ),
+                      })
+                    }
+                  />
+                  {m.type !== "release" && (
+                    <Choose
+                      label={
+                        m.type === "sound" ? "Son à jouer" : "Effet à afficher"
+                      }
+                      value={m.ref}
+                      options={
+                        m.type === "sound"
+                          ? project.presentation!.audio
+                          : project.presentation!.vfx
+                      }
+                      empty
+                      change={(ref) =>
+                        patch({
+                          markers: a.markers.map((x, j) =>
+                            j === i ? { ...x, ref } : x,
+                          ),
+                        })
+                      }
+                    />
+                  )}
+                </div>
+                {advanced && (
+                  <Choose
+                    label="Position sur le personnage"
+                    value={m.attach}
+                    options={Object.entries(ATTACH_LABELS).map(
+                      ([id, name]) => ({ id, name }),
+                    )}
+                    change={(attach) =>
+                      patch({
+                        markers: a.markers.map((x, j) =>
+                          j === i ? { ...x, attach } : x,
+                        ),
+                      })
+                    }
+                  />
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="lp-inline-empty">
+            Aucun repère. Pour une attaque, place le repère de départ si la
+            capacité utilise ce mode.
+          </div>
+        )}
+      </section>
+
+      {advanced && (
+        <details className="lp-advanced-panel lp-global-advanced" open>
+          <summary>Position, taille et points d’attache avancés</summary>
+          <div className="gd-form-grid">
+            <Num
+              label="Ancrage horizontal"
+              value={a.anchor.x}
+              min={-2}
+              max={3}
+              change={(x) => patch({ anchor: { ...a.anchor, x } })}
+            />
+            <Num
+              label="Ancrage vertical"
+              value={a.anchor.y}
+              min={-2}
+              max={3}
+              change={(y) => patch({ anchor: { ...a.anchor, y } })}
+            />
+            {(
+              ["x", "y", "rotation", "scaleX", "scaleY", "opacity"] as const
+            ).map((k) => (
+              <Num
+                key={k}
+                label={
+                  {
+                    x: "Décalage horizontal",
+                    y: "Décalage vertical",
+                    rotation: "Rotation",
+                    scaleX: "Échelle horizontale",
+                    scaleY: "Échelle verticale",
+                    opacity: "Opacité",
+                  }[k]
+                }
+                value={a.transform[k]}
+                min={
+                  k === "opacity"
+                    ? 0
+                    : k.startsWith("scale")
+                      ? 0.01
+                      : k === "rotation"
+                        ? -720
+                        : -200
+                }
+                max={
+                  k === "opacity"
+                    ? 1
+                    : k.startsWith("scale")
+                      ? 5
+                      : k === "rotation"
+                        ? 720
+                        : 200
+                }
+                change={(v) => patch({ transform: { ...a.transform, [k]: v } })}
+              />
+            ))}
+          </div>
+          <h3>Points d’attache</h3>
+          {a.attachments.map((point, i) => (
+            <div className="lp-attachment-row" key={point.id}>
+              <b>
+                {ATTACH_LABELS[point.id as keyof typeof ATTACH_LABELS] ??
+                  point.id}
+              </b>
+              <Num
+                label="Horizontal"
+                value={point.x}
+                min={-2}
+                max={3}
+                change={(x) =>
+                  patch({
+                    attachments: a.attachments.map((q, j) =>
+                      j === i ? { ...q, x } : q,
+                    ),
+                  })
+                }
+              />
+              <Num
+                label="Vertical"
+                value={point.y}
+                min={-2}
+                max={3}
+                change={(y) =>
+                  patch({
+                    attachments: a.attachments.map((q, j) =>
+                      j === i ? { ...q, y } : q,
+                    ),
+                  })
+                }
+              />
+            </div>
+          ))}
+        </details>
+      )}
+    </>
+  );
 }
-export function ProfileFields({value,project,assets,patch,openAnimation}:{value:AnimationProfile;project:GameProject;assets:Asset[];patch:(p:Record<string,unknown>,key?:string)=>void;openAnimation:(id:string)=>void}){
- const [custom,setCustom]=useState('');const c=project.presentation!,fallback=c.profiles.find(p=>p.id===c.defaultProfileId),profileUsers=[...project.balance.plants,...project.balance.enemies].filter(s=>s.animationProfileId===value.id),owner=profileUsers[0];
- const availableAnimations=c.animations.filter(animation=>{const animationOwner=animationOwnerId(project,animation);return !animationOwner||(profileUsers.length===1&&animationOwner===owner?.id);});
- const slots=[...new Set([...BASE_SLOTS,...(fallback?.slots??[]).map(s=>s.slot),...value.slots.map(s=>s.slot)])];
- const setSlot=(slot:string,animationId:string|null)=>patch({slots:animationId===null?value.slots.filter(s=>s.slot!==slot):[...value.slots.filter(s=>s.slot!==slot),{slot,animationId}]});
- return <>
-  <p className="gd-callout">Chaque carte correspond à une action du personnage. Choisis l’animation, vérifie-la dans l’aperçu, puis passe à la suivante.</p>
-  <div className="lp-slots">{slots.map(slot=>{const own=value.slots.find(s=>s.slot===slot),id=(own??fallback?.slots.find(s=>s.slot===slot))?.animationId,animation=c.animations.find(a=>a.id===id);return <article key={slot}><div className="lp-slot-heading"><span aria-hidden="true">{slot==='attack'?'⚔':slot==='move'?'➜':slot==='hit'?'◆':slot==='death'?'✕':'●'}</span><h3>{SLOT_LABELS[slot]??slot}</h3></div><AnimationPreview catalog={project.presentation} compact animation={animation} visual={owner?.visual??project.balance.plants[0].visual} assets={assets}/><Choose label="Animation utilisée" value={id??''} options={availableAnimations} empty change={id=>setSlot(slot,id)}/><small>{own?'Réglage propre à ce personnage':'Animation commune utilisée par défaut'}</small><div className="gd-inline"><button disabled={!animation} onClick={()=>openAnimation(id!)}>Modifier l’animation</button><button disabled={value.id===c.defaultProfileId||!own} onClick={()=>setSlot(slot,null)}>Revenir au réglage commun</button></div></article>;})}</div>
-  <details className="lp-advanced-panel"><summary>Actions et sons avancés</summary><p>Cette partie sert uniquement aux actions spéciales et aux exceptions sonores d’un personnage.</p><div className="gd-inline"><input aria-label="Nouvelle action personnalisée" placeholder="Ex. attaque spéciale" value={custom} onChange={e=>setCustom(e.target.value)}/><button disabled={!/^[a-zA-Z0-9_-]+$/.test(custom)||slots.includes(custom)||value.slots.length>=32} onClick={()=>{setSlot(custom,'');setCustom('');}}>Ajouter l’action</button></div><h2>Sons et effets propres au personnage</h2>{(['spawn','start','release','impact','death','phase_transition'] as const).map(event=><CueFields key={event} label={event} project={project} value={value.events.find(e=>e.event===event)??{...EMPTY_CUE,attach:'center'}} change={cue=>patch({events:[...value.events.filter(e=>e.event!==event),{...cue,event} as EventCue]})}/>)}</details>
-  <details className="lp-advanced-panel"><summary>Réinitialiser toutes les actions</summary><button onClick={()=>patch({slots:structuredClone(DEFAULT_PRESENTATION.profiles.find(p=>p.id===DEFAULT_PRESENTATION.defaultProfileId)!.slots),events:[]})}>Restaurer les animations communes</button></details>
- </>;
+export function ProfileFields({
+  value,
+  project,
+  assets,
+  patch,
+  openAnimation,
+}: {
+  value: AnimationProfile;
+  project: GameProject;
+  assets: Asset[];
+  patch: (p: Record<string, unknown>, key?: string) => void;
+  openAnimation: (id: string) => void;
+}) {
+  const [custom, setCustom] = useState("");
+  const c = project.presentation!,
+    fallback = c.profiles.find((p) => p.id === c.defaultProfileId),
+    profileUsers = [
+      ...project.balance.plants,
+      ...project.balance.enemies,
+    ].filter((s) => s.animationProfileId === value.id),
+    owner = profileUsers[0];
+  const availableAnimations = c.animations.filter((animation) => {
+    const animationOwner = animationOwnerId(project, animation);
+    return (
+      !animationOwner ||
+      (profileUsers.length === 1 && animationOwner === owner?.id)
+    );
+  });
+  const slots = [
+    ...new Set([
+      ...BASE_SLOTS,
+      ...(fallback?.slots ?? []).map((s) => s.slot),
+      ...value.slots.map((s) => s.slot),
+    ]),
+  ];
+  const setSlot = (slot: string, animationId: string | null) =>
+    patch({
+      slots:
+        animationId === null
+          ? value.slots.filter((s) => s.slot !== slot)
+          : [
+              ...value.slots.filter((s) => s.slot !== slot),
+              { slot, animationId },
+            ],
+    });
+  return (
+    <>
+      <p className="gd-callout">
+        Chaque carte correspond à une action du personnage. Choisis l’animation,
+        vérifie-la dans l’aperçu, puis passe à la suivante.
+      </p>
+      <div className="lp-slots">
+        {slots.map((slot) => {
+          const own = value.slots.find((s) => s.slot === slot),
+            id = (own ?? fallback?.slots.find((s) => s.slot === slot))
+              ?.animationId,
+            animation = c.animations.find((a) => a.id === id);
+          return (
+            <article key={slot}>
+              <div className="lp-slot-heading">
+                <span aria-hidden="true">
+                  {slot === "attack"
+                    ? "⚔"
+                    : slot === "move"
+                      ? "➜"
+                      : slot === "hit"
+                        ? "◆"
+                        : slot === "death"
+                          ? "✕"
+                          : "●"}
+                </span>
+                <h3>{SLOT_LABELS[slot] ?? slot}</h3>
+              </div>
+              <AnimationPreview
+                catalog={project.presentation}
+                compact
+                animation={animation}
+                visual={owner?.visual ?? project.balance.plants[0].visual}
+                assets={assets}
+              />
+              <Choose
+                label="Animation utilisée"
+                value={id ?? ""}
+                options={availableAnimations}
+                empty={
+                  !["idle", "move", "attack", "hit", "death", "spawn"].includes(
+                    slot,
+                  )
+                }
+                emptyLabel="Désactiver cette action"
+                change={(id) => setSlot(slot, id)}
+              />
+              <small>
+                {own
+                  ? "Réglage propre à ce personnage"
+                  : "Animation commune utilisée par défaut"}
+              </small>
+              <div className="gd-inline">
+                <button
+                  disabled={!animation}
+                  onClick={() => openAnimation(id!)}
+                >
+                  Modifier l’animation
+                </button>
+                <button
+                  disabled={value.id === c.defaultProfileId || !own}
+                  onClick={() => setSlot(slot, null)}
+                >
+                  Revenir au réglage commun
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <details className="lp-advanced-panel">
+        <summary>Actions et sons avancés</summary>
+        <p>
+          Cette partie sert uniquement aux actions spéciales et aux exceptions
+          sonores d’un personnage.
+        </p>
+        <div className="gd-inline">
+          <input
+            aria-label="Nouvelle action personnalisée"
+            placeholder="Ex. attaque spéciale"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+          />
+          <button
+            disabled={
+              !/^[a-zA-Z0-9_-]+$/.test(custom) ||
+              slots.includes(custom) ||
+              value.slots.length >= 32
+            }
+            onClick={() => {
+              setSlot(custom, "");
+              setCustom("");
+            }}
+          >
+            Ajouter l’action
+          </button>
+        </div>
+        <h2>Sons et effets propres au personnage</h2>
+        {(
+          [
+            "spawn",
+            "start",
+            "release",
+            "impact",
+            "death",
+            "phase_transition",
+          ] as const
+        ).map((event) => (
+          <CueFields
+            key={event}
+            label={event}
+            project={project}
+            value={
+              value.events.find((e) => e.event === event) ?? {
+                ...EMPTY_CUE,
+                attach: "center",
+              }
+            }
+            change={(cue) =>
+              patch({
+                events: [
+                  ...value.events.filter((e) => e.event !== event),
+                  { ...cue, event } as EventCue,
+                ],
+              })
+            }
+          />
+        ))}
+      </details>
+      <details className="lp-advanced-panel">
+        <summary>Réinitialiser toutes les actions</summary>
+        <button
+          disabled={value.id === c.defaultProfileId}
+          onClick={() => patch({ slots: [], events: [] })}
+        >
+          Rétablir l’héritage du profil par défaut
+        </button>
+      </details>
+    </>
+  );
 }
-function AudioFields({value,assets,patch}:{value:SoundDefinition;assets:Asset[];patch:(p:Record<string,unknown>,key?:string)=>void}){
- const player=useRef<HTMLAudioElement|null>(null),[playing,setPlaying]=useState(false),[error,setError]=useState('');
- const stop=()=>{player.current?.pause();player.current=null;setPlaying(false);};useEffect(()=>{stop();return()=>player.current?.pause();},[value.id,value.asset]);
- useEffect(()=>{if(player.current){player.current.volume=value.volume;player.current.loop=value.loop;}},[value.volume,value.loop]);
- return <><AssetChoice label="Fichier audio de la bibliothèque" value={value.asset} audio assets={assets} change={asset=>patch({asset})}/><Choose label="Catégorie / volume du jeu" value={value.bus} options={[{id:'sfx',name:'Effets sonores'},{id:'music',name:'Musique'},{id:'ambience',name:'Ambiance (volume sonore)'}]} change={bus=>patch({bus})}/><div className="gd-form-grid"><Num label="Volume (0 à 1)" value={value.volume} max={1} change={volume=>patch({volume})}/><Num label="Variation de hauteur (±)" value={value.pitchVariation} max={.2} change={pitchVariation=>patch({pitchVariation})}/><Num label="Instances simultanées max." value={value.maxInstances} min={1} max={32} integer change={maxInstances=>patch({maxInstances})}/></div><label><input type="checkbox" checked={value.loop} onChange={e=>patch({loop:e.target.checked})}/> Boucle (arrêt à la disparition du porteur / de la scène)</label><p><button onClick={()=>{if(playing){stop();return;}const asset=assets.find(a=>a.ref===value.asset);if(!asset){setError('Fichier absent de la bibliothèque liée.');return;}const audio=new Audio(asset.url);player.current=audio;audio.volume=value.volume;audio.loop=value.loop;audio.playbackRate=1+(Math.random()*2-1)*value.pitchVariation;audio.onended=stop;void audio.play().then(()=>{setPlaying(true);setError('');}).catch(e=>{setError(String(e));stop();});}}>{playing?'Arrêter':'Écouter'}</button> {error}</p></>;
+function AudioFields({
+  value,
+  assets,
+  patch,
+}: {
+  value: SoundDefinition;
+  assets: Asset[];
+  patch: (p: Record<string, unknown>, key?: string) => void;
+}) {
+  return (
+    <>
+      <AssetChoice
+        label="Fichier audio de la bibliothèque"
+        value={value.asset}
+        audio
+        assets={assets}
+        change={(asset) => patch({ asset })}
+      />
+      <Choose
+        label="Catégorie / volume du jeu"
+        value={value.bus}
+        options={[
+          { id: "sfx", name: "Effets sonores" },
+          { id: "music", name: "Musique" },
+          { id: "ambience", name: "Ambiance (volume sonore)" },
+        ]}
+        change={(bus) => patch({ bus })}
+      />
+      <div className="gd-form-grid">
+        <Num
+          label="Volume (0 à 1)"
+          value={value.volume}
+          max={1}
+          change={(volume) => patch({ volume })}
+        />
+        <Num
+          label="Variation de hauteur (±)"
+          value={value.pitchVariation}
+          max={0.2}
+          change={(pitchVariation) => patch({ pitchVariation })}
+        />
+        <Num
+          label="Instances simultanées max."
+          value={value.maxInstances}
+          min={1}
+          max={32}
+          integer
+          change={(maxInstances) => patch({ maxInstances })}
+        />
+      </div>
+      <label>
+        <input
+          type="checkbox"
+          checked={value.loop}
+          onChange={(e) => patch({ loop: e.target.checked })}
+        />{" "}
+        Boucle (arrêt à la disparition du porteur / de la scène)
+      </label>
+      <p>
+        <SoundPreview sound={value} assets={assets} />
+      </p>
+    </>
+  );
 }
-function VfxFields({value:v,assets,patch}:{value:VfxDefinition;assets:Asset[];patch:(p:Record<string,unknown>,key?:string)=>void}){
- const [time,setTime]=useState(0),[playing,setPlaying]=useState(false);useEffect(()=>{if(!playing)return;let handle=0,start=performance.now();const tick=(now:number)=>{const t=(now-start)/1000;setTime(t);if(t<v.duration)handle=requestAnimationFrame(tick);else setPlaying(false);};handle=requestAnimationFrame(tick);return()=>cancelAnimationFrame(handle);},[playing,v.duration]);
- const u=Math.min(1,time/v.duration),url=assets.find(a=>a.ref===v.asset)?.url;
- return <><Choose label="Préréglage VFX" value={v.preset} options={['impact','dust','leaves','halo','flash','explosion','trail','smoke'].map(id=>({id,name:id}))} change={preset=>patch({preset})}/><svg className="lp-vfx" viewBox="-180 -180 360 360"><VfxGlyph definition={v} age={time} assets={assets}/></svg><button onClick={()=>{setTime(0);setPlaying(true);}}>Prévisualiser le VFX</button><div className="gd-form-grid"><Num label="Durée VFX (s)" value={v.duration} min={.01} max={10} change={duration=>patch({duration})}/><Num label="Taille" value={v.size} min={1} max={300} change={size=>patch({size})}/><Num label="Intensité" value={v.intensity} max={1} change={intensity=>patch({intensity})}/><Num label="Quantité" value={v.quantity} min={1} max={64} integer change={quantity=>patch({quantity})}/><Num label="Instances VFX max." value={v.maxInstances} min={1} max={128} integer change={maxInstances=>patch({maxInstances})}/><label className="gd-field"><span>Couleur</span><input type="color" value={v.color} onChange={e=>patch({color:e.target.value})}/></label></div><Choose label="Attache par défaut" value={v.attach} options={['center','feet','head','launch'].map(id=>({id,name:id}))} change={attach=>patch({attach})}/><AssetChoice label="Image optionnelle" value={v.asset} assets={assets} empty change={asset=>patch({asset})}/><p>Ce VFX ne provoque ni dégât ni changement de vitesse. Les particules sont plafonnées ; la réduction des mouvements remplace les projections par un halo discret.</p></>;
+function VfxFields({
+  value: v,
+  assets,
+  patch,
+}: {
+  value: VfxDefinition;
+  assets: Asset[];
+  patch: (p: Record<string, unknown>, key?: string) => void;
+}) {
+  const [time, setTime] = useState(0),
+    [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    if (!playing) return;
+    let handle = 0,
+      start = performance.now();
+    const tick = (now: number) => {
+      const t = (now - start) / 1000;
+      setTime(t);
+      if (t < v.duration) handle = requestAnimationFrame(tick);
+      else setPlaying(false);
+    };
+    handle = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(handle);
+  }, [playing, v.duration]);
+  const u = Math.min(1, time / v.duration),
+    url = assets.find((a) => a.ref === v.asset)?.url;
+  return (
+    <>
+      <Choose
+        label="Préréglage VFX"
+        value={v.preset}
+        options={[
+          "impact",
+          "dust",
+          "leaves",
+          "halo",
+          "flash",
+          "explosion",
+          "trail",
+          "smoke",
+        ].map((id) => ({ id, name: id }))}
+        change={(preset) => patch({ preset })}
+      />
+      <svg className="lp-vfx" viewBox="-180 -180 360 360">
+        <VfxGlyph definition={v} age={time} assets={assets} />
+      </svg>
+      <button
+        onClick={() => {
+          setTime(0);
+          setPlaying(true);
+        }}
+      >
+        Prévisualiser le VFX
+      </button>
+      <div className="gd-form-grid">
+        <Num
+          label="Durée VFX (s)"
+          value={v.duration}
+          min={0.01}
+          max={10}
+          change={(duration) => patch({ duration })}
+        />
+        <Num
+          label="Taille"
+          value={v.size}
+          min={1}
+          max={300}
+          change={(size) => patch({ size })}
+        />
+        <Num
+          label="Intensité"
+          value={v.intensity}
+          max={1}
+          change={(intensity) => patch({ intensity })}
+        />
+        <Num
+          label="Quantité"
+          value={v.quantity}
+          min={1}
+          max={64}
+          integer
+          change={(quantity) => patch({ quantity })}
+        />
+        <Num
+          label="Instances VFX max."
+          value={v.maxInstances}
+          min={1}
+          max={128}
+          integer
+          change={(maxInstances) => patch({ maxInstances })}
+        />
+        <label className="gd-field">
+          <span>Couleur</span>
+          <input
+            type="color"
+            value={v.color}
+            onChange={(e) => patch({ color: e.target.value })}
+          />
+        </label>
+      </div>
+      <Choose
+        label="Attache par défaut"
+        value={v.attach}
+        options={["center", "feet", "head", "launch"].map((id) => ({
+          id,
+          name: id,
+        }))}
+        change={(attach) => patch({ attach })}
+      />
+      <AssetChoice
+        label="Image optionnelle"
+        value={v.asset}
+        assets={assets}
+        empty
+        change={(asset) => patch({ asset })}
+      />
+      <p>
+        Ce VFX ne provoque ni dégât ni changement de vitesse. Les particules
+        sont plafonnées ; la réduction des mouvements remplace les projections
+        par un halo discret.
+      </p>
+    </>
+  );
 }

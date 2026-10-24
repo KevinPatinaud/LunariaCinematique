@@ -4,7 +4,7 @@
 
 Le renderer React est sous `src/renderer/`, le processus Electron sous `src/main/` et le preload sous `src/preload/index.cts`. Le renderer utilise le pont exposé par le preload ; il ne lit pas directement le disque avec Node. Electron configure l’isolation du contexte, les protocoles d’assets et les autorisations de dossiers.
 
-Le document `lunaria-game-project` contient catalogues globaux, niveaux, parcours et `cinematics[]`. Les modes **Cinématiques** et **Niveaux** éditent le même état ; les films ne sont plus dispersés dans des fichiers obligatoires par plan. Les documents cinématiques autonomes restent importables. Les services de document gèrent fichier enregistré, jetons, historique, sauvegarde atomique, récupération locale et projets récents. La récupération et les versions locales ne remplacent pas Git.
+Le document `lunaria-game-project` contient catalogues globaux, niveaux, parcours et `cinematics[]`. Les modes **Cinématiques** et **Niveaux** éditent le même état ; les films ne sont plus dispersés dans des fichiers obligatoires par plan. Les cinématiques sont intégrées au projet ; aucun film externe n’est importé ou lié. Les services de document gèrent fichier enregistré, jetons, historique, sauvegarde atomique, récupération locale et projets récents. La récupération du projet entier et son historique ne remplacent pas Git.
 
 `GameEditor` coordonne les commandes d’édition. Les panneaux de niveaux, attaques, personnages, événements et présentation modifient les données d’auteur. Les aperçus utilisent les fonctions partagées de géométrie, texte, mouvement et animation, plutôt qu’un second format de rendu.
 

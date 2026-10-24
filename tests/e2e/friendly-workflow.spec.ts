@@ -19,16 +19,16 @@ test.afterEach(async()=>{await app?.close();await fs.rm(dir,{recursive:true,forc
 test('project overview guides creation and saves levels and films together',async({},info)=>{
  await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
  let overview=page.getByRole('dialog',{name:'Vue du projet'});
- await expect(overview).toContainText('0 cinématique dans le projet');
- await expect(overview).toContainText('0 niveau dans le projet');
+ await expect(overview).toContainText('0 cinématique');
+ await expect(overview).toContainText('0 niveau');
  await page.screenshot({path:info.outputPath('overview.png')});
  await overview.getByRole('button',{name:/Créer un niveau/}).click();
  await expect(overview).not.toBeVisible();
  await page.getByLabel('Nom du niveau').fill('Le jardin des débuts');
  await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
  overview=page.getByRole('dialog',{name:'Vue du projet'});
- await expect(overview).toContainText('1 niveau dans le projet');
- await expect(overview).toContainText('1 étape dans le parcours');
+ await expect(overview).toContainText('1 niveau');
+ await expect(overview).toContainText('1 étape');
  await overview.getByRole('button',{name:/Créer une cinématique/}).click();
  await page.getByLabel('Titre de la cinématique').fill('Avant le jardin');
  await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
@@ -37,7 +37,7 @@ test('project overview guides creation and saves levels and films together',asyn
  const saved=JSON.parse(await fs.readFile(file,'utf8'));expect(saved.levels[0].title).toBe('Le jardin des débuts');
  await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
  await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
- await expect(page.getByRole('dialog',{name:'Vue du projet'})).toContainText('Toutes les modifications sont enregistrées');
+ await expect(page.getByRole('dialog',{name:'Vue du projet'})).toContainText('✓ Enregistré');
  await page.keyboard.press('Escape');
   await expect(page.getByRole('button',{name:'Vue du projet',exact:true})).toBeFocused();
  await page.getByLabel('Titre de la cinématique').fill('Film enregistré au clavier');
@@ -46,6 +46,39 @@ test('project overview guides creation and saves levels and films together',asyn
  await page.keyboard.press('Control+s');
  await expect.poll(async()=>JSON.parse(await fs.readFile(file,'utf8')).cinematics[0].title).toBe('Film enregistré au clavier');
  await expect(page.locator('.studio-save')).toBeEnabled();
+});
+
+test('project overview opens existing work without creating content and keeps tools discoverable',async({},info)=>{
+ await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
+ let overview=page.getByRole('dialog',{name:'Vue du projet'});
+ await overview.getByRole('button',{name:'Créer un niveau',exact:true}).click();
+ await page.getByLabel('Nom du niveau').fill('Mon niveau existant');
+ await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
+ overview=page.getByRole('dialog',{name:'Vue du projet'});
+ await page.setViewportSize({width:1000,height:680});
+ expect(await overview.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
+ await expect(overview.getByRole('button',{name:'Voir les niveaux',exact:true})).toBeInViewport();
+ await expect(overview.getByRole('button',{name:'Configurer l’accueil'})).not.toBeVisible();
+ await page.screenshot({path:info.outputPath('simple-overview-small.png')});
+ await overview.getByRole('button',{name:'Voir les niveaux',exact:true}).click();
+ await expect(page.getByLabel('Nom du niveau')).toHaveValue('Mon niveau existant');
+ await expect(page.locator('.gd-level-items button')).toHaveCount(1);
+ await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
+ overview=page.getByRole('dialog',{name:'Vue du projet'});
+ await overview.getByRole('button',{name:'Voir toutes les cinématiques',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'Toutes les cinématiques'})).toBeVisible();
+ await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
+ await page.getByRole('dialog',{name:'Vue du projet'}).getByRole('button',{name:'Organiser la campagne',exact:true}).click();
+ await expect(page.locator('.gd-campaign')).toBeVisible();
+ await page.getByRole('button',{name:'Vue du projet',exact:true}).click();
+ overview=page.getByRole('dialog',{name:'Vue du projet'});
+ await overview.locator('summary').click();
+ await expect(overview.getByRole('button',{name:'Images et sons',exact:false})).toBeVisible();
+ await expect(overview.getByRole('button',{name:'Voir les personnages',exact:true})).toBeVisible();
+ await expect(overview.getByRole('button',{name:'Vérifier le projet',exact:true})).toBeVisible();
+ await overview.getByRole('button',{name:'Configurer l’accueil',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Écran d’accueil',exact:true})).toBeVisible();
 });
 
 test('compact tools and searchable catalogs keep the editor usable on a small screen',async({},info)=>{
@@ -72,7 +105,7 @@ test('compact tools and searchable catalogs keep the editor usable on a small sc
  expect(await page.locator('.gd-body').evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(440);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(1000);
  await expect(page.locator('.lp-character-image .lp-image-preview')).toHaveCount(1);
- await expect(page.getByRole('button',{name:'Caractéristiques et attaques'})).toBeInViewport();
+ await expect(page.getByRole('button',{name:'Caractéristiques'})).toBeInViewport();
  await expect(page.locator('.lp-navigation')).not.toBeVisible();
  await page.screenshot({path:info.outputPath('small-editor.png')});
  await page.locator('.gd-tools > summary').click();

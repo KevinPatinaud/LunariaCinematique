@@ -1,6 +1,7 @@
 import {CinematicCues} from '../presentation/PreviewCues.js';
 import type {GameProject} from '../../shared/game/types.js';
 import {CinematicSprite,cinematicSpriteGeometry} from '../presentation/CinematicSprite.js';
+import { useImageSize } from '../presentation/AnimationPreview.js';
 import { AnimatedBubbleText } from './AnimatedBubbleText.js';
 import { bubbleEntryPose } from '../../shared/bubbleEntry.js';
 import { isLibraryTab } from '../../shared/libraryBrowser.js';
@@ -13,9 +14,11 @@ import { restPose, actorTransform, actorAnchor, setMovementDestination } from '.
 import { resizeBox, resizeActor } from '../../shared/editing.js';
 import type { LibraryTab } from '../../shared/libraryBrowser.js';
 import { STAGE } from '../../shared/model.js';
+import { isPanoramicBackground } from '../../shared/backgroundCorrection.js';
 import { actorPose, bubbleLayout, bubbleTarget, cameraTransform, clamp, framePatches, tailPoints } from '../../shared/geometry.js';
 export type Selection = { kind: 'shot' } | { kind: 'actor' | 'bubble'; id: string };
 interface Props {
+  viewportWidth?: number;
   exporting?: boolean;
   presentationProject?:GameProject;catalogMatches?:boolean;presentationRunning?:boolean;
   selectionIds?: readonly string[]; lockedIds?: ReadonlySet<string>; hiddenIds?: ReadonlySet<string>; snap?: boolean;
@@ -123,12 +126,23 @@ export function Scene(props: Props) {
     clearDraft();if(svg.current?.hasPointerCapture(event.pointerId))svg.current.releasePointerCapture(event.pointerId);
   }
   const bg = asset(shot.background.asset);
+  const viewportWidth = Math.max(STAGE.width, props.viewportWidth ?? STAGE.width);
+  const viewportX = (STAGE.width - viewportWidth) / 2;
+  const backgroundSize = useImageSize(bg?.url ?? '');
+  // Match Godot: the retained 16:9 core stays aligned with authored elements,
+  // even on 16:9 previews/exports; wider viewports reveal the generated sides.
+  const extended = !!bg && !!backgroundSize && isPanoramicBackground(bg.ref, backgroundSize);
+  const backgroundScale = extended ? STAGE.width / (backgroundSize.height * 16 / 9) : 1;
+  const imageWidth = extended ? backgroundSize.width * backgroundScale : STAGE.width;
+  const imageHeight = extended ? backgroundSize.height * backgroundScale : STAGE.height;
+  const frameWidth = extended ? Math.min(viewportWidth, imageWidth) : STAGE.width;
+  const frameX = (STAGE.width - frameWidth) / 2;
   const selected = selection.kind === 'actor' ? effectiveShot.actors.find(a => a.id === selection.id)
     : selection.kind === 'bubble' ? effectiveShot.bubbles.find(b => b.id === selection.id) : undefined;
   const selectionBox = selected ? { x: selected.x * STAGE.width, y: selected.y * STAGE.height,
     width: selected.width * STAGE.width, height: selection.kind === 'bubble' ? bubbleLayout(selected as Bubble).height : selected.height * STAGE.height } : null;
   const missing = (name: string, width: number, height: number) => <g><rect data-background="true" width={width} height={height} fill="#223632" stroke="#c99254" strokeDasharray="10 8" strokeWidth="3"/><text x={width / 2} y={height / 2} textAnchor="middle" fill="#e4d9bd" fontSize="22">{name.slice(0, 30)}</text></g>;
-  return <svg ref={svg} className={`scene-svg ${playing ? 'is-playing' : ''}`} data-testid="scene" viewBox="0 0 1600 900" role="img" aria-label={`Plan : ${shot.name}`}
+  return <svg ref={svg} className={`scene-svg ${playing ? 'is-playing' : ''}`} data-testid="scene" viewBox={`${viewportX} 0 ${viewportWidth} 900`} role="img" aria-label={`Plan : ${shot.name}`}
     onPointerMove={move} onPointerUp={e => end(e)} onPointerCancel={e => end(e, true)} onLostPointerCapture={() => { clearDraft(); }}
     onPointerDown={e => { if (e.button !== 0 || props.disabled) return; if (playing) onAdvance(); else if (e.target === svg.current || (e.target as SVGElement).dataset.background) beginMarquee(e); }}
     onDragOver={e => { if (e.dataTransfer.types.includes(ASSET_MIME)) e.preventDefault(); }} onDrop={e => {
@@ -138,11 +152,12 @@ export function Scene(props: Props) {
       const local = p ? new DOMPoint(e.clientX, e.clientY).matrixTransform(p.inverse()) : null;
       if (ref) props.onDropAsset(ref, isLibraryTab(kind) ? kind : undefined, local ? { x: local.x / STAGE.width, y: local.y / STAGE.height } : undefined);
     }}>
-    <defs><clipPath id={clipId}><rect width="1600" height="900"/></clipPath></defs>
+    <rect data-background="true" x={viewportX} width={viewportWidth} height="900" fill="black"/>
+    <defs><clipPath id={clipId}><rect x={frameX} width={frameWidth} height="900"/></clipPath></defs>
     <g clipPath={`url(#${clipId})`}>
-      <rect data-background="true" width="1600" height="900" fill="#121a18"/>
+      <rect data-background="true" x={frameX} width={frameWidth} height="900" fill="#121a18"/>
       <g transform={`translate(${camera.x},${camera.y}) scale(${camera.zoom})`}>
-        {bg && !failed.has(bg.url) ? <image data-background="true" href={bg.url} width="1600" height="900"
+        {bg && !failed.has(bg.url) ? <image data-background="true" href={bg.url} x={(STAGE.width - imageWidth) / 2} y={(STAGE.height - imageHeight) / 2} width={imageWidth} height={imageHeight}
           preserveAspectRatio={shot.background.fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'}
           onError={() => setFailed(prev => new Set(prev).add(bg.url))}/> : shot.background.asset ? missing('Décor à reconnecter', 1600, 900) : null}
         {effectiveShot.actors.filter(a=>playing||!hidden.has(a.id)).map(a => {
@@ -237,8 +252,8 @@ export function Scene(props: Props) {
       {!animated && chosen.length>1 && <g pointerEvents="none">{[...effectiveShot.actors,...effectiveShot.bubbles].filter(o=>chosen.includes(o.id)&&!hidden.has(o.id)).map(o=>{const b=objectBox(o);return <rect key={o.id} x={b.x*1600} y={b.y*900} width={b.width*1600} height={b.height*900} fill="none" stroke="#c5dea9" strokeWidth="2" strokeDasharray="8 5"/>;})}</g>}
       {!animated && snapLines && <g pointerEvents="none" stroke="#e3c785" strokeWidth="2" strokeDasharray="6 4">{snapLines.xLine!==null&&<path d={`M${snapLines.xLine*1600} 0v900`}/>} {snapLines.yLine!==null&&<path d={`M0 ${snapLines.yLine*900}h1600`}/>}</g>}
       {!animated && marquee && <rect pointerEvents="none" data-testid="marquee" x={marquee.x*1600} y={marquee.y*900} width={marquee.width*1600} height={marquee.height*900} fill="#b9d5a022" stroke="#c5dea9" strokeWidth="2"/>}
-      {playing && shot.transition.type === 'fade' && elapsed < shot.transition.duration && <rect width="1600" height="900" fill="black" opacity={1 - elapsed / Math.max(0.01, shot.transition.duration)} pointerEvents="none"/>}
-      {playing && props.exitElapsed !== undefined && shot.exitTransition?.type === 'fade' && <rect width="1600" height="900" fill="black" opacity={Math.min(1, props.exitElapsed / shot.exitTransition.duration)} pointerEvents="none"/>}
+      {playing && shot.transition.type === 'fade' && elapsed < shot.transition.duration && <rect x={frameX} width={frameWidth} height="900" fill="black" opacity={1 - elapsed / Math.max(0.01, shot.transition.duration)} pointerEvents="none"/>}
+      {playing && props.exitElapsed !== undefined && shot.exitTransition?.type === 'fade' && <rect x={frameX} width={frameWidth} height="900" fill="black" opacity={Math.min(1, props.exitElapsed / shot.exitTransition.duration)} pointerEvents="none"/>}
     </g>
   </svg>;
 }

@@ -17,7 +17,7 @@ const errors=(value:unknown)=>gameIssues(value).filter(issue=>issue.severity==='
 test('home defaults preserve menu actions, dynamic progress and conditional unlocked heroes',()=>{
  const p=project(),home=p.homeScreen;
  assert.deepEqual(errors(p),[]);
- assert.deepEqual(home.elements.filter(e=>e.kind==='button').map(e=>e.action),['continue','map','collection','journal','options']);
+ assert.deepEqual(home.elements.filter(e=>e.kind==='button').map(e=>e.action),['continue','map','collection','options']);
  assert.equal(home.elements.find(e=>e.id==='continue')!.text,'{continue}');
  assert.equal(home.elements.find(e=>e.id==='progress_count')!.text,'{completed} / {total}');
  assert.equal(home.elements.find(e=>e.id==='hero_hazel')!.hideIfPlantUnlocked,'baobab');
@@ -74,13 +74,13 @@ test('home library assets are deduplicated and included in publication including
   p.homeScreen!.elements.push({...newHomeElement('image','duplicate'),image:'library://home.png'});
   p.homeScreen!.elements.find(e=>e.id==='title')!.text='library://this-is-a-label.png';
   assert.deepEqual(presentationAssets(p).filter(ref=>ref!=='library://sprite.png').sort(),['library://home.png','library://overlay.png']);
-  const plan=await planCampaign(p,'',library);assert.equal(plan.check.assets,3);
+  const plan=await planCampaign(p,library);assert.equal(plan.check.assets,3);
   assert.deepEqual(plan.project.homeScreen,p.homeScreen);
-  const published=await publishCampaign(p,game,'',library);
+  const published=await publishCampaign(p,game,library);
   assert.deepEqual(JSON.parse(await readFile(published.path,'utf8')).homeScreen,p.homeScreen);
   assert.deepEqual(await readFile(path.join(game,'LunariaArtLibrary','home.png')),PIXEL_PNG);
   assert.deepEqual(await readFile(path.join(game,'LunariaArtLibrary','overlay.png')),PIXEL_PNG);
-  p.homeScreen!.background.image='library://missing.png';await assert.rejects(planCampaign(p,'',library),/introuvable/);
+  p.homeScreen!.background.image='library://missing.png';await assert.rejects(planCampaign(p,library),/introuvable/);
  }finally{await rm(root,{recursive:true,force:true});}
 });
 

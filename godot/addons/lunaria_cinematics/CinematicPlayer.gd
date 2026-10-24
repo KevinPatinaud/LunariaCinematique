@@ -467,7 +467,8 @@ func _actor_pose(actor: Dictionary) -> Dictionary:
 	return Motion.pose(_motion_actor(actor), _elapsed)
 
 func _is_extended_background(ref: Variant, dimensions: Vector2) -> bool:
-	return ref != null and str(ref).contains("_wide_v01.") and dimensions.x / maxf(1.0, dimensions.y) > 2.0
+	var ratio: float = dimensions.x / maxf(1.0, dimensions.y)
+	return ref != null and ratio > 2.0 and (str(ref).contains("_wide_v01.") or absf(ratio / (20.0 / 9.0) - 1.0) < 0.01)
 
 func _background_bounds(shot: Dictionary, visible_bounds: Rect2) -> Rect2:
 	var ref: Variant = shot["background"]["asset"]
@@ -476,10 +477,9 @@ func _background_bounds(shot: Dictionary, visible_bounds: Rect2) -> Rect2:
 	var dimensions: Vector2 = _textures[ref].get_size()
 	if not _is_extended_background(ref, dimensions) or visible_bounds.size.x <= LOGICAL.x:
 		return Rect2(Vector2.ZERO, LOGICAL)
-	# The extended assets keep the original 1672x941 composition untouched in
-	# their centre and add 209 pixels on each side. Reveal only the extra width
-	# available on the device, while keeping the authored 1600x900 coordinates.
-	var core_width: float = dimensions.y * (1672.0 / 941.0)
+	# The retained 16:9 core keeps authored 1600x900 coordinates aligned.
+	# Reveal the available generated sides on wider devices, at any resolution.
+	var core_width: float = dimensions.y * (16.0 / 9.0)
 	var maximum_width: float = LOGICAL.x * dimensions.x / core_width
 	var target_width: float = minf(visible_bounds.size.x, maximum_width)
 	return Rect2(Vector2((LOGICAL.x - target_width) * 0.5, 0.0), Vector2(target_width, LOGICAL.y))
@@ -493,7 +493,7 @@ func _draw_background(shot: Dictionary, bounds: Rect2) -> void:
 	if _is_extended_background(ref, dimensions):
 		# Crop from the symmetric centre. At 16:9 this selects the untouched
 		# original image; at 20:9 it reveals both generated extensions.
-		var core_width: float = dimensions.y * (1672.0 / 941.0)
+		var core_width: float = dimensions.y * (16.0 / 9.0)
 		var scale: float = LOGICAL.x / core_width
 		var source_width: float = core_width + maxf(0.0, bounds.size.x - LOGICAL.x) / scale
 		var source_height: float = bounds.size.y / scale

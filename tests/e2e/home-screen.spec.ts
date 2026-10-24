@@ -44,7 +44,7 @@ test.beforeEach(async()=>{
   dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});
  },{file,game});
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
- await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
  await expect(page.getByText('Projet ouvert.',{exact:true})).toBeVisible();
  await dismissMessage();
  await page.locator('.gd-sections').getByRole('button',{name:'Écran d’accueil',exact:true}).click();
@@ -155,7 +155,7 @@ test('compose the home screen, undo, reopen and publish its data and dedicated m
  saved=await save();
  expect(saved.elements.some(e=>e.id===note.id)).toBe(true);
 
- await page.locator('.gd-toolbar').getByRole('button',{name:'Ouvrir',exact:true}).click();
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
  await expect(page.getByText('Projet ouvert.',{exact:true})).toBeVisible();await dismissMessage();
  await page.locator('.gd-sections').getByRole('button',{name:'Écran d’accueil',exact:true}).click();
  await select('Titre');await expect(page.getByLabel('Texte',{exact:true})).toHaveValue('LUNARIA — MON JARDIN');

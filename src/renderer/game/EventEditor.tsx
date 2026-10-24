@@ -1,16 +1,16 @@
 import React,{useState} from 'react';
-import type { GameProject, LevelDefinition, CampaignFilm } from '../../shared/game/types.js';
+import type { GameProject, LevelDefinition } from '../../shared/game/types.js';
 import { enemyChoices, newId } from '../../shared/game/types.js';
 import { newEvent,TRIGGER_LABELS,type LevelEvent } from '../../shared/game/logic.js';
 import { ActionEditor,ConditionEditor,Select } from './LogicFields.js';
 import { Num } from './BalanceEditor.js';
 const TRIGGER_VALUE_LABELS:Partial<Record<LevelEvent['trigger']['kind'],string>>={time:'Après (s)',interval:'Intervalle (s)',wave_start:'Vague (0 = toutes)',wave_end:'Vague (0 = toutes)',health:'Seuil de PV (%)',enemies:'Ennemis restants ≤',variable:'Variable ≥'};
-export function EventEditor({project,level,update,addFilm}:{project:GameProject;level:LevelDefinition;update:(events:LevelEvent[])=>void;addFilm:()=>void}){
+export function EventEditor({project,level,update,linkFilm}:{project:GameProject;level:LevelDefinition;update:(events:LevelEvent[])=>void;linkFilm:(documentId:string)=>void}){
  const [selected,setSelected]=useState('');const events=level.events??[],ev=events.find(e=>e.id===selected)??events[0];
  const patch=(v:Partial<LevelEvent>)=>update(events.map(e=>e.id===ev.id?{...e,...v}:e));
  const add=()=>{const e=newEvent();update([...events,e]);setSelected(e.id);};
  const valueLabel=ev?TRIGGER_VALUE_LABELS[ev.trigger.kind]:undefined;
- return <section className="logic-event-editor"><div className="gd-section-heading"><div><h2>Événements du niveau</h2><p>Déclencheurs et actions, indépendants des vagues. La publication inclut aussi les films uniquement utilisés par un événement.</p></div><div className="gd-inline"><button onClick={addFilm}>+ Lier une cinématique</button><button className="gd-primary" disabled={events.length>=128} onClick={add}>+ Événement</button></div></div>
+ return <section className="logic-event-editor"><div className="gd-section-heading"><div><h2>Événements du niveau</h2><p>Déclencheurs et actions, indépendants des vagues. La publication inclut aussi les films uniquement utilisés par un événement.</p></div><div className="gd-inline"><label>Film du projet <select aria-label="Lier une cinématique du projet" value="" onChange={e=>{if(e.target.value)linkFilm(e.target.value);}}><option value="">Choisir une cinématique…</option>{(project.cinematics??[]).filter(doc=>!project.campaign?.cinematics.some(f=>f.documentId===doc.id)).map(doc=><option key={doc.id} value={doc.id}>{doc.title}</option>)}</select></label><button className="gd-primary" disabled={events.length>=128} onClick={add}>+ Événement</button></div></div>
  <div className="logic-event-tabs">{events.map(e=><button key={e.id} className={e.id===ev?.id?'selected':''} onClick={()=>setSelected(e.id)}>{e.enabled?'●':'○'} {e.name}</button>)}</div>
  {!ev?<p className="gd-callout">Aucun événement pour ce niveau. Ajoute une alerte, des renforts ou une cinématique pendant le combat.</p>:<div key={ev.id}><div className="logic-row"><label className="gd-field"><span>Nom de l’événement</span><input aria-label="Nom de l’événement" maxLength={120} value={ev.name} onChange={e=>patch({name:e.target.value})}/></label><label className="logic-check"><input type="checkbox" checked={ev.enabled} onChange={e=>patch({enabled:e.target.checked})}/>Activé</label><button onClick={()=>{const copy=structuredClone(ev);copy.id=newId('event');copy.name=(copy.name+' — copie').slice(0,120);update([...events,copy]);setSelected(copy.id);}}>Dupliquer</button><button onClick={()=>update(events.filter(e=>e.id!==ev.id))}>Supprimer l’événement</button></div>
  <div className="gd-form-grid"><Select label="Déclencheur" value={ev.trigger.kind} change={kind=>patch({trigger:{kind:kind as LevelEvent['trigger']['kind'],value:['time','interval'].includes(kind)?10:kind==='health'?50:0,ref:''},once:kind!=='interval'})} options={Object.entries(TRIGGER_LABELS).map(([id,name])=>({id,name}))}/>

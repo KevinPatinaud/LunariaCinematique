@@ -5,7 +5,7 @@ import { allActions } from '../shared/game/logic.js';
 import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
-import { atomicJson, isWithin, readJsonSource, resolveAsset } from './files.js';
+import { atomicJson, isWithin, resolveAsset } from './files.js';
 import { parseGameProject } from '../shared/game/validation.js';
 import { compileCampaign, safeMoviePath } from '../shared/game/campaign.js';
 import { parseCinematic } from '../shared/schema.js';
@@ -17,13 +17,20 @@ const json=(v:unknown)=>JSON.stringify(v,null,2)+'\n';
 const sha=(v:string)=>createHash('sha256').update(v).digest('hex');
 interface PlannedFile {relative:string;hash:string;source?:string;text?:string}
 interface Plan {project:GameProject;files:PlannedFile[];check:CampaignCheck}
+/** Rewrite media fields only: a title or dialogue can also contain a library URL. */
+function remapAssets(value:unknown,refs:Map<string,string>):void{
+ if(!value||typeof value!=='object')return;
+ for(const [key,item] of Object.entries(value)){
+  if(typeof item==='string'&&['asset','frameAsset','image','terrainImage','restoredTerrainImage'].includes(key)&&refs.has(item))
+   (value as Record<string,unknown>)[key]=refs.get(item)!;
+  else if(item&&typeof item==='object')remapAssets(item,refs);
+ }
+}
 /** Preflight performs no writes. A missing/invalid film or asset aborts the entire publication. */
-export async function planCampaign(value:unknown,movieRoot:string,libraryRoot:string):Promise<Plan>{
+export async function planCampaign(value:unknown,libraryRoot:string,gameRoot?:string):Promise<Plan>{
  const original=parseGameProject(value),project=compileCampaign(original),files:PlannedFile[]=[],assets=new Map<string,string>();
  const movies=project.campaign!.cinematics;
  const embedded=new Map((original.cinematics??[]).map(doc=>[doc.id,doc]));
- const needsLegacyFolder=movies.some(film=>!embedded.has(film.documentId));
- const root=needsLegacyFolder?await fs.realpath(movieRoot).catch(()=>{throw Error('Choisis le dossier des anciennes cinématiques à importer.');}):'';
  const folded=new Map<string,string>(), canonicalMovies=new Map<string,string>();
  async function collect(ref:string):Promise<void>{
    const relative=ref.slice(10);if(!safeMoviePath(relative+'.json'))throw Error('Nom de ressource non portable : '+ref);
@@ -34,31 +41,37 @@ export async function planCampaign(value:unknown,movieRoot:string,libraryRoot:st
    const source=await resolveAsset(libraryRoot,ref).catch(()=>{throw Error('Ressource introuvable ou hors bibliothèque : '+ref);});
    const stat=await fs.stat(source);if(stat.size===0||stat.size>MAX_ASSET)throw Error('Ressource vide ou supérieure à 100 Mo : '+ref);
    if(!/\.(png|jpe?g|webp|wav|ogg|mp3)$/i.test(source))throw Error('Format de ressource refusé : '+ref);
-   const digest=await hash(source);assets.set(ref,digest);files.push({relative:'LunariaArtLibrary/'+relative,source,hash:digest});
+   const digest=await hash(source);let published=relative;
+   if(gameRoot){
+    const dest=await target(gameRoot,'LunariaArtLibrary/'+relative);
+    const existing=await hash(dest).catch((e:NodeJS.ErrnoException)=>{if(e.code==='ENOENT')return null;throw e;});
+    // Keep earlier campaigns playable; a changed source gets an immutable, reusable copy.
+    if(existing!==null&&existing!==digest)published=`studio_versions/${digest}${path.posix.extname(relative).toLowerCase()}`;
+   }
+   assets.set(ref,'library://'+published);
+   const destination='LunariaArtLibrary/'+published;
+   const planned=files.find(file=>file.relative===destination);
+   if(planned&&planned.hash!==digest)throw Error('Deux ressources ciblent des contenus différents : '+destination);
+   if(!planned)files.push({relative:destination,source,hash:digest});
  }
  for(const ref of presentationAssets(project))await collect(ref);
  if(project.presentation)await validatePresentationRegions(project,libraryRoot);
  const aliases=new Map<string,string>();
  for(const film of movies){
-  let doc;
   const authored=embedded.get(film.documentId);
-  if(authored)doc=parseCinematic(authored);
-  else{
-   if(!safeMoviePath(film.file))throw Error('Chemin de cinématique invalide : '+film.file);
-   const real=await fs.realpath(path.join(root,...film.file.split('/'))).catch(()=>{throw Error('Cinématique introuvable : '+film.file);});
-   if(!isWithin(root,real))throw Error('Cinématique hors du dossier autorisé : '+film.file);
-   doc=parseCinematic((await readJsonSource(real)).value);
-  }
+  if(!authored)throw Error('Cinématique absente du projet : '+film.title);
+  const doc=parseCinematic(authored);
   if(doc.id!==film.documentId)throw Error('Le fichier ne correspond plus à la cinématique liée : '+film.file);
   const presentationErrors=cinematicPresentationIssues(doc,project);if(presentationErrors.length)throw Error(presentationErrors.join('\n'));
   delete doc.category; // Studio organization must not change the playable film or its content hash.
   if(doc.presentationCatalog)doc.presentationCatalog.file='content/design/game_content.json';
+  for(const ref of referencedAssets(doc))await collect(ref);
+  remapAssets(doc,assets);
   const text=json(doc),digest=sha(text),relative=`content/cinematics/studio/${digest}.cinematic.json`;
   if(!files.some(f=>f.relative===relative))files.push({relative,hash:digest,text});
   const canonicalId=canonicalMovies.get(digest);
   if(canonicalId)aliases.set(film.id,canonicalId);else canonicalMovies.set(digest,film.id);
   film.file=relative;film.title=doc.title;
-  for(const ref of referencedAssets(doc))await collect(ref);
  }
  delete project.cinematics;
  // Two source files may contain an identical film. Reuse one immutable blob/catalog entry.
@@ -67,9 +80,13 @@ export async function planCampaign(value:unknown,movieRoot:string,libraryRoot:st
   for(const step of project.campaign!.steps)if(step.kind==='cinematic')step.cinematicId=aliases.get(step.cinematicId)??step.cinematicId;
   for(const a of allActions(project))if(a.type==='cinematic')a.cinematicId=aliases.get(a.cinematicId!)??a.cinematicId;
  }
+ remapAssets(project,assets);
  parseGameProject(project);
  const skipped=original.levels.length-project.levels.length;
- return {project,files,check:{films:project.campaign!.cinematics.length,assets:assets.size,steps:project.campaign!.steps.length,levels:project.levels.length,warnings:skipped?[`${skipped} niveau(x) hors parcours conservé(s) dans le projet du Studio, non publié(s).`]:[]}};
+ const deferred=(original.campaign?.steps.length??project.campaign!.steps.length)-project.campaign!.steps.length;
+ const warnings=skipped?[`${skipped} niveau(x) hors de la partie jouable conservé(s) dans le projet du Studio, non publié(s).`]:[];
+ if(deferred>0)warnings.push(`${deferred} étape(s) après la fin actuelle conservée(s) dans le Studio, non publiée(s).`);
+ return {project,files,check:{films:project.campaign!.cinematics.length,assets:assets.size,steps:project.campaign!.steps.length,levels:project.levels.length,warnings}};
 }
 /** Refuse symlinked destinations (including internal ones) and non-regular files. */
 async function target(root:string,relative:string,create=false):Promise<string>{
@@ -87,19 +104,19 @@ async function target(root:string,relative:string,create=false):Promise<string>{
  * On a handled failure, remove only files created by this job whose hash is still ours.
  * A process crash can leave unused blobs, but cannot point the previous campaign at half-written films.
  */
-export async function publishCampaign(value:unknown,gameRoot:string,movieRoot:string,libraryRoot:string):Promise<CampaignCheck&{path:string}>{
+export async function publishCampaign(value:unknown,gameRoot:string,libraryRoot:string):Promise<CampaignCheck&{path:string}>{
  const root=await fs.realpath(gameRoot);
  for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd']){const real=await fs.realpath(path.join(root,marker)).catch(()=>{throw Error('Choisis le projet Godot fourni avec Lunaria Studio V1.10.');});if(!isWithin(root,real))throw Error('Projet de destination invalide.');}
  const lock=path.join(root,'.lunaria-campaign-publish.lock');
  const handle=await fs.open(lock,'wx').catch(()=>{throw Error('Une publication est déjà en cours (ou un verrou subsiste après un arrêt forcé).');});
  const created:PlannedFile[]=[],temporary:string[]=[];let committed=false;
  try{
-  const plan=await planCampaign(value,movieRoot,libraryRoot);
+  const plan=await planCampaign(value,libraryRoot,root);
   const content=await target(root,'content/design/game_content.json');
   const pending:PlannedFile[]=[];
-  // All conflicts checked before creating an asset. Existing different assets are NEVER overwritten.
+  // Changed media were versioned during planning. Reject corrupted immutable destinations.
   for(const file of plan.files){const dest=await target(root,file.relative);const present=await fs.stat(dest).catch((e:NodeJS.ErrnoException)=>{if(e.code==='ENOENT')return null;throw e;});
-   if(present){if(await hash(dest)!==file.hash)throw Error('Conflit de ressource déjà publiée : '+file.relative+'. Donne un nouveau nom à sa nouvelle version.');}
+   if(present){if(await hash(dest)!==file.hash)throw Error('Conflit de ressource publiée : '+file.relative+'. La copie du jeu diffère de la version attendue.');}
    else pending.push(file);
   }
   for(const file of pending){

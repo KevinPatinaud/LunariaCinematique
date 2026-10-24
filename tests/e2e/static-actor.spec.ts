@@ -27,7 +27,7 @@ test('returning the actor in shot 18 to a static image allows validation, playba
   app=await _electron.launch({args:[ROOT],env:env as Record<string,string>});
   const page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},projectFile);
-  await page.getByRole('button',{name:'Ouvrir le projet',exact:true}).click();
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.getByLabel('Nom du plan')).toHaveValue('Plan 1');
   await page.getByTestId('shot-card-17').click();
   await page.getByRole('button',{name:'Sélectionner Personnage test',exact:true}).click();

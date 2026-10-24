@@ -1,3 +1,4 @@
+import {importCombatMechanics} from './combatMechanics.js';
 import type { GameProject } from './types.js';
 import type { CombatCatalog } from './combat.js';
 /** Import presets for authored V1.7 projects, not a runtime fallback. No saved game is converted. */
@@ -63,10 +64,10 @@ export const DEFAULT_COMBAT:CombatCatalog={
     },
     {
       "id": "ab_fern",
-      "name": "Frondes humides",
-      "description": "",
+      "name": "Crosse de rosée",
+      "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
       "delivery": "projectile",
-      "projectileId": "proj_seed",
+      "projectileId": "proj_fern_frond",
       "target": "opponent",
       "selection": "one",
       "priority": "nearest",
@@ -77,9 +78,8 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "cooldown": 1,
       "initialDelay": 0.35,
       "effects": [
-        "fx_armor_break",
-        "fx_attack",
-        "fx_slow"
+        "fx_fern_impact",
+        "fx_fern_bind"
       ]
     },
     {
@@ -768,6 +768,28 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "damageType": "inherit",
       "duration": 2,
       "tickInterval": 1
+    },
+    {
+      "id": "fx_fern_impact",
+      "name": "Impact de la fronde",
+      "description": "Dégâts légers à l’accrochage.",
+      "kind": "damage",
+      "valueSource": "attack",
+      "amount": 0.2,
+      "damageType": "inherit",
+      "duration": 3,
+      "tickInterval": 1
+    },
+    {
+      "id": "fx_fern_bind",
+      "name": "Fronde enroulée",
+      "description": "Ralentit les déplacements et les attaques de 80 %. Inflige 25 % de l’attaque par seconde. Libération entre la moitié et la totalité de la durée. Une autre plante déclenche 100 % de dégâts sur le porteur et 65 % sur ses voisins à 1,25 case.",
+      "kind": "slow",
+      "valueSource": "fixed",
+      "amount": 0.8,
+      "damageType": "inherit",
+      "duration": 6,
+      "tickInterval": 1
     }
   ],
   "projectiles": [
@@ -822,6 +844,19 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "rowRadius": 0,
       "color": "#bd39ed",
       "size": 0.13
+    },
+    {
+      "id": "proj_fern_frond",
+      "name": "Fronde en spirale",
+      "description": "Petite fronde humide enroulée, qui s’accroche au premier pollueur.",
+      "speed": 4.8,
+      "lifetime": 3,
+      "maxHits": 1,
+      "hitRadius": 0.18,
+      "splashRadius": 0,
+      "rowRadius": 0,
+      "color": "#4fba85",
+      "size": 0.12
     }
   ]
 };
@@ -967,7 +1002,10 @@ const assignments:Record<string,string[]>={
 };
 export function ensureCombat(p:GameProject):void {
  if(!p.combat){assignments.plastic_bag=[PLASTIC_BAG_ABILITY.id];p.combat=structuredClone(DEFAULT_COMBAT);for(const x of [...p.balance.plants,...p.balance.enemies])x.ability_ids=[...(assignments[x.id]??[])];}
+ importCombatMechanics(p.combat);
  if(p.schemaVersion<2)p.schemaVersion=2;
 }
 import {PLASTIC_BAG_ABILITY,PLASTIC_BAG_EFFECT} from './plasticBag.js';
 import { CIGARETTE_ABILITY, CIGARETTE_EFFECT } from './cigarette.js';
+
+importCombatMechanics(DEFAULT_COMBAT);

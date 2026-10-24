@@ -1,9 +1,8 @@
+import {importCombatMechanics} from '../../src/shared/game/combatMechanics.js';
 import { ensurePresentation } from '../../src/shared/presentation/defaults.js';
 import type { GameProject } from '../../src/shared/game/types.js';
-import { defaultRewards } from '../../src/shared/game/types.js';
 /** Editable starter content, not a runtime fallback. */
 export const GAME_SEED:GameProject={
-  rewards: defaultRewards(),
   "schemaVersion": 3,
   "kind": "lunaria-game-project",
   "id": "lunaria_campaign",
@@ -1345,36 +1344,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "L'assaut est repoussé, mais les eaux contaminées ont déjà atteint les racines du tilleul."
-        },
-        {
-          "speaker": "Rose",
-          "text": "La porte a tenu. Je peux encore dégager tes racines. Il doit y avoir quelque chose à faire !"
-        },
-        {
-          "speaker": "Tilleul",
-          "text": "Il y a quelque chose. Prenez ces graines. Cherchez un endroit où elles pourront grandir."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Celle-ci reviendra ici. Je la garderai dans mes feuilles."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Alors il faudra qu'on revienne aussi."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Les survivants sont confiés aux jardins voisins. Radis et Rose franchissent la porte avec les graines du tilleul."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "L'assaut est repoussé, mais les eaux contaminées ont déjà atteint les racines du tilleul.",
       "events": []
     },
     {
@@ -1390,8 +1359,8 @@ export const GAME_SEED:GameProject={
         "hazel"
       ],
       "objective": {
-        "type": "operation",
-        "target": 35
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Gardez le passage libre pour dégager la clôture.",
       "tip": "Le chantier avance pendant les vagues tant qu'une plante est vivante dans le jardin. Noisetier peut retenir les assaillants.",
@@ -1556,53 +1525,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Noisetier",
-          "text": "Dix-huit, dix-neuf… Tu viens de marcher sur mon inventaire."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu es coincé dans ce grillage ! On peut te dégager ?"
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "En commençant par ne pas perdre la dernière noisette."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Nous tenons le passage pendant que les racines desserrent la clôture. Il pourra se battre à nos côtés."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Très bien. Je rejoins votre groupe. Provisoirement."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Noisetier",
-          "text": "Toutes retrouvées. Nous prenons simplement la même direction."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Le soir, une carcasse surgit du fossé. Noisetier s'interpose avant même que Radis ait vu le danger."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu nous as suivis jusque-là pour tes noisettes ?"
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Il faut bien quelqu'un pour compter correctement."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Donne-m'en deux. Tu porteras le reste."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Toutes retrouvées. Nous prenons simplement la même direction.",
       "events": []
     },
     {
@@ -1619,8 +1541,8 @@ export const GAME_SEED:GameProject={
         "fern"
       ],
       "objective": {
-        "type": "operation",
-        "target": 40
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Défendez les racines qui rouvrent le petit canal.",
       "tip": "La remise en eau avance pendant les vagues, avec l'aide des plantes vivantes. Toutes les parcelles sont disponibles ; Fougère ralentit les cibles.",
@@ -1809,49 +1731,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Fougère",
-          "text": "Pas par cette galerie. L'eau y goûte le métal."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu sais où elle reste claire ? Nous cherchons une terre pour ces graines."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Une source coule dans un parc, au-delà de la gare. Mais je ne vais jamais aussi loin."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Aide-nous à rouvrir ce passage. Nous avancerons ensemble."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Il reste justement quelques canalisations que j'aimerais écouter. Je viens."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Un filet d'eau rejoint la galerie. Des racines oubliées se redressent contre les pierres."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu es déjà plus loin que tu ne l'avais prévu."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Oui. Et il y a encore un escalier intéressant devant nous."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Les endroits intéressants peuvent-ils parfois être secs ?"
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Un filet d'eau rejoint la galerie. Des racines oubliées se redressent contre les pierres.",
       "events": []
     },
     {
@@ -2059,53 +1938,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Pissenlit",
-          "text": "Ne traversez pas ! Le Ramasseur revient dès que la grande aiguille grince."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Une énorme machine avale les déchets, les panneaux et les plantes. Sur son flanc : « Pour une ville plus propre »."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Il devrait se relire."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Il ne regarde jamais de ce côté. Je connais les rondes. Emmenez-moi et je vous montrerai le chemin."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Tu le connais entièrement ?"
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Le début. Ensuite, ce sera une découverte collective."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Pissenlit",
-          "text": "Tous les quais sont calmes. C'est la première fois que je vois l'horloge d'en bas."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous sommes cinq. Chacun aura sa place dans les prochaines batailles."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Une verrière rejoint le quai suivant. Quelqu'un y bouge encore."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Je l'avais presque repérée."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Tous les quais sont calmes. C'est la première fois que je vois l'horloge d'en bas.",
       "events": []
     },
     {
@@ -2124,8 +1956,8 @@ export const GAME_SEED:GameProject={
         "ivy"
       ],
       "objective": {
-        "type": "operation",
-        "target": 45
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez les attaches pendant la réparation du passage.",
       "tip": "Défendez le jardin pendant les travaux : chaque parcelle vide est disponible. Choisissez cinq espèces parmi vos six compagnons.",
@@ -2314,53 +2146,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Lierre",
-          "text": "Vous êtes très… proches du sol. Mon raccourci devrait arranger cela."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Le passage s'arrête devant un vide que seul Lierre peut franchir."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Et Noisetier, tu comptes le faire voler ?"
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Naturellement, j'avais prévu de construire un pont. Je vais fixer mes tiges des deux côtés."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous protégeons tes attaches. Ensuite tu viens avec nous."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Je vois qu'il vous faut quelqu'un de qualifié."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les attaches tiennent. Même Noisetier traverse sans abandonner une noisette."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Ton raccourci a pris toute la journée."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Un pont de cette qualité mérite qu'on le contemple."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Regardez sous la verrière. Il y a des feuilles dans ce wagon."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les attaches tiennent. Même Noisetier traverse sans abandonner une noisette.",
       "events": []
     },
     {
@@ -2594,49 +2379,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Ortie",
-          "text": "Montrez vos racines. Les canettes aussi ont appris à marcher : je vérifie."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous cherchons la sortie vers le parc. Qui est avec toi ?"
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Les petits dont le Ramasseur a arraché le jardin. Je ne pars pas sans eux."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Alors nous tenons les portes avec toi. Ensuite nous préparons leur traversée."
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Voilà une phrase que je peux entendre."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les jeunes plantes sortent de sous les sièges. Ortie les appelle une à une pour vérifier que toutes sont là."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Elles ne pourront pas traverser d'un seul coup."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Je peux relier plusieurs abris."
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Et je protège l'arrière. Après le parc, je continuerai avec vous. D'autres doivent encore attendre."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les jeunes plantes sortent de sous les sièges. Ortie les appelle une à une pour vérifier que toutes sont là.",
       "events": []
     },
     {
@@ -2656,8 +2398,8 @@ export const GAME_SEED:GameProject={
         "nettle"
       ],
       "objective": {
-        "type": "operation",
-        "target": 55
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Escortez les jeunes pousses jusqu'au refuge sans les perdre.",
       "tip": "L'escorte avance hors du plateau pendant les vagues. Gardez une défense vivante et protégez les cinq allées du jardin.",
@@ -2870,66 +2612,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Pissenlit",
-          "text": "Le Ramasseur est de l'autre côté. C'est maintenant."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Les plus petites par les passages bas. Les autres suivent les attaches de Lierre."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je retiens les wagons. Continuez tant que les rails sont libres."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous couvrirons chaque groupe jusqu'au bout."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Je préfère compter les arrivées. Elles doivent être aussi nombreuses que les départs."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "La dernière pousse rejoint le parc. Derrière elle, le wagon se soulève grâce à toutes les racines réunies."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Vous auriez dû continuer."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous avons continué. Ensemble."
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Tout le monde est là. Je recompterai quand même."
-        },
-        {
-          "speaker": "Narration",
-          "text": "La grue retombe sur des rails vides. À l'aube, la source apparaît entre les arbres."
-        }
-      ],
-      "midDialogue": [
-        {
-          "speaker": "Narration",
-          "text": "Le Ramasseur heurte un wagon. Rose retient le métal, mais une roue emprisonne ses tiges."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Continuez ! Il va revenir !"
-        },
-        {
-          "speaker": "Radis",
-          "text": "Lierre, une attache au-dessus ! Noisetier, avec moi. Ortie, protège les petites pousses. Nous revenons te chercher."
-        }
-      ],
-      "midWave": 2,
-      "restoration": "La dernière pousse rejoint le parc. Derrière elle, le wagon se soulève grâce à toutes les racines réunies.",
       "events": []
     },
     {
@@ -3296,61 +2978,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Fougère",
-          "text": "La source est claire. Nous pouvons enfin planter."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Un bras de grue dépasse de la grille. Le Ramasseur a suivi les traces jusqu'au parc."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Il devra traverser toutes nos racines avant de toucher ce jardin."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Sa plaque s'ouvre quand il frappe. Observez ses mouvements."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Protégeons la source. Cette fois, elle coulera encore après la bataille."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le noyau s'éteint. Le Ramasseur s'affaisse loin de la source, dans un long souffle de vapeur."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous pouvons les planter. Les graines du tilleul ont une terre."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Les habitants retirent les carcasses et reviennent entretenir le parc. Une vieille dame pose un écriteau : « Merci de laisser pousser »."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Une hirondelle arrive d'Afrique. Un fleuve n'atteint plus ses berges."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Nous venons juste de trouver un endroit sûr."
-        },
-        {
-          "speaker": "Radis",
-          "text": "L'eau et les oiseaux continuent de voyager, même si nous restons ici."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Les gardiens du parc prennent le relais. Les sept compagnons partent ensemble vers la côte."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le noyau s'éteint. Le Ramasseur s'affaisse loin de la source, dans un long souffle de vapeur.",
       "events": []
     },
     {
@@ -3371,8 +2998,8 @@ export const GAME_SEED:GameProject={
         "acacia"
       ],
       "objective": {
-        "type": "operation",
-        "target": 45
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Gardez le chantier de la pépinière en activité.",
       "tip": "Gardez des plantes vivantes dans le jardin pour faire avancer les travaux. Acacia est efficace contre les protections.",
@@ -3585,49 +3212,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Après la traversée en cargo, les hirondelles guident la troupe vers un bassin fluvial. Les canaux gardent la forme de l'eau disparue."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Si vous venez demander de l'eau, prenez un seau. Si vous venez donner des conseils, asseyez-vous dessus."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous avons reçu votre appel. Comment pouvons-nous aider ?"
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Commencez par cette fuite. Mes élèves garderont le puits ; je vous accompagne au chantier."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Enfin un plan qui tient en une phrase."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "La digue retient de nouveau l'eau. Acacia attend que les jeunes pousses aient bu avant d'y tremper ses racines."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Une fuite réparée paraît petite face à tout cela."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Dis-le à ceux qui boivent."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Un ancien conduit passe sous le canal. Quelqu'un a déjà dessiné son trajet."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "La digue retient de nouveau l'eau. Acacia attend que les jeunes pousses aient bu avant d'y tremper ses racines.",
       "events": []
     },
     {
@@ -3649,8 +3233,8 @@ export const GAME_SEED:GameProject={
         "papyrus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 50
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Rouvrez le circuit d'eau en défendant ses deux postes.",
       "tip": "L'eau revient pendant les vagues avec une défense vivante. Papyrus soigne à proximité et accélère l'opération depuis n'importe quelle parcelle.",
@@ -3863,49 +3447,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Papyrus",
-          "text": "J'ai corrigé les rigoles. Il reste à dégager cette galerie."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "La première idée était mauvaise ?"
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "La première idée ignorait encore où étaient les trous."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "J'entends de l'eau derrière cette paroi. Tes plans peuvent la ramener au puits."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Alors je viens les vérifier sur place. Tenez les deux postes pendant les travaux."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Un filet d'eau traverse les nouvelles rigoles et remplit un bassin longtemps resté vide."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Je vais dessiner ce qui fonctionne. Ceux qui restent doivent pouvoir le refaire."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Un messager arrive : un jardin isolé manque d'eau. Un jeune baobab y protège des pousses."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous partons dès que le passage est sûr."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Un filet d'eau traverse les nouvelles rigoles et remplit un bassin longtemps resté vide.",
       "events": []
     },
     {
@@ -3928,8 +3469,8 @@ export const GAME_SEED:GameProject={
         "papyrus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 60
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Escortez les jeunes pousses vers la pépinière.",
       "tip": "Baobab tient longtemps au contact. Soutenez-le avec des attaquants pour protéger le jardin pendant l'escorte.",
@@ -4142,57 +3683,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Baobab",
-          "text": "… Et le grand oiseau repartit chercher le chemin. Il avait oublié quelque chose. Encore."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu sais comment ton histoire finit ?"
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Oui. Mais je ne voulais pas y arriver avant les secours."
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Ils sont là. Nous ramènerons toutes les pousses."
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Alors je marche avec vous. Mais la dernière passe avant moi."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je prendrai l'autre côté. Tu n'auras pas à tout retenir seul."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les voyageurs rejoignent la pépinière. Baobab s'assied seulement quand la dernière pousse est à l'ombre."
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Maintenant, je peux terminer l'histoire."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu pourrais en raconter une autre ce soir ?"
-        },
-        {
-          "speaker": "Rose",
-          "text": "D'abord, tout le monde boit."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Elle découvre qu'elle peut détourner les yeux quelques secondes sans que quelqu'un soit en danger."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les voyageurs rejoignent la pépinière. Baobab s'assied seulement quand la dernière pousse est à l'ombre.",
       "events": []
     },
     {
@@ -4454,53 +3944,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Aloès",
-          "text": "Les nouvelles pousses ici. Les blessés près du bassin. Et toi, Rose : tu boites."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je marche comme ça."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Depuis quand ?"
-        },
-        {
-          "speaker": "Narration",
-          "text": "Des patrouilles remontent le canal. Aloès rassemble de quoi soigner les défenseurs."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Je rejoins votre équipe. Cela ne vous dispense pas d'éviter les coups."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le dispensaire tient. Aloès finit par examiner les racines de Rose."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "La prochaine fois que tu veux cacher une blessure, choisis quelqu'un de moins observateur."
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Radis s'est endormi. Je vais veiller sur lui."
-        },
-        {
-          "speaker": "Rose",
-          "text": "D'accord."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Soulagée, Rose reste pourtant un peu à l'écart. Elle ne sait pas encore partager sa peur."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le dispensaire tient. Aloès finit par examiner les racines de Rose.",
       "events": []
     },
     {
@@ -4763,49 +4206,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Hibiscus",
-          "text": "Vous tombez bien. Trois jardins veulent agir et aucun ne connaît le plan des deux autres."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "J'ai préparé un schéma des vannes."
-        },
-        {
-          "speaker": "Hibiscus",
-          "text": "Je peux réunir du monde. Mais il faudra l'expliquer sans employer trois fois « vanne » dans la même phrase."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Une patrouille approche du rassemblement. Hibiscus guide les jeunes vers les abris."
-        },
-        {
-          "speaker": "Hibiscus",
-          "text": "Je reste avec les défenseurs. Ensuite, nous irons porter nos nouvelles ensemble."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les jardins décident de tenir les pépinières pendant qu'une équipe remontera vers la station."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "L'Assoiffeur détourne le fleuve vers ses bassins. Nous connaissons ses rondes ; nous avons enfin assez de défenseurs."
-        },
-        {
-          "speaker": "Hibiscus",
-          "text": "Les messages circulent. Personne n'attendra un signal qui n'arrive pas."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Nous devons regarder ses réserves avant l'assaut."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les jardins décident de tenir les pépinières pendant qu'une équipe remontera vers la station.",
       "events": []
     },
     {
@@ -4830,8 +4230,8 @@ export const GAME_SEED:GameProject={
         "hibiscus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 60
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez les postes qui isolent les réserves toxiques.",
       "tip": "Gardez une défense vivante pendant les vagues jusqu'à la fin du confinement, suivi dans la jauge de mission.",
@@ -5068,53 +4468,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Une poudre claire couvre le bord d'un bassin. Un pollueur la touche, se contracte et tombe."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Vous avez vu ? Il suffirait d'en mettre dans leurs réserves."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "La cendre blanche. Regarde autour du bassin avant de la toucher."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Aucune herbe, aucun insecte. Les anciennes racines s'arrêtent à la limite de la poudre."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Leurs réserves rejoignent le fleuve. Nous devons isoler les cuves."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous suivrons le plan des canaux."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Papyrus",
-          "text": "Les cuves sont isolées. Les équipes locales les surveilleront pendant l'assaut."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Nous aurions pu les arrêter ici."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Et faire disparaître ce que nous essayons de sauver."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Rose replie une feuille contenant un peu de poudre. Elle la range sans rien dire."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les cuves sont isolées. Les équipes locales les surveilleront pendant l'assaut.",
       "events": []
     },
     {
@@ -5139,8 +4492,8 @@ export const GAME_SEED:GameProject={
         "hibiscus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 65
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Faites progresser l'eau tout en repoussant les vagues.",
       "tip": "Les plantes vivantes font avancer l'ouverture des canaux pendant les vagues. Toutes les parcelles vides sont disponibles.",
@@ -5401,49 +4754,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Papyrus",
-          "text": "Nous ouvrirons les passages l'un après l'autre. Chaque rive libérée doit rester protégée."
-        },
-        {
-          "speaker": "Hibiscus",
-          "text": "Les jardins attendent vos signaux."
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Je peux tenir le canal avec Rose."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Bien. Cette fois, on ne les laissera pas approcher des pousses."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Les défenseurs avancent avec l'eau. Personne ne reste isolé."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "L'eau revient dans les premiers bassins. Au loin, la station entière se met à bouger."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Elle marche ! Les réservoirs ont des pattes !"
-        },
-        {
-          "speaker": "Acacia",
-          "text": "L'Assoiffeur vient reprendre ce qu'il croit lui appartenir."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Gardez les ouvertures. Elles peuvent le déséquilibrer."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "L'eau revient dans les premiers bassins. Au loin, la station entière se met à bouger.",
       "events": []
     },
     {
@@ -5468,8 +4778,8 @@ export const GAME_SEED:GameProject={
         "hibiscus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 70
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Tenez les canaux et neutralisez l'Assoiffeur.",
       "tip": "Protégez le jardin pendant la remise en eau et préparez une défense capable de résister aux attaques du boss.",
@@ -5847,74 +5157,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "La station plonge ses tuyaux dans le courant. Les berges se fissurent sous l'aspiration."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Si les conduites restent ouvertes, il ne pourra pas retenir tous les débits."
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Les pépinières sont gardées. Occupons-nous de lui."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Gardez vos positions jusqu'au dernier signal."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Noisetier, reste près de moi. La rive bouge."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les canaux ouverts déséquilibrent la station. Son noyau cède ; l'eau reprend le chemin des pépinières."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Rose, cette racine est déchirée. Cette fois, tu te reposes."
-        },
-        {
-          "speaker": "Rose",
-          "text": "La prochaine fois, je veux qu'ils tombent avant de nous atteindre."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Les jardins se rétablissent. Acacia, Papyrus et Hibiscus confient leurs tâches à leurs proches. Baobab et Aloès choisissent aussi de poursuivre le voyage."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Baobab prend trois places. Enfin… Il reste une noisette pour lui."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Les pièces de la station viennent d'ateliers en Asie. Ils fabriquent de quoi étendre les colonies."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Les compagnons préparent leur traversée. Rose range soigneusement sa feuille de cendre blanche."
-        }
-      ],
-      "midDialogue": [
-        {
-          "speaker": "Narration",
-          "text": "Une berge cède. Rose rattrape Noisetier, mais l'effort déchire une racine. Baobab s'ancre derrière eux."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Radis, les conduites ! Si tu quittes ton poste, toute la ligne cède."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Baobab, tiens-les ! Je reste. Nous allons ouvrir le passage."
-        }
-      ],
-      "midWave": 3,
-      "restoration": "Les canaux ouverts déséquilibrent la station. Son noyau cède ; l'eau reprend le chemin des pépinières.",
       "events": []
     },
     {
@@ -5940,8 +5182,8 @@ export const GAME_SEED:GameProject={
         "lavender"
       ],
       "objective": {
-        "type": "operation",
-        "target": 55
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez le refuge et son évacuation sous la fumée.",
       "tip": "L'évacuation avance pendant les vagues, sans case bloquée par la fumée. Lavande couvre plusieurs allées ; protégez-la.",
@@ -6287,53 +5529,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Une grande cité portuaire apparaît derrière la fumée. Depuis une terrasse, une enfant tend une planche à Radis."
-        },
-        {
-          "speaker": "Mei",
-          "text": "Attention au trou ! Ma grand-mère a de l'eau pour vous."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Trois ans que je travaille mon parfum, et on m'installe près des chaussures."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous cherchons les ateliers qui fabriquent les pollueurs."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Commençons par mettre ce jardin à l'abri. Je vous accompagne ; je connais les terrasses et les voisins qui font semblant de ne pas nous entendre."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Mei",
-          "text": "Le passage est sûr. Nous accueillons les petites plantes à l'intérieur."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Je vais prévenir les autres jardins. Il faudra parler fort, tout le monde tousse au mauvais moment."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Plus loin, un homme chasse les voyageurs pour protéger sa citerne. Dans la rue voisine, des habitants réparent ensemble leurs filtres."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Comment peuvent-ils agir si différemment ?"
-        },
-        {
-          "speaker": "Acacia",
-          "text": "Écoute ce qu'ils vivent. Tu n'auras pas toujours une réponse facile."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le passage est sûr. Nous accueillons les petites plantes à l'intérieur.",
       "events": []
     },
     {
@@ -6360,8 +5555,8 @@ export const GAME_SEED:GameProject={
         "bamboo"
       ],
       "objective": {
-        "type": "operation",
-        "target": 60
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez la réparation des nouveaux chemins de repli.",
       "tip": "Les travaux avancent grâce aux plantes vivantes, quelle que soit leur position. Bambou frappe les pollueurs protégés à longue portée.",
@@ -6707,53 +5902,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Bambou",
-          "text": "Entrée par la gauche. Réserves à droite. Ne franchissez pas les lignes."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Cette rambarde rejoint pourtant le jardin voisin."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Ce passage n'est pas prévu."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Un drone surgit d'une conduite derrière les défenses. D'autres pollueurs l'accompagnent."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous devons ouvrir une autre sortie. Bambou, aide-nous à tenir pendant les réparations."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Je rejoins votre formation. Mais nous reparlerons de la rambarde."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les habitants ferment l'ancienne conduite et sécurisent le nouveau passage. Bambou regarde les ratures sur son plan."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Vous changez souvent d'avis aussi brusquement ?"
-        },
-        {
-          "speaker": "Radis",
-          "text": "Quand quelque chose ne fonctionne plus."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Je garderai quelques cases vides sur le prochain plan."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les habitants ferment l'ancienne conduite et sécurisent le nouveau passage. Bambou regarde les ratures sur son plan.",
       "events": []
     },
     {
@@ -6781,8 +5929,8 @@ export const GAME_SEED:GameProject={
         "lotus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 65
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Rétablissez le circuit d'eau avant de quitter le bassin.",
       "tip": "Protégez le jardin pendant les travaux hydrauliques. Lotus soigne largement ; gardez assez d'attaquants pour arrêter les vagues.",
@@ -7128,49 +6276,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Lotus",
-          "text": "Les petites plantes attendent sur le bord le moins atteint. Je reste jusqu'à leur sortie."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Une conduite apporte la contamination depuis les ateliers."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Les habitants peuvent la fermer. Nous devons protéger leurs postes."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Je vous aiderai. Je connais les endroits où l'eau arrive avant les secours."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Reste près des défenses. Personne ne te demandera de tenir seule."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "La conduite sale est isolée. Les dernières pousses sont installées dans des bacs propres."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Maintenant, je peux quitter le bassin."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu reviendras ?"
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Oui. Mais d'abord, je viens avec vous. L'eau relie encore beaucoup d'endroits blessés."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "La conduite sale est isolée. Les dernières pousses sont installées dans des bacs propres.",
       "events": []
     },
     {
@@ -7578,53 +6683,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Gingembre",
-          "text": "Ils réparaient une porte. J'ai frappé avant qu'ils la referment."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Et toi, quand répares-tu ? Montre cette éraflure."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Sa porte vient vers nous. Avec le reste de la patrouille."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "D'accord, cette partie n'était pas prévue. Je prends ma place avec vous."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Enfin quelqu'un qui veut les atteindre avant qu'ils attaquent."
-        },
-        {
-          "speaker": "Radis",
-          "text": "On les arrête ensemble. Personne ne repart seul vers les ateliers."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les patrouilles sont contenues. Gingembre accepte enfin les soins d'Aloès."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "Leurs ateliers s'appellent Mille-Gueules. Il sort toujours une autre machine par une autre porte."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Alors il faut interrompre les arrivées et les conduites, pas courir d'une porte à l'autre."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Pendant qu'on prépare, les toits continuent de s'étouffer."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les patrouilles sont contenues. Gingembre accepte enfin les soins d'Aloès.",
       "events": []
     },
     {
@@ -7653,8 +6711,8 @@ export const GAME_SEED:GameProject={
         "ginger"
       ],
       "objective": {
-        "type": "operation",
-        "target": 65
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Tenez le refuge pendant que la fumée coupe les passages.",
       "tip": "Protégez le jardin pendant l'évacuation, suivie dans la jauge. Pour cette mission, les épines de Rose sont renforcées.",
@@ -8032,90 +7090,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Les quartiers les plus exposés sont évacués. Mei attend derrière une porte avec plusieurs jeunes pousses."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Les relais sont prêts. Lierre a renforcé les passerelles."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Rose, tu n'as pas reposé ta racine."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je me reposerai quand ils seront passés."
-        },
-        {
-          "speaker": "Radis",
-          "text": "On tient les abris. Dès que la fumée baisse, le prochain groupe traverse."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les habitants sont sauvés. Radis acclame Rose ; Gingembre voudrait déjà repartir derrière elle."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Attendez. Les feuilles brunissent là où ses épines ont touché."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Une traînée rejoint la gouttière. Empêchons-la d'atteindre les citernes."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Rose, il faut retirer ce qui reste de poudre."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Et quand ils reviendront ?"
-        },
-        {
-          "speaker": "Radis",
-          "text": "On trouvera autre chose."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Comme pour le tilleul ? Je tenais la porte. J'ai tout fait, et il est mort quand même."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Moi aussi, j'étais là."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Vous pouvez continuer à planter derrière eux. Moi, je vais les arrêter."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Rose disparaît avant l'aube. La cendre blanche a donné de la puissance à ses épines et laissé une blessure dans le groupe."
-        }
-      ],
-      "midDialogue": [
-        {
-          "speaker": "Narration",
-          "text": "Mille-Gueules épaissit brutalement la fumée. Rose entend Mei derrière la porte, mais ne voit plus Radis."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Écartez-vous !"
-        },
-        {
-          "speaker": "Narration",
-          "text": "Elle enduit ses épines de cendre blanche. Les noyaux tombent à son contact ; elle dégage la passerelle."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "Vous avez vu ? Ils ne peuvent même plus l'approcher !"
-        }
-      ],
-      "midWave": 2,
-      "restoration": "Les habitants sont sauvés. Radis acclame Rose ; Gingembre voudrait déjà repartir derrière elle.",
       "events": []
     },
     {
@@ -8491,61 +7465,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Radis",
-          "text": "Il faut la retrouver. Elle peut encore être près du port."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Les jardins attendent aussi votre signal. Vos départs ne sont décidément pas bien annoncés."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Ces pousses n'ont pas encore pu partir."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Je peux réorganiser la première ligne."
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Rose n'est pas juste une place vide à remplir."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Je sais. Nous restons jusqu'à leur évacuation."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Je vous rejoins. Je connais les relais, et je préfère surveiller les signaux moi-même."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les derniers jardins isolés reçoivent le signal. Les habitants rejoignent les passages sécurisés."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "J'ai trouvé sa force admirable. Puis j'ai vu les feuilles."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Moi aussi."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Vous pourrez lui parler quand nous l'aurons retrouvée. Pour l'instant, les ateliers se rallument."
-        },
-        {
-          "speaker": "Ortie",
-          "text": "Alors nous les arrêterons. Elle saura au moins où nous chercher."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les derniers jardins isolés reçoivent le signal. Les habitants rejoignent les passages sécurisés.",
       "events": []
     },
     {
@@ -8574,8 +7493,8 @@ export const GAME_SEED:GameProject={
         "chrysanthemum"
       ],
       "objective": {
-        "type": "operation",
-        "target": 70
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez les équipes qui coupent les alimentations.",
       "tip": "Protégez le jardin pendant les deux chantiers, suivis hors du plateau. Un soutien seul ne remplace pas les attaquants.",
@@ -8953,49 +7872,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Papyrus",
-          "text": "Les ateliers partagent plusieurs arrivées. Nous les fermerons progressivement."
-        },
-        {
-          "speaker": "Mei",
-          "text": "Ma grand-mère connaît les personnes qui entretiennent les filtres. Elles viennent vous montrer les conduites."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Nous couvrons leurs passages. Personne ne doit rester coincé entre deux ateliers."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Un signal lorsque chaque équipe est prête. Gingembre, un signal reçu, pas imaginé."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "J'avais compris."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les premières cheminées s'éteignent. Les ateliers restants concentrent leur activité autour du noyau central."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Nos chemins de repli tiennent."
-        },
-        {
-          "speaker": "Mei",
-          "text": "Nous pouvons respirer un peu mieux près des fenêtres."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Une dernière attaque. Ensuite nous suivrons la trace de Rose."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les premières cheminées s'éteignent. Les ateliers restants concentrent leur activité autour du noyau central.",
       "events": []
     },
     {
@@ -9024,8 +7900,8 @@ export const GAME_SEED:GameProject={
         "chrysanthemum"
       ],
       "objective": {
-        "type": "operation",
-        "target": 75
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez le refuge et stoppez le noyau de Mille-Gueules.",
       "tip": "La colonie produit des renforts. Gardez des moyens de traiter les groupes et les pollueurs protégés.",
@@ -9403,57 +8279,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "L'atelier central ouvre ses portes. Derrière chacune, une nouvelle carcasse se met en mouvement."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "Cette fois, j'attends le signal."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Le voici. Les équipes extérieures sont prêtes."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "J'aimerais enfin savoir ce que sent cette ville sans les pneus."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous tenons jusqu'à l'arrêt du dernier atelier."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le noyau se sépare de ses conduites. Les dernières cheminées ralentissent, puis s'éteignent."
-        },
-        {
-          "speaker": "Mei",
-          "text": "Regardez. Là-haut. C'est du bleu."
-        },
-        {
-          "speaker": "Radis",
-          "text": "J'aurais voulu qu'elle le voie."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Les registres indiquent des convois à travers l'Océanie, vers un site des Amériques : la Fournaise."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Je maintiendrai les messages avec les jardins. Nous ne les perdrons plus de vue."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Les habitants gardent les filtres en état. Un équipage propose d'emmener la troupe vers les archipels."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le noyau se sépare de ses conduites. Les dernières cheminées ralentissent, puis s'éteignent.",
       "events": []
     },
     {
@@ -9483,8 +8308,8 @@ export const GAME_SEED:GameProject={
         "mangrove"
       ],
       "objective": {
-        "type": "operation",
-        "target": 60
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez le refuge pendant les changements de marée.",
       "tip": "Le refuge se prépare hors du plateau pendant les vagues. La marée ne réserve aucune parcelle ; répartissez vos défenses.",
@@ -9830,53 +8655,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Après une longue traversée, la troupe atteint une baie où les déchets reviennent à chaque marée."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "Cette berge tient encore. Celle d'à côté, non."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous pouvons vous aider à protéger le refuge."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "Alors observons d'abord le courant. Les racines doivent tenir quand il change."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Voilà une excellente raison de rester sur un sol immobile."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "Je prends ma place avec vous. Ce sol l'est moins qu'il en a l'air."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les habitants dégagent les premiers débris et renforcent le refuge après la bataille."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "Mes proches reprendront la garde. Vous aurez besoin de quelqu'un pour lire les berges."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Les courants apportent plus que ce qu'on peut retirer."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Alors nous chercherons aussi ce qui les alimente."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les habitants dégagent les premiers débris et renforcent le refuge après la bataille.",
       "events": []
     },
     {
@@ -9907,8 +8685,8 @@ export const GAME_SEED:GameProject={
         "pandanus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 65
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Défendez les travaux du jardin flottant.",
       "tip": "Protégez le jardin pendant les travaux. Pandanus soigne à proximité et accélère l'opération depuis n'importe quelle parcelle.",
@@ -10286,53 +9064,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Pandanus",
-          "text": "Si vous accueillez les plantes des rivages, il leur faut un endroit stable."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Je peux relier ces plateformes avec élégance."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Avec des attaches, surtout. L'élégance n'a jamais retenu une caisse."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous défendrons le chantier. Les équipages peuvent amarrer le jardin à leur bateau."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Je vous accompagne. Je préfère vérifier mes réparations quand elles voyagent."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le jardin flottant accueille ses premières plantes déplacées. Les habitants préparent leur retour dans des lieux adaptés."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Les attaches sont tout à fait élégantes."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Elles tiennent. Nous pourrons discuter du reste en route."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Ma caisse a une place au sec ?"
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Et moi, loin du moteur."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le jardin flottant accueille ses premières plantes déplacées. Les habitants préparent leur retour dans des lieux adaptés.",
       "events": []
     },
     {
@@ -10364,8 +9095,8 @@ export const GAME_SEED:GameProject={
         "pandanus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 65
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Gardez le refuge côtier en sécurité pendant les marées.",
       "tip": "Cocotier tire loin et fort, mais lentement. Prévoyez une réponse aux canettes rapides.",
@@ -10743,57 +9474,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Cocotier",
-          "text": "J'avais prédit ce changement de courant."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Avant ou après la vague ?"
-        },
-        {
-          "speaker": "Cocotier",
-          "text": "Très près. Ce qui compte, c'est qu'elle annonce l'Avaleur."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "Tu connais son trajet ?"
-        },
-        {
-          "speaker": "Cocotier",
-          "text": "Je surveille les nappes qu'il laisse derrière lui. Emmenez-moi ; je vous conduirai jusqu'à sa prochaine baie."
-        },
-        {
-          "speaker": "Radis",
-          "text": "D'abord, nous protégeons les habitants de celle-ci."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les embarcations passent la pointe et gagnent une eau plus calme. Cocotier repère une masse sombre à l'horizon."
-        },
-        {
-          "speaker": "Cocotier",
-          "text": "Il absorbe les épaves et rejette ce qui ne le nourrit pas."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Détruire tout cela d'un coup répandrait la pollution."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Il faudra séparer ses réserves et contenir chaque partie."
-        },
-        {
-          "speaker": "Cocotier",
-          "text": "J'ai justement plusieurs questions sur la manière de faire."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les embarcations passent la pointe et gagnent une eau plus calme. Cocotier repère une masse sombre à l'horizon.",
       "events": []
     },
     {
@@ -10826,8 +9506,8 @@ export const GAME_SEED:GameProject={
         "eucalyptus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 65
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Escortez les jeunes pousses jusqu'aux abris côtiers.",
       "tip": "Protégez le jardin pendant l'escorte, suivie dans la jauge de mission. Eucalyptus frappe une large zone ; surveillez les attaques isolées.",
@@ -11205,49 +9885,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Eucalyptus",
-          "text": "Je garde ce terrain. Vous pouvez poursuivre votre route."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Les pousses derrière toi ont besoin d'un refuge."
-        },
-        {
-          "speaker": "Eucalyptus",
-          "text": "Je le sais."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Alors acceptons d'abord de les mettre à l'abri. Nous pourrons préparer leur retour ensuite."
-        },
-        {
-          "speaker": "Eucalyptus",
-          "text": "Je prends l'arrière. Je viendrai avec vous jusqu'à ce qu'elles soient toutes en sécurité."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Eucalyptus arrive au refuge avec la dernière pousse. Il se retourne longtemps vers son ancien terrain."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "On peut protéger un lieu en commençant par sauver ceux qui y vivent."
-        },
-        {
-          "speaker": "Eucalyptus",
-          "text": "Je veux apprendre comment le rendre accueillant. Je continuerai avec vous."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Alors nous reviendrons mieux préparés."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Eucalyptus arrive au refuge avec la dernière pousse. Il se retourne longtemps vers son ancien terrain.",
       "events": []
     },
     {
@@ -11281,8 +9918,8 @@ export const GAME_SEED:GameProject={
         "banksia"
       ],
       "objective": {
-        "type": "operation",
-        "target": 70
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Isolez les déchets qui menacent la réserve de graines.",
       "tip": "Banksia augmente les graines obtenues sur les cibles marquées et accélère le confinement tant qu'elle reste vivante.",
@@ -11660,53 +10297,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Banksia",
-          "text": "Ne posez pas ce bidon près des graines. Certaines viennent de jardins qui n'existent plus."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu les gardes depuis tout ce temps ?"
-        },
-        {
-          "speaker": "Banksia",
-          "text": "Quelqu'un doit se souvenir d'où elles pourront pousser."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Nous pouvons isoler les arrivées de déchets autour de la réserve."
-        },
-        {
-          "speaker": "Banksia",
-          "text": "Je vous aiderai. Ensuite, j'emporterai une partie des graines dans votre jardin flottant."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "La réserve est sécurisée. Banksia répartit les graines entre plusieurs refuges avant de rejoindre la troupe."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Il m'en reste une du tilleul. Je voudrais la ramener chez nous."
-        },
-        {
-          "speaker": "Banksia",
-          "text": "Montre ton enveloppe. Nous allons la conserver correctement."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu crois que nous pourrons ?"
-        },
-        {
-          "speaker": "Banksia",
-          "text": "Nous préparerons le terrain avant de l'ouvrir."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "La réserve est sécurisée. Banksia répartit les graines entre plusieurs refuges avant de rejoindre la troupe.",
       "events": []
     },
     {
@@ -11740,8 +10330,8 @@ export const GAME_SEED:GameProject={
         "banksia"
       ],
       "objective": {
-        "type": "operation",
-        "target": 75
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Confinez les résidus avant qu'ils rejoignent la mer.",
       "tip": "Le confinement avance grâce aux plantes vivantes, sans position imposée. Gardez des graines pour remplacer les pertes.",
@@ -12151,57 +10741,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Des carcasses gisent sur le rivage. Leurs plaques portent les marques des épines de Rose."
-        },
-        {
-          "speaker": "Jeune arbuste",
-          "text": "Elle nous a sauvés. Les pollueurs ne bougent plus."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Les petites feuilles non plus. Regardez autour d'eux."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "La poudre suit les rigoles jusqu'à la mer."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous isolons ces traces. Puis nous reprenons sa piste."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les résidus sont contenus avant la marée. Les habitants indiquent la direction prise par Rose."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Quand elle nous a sauvés, j'étais heureux de sa force. Je n'ai rien vu d'autre."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Tu étais heureux qu'on soit vivants."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Elle a dû croire que je comprenais."
-        },
-        {
-          "speaker": "Lavande",
-          "text": "Alors il faudra lui dire ce que tu comprends maintenant."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "L'Avaleur approche de la lagune. Nous n'avons plus beaucoup de temps."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les résidus sont contenus avant la marée. Les habitants indiquent la direction prise par Rose.",
       "events": []
     },
     {
@@ -12236,8 +10775,8 @@ export const GAME_SEED:GameProject={
         "mushroom"
       ],
       "objective": {
-        "type": "operation",
-        "target": 70
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez l'installation des accès sur la carcasse.",
       "tip": "Mycélium attaque à courte portée et aide au recyclage. Protégez le jardin pendant la préparation des accès.",
@@ -12647,57 +11186,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Fougère",
-          "text": "Il y a quelqu'un dans ce bois."
-        },
-        {
-          "speaker": "Mycélium",
-          "text": "Plusieurs. Vous faites beaucoup de bruit au-dessus de nos filaments."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Vous vivez dans les débris que transporte l'Avaleur ?"
-        },
-        {
-          "speaker": "Mycélium",
-          "text": "Nous suivons ce qui peut encore nourrir une vie. Nous connaissons les plaques qui cèdent et celles qu'il faut éviter."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Guidez-nous. Nous préparerons les attaches pour séparer les poches toxiques."
-        },
-        {
-          "speaker": "Mycélium",
-          "text": "Nous joignons notre réseau à votre troupe."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les accès sont fixés. Mycélium révèle un passage vers le noyau, entre les matières encore vivantes."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Les équipages retiendront les parties libérées loin de la lagune."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Je surveillerai les attaches avec toi."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Bien. Cette fois, je te les confie."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous avançons demain avec la marée."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les accès sont fixés. Mycélium révèle un passage vers le noyau, entre les matières encore vivantes.",
       "events": []
     },
     {
@@ -12732,8 +11220,8 @@ export const GAME_SEED:GameProject={
         "mushroom"
       ],
       "objective": {
-        "type": "operation",
-        "target": 80
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Tenez le refuge et arrêtez l'Avaleur sans abandonner les protections.",
       "tip": "Toutes les parcelles restent disponibles. L'Avaleur annonce une projection qui frappe directement les plantes d'une allée : la pluie l'interrompt.",
@@ -13143,61 +11631,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "L'Avaleur avance avec une montagne d'épaves. Ses rejets obscurcissent l'entrée de la lagune."
-        },
-        {
-          "speaker": "Cocotier",
-          "text": "Les bateaux sont en place. Ils attendent notre signal."
-        },
-        {
-          "speaker": "Mycélium",
-          "text": "Le noyau est derrière les plaques humides. Nous pouvons les atteindre."
-        },
-        {
-          "speaker": "Pandanus",
-          "text": "Les attaches sont prêtes. On sépare les réserves avant de les déplacer."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Gardons la lagune vivante."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le noyau tombe. Les épaves se séparent en amas retenus par les embarcations, loin du refuge."
-        },
-        {
-          "speaker": "Palétuvier",
-          "text": "Le nettoyage prendra longtemps. Mais cette baie respire encore."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Les cargaisons de cendre blanche partaient vers la Fournaise."
-        },
-        {
-          "speaker": "Fougère",
-          "text": "Ces réservoirs ont été arrachés. Les marques… C'est Rose."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "La Fournaise rejette dans un fleuve et par ses cheminées. Si elle y ouvre les cuves, le poison dépassera ses ennemis."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous allons la retrouver. Avec les plans et l'aide de tous ceux que nous avons rencontrés."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Le jardin flottant poursuit son travail avec les équipages. La troupe traverse vers les Amériques."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le noyau tombe. Les épaves se séparent en amas retenus par les embarcations, loin du refuge.",
       "events": []
     },
     {
@@ -13612,53 +12045,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Les voyageurs abordent près d'une région boisée. Un jeune séquoia barre un passage entre les carcasses."
-        },
-        {
-          "speaker": "Séquoia",
-          "text": "Les grands arbres savaient tenir. Je ne suis pas encore assez…"
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Grand ? Regarde ceux qui attendent derrière toi. Ils savent déjà ce que tu protèges."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous tiendrons avec toi."
-        },
-        {
-          "speaker": "Séquoia",
-          "text": "Alors je rejoins votre ligne. Dites-moi seulement si je prends trop de place."
-        },
-        {
-          "speaker": "Noisetier",
-          "text": "Nous avons de l'habitude."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le passage est sécurisé. Les jeunes arbres retrouvent leurs proches derrière la lisière."
-        },
-        {
-          "speaker": "Séquoia",
-          "text": "Je voudrais voir ce que je peux faire ailleurs."
-        },
-        {
-          "speaker": "Baobab",
-          "text": "Tu auras des histoires à raconter en revenant."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "La piste de Rose continue vers des terres plus sèches. Un cactus l'aurait vue passer."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le passage est sécurisé. Les jeunes arbres retrouvent leurs proches derrière la lisière.",
       "events": []
     },
     {
@@ -13695,8 +12081,8 @@ export const GAME_SEED:GameProject={
         "cactus"
       ],
       "objective": {
-        "type": "operation",
-        "target": 70
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Escortez les voyageurs jusqu'au prochain abri.",
       "tip": "Cactus protège au contact ; accompagnez-le de tirs à distance pour protéger le jardin pendant l'escorte.",
@@ -14074,61 +12460,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Cactus",
-          "text": "L'ombre est prise. L'eau aussi. La conversation n'est pas recommandée."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Nous cherchons Rose. Elle est blessée."
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Elle portait des morceaux de machines. Elle a refusé l'eau et demandé le chemin de la Fournaise."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu peux nous guider ?"
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Quelqu'un doit éviter que vous preniez la route où tout s'effondre. Protégez les voyageurs, je vous montre le passage."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Merci."
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Je n'ai pas encore demandé qu'on me parle."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Le groupe atteint un abri. Cactus distribue de l'eau en prétendant déplacer les récipients qui l'encombrent."
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Votre amie souffre. Elle pense que marcher plus vite lui permettra de ne pas le sentir."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Tu viens avec nous ?"
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Vous savez déjà vous perdre. Je n'ai pas besoin de vérifier."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Il prend pourtant la tête du groupe au matin."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Le groupe atteint un abri. Cactus distribue de l'eau en prétendant déplacer les récipients qui l'encombrent.",
       "events": []
     },
     {
@@ -14166,8 +12497,8 @@ export const GAME_SEED:GameProject={
         "agave"
       ],
       "objective": {
-        "type": "operation",
-        "target": 75
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Tenez les postes qui isolent les convois de déchets.",
       "tip": "Agave est efficace contre les blindages. Protégez le jardin jusqu'à la fin du confinement, suivi dans la jauge.",
@@ -14577,53 +12908,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Agave",
-          "text": "Les convois empruntent ce passage. Chaque arrivée nourrit la Fournaise."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Nous pouvons les immobiliser dans les bassins secs, puis isoler les écoulements."
-        },
-        {
-          "speaker": "Agave",
-          "text": "J'ai préparé les accès. Il me manque des défenseurs pour tenir les deux côtés."
-        },
-        {
-          "speaker": "Bambou",
-          "text": "Nous formerons une ligne."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Et nous la tiendrons ensemble."
-        },
-        {
-          "speaker": "Agave",
-          "text": "Bien. Je viens jusqu'au bout."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les convois sont immobilisés dans les zones prévues. Les premières arrivées de déchets cessent."
-        },
-        {
-          "speaker": "Agave",
-          "text": "Un passage fermé. Il en reste d'autres."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous aurons besoin des gens qui vivent autour du site."
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Le prochain jardin les réunit déjà. Écoutez avant de leur annoncer votre plan."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les convois sont immobilisés dans les zones prévues. Les premières arrivées de déchets cessent.",
       "events": []
     },
     {
@@ -14662,8 +12946,8 @@ export const GAME_SEED:GameProject={
         "dahlia"
       ],
       "objective": {
-        "type": "operation",
-        "target": 75
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Protégez la remise en état des communications entre refuges.",
       "tip": "Dahlia soutient un large voisinage. Répartissez les attaquants pour protéger le jardin pendant les deux chantiers.",
@@ -15073,57 +13357,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Dahlia",
-          "text": "Bienvenue. Nous avions prévu une réunion, mais les câbles viennent d'être coupés."
-        },
-        {
-          "speaker": "Hibiscus",
-          "text": "Les voisins savent-ils où se rassembler ?"
-        },
-        {
-          "speaker": "Dahlia",
-          "text": "Oui. Ce qu'ils veulent savoir, c'est où ira l'eau quand vous fermerez les vannes."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Nous devons reprendre le plan avec eux."
-        },
-        {
-          "speaker": "Radis",
-          "text": "D'abord, nous protégeons les réparations."
-        },
-        {
-          "speaker": "Dahlia",
-          "text": "Je vous accompagne. Ce qui se décide ici doit parvenir aux autres refuges."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les relais fonctionnent. Les habitants corrigent plusieurs dérivations pour protéger les quartiers en contrebas."
-        },
-        {
-          "speaker": "Dahlia",
-          "text": "Une lettre de Mei. Elle a dessiné sa fenêtre ouverte."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Gardons-la près de la carte."
-        },
-        {
-          "speaker": "Hibiscus",
-          "text": "Les connaissances des cinq continents arrivent avec les messages et les équipages."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Radis comprend que le voyage a relié des gens qui travaillaient chacun de leur côté."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les relais fonctionnent. Les habitants corrigent plusieurs dérivations pour protéger les quartiers en contrebas.",
       "events": []
     },
     {
@@ -15163,8 +13396,8 @@ export const GAME_SEED:GameProject={
         "passionflower"
       ],
       "objective": {
-        "type": "operation",
-        "target": 80
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Sécurisez les accès permettant d'entrer dans la Fournaise.",
       "tip": "Passiflore entrave à distance. Protégez les travaux sans perdre de vue les autres allées.",
@@ -15574,57 +13807,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Passiflore",
-          "text": "L'entrée principale est mauvaise. J'en connais trois autres, dont deux excellentes."
-        },
-        {
-          "speaker": "Lierre",
-          "text": "Et la troisième ?"
-        },
-        {
-          "speaker": "Passiflore",
-          "text": "Je n'ai jamais pu aller jusqu'au bout. C'est celle qui m'intéresse."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Naturellement."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Peut-elle conduire à la salle centrale ?"
-        },
-        {
-          "speaker": "Passiflore",
-          "text": "Oui. Fixons des accès sûrs ; je vous guiderai ensuite. Je veux savoir ce qui se cache après."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les attaches sont installées. Passiflore atteint une conduite oubliée qui rejoint les installations centrales."
-        },
-        {
-          "speaker": "Passiflore",
-          "text": "Il y a des marques d'épines sur les parois."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Elle est passée par ici."
-        },
-        {
-          "speaker": "Chrysanthème",
-          "text": "Les équipes extérieures doivent être prêtes avant notre entrée."
-        },
-        {
-          "speaker": "Passiflore",
-          "text": "D'accord. Je peux attendre. Un peu."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les attaches sont installées. Passiflore atteint une conduite oubliée qui rejoint les installations centrales.",
       "events": []
     },
     {
@@ -15664,8 +13846,8 @@ export const GAME_SEED:GameProject={
         "passionflower"
       ],
       "objective": {
-        "type": "operation",
-        "target": 85
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Isolez les circuits qui menacent les quartiers et les zones humides.",
       "tip": "Le confinement avance hors du plateau avec l'aide des plantes vivantes. Gardez des graines pour remplacer vos défenseurs.",
@@ -16075,53 +14257,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "La Fournaise respire par ses cheminées. La décharge a englouti des ateliers et des usines ; son noyau organise maintenant les convois."
-        },
-        {
-          "speaker": "Dahlia",
-          "text": "Les registres montrent des années de dépôts oubliés. Même après le combat, il faudra empêcher les nouvelles arrivées."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Fermer ce canal envoie l'eau vers celui-ci. Les bassins isolés doivent être prêts."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Chaque équipe a son poste. Nous attendons les réponses avant d'avancer."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous sommes tous reliés. Gardons ces passages vivants."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les dérivations protègent enfin les zones habitées. Au-dessus du site, une branche épineuse traverse une cheminée."
-        },
-        {
-          "speaker": "Cactus",
-          "text": "Elle a trouvé la salle centrale."
-        },
-        {
-          "speaker": "Passiflore",
-          "text": "La conduite est libre. Je peux nous y mener."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Alors on va chercher Rose."
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Et cette fois, elle rentre avec quelqu'un pour soigner ses blessures."
-        }
-      ],
-      "midDialogue": [],
-      "midWave": 0,
-      "restoration": "Les dérivations protègent enfin les zones habitées. Au-dessus du site, une branche épineuse traverse une cheminée.",
       "events": []
     },
     {
@@ -16161,8 +14296,8 @@ export const GAME_SEED:GameProject={
         "passionflower"
       ],
       "objective": {
-        "type": "rescue",
-        "target": 3
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Brisez les trois excroissances contaminées et arrêtez les noyaux qui emprisonnent Rose.",
       "tip": "Protégez l'opération de sauvetage et frappez les parties contaminées. Rose ne rejoint pas encore l'équipe de combat.",
@@ -16596,86 +14731,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Rose est suspendue au-dessus des conduites. Des plaques et des câbles emprisonnent ses tiges ; elle retient des cuves de cendre blanche."
-        },
-        {
-          "speaker": "Rose",
-          "text": "N'approchez pas ! Si je détruis le cœur, ils ne pourront plus recommencer."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Le circuit vient de changer. La Fournaise détourne le débit vers les sorties."
-        },
-        {
-          "speaker": "Lotus",
-          "text": "Le poison atteindra le fleuve avant nous."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Une branche frappe malgré Rose. Sous la plaque qui l'entoure, un noyau sombre s'est installé."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je sais… Je n'arrive plus à tout arrêter."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous allons dégager ce qui t'emprisonne. Reste avec nous."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "Les dernières excroissances cèdent. Radis atteint une petite poche de feuilles encore vertes."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je voulais qu'on soit assez forts."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Moi aussi. Sur la passerelle, je n'ai pas regardé ce que cela te coûtait."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Si je lâche les cuves, je ne pourrai plus les retenir."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Regarde autour de toi. Les attaches, les racines, les mains. Nous sommes prêts."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Rose desserre ses tiges. Les équipes descendent les cuves fermées dans les bassins isolés. Aloès et Cactus la dégagent des carcasses."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Tu vois… Tu avais encore besoin qu'on te surveille."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Radis rit malgré ses larmes. Sous eux, la Fournaise se réveille tout entière."
-        }
-      ],
-      "midDialogue": [
-        {
-          "speaker": "Mycélium",
-          "text": "La sève circule encore sous cette plaque. Suivez nos filaments jusqu'aux racines saines."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je peux retenir cette branche… Quelques secondes. Passez !"
-        },
-        {
-          "speaker": "Radis",
-          "text": "Aloès, prépare les soins. Les autres attendent notre signal pour les cuves."
-        }
-      ],
-      "midWave": 3,
-      "restoration": "Les dernières excroissances cèdent. Radis atteint une petite poche de feuilles encore vertes.",
       "events": []
     },
     {
@@ -16715,8 +14770,8 @@ export const GAME_SEED:GameProject={
         "passionflower"
       ],
       "objective": {
-        "type": "operation",
-        "target": 100
+        "type": "defend",
+        "target": 0
       },
       "objectiveText": "Isolez les dernières réserves et neutralisez le cœur de la Fournaise.",
       "tip": "Protégez le jardin pendant les cinq vagues et le confinement. Adaptez vos positions aux attaques successives du cœur.",
@@ -17307,86 +15362,6 @@ export const GAME_SEED:GameProject={
           ]
         }
       ],
-      "briefing": [
-        {
-          "speaker": "Narration",
-          "text": "Des grues sortent des parois. Des pompes aspirent les bassins. Les ateliers libèrent leurs dernières carcasses."
-        },
-        {
-          "speaker": "Pissenlit",
-          "text": "Je reconnais ses mouvements. La grue frappe comme le Ramasseur."
-        },
-        {
-          "speaker": "Papyrus",
-          "text": "Trois réserves alimentent encore le cœur. Les équipes extérieures sont prêtes ; il faut protéger les postes jusqu'à leur fermeture."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Je peux me lever…"
-        },
-        {
-          "speaker": "Aloès",
-          "text": "Tu n'as plus rien à prouver aujourd'hui."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Alors j'aiderai à tenir cette conduite. Cactus, l'autre appui."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Nous avançons avec tout ce que nous avons appris. Au dernier signal, ensemble."
-        }
-      ],
-      "outro": [
-        {
-          "speaker": "Narration",
-          "text": "La dernière vanne résiste. Radis plante ses racines dans ses rayons. Le métal ne bouge pas."
-        },
-        {
-          "speaker": "Radis",
-          "text": "J'ai besoin de vous !"
-        },
-        {
-          "speaker": "Narration",
-          "text": "Des racines rejoignent les siennes. Des mains saisissent le levier renforcé. La vanne tourne ; les réserves cessent d'alimenter la colonie."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Le noyau exposé cède sous les attaques. Les bras mécaniques s'arrêtent. Le battement de la Fournaise s'interrompt."
-        },
-        {
-          "speaker": "Rose",
-          "text": "C'est fini ?"
-        },
-        {
-          "speaker": "Radis",
-          "text": "Elle s'est arrêtée."
-        },
-        {
-          "speaker": "Rose",
-          "text": "Bien. Parce que je commence à avoir une crampe absolument historique."
-        },
-        {
-          "speaker": "Narration",
-          "text": "Au-dehors, une voix annonce qu'une digue tient. Une autre demande de l'aide pour un tuyau. Le travail de restauration commence."
-        }
-      ],
-      "midDialogue": [
-        {
-          "speaker": "Chrysanthème",
-          "text": "Les jardins, les berges et les équipes des galeries répondent. Tous les signaux sont reçus."
-        },
-        {
-          "speaker": "Gingembre",
-          "text": "Cette fois, je sais pourquoi j'attends."
-        },
-        {
-          "speaker": "Radis",
-          "text": "Chaque poste gagné reste protégé. Nous avons besoin de tout le monde jusqu'à la dernière réserve."
-        }
-      ],
-      "midWave": 3,
-      "restoration": "La dernière vanne résiste. Radis plante ses racines dans ses rayons. Le métal ne bouge pas.",
       "events": []
     }
   ],
@@ -18871,4 +16846,6 @@ export const GAME_SEED:GameProject={
     "variables": []
   }
 };
-export function seedProject():GameProject{const p=structuredClone(GAME_SEED);ensurePresentation(p);return p;}
+import {ensureEnemyRules} from '../../src/shared/game/enemyRules.js';
+ensureEnemyRules(GAME_SEED);
+export function seedProject():GameProject{const p=structuredClone(GAME_SEED);ensurePresentation(p);importCombatMechanics(p.combat!);return p;}

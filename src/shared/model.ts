@@ -1,5 +1,4 @@
 import type { ActorAnimation, CatalogLink } from './presentation/types.js';
-import type { RecentProjectsSnapshot } from './recentProjects.js';
 import { actorAnchor } from './motion.js';
 /** Coordinates are relative to a fixed logical 1600 × 900 stage. All times are seconds. */
 export type AssetRef = `library://${string}`;
@@ -88,35 +87,33 @@ export interface Asset {
   bytes: number; modified: number; url: string; thumbnail: string;
 }
 export interface LibrarySnapshot { rootName: string; rootPath: string; assets: Asset[]; warnings: string[] }
-export interface Bootstrap { recentProjects?: RecentProjectsSnapshot; documentToken: string; recoveryLibraryRoot?: string; library: LibrarySnapshot | null; recovery: Cinematic | null; desktop: boolean }
-export interface SaveResult { warnings?: string[]; path: string; missing: AssetRef[]; cinematic: Cinematic }
-export interface OpenResult { library?: LibrarySnapshot | null; warnings?: string[]; documentToken: string; path: string; cinematic: Cinematic }
+export interface Bootstrap { library: LibrarySnapshot | null; desktop: boolean }
 export interface StudioAPI {
   bootstrap(): Promise<Bootstrap>;
   chooseLibrary(): Promise<LibrarySnapshot | null>;
   exampleLibrary(): Promise<LibrarySnapshot>;
   refreshLibrary(): Promise<LibrarySnapshot | null>;
+  prepareBackgroundCorrection(ref: AssetRef): Promise<BackgroundPreparation>;
+  listImageTasks(): Promise<import('./imageTasks.js').ImageTask[]>;
+  removeImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<void>;
+  clearImageTaskHistory(): Promise<number>;
+  retryImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<BackgroundCorrectionJob | TerrainGenerationJob>;
+  listBackgroundModels(): Promise<CodexModelOption[]>;
+  startBackgroundCorrection(request: BackgroundCorrectionRequest): Promise<BackgroundCorrectionJob>;
+  getBackgroundCorrection(id: string): Promise<BackgroundCorrectionJob>;
+  cancelBackgroundCorrection(id: string): Promise<BackgroundCorrectionJob>;
+  applyBackgroundCorrection(id: string): Promise<{ job: BackgroundCorrectionJob; library: LibrarySnapshot | null }>;
+  revealBackgroundBackup(id: string): Promise<void>;
+  startTerrainGeneration(request: TerrainGenerationRequest): Promise<TerrainGenerationJob>;
+  getTerrainGeneration(id: string): Promise<TerrainGenerationJob>;
+  cancelTerrainGeneration(id: string): Promise<TerrainGenerationJob>;
+  applyTerrainGeneration(id: string): Promise<{ job: TerrainGenerationJob; library: LibrarySnapshot | null }>;
   importImages(): Promise<Asset[] | null>;
-  openCinematic(): Promise<OpenResult | null>;
-  listRecentProjects(): Promise<RecentProjectsSnapshot>;
-  openRecentProject(id: string): Promise<OpenResult>;
-  locateRecentProject(id: string): Promise<OpenResult | null>;
-  setRecentProjectPinned(id: string, pinned: boolean): Promise<void>;
-  removeRecentProject(id: string): Promise<void>;
-  clearRecentProjects(): Promise<void>;
-  revealRecentProject(id: string): Promise<void>;
-  saveCinematic(cinematic: Cinematic, saveAs: boolean, documentToken: string): Promise<SaveResult | null>;
   beginJpgExport(title: string, count: number): Promise<{ id: string; path: string } | null>;
   writeJpgFrame(id: string, index: number, dataUrl: string): Promise<void>;
   imageDataForJpg(ref: AssetRef): Promise<string>;
   finishJpgExport(id: string): Promise<string>;
   cancelJpgExport(id: string): Promise<void>;
-  autosave(cinematic: Cinematic, documentToken: string): Promise<void>;
-  listVersions(documentToken: string): Promise<VersionSummary[]>;
-  createVersion(cinematic: Cinematic, documentToken: string, label: string): Promise<VersionSummary>;
-  loadVersion(documentToken: string, id: string): Promise<LocalVersion>;
-  resetDocument(): Promise<string>;
-  discardRecovery(documentToken: string): Promise<void>;
   confirmUnsaved(reason: string): Promise<'save' | 'discard' | 'cancel'>;
   confirmDelete(name: string): Promise<boolean>;
   closeWindow(): Promise<void>;
@@ -125,10 +122,11 @@ export interface StudioAPI {
   onLibraryChanged(callback: (snapshot: LibrarySnapshot) => void): () => void;
 }
 export const STAGE = { width: 1600, height: 900 } as const;
+export const DEFAULT_SHOT_DURATION = 3;
 export const uid = () => globalThis.crypto.randomUUID();
 export const copy = <T>(value: T): T => structuredClone(value);
 export function newShot(background: AssetRef | null = null): Shot {
-  return { id: uid(), name: 'Nouveau plan', duration: 6, endAdvance: 'auto', background: { asset: background, fit: 'cover' },
+  return { id: uid(), name: 'Nouveau plan', duration: DEFAULT_SHOT_DURATION, endAdvance: 'auto', background: { asset: background, fit: 'cover' },
     camera: { preset: 'fixed', intensity: 0.35 }, transition: { type: 'fade', duration: 0.6 }, exitTransition: { type: 'cut', duration: 0 },
     actors: [], bubbles: [], dialogueStart: 0.8, audio: null };
 }
@@ -228,5 +226,5 @@ export function referencedAssets(cinematic: Cinematic): AssetRef[] {
   return [...refs];
 }
 
-export interface VersionSummary { id: string; createdAt: string; label: string; title: string; shots: number; libraryRoot: string }
-export interface LocalVersion extends VersionSummary { cinematic: Cinematic }
+import type { BackgroundCorrectionJob, BackgroundCorrectionRequest, BackgroundPreparation, CodexModelOption } from './backgroundCorrection.js';
+import type { TerrainGenerationJob, TerrainGenerationRequest } from './terrainGeneration.js';

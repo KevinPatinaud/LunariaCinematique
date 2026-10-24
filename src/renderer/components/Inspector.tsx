@@ -40,6 +40,7 @@ export function Inspector(p: Props) {
   const selectedId = p.selection.kind === 'shot' ? null : p.selection.id;
   const actor = (p.multiCount??0)<=1 && p.selection.kind === 'actor' ? p.shot.actors.find(a => a.id === selectedId) : undefined;
   const bubble = (p.multiCount??0)<=1 && p.selection.kind === 'bubble' ? p.shot.bubbles.find(b => b.id === selectedId) : undefined;
+  const formKey = `${p.doc.id}:${p.shot.id}:${actor ? `actor:${actor.id}` : bubble ? `bubble:${bubble.id}` : (p.multiCount??0)>1 ? 'group' : 'shot'}`;
   React.useLayoutEffect(() => {
     if (pendingAnimationScroll.current !== null && scrollArea.current) {
       scrollArea.current.scrollTop = pendingAnimationScroll.current;
@@ -71,6 +72,8 @@ export function Inspector(p: Props) {
     {p.children}
     {p.objectLocked && <p className="locked-note"><Icon name="lock" size={13}/> Calque verrouillé. Déverrouille-le dans la liste pour le modifier.</p>}
     <fieldset ref={scrollArea} disabled={p.disabled || p.objectLocked} className="inspector-content">
+      {/* Local drafts and expanded controls belong to one element, even when values match. */}
+      <React.Fragment key={formKey}>
       <div className="inspector-title"><span className="overline">{actor ? 'DANS CE PLAN' : bubble ? `RÉPLIQUE ${p.shot.bubbles.indexOf(bubble) + 1}` : `PLAN ${String(p.doc.shots.indexOf(p.shot) + 1).padStart(2, '0')}`}</span><h2>{actor ? actor.name : bubble ? bubble.kind === 'narration' ? 'Narration' : 'Une voix dans la scène' : p.shot.name}</h2></div>
       {(p.multiCount??0)>1 && <div className="multi-selection-note"><h3>{p.multiCount} éléments sélectionnés</h3><p>Déplace le groupe directement dans la scène. Les commandes d’alignement sont au-dessus ; Dupliquer et Supprimer agissent sur toute la sélection.</p><small>Les calques verrouillés ne sont pas modifiés.</small></div>}
       {!actor && !bubble && (p.multiCount??0)<=1 && <>
@@ -112,7 +115,7 @@ export function Inspector(p: Props) {
         <div className="section-label"><Icon name="actor" size={15}/> APPARITION</div>
         <Field label="Entrée"><select value={actor.entry.preset} onChange={e => changeActor({ entry: { ...actor.entry, preset: e.target.value as EntryPreset } })}>{Object.entries(entryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
         {entryDescriptions[actor.entry.preset] && <p className="field-hint">{entryDescriptions[actor.entry.preset]}</p>}
-        {actor.entry.preset !== 'none' && <div className="field-row"><Field label="Durée (s)"><NumberInput min={0.1} max={10} value={actor.entry.duration} onCommit={duration => changeActor({ entry: { ...actor.entry, duration } }, 'entry-duration')}/></Field><Field label="Délai d’apparition (s)"><NumberInput label="Délai d’apparition" min={0} max={300} value={actor.entry.delay} onCommit={delay => changeActor({ entry: { ...actor.entry, delay } }, 'entry-delay')}/></Field></div>}
+        {actor.entry.preset !== 'none' && <div className="field-row"><Field label="Durée (s)"><NumberInput label="Durée de l’apparition" min={0.1} max={10} value={actor.entry.duration} onCommit={duration => changeActor({ entry: { ...actor.entry, duration } }, 'entry-duration')}/></Field><Field label="Délai d’apparition (s)"><NumberInput label="Délai d’apparition" min={0} max={300} value={actor.entry.delay} onCommit={delay => changeActor({ entry: { ...actor.entry, delay } }, 'entry-delay')}/></Field></div>}
         <p className="field-hint">{actor.entry.preset === 'none' ? '« Déjà présent » affiche cet élément dès le début du plan. Choisis une autre entrée pour régler un délai.' : 'Le délai commence au début du plan. La composition garde l’élément visible pour le placer ; teste les animations ou lis le plan pour voir son apparition réelle.'}</p>
         <ExitInspector actor={actor} change={changeActor} duration={p.shot.duration} preview={p.previewMotion}/>
         <p className="field-hint">Les effets animent le PNG entier, pas une marche articulée. Ils fonctionnent aussi pour les ennemis et les objets.</p>
@@ -134,9 +137,10 @@ export function Inspector(p: Props) {
         <TextAnimationInspector bubble={bubble} change={changeBubble} preview={() => p.previewText(bubble.id)}/>
         <div className="section-label"><Icon name="play" size={14}/> LECTURE</div>
         <label className="check-field"><input type="checkbox" checked={bubble.advance.mode === 'click'} onChange={e => changeBubble({ advance: { ...bubble.advance, mode: e.target.checked ? 'click' : 'auto' } })}/> Attendre le clic du joueur</label>
-        {bubble.advance.mode === 'auto' && <Field label={bubble.textAnimation ? "Temps de lecture après l’animation (s)" : "Afficher pendant (secondes)"}><NumberInput min={0.5} max={120} value={bubble.advance.seconds} onCommit={seconds => changeBubble({ advance: { ...bubble.advance, seconds } }, 'dialogue-duration')}/></Field>}
+        {bubble.advance.mode === 'auto' && <Field label={bubble.textAnimation ? "Temps de lecture après l’animation (s)" : "Afficher pendant (secondes)"}><NumberInput label="Temps de lecture" min={0.5} max={120} value={bubble.advance.seconds} onCommit={seconds => changeBubble({ advance: { ...bubble.advance, seconds } }, 'dialogue-duration')}/></Field>}
         <details className="advanced"><summary>Réglages du texte</summary><Field label="Taille du texte"><input type="range" min="18" max="72" step="1" value={bubble.fontSize} onChange={e => changeBubble({ fontSize: +e.target.value }, 'font-size')}/><small>{bubble.fontSize} px dans la scène de référence</small></Field></details>
       </>}
+      </React.Fragment>
     </fieldset>
     {(actor || bubble || p.copiedKind) && <div className="inspector-clipboard-actions">
       {actor && <button className="button subtle" disabled={p.disabled} title="Copier ce personnage pour le coller dans un autre plan (Ctrl+C)" onClick={p.copySelection}>Copier le personnage</button>}

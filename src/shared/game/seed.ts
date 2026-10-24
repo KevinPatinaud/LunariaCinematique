@@ -1,11 +1,10 @@
+import {importCombatMechanics} from './combatMechanics.js';
 import {installPlasticBag} from './plasticBag.js';
 import { ensurePresentation } from '../presentation/defaults.js';
 import type { GameProject } from './types.js';
-import { defaultRewards } from './types.js';
 import { installCigarette } from './cigarette.js';
 /** Editable starter content, not a runtime fallback. */
 export const GAME_SEED:GameProject={
-  rewards: defaultRewards(),
   "schemaVersion": 3,
   "kind": "lunaria-game-project",
   "id": "lunaria_campaign",
@@ -108,9 +107,9 @@ export const GAME_SEED:GameProject={
       {
         "id": "fern",
         "name": "Fougère",
-        "role": "Ralentissement",
-        "description": "Ralentit les pollueurs et fragilise leur protection.",
-        "ability": "Frondes humides",
+        "role": "Entrave et explosion alliée",
+        "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
+        "ability": "Crosse de rosée",
         "personality": "Discrète et attentive. L'eau lui indique des chemins insoupçonnés.",
         "cost": 125,
         "cooldown": 4.5,
@@ -1216,6 +1215,25 @@ export const GAME_SEED:GameProject={
           "ab_plaque_spit"
         ],
         "behaviorId": "ai_fixed"
+      },
+      {
+        "id": "poubelle",
+        "name": "Poubelle",
+        "hp": 320,
+        "speed": 0,
+        "attack": 0,
+        "reward": 10,
+        "reach": 0,
+        "damage_type": "physical",
+        "armor": 0.2,
+        "resistances": {
+          "physical": 0,
+          "piercing": 0,
+          "toxic": 0
+        },
+        "special_damage": 0,
+        "ability_ids": [],
+        "behaviorId": "ai_fixed"
       }
     ]
   },
@@ -1340,10 +1358,10 @@ export const GAME_SEED:GameProject={
       },
       {
         "id": "ab_fern",
-        "name": "Frondes humides",
-        "description": "",
+        "name": "Crosse de rosée",
+        "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
         "delivery": "projectile",
-        "projectileId": "proj_seed",
+        "projectileId": "proj_fern_frond",
         "target": "opponent",
         "selection": "one",
         "priority": "nearest",
@@ -1354,9 +1372,8 @@ export const GAME_SEED:GameProject={
         "cooldown": 1,
         "initialDelay": 0.35,
         "effects": [
-          "fx_armor_break",
-          "fx_attack",
-          "fx_slow"
+          "fx_fern_impact",
+          "fx_fern_bind"
         ]
       },
       {
@@ -2299,6 +2316,28 @@ export const GAME_SEED:GameProject={
         "damageType": "physical",
         "duration": 1,
         "tickInterval": 1
+      },
+      {
+        "id": "fx_fern_impact",
+        "name": "Impact de la fronde",
+        "description": "Dégâts légers à l’accrochage.",
+        "kind": "damage",
+        "valueSource": "attack",
+        "amount": 0.2,
+        "damageType": "inherit",
+        "duration": 3,
+        "tickInterval": 1
+      },
+      {
+        "id": "fx_fern_bind",
+        "name": "Fronde enroulée",
+        "description": "Ralentit les déplacements et les attaques de 80 %. Inflige 25 % de l’attaque par seconde. Libération entre la moitié et la totalité de la durée. Une autre plante déclenche 100 % de dégâts sur le porteur et 65 % sur ses voisins à 1,25 case.",
+        "kind": "slow",
+        "valueSource": "fixed",
+        "amount": 0.8,
+        "damageType": "inherit",
+        "duration": 6,
+        "tickInterval": 1
       }
     ],
     "projectiles": [
@@ -2379,6 +2418,19 @@ export const GAME_SEED:GameProject={
         "rowRadius": 0,
         "color": "#bd39ed",
         "size": 0.13
+      },
+      {
+        "id": "proj_fern_frond",
+        "name": "Fronde en spirale",
+        "description": "Petite fronde humide enroulée, qui s’accroche au premier pollueur.",
+        "speed": 4.8,
+        "lifetime": 3,
+        "maxHits": 1,
+        "hitRadius": 0.18,
+        "splashRadius": 0,
+        "rowRadius": 0,
+        "color": "#4fba85",
+        "size": 0.12
       }
     ]
   },
@@ -2888,4 +2940,6 @@ export const GAME_SEED:GameProject={
 };
 installCigarette(GAME_SEED);
 installPlasticBag(GAME_SEED);
-export function seedProject():GameProject{const p=structuredClone(GAME_SEED);ensurePresentation(p);return p;}
+import {ensureEnemyRules} from './enemyRules.js';
+ensureEnemyRules(GAME_SEED);
+export function seedProject():GameProject{const p=structuredClone(GAME_SEED);ensureEnemyRules(p);ensurePresentation(p);importCombatMechanics(p.combat!);return p;}

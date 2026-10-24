@@ -1,72 +1,136 @@
-import type { Asset } from '../../shared/model.js';
-import { AbilityPresentationFields,ProjectilePresentationFields } from '../presentation/PresentationFields.js';
-import { CombatProbe } from './CombatProbe.js';
-import React,{useState} from 'react';
-import type { GameProject } from '../../shared/game/types.js';
-import { DAMAGE_LABELS,DAMAGE_TYPES,newId } from '../../shared/game/types.js';
-import { BENEFICIAL,EFFECT_KINDS,EFFECT_LABELS,FRACTION,INSTANT,PERIODIC,attackTypeLabel,combatReferences,deleteCombatItem,newAbility,newEffect,type AbilityDefinition,type EffectDefinition,type ProjectileDefinition } from '../../shared/game/combat.js';
-import { Num } from './BalanceEditor.js';
-import { api } from '../browserBridge.js';
+import React, { useState } from "react";
+import type { Asset } from "../../shared/model.js";
+import type { GameProject } from "../../shared/game/types.js";
+import {
+  attackTypeLabel,
+  combatReferences,
+  deleteCombatItem,
+} from "../../shared/game/combat.js";
+import {
+  cloneAbility,
+  createAbility,
+} from "../../shared/game/combatAuthoring.js";
+import type { Change } from "../presentation/PresentationEditor.js";
+import { AbilityEditor } from "./capabilities/AbilityEditor.js";
+import "./capabilities/capabilities.css";
 
-interface Props{assets:Asset[];project:GameProject;id:string;select:(id:string)=>void;change:(edit:(p:GameProject)=>void,key:string,label:string)=>void;report:(s:string)=>void;run:(fn:()=>Promise<void>)=>Promise<void>}
-function Choice({label,value,options,onChange}:{label:string;value:string;options:[string,string][];onChange:(s:string)=>void}){return <label className="gd-field"><span>{label}</span><select aria-label={label} value={value} onChange={e=>onChange(e.target.value)}>{options.map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>;}
-
-/** One author-facing object: internal effects and trajectories remain an implementation detail. */
-export function CombatEditor({assets,project,id,select,change,report,run}:Props){
- const [query,setQuery]=useState('');
- const catalog=project.combat!,list=catalog.abilities,a=list.find(x=>x.id===id)??list[0];
- const refs=combatReferences(project,'abilities',a.id);
- const trajectory=a.delivery==='projectile'?catalog.projectiles.find(x=>x.id===a.projectileId):undefined;
- const patch=(data:Partial<AbilityDefinition>,key='')=>change(p=>Object.assign(p.combat!.abilities.find(x=>x.id===a.id)!,data),key?a.id+':'+key:'','Modifier l’attaque');
- const set=<K extends keyof AbilityDefinition>(key:K,value:AbilityDefinition[K])=>patch({[key]:value},key);
- const patchResult=(effectId:string,data:Partial<EffectDefinition>,key='')=>change(p=>Object.assign(p.combat!.effects.find(x=>x.id===effectId)!,data),key?effectId+':'+key:'','Modifier le résultat de l’attaque');
- const patchTrajectory=(data:Partial<ProjectileDefinition>,key='')=>{if(!trajectory)return;change(p=>Object.assign(p.combat!.projectiles.find(x=>x.id===trajectory.id)!,data),key?trajectory.id+':'+key:'','Modifier la trajectoire de l’attaque');};
- const abilityNumber=(key:keyof AbilityDefinition,label:string,max:number,min=0,integer=false)=><Num key={String(key)} label={label} value={Number(a[key])} max={max} min={min} integer={integer} change={v=>set(key,v as never)}/>;
- const trajectoryNumber=(key:keyof ProjectileDefinition,label:string,max:number,min=0,integer=false)=><Num key={String(key)} label={label} value={Number(trajectory?.[key])} max={max} min={min} integer={integer} change={v=>patchTrajectory({[key]:v},String(key))}/>;
- function add(){const harmful=catalog.effects.find(e=>!BENEFICIAL.includes(e.kind))??catalog.effects[0],created=newAbility(harmful.id);change(p=>p.combat!.abilities.push(created),'','Créer une attaque');select(created.id);}
- function duplicate(){const created=structuredClone(a);created.id=newId('ab');created.name=(created.name+' — copie').slice(0,120);change(p=>p.combat!.abilities.push(created),'','Dupliquer l’attaque');select(created.id);}
- async function remove(){await run(async()=>{if(await api.confirmDelete(a.name)){try{change(p=>deleteCombatItem(p,'abilities',a.id),'','Supprimer '+a.name);}catch(e){report(String(e));}}});}
- const typeValue=a.delivery==='projectile'?'projectile:'+a.projectileId:'instant';
- const typeOptions:[string,string][]=a.target==='opponent'&&a.selection==='one'?
-  [['instant','Attaque directe / immédiate'],...catalog.projectiles.map(p=>['projectile:'+p.id,p.name] as [string,string])]:[['instant',a.target==='opponent'?'Attaque de zone immédiate':'Soutien immédiat']];
- const priorityOptions:[string,string][]=a.target==='ally'?[['nearest','La plus proche'],['nearest_right','La plus proche (droite si égalité)'],['rightmost','La plus à droite'],['strongest','Le plus de PV maximum'],['wounded','Le plus faible ratio de PV'],['random','Au hasard']]:[['nearest','La plus proche'],['nearest_right','La plus proche (droite si égalité)'],['rightmost','La plus à droite'],['strongest','Le plus de PV maximum'],['random','Au hasard']];
- return <div className="gd-balance gd-combat gd-attacks">
-  <aside className="gd-catalog gd-combat-catalog"><input aria-label="Rechercher une attaque" placeholder="Rechercher une attaque…" value={query} onChange={x=>setQuery(x.target.value)}/><button className="gd-primary" onClick={add} disabled={list.length>=256}>+ Créer une attaque</button><div className="gd-combat-items">{list.filter(x=>(x.name+' '+attackTypeLabel(x,catalog)).normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase().includes(query.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase())).map(x=><button key={x.id} className={x.id===a.id?'selected':''} onClick={()=>select(x.id)}><b>{x.name}</b><small>{attackTypeLabel(x,catalog)}</small></button>)}</div><small>{list.length} attaques disponibles</small></aside>
-  <section className="gd-scroll gd-balance-form" key={a.id}>
-   <div className="gd-section-heading"><div><div className="gd-kicker">ATTAQUE · RÉGLAGE GLOBAL</div><h1>{a.name}</h1><p>{attackTypeLabel(a,catalog)}</p></div><div className="gd-inline"><button onClick={duplicate} disabled={list.length>=256}>Dupliquer</button><button onClick={()=>void remove()} disabled={refs.length>0||list.length<=1} title={refs.length?'Retire d’abord cette attaque des espèces et comportements.':''}>Supprimer</button></div></div>
-   <p className="gd-callout">Tout se règle ici : le type d’attaque, ses cibles, sa cadence, sa trajectoire et ses résultats.</p>
-   <div className="gd-form-grid"><label className="gd-field"><span>Nom de l’attaque</span><input aria-label="Nom de l’attaque" maxLength={120} value={a.name} onChange={x=>set('name',x.target.value)}/></label><Choice label="Type d’attaque" value={typeValue} options={typeOptions} onChange={value=>value==='instant'?patch({delivery:'instant',projectileId:''},'type'):patch({delivery:'projectile',projectileId:value.slice('projectile:'.length),attachToTarget:false,blocksTargetAttack:false},'type')}/></div>
-   <label className="gd-field"><span>Description</span><textarea aria-label="Description de l’attaque" rows={2} maxLength={1000} value={a.description} onChange={x=>set('description',x.target.value)}/></label>
-   <h2>Cadence et cibles</h2><div className="gd-form-grid">
-    <Choice label="Cadence" value={a.cooldownSource} options={[["species","Utiliser la cadence de l’espèce"],["fixed","Durée propre à cette attaque"]]} onChange={v=>set('cooldownSource',v as AbilityDefinition['cooldownSource'])}/>
-    {a.cooldownSource==='fixed'&&abilityNumber('cooldown','Intervalle entre utilisations (s)',120,.1)}{abilityNumber('initialDelay','Délai initial en combat (s)',120)}
-    <Choice label="Cible" value={a.target} options={[["opponent","Adversaires"],["ally","Alliés"],["self","Porteur uniquement"]]} onChange={v=>patch({target:v as AbilityDefinition['target'],...(v!=='opponent'?{forwardCells:undefined,attachToTarget:false,blocksTargetAttack:false}:{}),...(v!=='opponent'?{delivery:'instant',projectileId:''}:{}),...(v==='self'?{selection:'one',rowRadius:0}:{}),...(v!=='ally'?{excludeSelf:false,requiresActiveAttack:false}:{}),priority:v==='opponent'?'nearest':a.priority},'target')}/>
-    {a.target==='ally'&&<Choice label="Porteur admissible" value={a.excludeSelf?'no':'yes'} options={[["yes","Oui"],["no","Non, seulement les autres alliés"]]} onChange={v=>set('excludeSelf',v==='no')}/>}
-    {a.target==='ally'&&<Choice label="Alliés admissibles" value={a.requiresActiveAttack?'attacking':'all'} options={[["all","Tous les alliés"],["attacking","Seulement ceux qui attaquent"]]} onChange={v=>set('requiresActiveAttack',v==='attacking')}/>}
-    {a.target!=='self'&&!a.attachToTarget&&a.forwardCells===undefined&&<><Choice label="Nombre de cibles" value={a.selection} options={[["one","Une cible"],["all","Toutes les cibles à portée"]]} onChange={v=>patch({selection:v as AbilityDefinition['selection'],...(v==='all'?{delivery:'instant',projectileId:''}:{})},'selection')}/><Choice label="Priorité" value={a.priority} options={priorityOptions} onChange={v=>set('priority',v as AbilityDefinition['priority'])}/><Choice label="Portée" value={a.rangeSource} options={[["species","Utiliser la portée de l’espèce"],["fixed","Portée propre à cette attaque"]]} onChange={v=>set('rangeSource',v as AbilityDefinition['rangeSource'])}/>{a.rangeSource==='fixed'&&abilityNumber('range','Distance maximale (cases)',12)}{abilityNumber('rowRadius','Allées adjacentes (0 = même allée)',4,0,true)}</>}
-    {a.target==='opponent'&&!a.attachToTarget&&<><Choice label="Zone de ciblage" value={a.forwardCells?'cells':'range'} options={[["range","Distance depuis le porteur"],["cells","Cases immédiatement devant"]]} onChange={value=>value==='cells'?patch({forwardCells:3,delivery:'instant',projectileId:'',selection:'all',rowRadius:0,allowBehind:false},'zone'):patch({forwardCells:undefined},'zone')}/>{a.forwardCells!==undefined&&abilityNumber('forwardCells','Nombre de cases devant',8,1,true)}</>}
-    {a.target==='opponent'&&<label className="gd-check"><input aria-label="Se poser sur la cible" type="checkbox" checked={Boolean(a.attachToTarget)} onChange={e=>patch(e.target.checked?{attachToTarget:true,delivery:'instant',projectileId:'',selection:'one',priority:'nearest',rangeSource:'fixed',range:.05,rowRadius:0,allowBehind:false,forwardCells:undefined}:{attachToTarget:false,blocksTargetAttack:false},'attachment')}/>Se poser sur la cible</label>}
-    {a.attachToTarget&&<label className="gd-check"><input aria-label="Empêcher la cible d’attaquer" type="checkbox" checked={Boolean(a.blocksTargetAttack)} onChange={e=>set('blocksTargetAttack',e.target.checked)}/>Empêcher la cible d’attaquer</label>}
-   </div>{a.attachToTarget&&<p className="gd-note">L’ennemi rejoint la première plante à gauche sur sa propre allée, se pose dessus et reste accroché. Les dégâts suivent la cadence réglée ici. La destruction du sac libère immédiatement la plante ; sa mort fait repartir le sac.</p>}<p className="gd-note">{a.forwardCells?'Les cases vides comptent dans la portée. Le souffle traverse les plantes et touche au plus une cible par case, sur la même allée. Les occupants sont vérifiés au moment du souffle. ':''}L’attaque attend une cible valide. Sa recharge n’est jamais consommée dans le vide et reste suspendue entre les vagues.</p>
-
-   <h2>Résultats de l’attaque</h2><p>Dégâts, soin et états temporaires sont regroupés ici, dans leur ordre d’application.</p>
-   <div className="gd-attack-results">{a.effects.map((effectId,i)=>{const effect=catalog.effects.find(x=>x.id===effectId);if(!effect)return <p className="gd-callout" key={effectId}>Résultat introuvable : {effectId}</p>;
-    const resultNumber=(key:keyof EffectDefinition,label:string,max:number,min=0,integer=false)=><Num key={String(key)} label={label} value={Number(effect[key])} max={max} min={min} integer={integer} change={v=>patchResult(effect.id,{[key]:v},String(key))}/>;
-    const uses=combatReferences(project,'effects',effect.id);
-    return <details className="gd-attack-result" key={effect.id} open={i===0}><summary><span><b>{i+1}. {EFFECT_LABELS[effect.kind]}</b><small>{effect.name}{uses.length>1?` · partagé par ${uses.length} éléments`:''}</small></span></summary><div className="gd-inline gd-result-actions"><button aria-label={'Monter résultat '+(i+1)} disabled={i===0} onClick={()=>{const effects=[...a.effects];[effects[i-1],effects[i]]=[effects[i],effects[i-1]];set('effects',effects);}}>↑</button><button aria-label={'Retirer résultat '+(i+1)} onClick={()=>set('effects',a.effects.filter(x=>x!==effectId))}>Retirer de cette attaque</button></div><div className="gd-form-grid">
-     <Choice label={'Type de résultat '+(i+1)} value={effect.kind} options={EFFECT_KINDS.filter(k=>BENEFICIAL.includes(k)===(a.target!=='opponent')).map(k=>[k,EFFECT_LABELS[k]])} onChange={kind=>{const next=newEffect(kind as EffectDefinition['kind']);patchResult(effect.id,{...next,id:effect.id,name:effect.name,description:effect.description},'kind');}}/>
-     {['damage','heal','poison','regeneration'].includes(effect.kind)&&<Choice label={'Calcul du résultat '+(i+1)} value={effect.valueSource} options={[["fixed","Valeur fixe"],["attack","Selon l’attaque du porteur"],["strength","Selon sa puissance d’effet"]]} onChange={v=>patchResult(effect.id,{valueSource:v as EffectDefinition['valueSource'],amount:v==='attack'?Math.min(effect.amount,10):effect.amount},'valueSource')}/>}
-     {!['root','stun','armor_break','cleanse','counter_cooldown'].includes(effect.kind)&&(FRACTION.includes(effect.kind)?<Num label={'Intensité du résultat '+(i+1)+' (%)'} value={effect.amount*100} max={['damage_boost','attack_speed_boost'].includes(effect.kind)?300:95} change={v=>patchResult(effect.id,{amount:v/100},'amount')}/>:resultNumber('amount',PERIODIC.includes(effect.kind)?'Valeur par déclenchement':effect.valueSource==='fixed'?'Valeur':'Multiplicateur',effect.valueSource==='attack'?10:effect.kind==='reward_mark'?400:10000,0,effect.kind==='reward_mark'))}
-     {['damage','poison'].includes(effect.kind)&&<Choice label={'Type de dégâts du résultat '+(i+1)} value={effect.damageType} options={[["inherit","Type de dégâts du porteur"],...DAMAGE_TYPES.map(k=>[k,DAMAGE_LABELS[k]] as [string,string])]} onChange={v=>patchResult(effect.id,{damageType:v as EffectDefinition['damageType']},'damageType')}/>}
-     {!INSTANT.includes(effect.kind)&&resultNumber('duration','Durée (s)',120,.05)}{PERIODIC.includes(effect.kind)&&resultNumber('tickInterval','Intervalle périodique (s)',30,.05)}
-    </div></details>;})}</div>
-   <div className="gd-form-grid"><Choice label="Ajouter un résultat existant" value="" options={[["","Choisir…"],...catalog.effects.filter(f=>!a.effects.includes(f.id)&&BENEFICIAL.includes(f.kind)===(a.target!=='opponent')).map(f=>[f.id,f.name] as [string,string])]} onChange={effectId=>{if(effectId&&a.effects.length<8)set('effects',[...a.effects,effectId]);}}/><Choice label="Créer un nouveau résultat" value="" options={[["","Choisir le résultat…"],...EFFECT_KINDS.filter(k=>BENEFICIAL.includes(k)===(a.target!=='opponent')).map(k=>[k,EFFECT_LABELS[k]] as [string,string])]} onChange={kind=>{if(!kind||a.effects.length>=8)return;const created=newEffect(kind as EffectDefinition['kind']);created.name=(EFFECT_LABELS[created.kind]+' — '+a.name).slice(0,120);change(p=>{p.combat!.effects.push(created);p.combat!.abilities.find(x=>x.id===a.id)!.effects.push(created.id);},'','Ajouter un résultat à l’attaque');}}/></div>
-   <p className="gd-note">Un résultat partagé reste commun aux attaques qui l’utilisent. Pour obtenir un réglage indépendant, crée un nouveau résultat directement ici.</p>
-
-   {trajectory&&<details className="gd-attack-advanced"><summary>Trajectoire et apparence du tir</summary><p className="gd-callout">Ce modèle de tir est utilisé par {combatReferences(project,'projectiles',trajectory.id).length} attaque(s). Les réglages ci-dessous restent dans cette fiche, mais sont partagés lorsqu’un même modèle est réutilisé.</p><div className="gd-form-grid">{trajectoryNumber('speed','Vitesse (cases/s)',20,0)}{trajectoryNumber('lifetime','Durée maximale (s)',30,.1)}{trajectoryNumber('maxHits','Nombre maximal de contacts',16,1,true)}{trajectoryNumber('hitRadius','Tolérance de contact (case)',.5,.01)}{trajectoryNumber('splashRadius','Rayon autour de l’impact (cases)',4)}{trajectoryNumber('rowRadius','Allées adjacentes touchées',4,0,true)}{trajectoryNumber('size','Taille visuelle (case)',.3,.02)}<label className="gd-field"><span>Couleur du tir</span><input type="color" aria-label="Couleur du tir" value={trajectory.color} onChange={x=>patchTrajectory({color:x.target.value},'color')}/></label></div><div className="gd-projectile-sample" aria-label="Aperçu du tir"><span style={{background:trajectory.color,width:Math.max(6,trajectory.size*100),height:Math.max(6,trajectory.size*100)}}/><small>{trajectory.name} · {trajectory.speed===0?`piège immobile pendant ${trajectory.lifetime} s`:`portée théorique ${(trajectory.speed*trajectory.lifetime).toFixed(1)} cases`}</small></div><ProjectilePresentationFields project={project} value={trajectory.presentation} assets={assets} change={presentation=>patchTrajectory({presentation},'presentation')}/></details>}
-   <AbilityPresentationFields project={project} value={a.presentation} change={presentation=>set('presentation',presentation)}/>
-   <CombatProbe project={project} ability={a}/>
-   <h2>Utilisée par ({refs.length})</h2><p>{refs.length?refs.join(' · '):'Aucune espèce ou règle pour le moment.'}</p><code className="gd-movie-path">{a.id}</code>
-  </section>
- </div>;
+interface Props {
+  assets: Asset[];
+  project: GameProject;
+  id: string;
+  select: (id: string) => void;
+  change: Change;
+  report: (message: string) => void;
+  run: (fn: () => Promise<void>) => Promise<void>;
+}
+/** Optional model library. Everyday editing lives on each character's capabilities tab. */
+export function CombatEditor({
+  assets,
+  project,
+  id,
+  select,
+  change,
+  report,
+}: Props) {
+  const [query, setQuery] = useState(""),
+    catalog = project.combat!,
+    ability =
+      catalog.abilities.find((x) => x.id === id) ?? catalog.abilities[0];
+  const normalize = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+  const refs = combatReferences(project, "abilities", ability.id);
+  return (
+    <div className="gd-balance gd-combat cap-library">
+      <aside className="gd-catalog">
+        <input
+          aria-label="Rechercher une capacité"
+          placeholder="Nom, personnage ou mécanique…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button
+          className="gd-primary"
+          onClick={() =>
+            change(
+              (p) => select(createAbility(p, "shot").id),
+              "",
+              "Créer un modèle",
+            )
+          }
+        >
+          + Créer un modèle
+        </button>
+        {catalog.abilities
+          .filter((a) =>
+            normalize(
+              a.name +
+                " " +
+                attackTypeLabel(a, catalog) +
+                " " +
+                combatReferences(project, "abilities", a.id).join(" "),
+            ).includes(normalize(query)),
+          )
+          .map((a) => (
+            <button
+              key={a.id}
+              className={a.id === ability.id ? "selected" : ""}
+              onClick={() => select(a.id)}
+            >
+              <b>{a.name}</b>
+              <small>{attackTypeLabel(a, catalog)}</small>
+              <small>
+                {combatReferences(project, "abilities", a.id).join(" · ") ||
+                  "Modèle libre"}
+              </small>
+            </button>
+          ))}
+      </aside>
+      <main className="gd-scroll gd-balance-form">
+        <div className="gd-section-heading">
+          <h1>Bibliothèque de capacités</h1>
+          <div className="gd-inline">
+            <button
+              onClick={() =>
+                change(
+                  (p) => select(cloneAbility(p, ability.id).id),
+                  "",
+                  "Dupliquer la capacité complète",
+                )
+              }
+            >
+              Dupliquer entièrement
+            </button>
+            <button
+              disabled={refs.length > 0 || catalog.abilities.length <= 1}
+              onClick={() => {
+                try {
+                  change(
+                    (p) => deleteCombatItem(p, "abilities", ability.id),
+                    "",
+                    "Supprimer le modèle",
+                  );
+                  select("");
+                } catch (e) {
+                  report(String(e));
+                }
+              }}
+            >
+              Supprimer
+            </button>
+          </div>
+        </div>
+        <AbilityEditor
+          key={ability.id}
+          project={project}
+          id={ability.id}
+          assets={assets}
+          change={change}
+          select={select}
+        />
+      </main>
+    </div>
+  );
 }

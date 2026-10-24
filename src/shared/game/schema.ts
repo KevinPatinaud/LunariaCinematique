@@ -1,6 +1,7 @@
+import {bindingSchema,mechanicsSchema} from './combatMechanicsSchema.js';
 export type Rule = {type?:string|string[];const?:unknown;enum?:unknown[];minimum?:number;maximum?:number;multipleOf?:number;minLength?:number;maxLength?:number;pattern?:string;minItems?:number;maxItems?:number;items?:Rule;properties?:Record<string,Rule>;required?:string[];additionalProperties?:boolean;[key:string]:unknown};
 import { cinematicSchema } from '../schema.js';
-export const GAME_SCHEMA:Rule = {
+export const GAME_SCHEMA: Rule = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lunaria.local/game-project.schema.json",
   "type": "object",
@@ -256,7 +257,7 @@ export const GAME_SCHEMA:Rule = {
         "enemies": {
           "type": "array",
           "minItems": 13,
-          "maxItems": 15,
+          "maxItems": 17,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -291,6 +292,7 @@ export const GAME_SCHEMA:Rule = {
                   "furnace",
                   "thorn_knot",
                   "plaque",
+                  "poubelle",
                   "cigarette"
                 ]
               },
@@ -396,12 +398,7 @@ export const GAME_SCHEMA:Rule = {
           "objective",
           "objectiveText",
           "tip",
-          "waves",
-          "briefing",
-          "outro",
-          "midDialogue",
-          "midWave",
-          "restoration"
+          "waves"
         ],
         "properties": {
           "id": {
@@ -437,6 +434,12 @@ export const GAME_SCHEMA:Rule = {
             "maxLength": 500,
             "pattern": "^library://.+[.]([Pp][Nn][Gg]|[Jj][Pp][Ee]?[Gg]|[Ww][Ee][Bb][Pp])$"
           },
+          "restoredTerrainImage": {
+            "type": "string",
+            "minLength": 11,
+            "maxLength": 500,
+            "pattern": "^library://.+[.]([Pp][Nn][Gg]|[Jj][Pp][Ee]?[Gg]|[Ww][Ee][Bb][Pp])$"
+          },
           "startingEnergy": {
             "type": "number",
             "minimum": 0,
@@ -465,12 +468,12 @@ export const GAME_SCHEMA:Rule = {
                 "type": "string",
                 "enum": [
                   "defend",
+                  "occupied_board",
                   "advance",
                   "escort",
                   "invasive_foci",
                   "protect_cell",
-                  "operation",
-                  "rescue"
+                  "repel_boss"
                 ]
               },
               "target": {
@@ -484,24 +487,78 @@ export const GAME_SCHEMA:Rule = {
           "protectedCell": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["row", "col", "image", "maxHp", "armor", "resistances"],
+            "required": [
+              "row",
+              "col",
+              "image",
+              "maxHp",
+              "armor",
+              "resistances"
+            ],
             "properties": {
-              "row": {"type": "number", "minimum": 0, "maximum": 4, "multipleOf": 1},
-              "col": {"type": "number", "minimum": 0, "maximum": 7, "multipleOf": 1},
-              "image": {"type": "string", "minLength": 11, "maxLength": 500, "pattern": "^library://.+[.]([Pp][Nn][Gg]|[Ww][Ee][Bb][Pp])$"},
-              "maxHp": {"type": "number", "minimum": 1, "maximum": 6000, "multipleOf": 1},
-              "armor": {"type": "number", "minimum": 0, "maximum": 0.95},
+              "row": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 4,
+                "multipleOf": 1
+              },
+              "col": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 7,
+                "multipleOf": 1
+              },
+              "image": {
+                "type": "string",
+                "minLength": 11,
+                "maxLength": 500,
+                "pattern": "^library://.+[.]([Pp][Nn][Gg]|[Ww][Ee][Bb][Pp])$"
+              },
+              "maxHp": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 6000,
+                "multipleOf": 1
+              },
+              "armor": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.95
+              },
               "resistances": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["physical", "piercing", "toxic"],
+                "required": [
+                  "physical",
+                  "piercing",
+                  "toxic"
+                ],
                 "properties": {
-                  "physical": {"type": "number", "minimum": 0, "maximum": 0.95},
-                  "piercing": {"type": "number", "minimum": 0, "maximum": 0.95},
-                  "toxic": {"type": "number", "minimum": 0, "maximum": 0.95}
+                  "physical": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.95
+                  },
+                  "piercing": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.95
+                  },
+                  "toxic": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.95
+                  }
                 }
               }
             }
+          },
+          "objectiveTextMode": {
+            "type": "string",
+            "enum": [
+              "automatic",
+              "custom"
+            ]
           },
           "objectiveText": {
             "type": "string",
@@ -589,12 +646,37 @@ export const GAME_SCHEMA:Rule = {
                       "placement": {
                         "type": "object",
                         "additionalProperties": false,
-                        "required": ["rowMin", "rowMax", "colMin", "colMax"],
+                        "required": [
+                          "rowMin",
+                          "rowMax",
+                          "colMin",
+                          "colMax"
+                        ],
                         "properties": {
-                          "rowMin": {"type":"number","minimum":0,"maximum":4,"multipleOf":1},
-                          "rowMax": {"type":"number","minimum":0,"maximum":4,"multipleOf":1},
-                          "colMin": {"type":"number","minimum":0,"maximum":7,"multipleOf":1},
-                          "colMax": {"type":"number","minimum":0,"maximum":7,"multipleOf":1}
+                          "rowMin": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 4,
+                            "multipleOf": 1
+                          },
+                          "rowMax": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 4,
+                            "multipleOf": 1
+                          },
+                          "colMin": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 7,
+                            "multipleOf": 1
+                          },
+                          "colMax": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 7,
+                            "multipleOf": 1
+                          }
                         }
                       }
                     }
@@ -602,92 +684,6 @@ export const GAME_SCHEMA:Rule = {
                 }
               }
             }
-          },
-          "briefing": {
-            "type": "array",
-            "minItems": 0,
-            "maxItems": 100,
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "speaker",
-                "text"
-              ],
-              "properties": {
-                "speaker": {
-                  "type": "string",
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "text": {
-                  "type": "string",
-                  "maxLength": 8000,
-                  "minLength": 1
-                }
-              }
-            }
-          },
-          "outro": {
-            "type": "array",
-            "minItems": 0,
-            "maxItems": 100,
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "speaker",
-                "text"
-              ],
-              "properties": {
-                "speaker": {
-                  "type": "string",
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "text": {
-                  "type": "string",
-                  "maxLength": 8000,
-                  "minLength": 1
-                }
-              }
-            }
-          },
-          "midDialogue": {
-            "type": "array",
-            "minItems": 0,
-            "maxItems": 100,
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "speaker",
-                "text"
-              ],
-              "properties": {
-                "speaker": {
-                  "type": "string",
-                  "maxLength": 100,
-                  "minLength": 1
-                },
-                "text": {
-                  "type": "string",
-                  "maxLength": 8000,
-                  "minLength": 1
-                }
-              }
-            }
-          },
-          "midWave": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 50,
-            "multipleOf": 1
-          },
-          "restoration": {
-            "type": "string",
-            "maxLength": 1000,
-            "minLength": 0
           }
         }
       }
@@ -721,7 +717,8 @@ export const GAME_SCHEMA:Rule = {
               "kind": {
                 "enum": [
                   "level",
-                  "cinematic"
+                  "cinematic",
+                  "end"
                 ]
               },
               "levelId": {
@@ -786,6 +783,8 @@ export const GAME_SCHEMA:Rule = {
 };
 
 // V1.8: global reusable combat catalog. No scripts, URLs or executable expressions.
+GAME_SCHEMA.properties!.levels.items!.properties!.waves.items!.properties!.groups.minItems=0;
+GAME_SCHEMA.properties!.levels.items!.properties!.waves.items!.properties!.groups.items!.properties!.interval.minimum=0;
 const obj=(properties:Record<string,Rule>):Rule=>({type:'object',additionalProperties:false,required:Object.keys(properties),properties});
 const num=(minimum:number,maximum:number,integer=false):Rule=>({type:'number',minimum,maximum,...(integer?{multipleOf:1}:{})});
 const str=(maxLength=200,minLength=0):Rule=>({type:'string',minLength,maxLength});
@@ -796,10 +795,14 @@ const base={id:idRule,name:str(120,1),description:str(1000)};
 const effect=obj({...base,kind:enumeration('damage','heal','poison','regeneration','slow','root','stun','weaken','armor_break','damage_boost','attack_speed_boost','protection','cleanse','counter_cooldown','reward_mark'),valueSource:enumeration('fixed','attack','strength'),amount:num(0,10000),damageType:enumeration('inherit','physical','piercing','toxic','pure'),duration:num(.05,120),tickInterval:num(.05,30)});
 const projectile=obj({...base,speed:num(0,20),lifetime:num(.1,30),maxHits:num(1,16,true),hitRadius:num(.01,.5),splashRadius:num(0,4),rowRadius:num(0,4,true),color:{...str(7,7),pattern:'^#[0-9a-fA-F]{6}$'},size:num(.02,.3)});
 const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','nearest_right','rightmost','strongest','wounded','random'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
+effect.properties!.binding=bindingSchema;
+projectile.properties!.visualStyle=enumeration('auto','nut','radish','aigrette','lance','bud','sprout','frond','slime');
+effect.properties!.counterStacking={type:'boolean'};
+ability.properties!.mechanics=mechanicsSchema;
 ability.properties!.allowBehind={type:'boolean'};
 ability.properties!.attachToTarget={type:'boolean'};
 ability.properties!.blocksTargetAttack={type:'boolean'};
-GAME_SCHEMA.properties!.balance.properties!.enemies.maxItems=16;
+GAME_SCHEMA.properties!.balance.properties!.enemies.maxItems=17;
 GAME_SCHEMA.properties!.balance.properties!.enemies.items!.properties!.id.enum!.push('plastic_bag');
 ability.properties!.forwardCells=num(1,8,true);
 ability.properties!.excludeSelf={type:'boolean'};
@@ -830,7 +833,14 @@ extendPresentationSchema(GAME_SCHEMA);
 // Authoring films live inside the same JSON as the levels. Publication removes
 // this field and writes the runtime film snapshots addressed by content hash.
 GAME_SCHEMA.properties!.cinematics={type:'array',minItems:0,maxItems:500,items:cinematicSchema as Rule};
-GAME_SCHEMA.properties!.rewards=obj({combo:obj({enabled:{type:'boolean'},seedsPerStep:num(0,10000,true),maxSeeds:num(0,10000,true)})});
 GAME_SCHEMA.properties!.levels.items!.properties!.laneCaptureSeedReward=num(0,10000,true);
 import { HOME_SCREEN_SCHEMA } from './homeScreenSchema.js';
 GAME_SCHEMA.properties!.homeScreen=HOME_SCREEN_SCHEMA;
+import {ENEMY_RULES_SCHEMA} from './enemyRulesSchema.js';
+const enemySchema=GAME_SCHEMA.properties!.balance.properties!.enemies;
+enemySchema.maxItems=128;
+enemySchema.items!.properties!.id=idRule;
+enemySchema.items!.properties!.rules=ENEMY_RULES_SCHEMA;
+enemySchema.items!.required!.push('rules');
+GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci.properties!.focusEnemyId=idRule;
+GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci.required!.push('focusEnemyId');

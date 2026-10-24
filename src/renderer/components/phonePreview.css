@@ -1,0 +1,7 @@
+.phone-format{display:flex;align-items:center;gap:7px;min-width:0;color:#b4c69c}
+.phone-format select{width:78px;padding:4px 5px;font-size:10px;background:#202b22}
+.canvas-topline:has(.phone-format){flex-wrap:wrap;row-gap:6px}
+.phone-device{position:relative;flex-shrink:0;min-width:0;border:8px solid #0a0e0b;border-radius:26px;outline:1px solid #64715b;box-shadow:0 16px 45px #0007,0 0 0 3px #20281f;background:#000}
+.phone-device:before{content:"";position:absolute;left:18%;top:-11px;width:12%;height:3px;border-radius:3px;background:#59634f;pointer-events:none}
+.phone-device .phone-screen{position:relative;width:100%;height:auto;border:0;border-radius:17px;box-shadow:none;background:#000;overflow:hidden}
+@media(max-width:1100px){.phone-format{gap:5px;font-size:8px}.phone-format select{width:72px}}

@@ -5,7 +5,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
-test('levels and complete films save and reopen in one JSON',async()=>{
+test('levels and complete films save and reopen in one JSON',async({},info)=>{
  test.setTimeout(120000);
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-unified-e2e-'));
  const file=path.join(dir,'lunaria.game.json'),profile=path.join(dir,'profile');
@@ -39,7 +39,8 @@ test('levels and complete films save and reopen in one JSON',async()=>{
   expect(saved.levels).toHaveLength(1);expect(saved.levels[0].act).toBe(2);
   expect(saved.campaign.steps.filter((step:{kind:string})=>step.kind==='level')).toHaveLength(1);
   expect(saved.cinematics).toHaveLength(1);expect(saved.cinematics[0].shots.length).toBeGreaterThan(0);
-  await page.getByRole('button',{name:'Ouvrir le projet'}).click();
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();
+  await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Film dans le projet');
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
   await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
@@ -67,6 +68,9 @@ test('levels and complete films save and reopen in one JSON',async()=>{
   await page.getByRole('button',{name:'Enregistrer le projet'}).click();
   await expect.poll(async()=>JSON.parse(await fs.readFile(file,'utf8')).cinematics.length).toBe(2);
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
+  await expect(page.getByRole('button',{name:/Importer un film/})).toHaveCount(0);
+  expect(await page.evaluate(()=>['openCinematic','saveCinematic','listVersions','openRecentProject'].filter(key=>key in window.lunaria!))).toEqual([]);
+  await page.screenshot({path:info.outputPath('studio-cinematiques-simplifie.png')});
   expect(new Set(JSON.parse(await fs.readFile(file,'utf8')).cinematics.map((film:{id:string})=>film.id)).size).toBe(2);
   await app.close();app=undefined;
   app=await _electron.launch({args:[ROOT],env:env as Record<string,string>});
@@ -98,11 +102,16 @@ test('levels and complete films save and reopen in one JSON',async()=>{
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
   const copyFile=path.join(dir,'copie.game.json');
   await app.evaluate(({dialog},target)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:target});},copyFile);
-  await page.locator('.gd-toolbar').getByRole('button',{name:'Récents'}).click();
-  await page.locator('.gd-recents').getByRole('button',{name:'Créer une copie du projet…'}).click();
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();
+  await page.getByRole('button',{name:'Enregistrer sous…',exact:true}).click();
   await expect.poll(async()=>{try{return JSON.parse(await fs.readFile(copyFile,'utf8')).title;}catch{return '';}}).toBe('Brouillon local du même projet');
   await expect(page.locator('.gd-project-name small')).toContainText(copyFile);
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
+  await page.screenshot({path:info.outputPath('studio-niveaux-simplifie.png')});
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();
+  await expect(page.getByRole('button',{name:'Ouvrir un projet…',exact:true})).toHaveCount(1);
+  await page.screenshot({path:info.outputPath('studio-menu-fichier.png')});
+  await page.getByRole('button',{name:'Fermer les actions du fichier'}).click();
   expect(JSON.parse(await fs.readFile(file,'utf8')).title).toBe('Brouillon local du même projet');
  }finally{
   if(app){

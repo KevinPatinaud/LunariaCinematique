@@ -1,184 +1,1394 @@
-import type { Asset, Cinematic } from '../../shared/model.js';
-import { ensurePresentation } from '../../shared/presentation/defaults.js';
-import { animationOwnerId } from '../../shared/presentation/ownership.js';
-import type { PresentationSection } from '../../shared/presentation/types.js';
-import { AnimationFields, PresentationEditor } from '../presentation/PresentationEditor.js';
-import { BehaviorEditor } from './BehaviorEditor.js';
-import { EventEditor } from './EventEditor.js';
-import { VariableEditor } from './VariableEditor.js';
-import { RewardsEditor } from './RewardsEditor.js';
-import { HomeScreenEditor } from './HomeScreenEditor.js';
-import { ensureLogic } from '../../shared/game/logicDefaults.js';
-import { CombatEditor } from './CombatEditor.js';
-import { ensureCombat } from '../../shared/game/combatDefaults.js';
-import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useReducer, useRef, useState } from 'react';
-import { createHistory, historyReducer, type HistoryAction } from '../../shared/history.js';
-import { seedProject } from '../../shared/game/seed.js';
-import { activeEnemies, cloneLevel, CONTINENTS, DAMAGE_LABELS, newId,newLevel, totalEnemies, OBJECTIVES, OBJECTIVE_LABELS, defaultInvasiveFoci, defaultEscort, isConquest, type GameProject, type LevelDefinition, type GameRecent, type GameFile, type GameBuildTarget } from '../../shared/game/types.js';
-import { gameIssues, parseGameProject } from '../../shared/game/validation.js';
-import { api } from '../browserBridge.js';
-import { gameAPI } from './bridge.js';
-import { BalanceEditor, Num } from './BalanceEditor.js';
-import { ImagePicker } from '../presentation/ImagePicker.js';
-import { WaveEditor } from './WaveEditor.js';
-import { EscortEditor } from './EscortEditor.js';
-import { InvasiveFociEditor } from './InvasiveFociEditor.js';
-import { CampaignEditor } from './CampaignEditor.js';
-import { ensureCampaign } from '../../shared/game/campaign.js';
-import { cinematicReferences } from '../../shared/game/cinematicManagement.js';
-import type { CampaignFilm } from '../../shared/game/types.js';
-import { StudioDialog } from '../components/StudioDialog.js';
-import type { GameIssue } from '../../shared/game/validation.js';
-import './game.css';
-export type GameSection = 'home'|'campaign'|'levels'|'plants'|'enemies'|'abilities'|'behaviors'|'variables'|'rewards'|PresentationSection;
-function starter(){const p=seedProject();p.levels=[];p.campaign={steps:[],cinematics:[]};p.cinematics=[];ensureCombat(p);ensureLogic(p);return p;}
-export interface GameEditorHandle {navigate(section:GameSection):void;createLevel():void;showChecks():void;prepareClose():Promise<boolean>;isBusy():boolean;save(as?:boolean):Promise<boolean>;open():Promise<void>;newProject():Promise<void>;upsertCinematic(doc:Cinematic,previousId?:string):void;moveCinematic(id:string,targetId:string):void;removeCinematic(id:string):void}
-interface Props {assets:Asset[];onProject:(p:GameProject)=>void;onProjectLoaded:(p:GameProject,path:string)=>void;onProjectPath:(path:string)=>void;externalUsages:Record<string,string[]>;active:boolean;onDirty:(dirty:boolean)=>void;onBusy:(busy:boolean)=>void;onOpenFilm:(film:CampaignFilm)=>Promise<void>;onBeforePublish:()=>Promise<boolean>}
-export const GameEditor=forwardRef<GameEditorHandle,Props>(function GameEditor({assets,onProject,onProjectLoaded,onProjectPath,externalUsages,active,onDirty,onBusy,onOpenFilm,onBeforePublish},ref){
- const [history,dispatch]=useReducer(historyReducer<GameProject>,undefined,()=>createHistory(starter()));
- const project=history.present;
- const [saved,setSaved]=useState(()=>JSON.stringify(project)),[path,setPath]=useState(''),[token,setToken]=useState('');
- const [section,setSection]=useState<GameSection>('campaign'),[levelId,setLevelId]=useState(project.levels[0]?.id??'');
- const [combatId,setCombatId]=useState('');
- const [toolsOpen,setToolsOpen]=useState(false);
- const deliveryRef=useRef<HTMLDetailsElement>(null);
- useEffect(()=>{if(['animations','profiles','audio','vfx'].includes(section))setToolsOpen(true);},[section]);
- useEffect(()=>{const close=(event:PointerEvent)=>{if(deliveryRef.current&&!deliveryRef.current.contains(event.target as Node))deliveryRef.current.open=false;};document.addEventListener('pointerdown',close);return()=>document.removeEventListener('pointerdown',close);},[]);
- const [species,setSpecies]=useState('radish'),[detail,setDetail]=useState<'settings'|'waves'|'plants'|'events'>('waves');
- const [speciesTab,setSpeciesTab]=useState<'details'|'animations'>('details'),[focusAnimationId,setFocusAnimationId]=useState('');
- const [query,setQuery]=useState(''),[continent,setContinent]=useState(-1),[busy,setBusy]=useState(true),[booted,setBooted]=useState(false);
- const [message,setMessage]=useState(''),[recovery,setRecovery]=useState<GameProject|null>(null),[recent,setRecent]=useState<GameRecent[]>([]),[showRecent,setShowRecent]=useState(false),[showIssues,setShowIssues]=useState(false);
- const [recoveryStatus,setRecoveryStatus]=useState('');
- const stateRef=useRef(history);stateRef.current=history;const savedRef=useRef(saved);savedRef.current=saved;const running=useRef(true);
- const pathRef=useRef(path),tokenRef=useRef(token);pathRef.current=path;tokenRef.current=token;const timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
- const dirty=JSON.stringify(project)!==saved,issues=useMemo(()=>gameIssues(project),[project]),errors=issues.filter(x=>x.severity==='error');
- const level=project.levels.find(l=>l.id===levelId)??project.levels[0];
- function action(a:HistoryAction<GameProject>){const next=historyReducer(stateRef.current,a);stateRef.current=next;dispatch(a);}
- function change(edit:(p:GameProject)=>void,key='',label='Modifier le projet de jeu',allowBusy=false){
-  if(running.current&&!allowBusy)return;const next=structuredClone(stateRef.current.present);edit(next);action({type:'commit',value:next,key,now:Date.now(),label});
- }
- function updateLevel(patch:Partial<LevelDefinition>,key='') {const id=level.id;change(p=>{const target=p.levels.find(l=>l.id===id)!;Object.assign(target,patch);if(Object.hasOwn(patch,'protectedCell')&&!patch.protectedCell)delete target.protectedCell;if(Object.hasOwn(patch,'invasiveFoci')&&!patch.invasiveFoci)delete target.invasiveFoci;if(Object.hasOwn(patch,'escort')&&!patch.escort)delete target.escort;if(Object.hasOwn(patch,'terrainImage')&&!patch.terrainImage)delete target.terrainImage;},key?`${id}:${key}`:'');}
- function flushInput(){if(document.activeElement instanceof HTMLElement)document.activeElement.blur();}
- function report(e:unknown){setMessage(e instanceof Error?e.message:String(e));}
- async function run(fn:()=>Promise<void>){if(running.current)return;flushInput();running.current=true;setBusy(true);try{await fn();}catch(e){report(e);}finally{running.current=false;setBusy(false);}}
- async function refreshRecent(){try{setRecent((await gameAPI.bootstrap()).recent);}catch(e){report(e);}}
- async function save(as=false):Promise<boolean>{
-  clearTimeout(timer.current);const current=stateRef.current.present;parseGameProject(current);
-  const result=await gameAPI.save(current,tokenRef.current,as);if(!result)return false;
-  savedRef.current=JSON.stringify(result.project);setSaved(savedRef.current);pathRef.current=result.path;setPath(result.path);tokenRef.current=result.token;setToken(result.token);
-  await gameAPI.clearRecovery();setRecoveryStatus('Fichier enregistré');setMessage('Niveaux et cinématiques enregistrés dans le même fichier.');onProjectPath(result.path);await refreshRecent();return true;
- }
- async function canReplace(reason:string):Promise<boolean>{
-  flushInput();if(savedRef.current===JSON.stringify(stateRef.current.present))return true;
-  const choice=await api.confirmUnsaved(reason);if(choice==='cancel')return false;
-  if(choice==='save')return save();return true;
- }
-  useImperativeHandle(ref,()=>({navigate:next=>selectSection(next),createLevel:()=>{if(running.current)return;addLevel();setSection('levels');},showChecks:()=>{if(!running.current)setShowIssues(true);},isBusy:()=>running.current,save:async(as=false)=>{if(running.current)return false;let result=false;await run(async()=>{result=await save(as);});return result;},open:()=>open(),newProject:()=>fresh(),upsertCinematic:(doc,previousId)=>{change(p=>{const films=p.cinematics??=[];const index=films.findIndex(f=>f.id===(previousId||doc.id));if(index>=0)films[index]=structuredClone(doc);else films.push(structuredClone(doc));for(const ref of p.campaign?.cinematics??[])if(ref.documentId===(previousId||doc.id)){ref.documentId=doc.id;ref.title=doc.title;}},'cinematic:'+doc.id,'Modifier la cinématique');},moveCinematic:(id,targetId)=>{change(p=>{const films=p.cinematics??[];const from=films.findIndex(f=>f.id===id),to=films.findIndex(f=>f.id===targetId);if(from<0||to<0||from===to)return;[films[from],films[to]]=[films[to],films[from]];},'','Réordonner les cinématiques');},removeCinematic:id=>{change(p=>{if(cinematicReferences(p,id).length)throw new Error('Cette cinématique est encore utilisée dans la campagne.');p.cinematics=(p.cinematics??[]).filter(f=>f.id!==id);if(p.campaign)p.campaign.cinematics=p.campaign.cinematics.filter(f=>f.documentId!==id);},'','Supprimer la cinématique');},prepareClose:async()=>{if(running.current)return false;try{const proceed=await canReplace('Enregistrer le projet Lunaria avant de quitter ?');if(proceed&&savedRef.current!==JSON.stringify(stateRef.current.present)){clearTimeout(timer.current);await gameAPI.recover(stateRef.current.present);}return proceed;}catch(e){report(e);return false;}}}));
- function apply(project:GameProject,file?:GameFile,modified=false){
-  project=structuredClone(project);ensureCampaign(project);
-   clearTimeout(timer.current);ensureCombat(project);ensureLogic(project);ensurePresentation(project);action({type:'reset',value:structuredClone(project)});setLevelId(project.levels[0]?.id??'');setSpecies(project.balance.plants[0].id);setSection('campaign');setQuery('');setContinent(-1);setDetail('waves');
-   const baseline=modified?'':JSON.stringify(project);savedRef.current=baseline;setSaved(baseline);pathRef.current=file?.path??'';setPath(pathRef.current);onProjectPath(pathRef.current);tokenRef.current=file?.token??'';setToken(tokenRef.current);setShowRecent(false);setRecovery(null);setRecoveryStatus(file?'Fichier ouvert':'');onProjectLoaded(project,pathRef.current);
- }
-  const open=(recentPath?:string)=>run(async()=>{if(!await canReplace('Enregistrer avant d’ouvrir un autre projet Lunaria ?'))return;const result=await (recentPath?gameAPI.openRecent(recentPath):gameAPI.open());if(result){apply(result.project,result,!!result.migrated);await gameAPI.clearRecovery();await refreshRecent();setMessage(result.migrated?'Projet ouvert. Les anciens films ont été intégrés ; enregistre le fichier unique.':'Projet ouvert.');}});
-  const fresh=()=>run(async()=>{if(!await canReplace('Enregistrer avant de créer un projet Lunaria ?'))return;const next=starter();next.id=newId('project');next.title='Nouveau projet Lunaria';next.balance=structuredClone(stateRef.current.present.balance);next.combat=structuredClone(stateRef.current.present.combat);next.logic=structuredClone(stateRef.current.present.logic);next.schemaVersion=4;next.presentation=structuredClone(stateRef.current.present.presentation);apply(next,undefined,true);await gameAPI.clearRecovery();setMessage('Projet vide créé. Ajoute des niveaux et des cinématiques.');});
-  const addLevel=()=>{const enemy=activeEnemies(project.balance.enemies)[0];if(!enemy){setMessage('Restaure un ennemi archivé avant de créer un niveau.');return;}setQuery('');setContinent(-1);const next=newLevel(project.balance.plants.map(p=>p.id),enemy.id);next.act=level?.act??0;change(p=>{const i=p.levels.findIndex(l=>l.id===levelId);p.levels.splice(i+1,0,next);if(!p.campaign)p.campaign={steps:[],cinematics:[]};p.campaign.steps.push({id:newId('step'),kind:'level',levelId:next.id});},'','Créer un niveau');setLevelId(next.id);setDetail('settings');};
- const duplicate=()=>{setQuery('');setContinent(-1);const next=cloneLevel(level);change(p=>p.levels.splice(p.levels.findIndex(l=>l.id===level.id)+1,0,next),'','Dupliquer le niveau');setLevelId(next.id);setMessage('Niveau dupliqué. Ajoute cette copie au parcours depuis Campagne pour la rendre jouable.');};
-  const remove=()=>run(async()=>{if(!level||!await api.confirmDelete(level.title))return;
-  // The asynchronous confirmation may finish after a render; edit from the current state.
-   const next=structuredClone(stateRef.current.present),i=next.levels.findIndex(l=>l.id===level.id);if(i<0)return;next.levels.splice(i,1);if(next.campaign)next.campaign.steps=next.campaign.steps.filter(s=>s.kind!=='level'||s.levelId!==level.id);action({type:'commit',value:next,label:'Supprimer le niveau'});setLevelId(next.levels[Math.min(i,next.levels.length-1)]?.id??'');
- });
- const move=(by:number)=>change(p=>{const i=p.levels.findIndex(l=>l.id===level.id),j=i+by;if(j<0||j>=p.levels.length)return;[p.levels[i],p.levels[j]]=[p.levels[j],p.levels[i]];},'','Réordonner les niveaux');
-  const playLevel=()=>void run(async()=>{if(!level||!await onBeforePublish()||!await save())return;const id=level.id;const result=await gameAPI.playLevel(stateRef.current.present,id);if(result)setMessage(`Lunaria lancé sur « ${result.title} ». Les données du Studio ont été synchronisées. Cette session de test est temporaire et n’écrit pas dans la progression du joueur.`);});
-  const buildGame=(target:GameBuildTarget)=>void run(async()=>{if(!await onBeforePublish()||!await save())return;const label=target==='windows'?'PC':'Android';setMessage(`Export ${label} en cours… La campagne est synchronisée avant l’export.`);const result=await gameAPI.build(stateRef.current.present,target);setMessage(result?`Export ${label} terminé : ${result.artifact}\n${(result.bytes/1048576).toFixed(1)} Mo · SHA-256 ${result.sha256}`:`Export ${label} annulé.`);});
- useEffect(()=>{let live=true;void (async()=>{
-  try{
-   const snapshot=await gameAPI.bootstrap();if(!live)return;
-   setRecent(snapshot.recent);
-   const latest=snapshot.recent[0];
-   if(latest){
-    try{const file=await gameAPI.openRecent(latest.path);if(!live)return;apply(file.project,file,!!file.migrated);setMessage(file.migrated?'Dernier projet chargé. Enregistre-le pour intégrer ses anciens films au fichier unique.':'Dernier projet chargé automatiquement.');}
-    catch(e){if(live)setMessage(`Impossible de charger le dernier projet « ${latest.title} » : ${e instanceof Error?e.message:String(e)}`);}
-   }
-   if(live)setRecovery(snapshot.recovery);
-  }catch(e){if(live)report(e);}
-  finally{if(live){running.current=false;setBusy(false);setBooted(true);}}
- })();return()=>{live=false;clearTimeout(timer.current);};},[]);
- useEffect(()=>{onProject(project);},[project,onProject]);
- useEffect(()=>{onDirty(dirty);},[dirty,onDirty]);
- useEffect(()=>{onBusy(busy);},[busy,onBusy]);
- useEffect(()=>{clearTimeout(timer.current);if(!dirty||!booted||recovery)return;setRecoveryStatus('Copie en attente…');const value=project;let current=true;
-  timer.current=setTimeout(()=>{void gameAPI.recover(value).then(()=>{if(current)setRecoveryStatus('Copie locale à jour');}).catch(e=>{if(current){setRecoveryStatus('Copie locale en erreur');report(e);}});},500);return()=>{current=false;clearTimeout(timer.current);};
- },[project,dirty,booted,recovery]);
- useEffect(()=>{if(!active)return;const key=(e:KeyboardEvent)=>{if(e.defaultPrevented||e.isComposing)return;const cmd=e.ctrlKey||e.metaKey;
-  if(cmd&&e.key.toLowerCase()==='s'){e.preventDefault();void run(async()=>{await save();});return;}
-  if(cmd&&e.key.toLowerCase()==='o'){e.preventDefault();void open();return;}
-  if(e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable]'))return;
-  if(!busy&&cmd&&e.key.toLowerCase()==='z'){e.preventDefault();action({type:e.shiftKey?'redo':'undo'});}else if(!busy&&cmd&&e.key.toLowerCase()==='y'){e.preventDefault();action({type:'redo'});}
- };window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);});
-  useEffect(()=>{if(!project.levels.some(l=>l.id===levelId))setLevelId(project.levels[0]?.id??'');},[project,levelId]);
- const norm=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const visible=project.levels.filter(l=>(continent<0||l.act===continent)&&norm(l.title+' '+l.id+' '+l.location).includes(norm(query)));
-  const selectSection=(next:typeof section)=>{if(running.current)return;setSection(next);setSpecies(next==='enemies'?activeEnemies(project.balance.enemies)[0]?.id??'':project.balance.plants[0].id);if(next==='plants'||next==='enemies'){setSpeciesTab('details');setFocusAnimationId('');}};
- const openAnimationDefinition=(animationId:string)=>{const animation=project.presentation?.animations.find(value=>value.id===animationId),owner=animation&&animationOwnerId(project,animation);if(owner){setSpecies(owner);setSpeciesTab('animations');setFocusAnimationId(animationId);setSection(project.balance.plants.some(value=>value.id===owner)?'plants':'enemies');}else{setSection('animations');setCombatId(animationId);}};
- const openCombatIssue=(path:string)=>{const [,kind,id='']=path.split('.');let attackId=id;if(kind==='effects')attackId=project.combat!.abilities.find(a=>a.effects.includes(id))?.id??'';else if(kind==='projectiles')attackId=project.combat!.abilities.find(a=>a.projectileId===id)?.id??'';setSection('abilities');setCombatId(attackId);};
- function issueLevel(issue:GameIssue){const match=issue.path.match(/^projet\.levels\[(\d+)\]/);return project.levels.find(l=>l.id===issue.levelId)??(match?project.levels[Number(match[1])]:undefined);}
- function issueLocation(issue:GameIssue){const target=issueLevel(issue);if(target)return 'Niveau · '+target.title;const labels:Record<string,string>={homeScreen:'Écran d’accueil',rewards:'Récompenses',presentation:'Animations et sons',logic:'Comportements et variables',combat:'Attaques',balance:'Personnages',campaign:'Campagne',cinematics:'Cinématiques'};return labels[issue.path.replace(/^projet\./,'').split(/[.[]/)[0]]??'Projet';}
- function openIssue(issue:GameIssue){
-  const target=issueLevel(issue),path=issue.path.replace(/^projet\./,'');
-  if(target){setLevelId(target.id);setSection('levels');setQuery('');setContinent(-1);setDetail(path.includes('.events')||path.includes('Dialogue')?'events':path.includes('.waves')?'waves':path.includes('.allowedPlants')?'plants':'settings');}
-  else if(path.startsWith('presentation.')){const parts=path.split('.');setSection((['animations','profiles','audio','vfx'].includes(parts[1])?parts[1]:'animations') as PresentationSection);setCombatId(parts[2]??'');}
-  else if(path.startsWith('logic.')){const parts=path.split('.');setSection(parts[1]==='variables'?'variables':'behaviors');setCombatId(parts[2]??'');}
-  else if(path.startsWith('rewards.'))setSection('rewards');
-  else if(path.startsWith('homeScreen.'))setSection('home');
-  else if(path.startsWith('combat.'))openCombatIssue(path);
-  else if(path.startsWith('balance.')){const match=path.match(/^balance\.(plants|enemies)(?:\[(\d+)\]|\.([^.[\]]+))/);if(match){const role=match[1] as 'plants'|'enemies';setSection(role);setSpecies(match[2]?project.balance[role][Number(match[2])]?.id??'':match[3]);setSpeciesTab('details');}}
-  else setSection('campaign');
-  setShowIssues(false);
-  requestAnimationFrame(()=>{const root=document.querySelector('.studio-game-host');const label=target&&path.endsWith('.title')?'Nom du niveau':path==='title'?'Titre du projet de niveaux':undefined;const field=label?root?.querySelector<HTMLElement>('[aria-label="'+label+'"]'):root?.querySelector<HTMLElement>('.gd-body input,.gd-body select,.gd-body button');field?.focus();});
- }
- return <div className="gd-shell" aria-label="Éditeur de niveaux">
-  <header className="gd-toolbar"><div className="gd-project-name"><span className="gd-kicker">PROJET DE JEU</span><input aria-label="Titre du projet de niveaux" maxLength={160} value={project.title} disabled={busy} onChange={e=>change(p=>{p.title=e.target.value;},'title')}/><small title={path}>{path||'Non enregistré · un seul catalogue pour tout le jeu'}{dirty?' · Modifié':''}</small></div>
-   <div className="gd-inline"><button disabled={busy||!booted} onClick={()=>void fresh()}>Nouveau</button><button disabled={busy||!booted} onClick={()=>void open()}>Ouvrir</button><button disabled={busy} aria-expanded={showRecent} onClick={()=>setShowRecent(!showRecent)}>Récents</button><button disabled={busy||!history.past.length} onClick={()=>{flushInput();action({type:'undo'});}} title="Annuler · Ctrl+Z">↶</button><button disabled={busy||!history.future.length} onClick={()=>{flushInput();action({type:'redo'});}} title="Rétablir · Ctrl+Y">↷</button><details ref={deliveryRef} className="gd-delivery" onKeyDown={e=>{if(e.key==='Escape'){e.preventDefault();e.currentTarget.open=false;e.currentTarget.querySelector('summary')?.focus();}}}><summary>Publier et exporter</summary><div className="gd-delivery-menu" onClick={event=>{if((event.target as Element).closest('button')&&deliveryRef.current)deliveryRef.current.open=false;}}><p><strong>Le projet reste ton fichier de travail.</strong> Ces actions préparent sa version jouable.</p>{errors.length>0&&<button className="gd-delivery-errors" onClick={()=>{if(deliveryRef.current)deliveryRef.current.open=false;setShowIssues(true);}}>{errors.length} point{errors.length>1?'s':''} à corriger avant de continuer →</button>}<button className="gd-publish" disabled={busy||errors.length>0} onClick={()=>void run(async()=>{if(!await onBeforePublish()||!await save())return;const result=await gameAPI.publish(stateRef.current.present);if(result)setMessage('Publié : '+result.path+'\nRelance le jeu pour utiliser ces données.');})}>Publier la campagne</button><button className="gd-build gd-build-pc" disabled={busy||errors.length>0} title="Synchroniser la campagne puis générer build/windows/Lunaria.exe" onClick={()=>buildGame('windows')}>Exporter pour PC</button><button className="gd-build gd-build-android" disabled={busy||errors.length>0} title="Synchroniser la campagne puis générer build/android/Lunaria.apk" onClick={()=>buildGame('android')}>Exporter pour Android</button><small>La publication met à jour le jeu sélectionné. Un export crée ensuite son application PC ou Android.</small></div></details></div>
-  </header>
-  {recovery&&<div className="gd-recovery">Une copie locale non enregistrée est disponible : <b>{recovery.title}</b><button onClick={()=>{const sameFile=pathRef.current&&tokenRef.current&&stateRef.current.present.id===recovery.id;apply(recovery,sameFile?{project:recovery,path:pathRef.current,token:tokenRef.current}:undefined,true);setMessage(sameFile?'Brouillon récupéré. Enregistre pour mettre à jour le projet.':'Brouillon récupéré. Enregistrer te demandera où créer son fichier.');}}>Reprendre</button><button onClick={()=>void run(async()=>{await gameAPI.clearRecovery();setRecovery(null);})}>Ignorer</button></div>}
-  {showRecent&&<div className="gd-recents"><b>Derniers projets</b>{recent.length?recent.map(r=><button disabled={busy} key={r.path} onClick={()=>void open(r.path)}><strong>{r.title}</strong><small>{r.path}</small></button>):<p>Les projets ouverts ou enregistrés apparaîtront ici. Leurs images ne sont jamais copiées.</p>}<button disabled={busy} onClick={()=>void run(async()=>{await save(true);})}>Créer une copie du projet…</button><button onClick={()=>setShowRecent(false)}>Fermer</button></div>}
-  <nav className="gd-sections" aria-label="Sections du mode Niveaux"><button className={section==='home'?'active':''} onClick={()=>selectSection('home')}>Écran d’accueil</button><button className={section==='campaign'?'active':''} onClick={()=>selectSection('campaign')}>Campagne <small>Ordre de lecture</small></button><button className={section==='levels'?'active':''} onClick={()=>selectSection('levels')}>Niveaux <small>{project.levels.length}</small></button><button className={section==='plants'?'active':''} onClick={()=>selectSection('plants')}>Plantes alliées <small>Équilibrage global</small></button><button className={section==='enemies'?'active':''} onClick={()=>selectSection('enemies')}>Ennemis <small>Équilibrage global</small></button><button className={section==='abilities'?'active':''} onClick={()=>{selectSection('abilities');setCombatId('');}}>Attaque <small>Types & résultats</small></button><button className={section==='behaviors'?'active':''} onClick={()=>{selectSection('behaviors');setCombatId('');}}>Comportements <small>IA & phases de boss</small></button><button className={section==='rewards'?'active':''} onClick={()=>selectSection('rewards')}>Récompenses</button><button className={section==='variables'?'active':''} onClick={()=>selectSection('variables')}>Variables</button><span>Équilibrage global · sans progression</span></nav>
-  <details className="gd-tools" open={toolsOpen} onToggle={e=>setToolsOpen(e.currentTarget.open)}><summary>Animations et sons <span>Animations communes, profils avancés et effets visuels</span></summary><nav className="lp-navigation" aria-label="Création des animations de combat">
-   <div className="lp-navigation-heading"><span aria-hidden="true">✦</span><div><b>Animations de combat</b><small>Crée le mouvement, puis associe-le aux personnages</small></div></div>
-   <div className="lp-navigation-actions">{([
-    ['animations','▶','Animations communes','Pour tous les personnages'],
-    ['profiles','♟','Profils avancés','Liaisons et sons'],
-    ['audio','♪','Sons','Ambiances et attaques'],
-    ['vfx','✦','Effets visuels','Impacts et particules']
-   ] as const).map(([key,icon,label,hint])=><button key={key} className={section===key?'active':''} onClick={()=>{selectSection(key);setCombatId('');}}><span aria-hidden="true">{icon}</span><span><b>{label}</b><small>{hint}</small></span></button>)}</div>
-  </nav></details>
-  <fieldset className="gd-body" disabled={busy}>
-  {section==='home'?<HomeScreenEditor project={project} assets={assets} change={(edit,key,label)=>change(edit,key,label,true)}/>:(section==='animations'||section==='profiles'||section==='audio'||section==='vfx')?<PresentationEditor project={project} section={section} id={combatId} select={setCombatId} assets={assets} externalUsages={externalUsages} change={(edit,key,label)=>change(edit,key,label,true)} report={setMessage} run={run} openAnimation={openAnimationDefinition}/>:section==='behaviors'?<BehaviorEditor project={project} id={combatId} select={setCombatId} change={(edit,key,label)=>change(edit,key,label,true)} report={setMessage}/>:section==='variables'?<VariableEditor project={project} change={(edit,key,label)=>change(edit,key,label,true)} report={setMessage}/>:section==='campaign'?<CampaignEditor project={project} change={(edit,key,label)=>change(edit,key,label,true)} run={run} report={setMessage} createLevel={()=>{addLevel();setSection('levels');}} selectLevel={id=>{setQuery('');setContinent(-1);setLevelId(id);setSection('levels');}} openFilm={film=>run(()=>onOpenFilm(film))}/>:section==='abilities'?<CombatEditor assets={assets} project={project} id={combatId} select={setCombatId} change={(edit,key,label)=>change(edit,key,label,true)} report={setMessage} run={run}/>:section==='rewards'?<RewardsEditor project={project} initialLevelId={levelId} change={(edit,key,label)=>change(edit,key,label,true)}/>:section!=='levels'?<BalanceEditor assets={assets} change={(edit,key,label)=>change(edit,key,label,true)} openProfile={id=>{setSection('profiles');setCombatId(id);}} editBehavior={id=>{setSection('behaviors');setCombatId(id);}} editAbility={id=>{setSection('abilities');setCombatId(id);}} project={project} role={section} id={species} select={setSpecies} tab={speciesTab} setTab={setSpeciesTab} focusAnimationId={focusAnimationId} renderAnimationEditor={(animation,patch,speciesId)=><AnimationFields value={animation} project={project} assets={assets} patch={patch} previewSpeciesId={speciesId}/>} update={(id,patch,key)=>change(p=>{const list=section==='plants'?p.balance.plants:p.balance.enemies;Object.assign(list.find(x=>x.id===id)!,patch);},key,'Calibrer le catalogue global')}/>:<>
-   <aside className="gd-level-list"><div className="gd-list-controls"><input aria-label="Rechercher un niveau" placeholder="Rechercher un niveau…" value={query} onChange={e=>setQuery(e.target.value)}/><select aria-label="Filtrer les niveaux par continent" value={continent} onChange={e=>setContinent(Number(e.target.value))}><option value={-1}>Tous les continents</option>{CONTINENTS.map((c,i)=><option key={c} value={i}>{c}</option>)}</select><button className="gd-primary" disabled={project.levels.length>=200||!activeEnemies(project.balance.enemies).length} onClick={addLevel}>+ Créer un niveau</button></div>
-    <div className="gd-level-items">{visible.map(l=><button key={l.id} className={level?.id===l.id?'selected':''} onClick={()=>setLevelId(l.id)}><span className="gd-level-index">{String(project.levels.indexOf(l)+1).padStart(2,'0')}</span><span><b>{l.title}</b><small>{CONTINENTS[l.act]} · {l.waves.length} vague{l.waves.length>1?'s':''} · {totalEnemies(l)} ennemis</small></span></button>)}{!visible.length&&<div className="gd-empty-search"><p>{project.levels.length?'Aucun niveau ne correspond à ces filtres.':'Tes niveaux apparaîtront ici.'}</p>{!!project.levels.length&&<button onClick={()=>{setQuery('');setContinent(-1);}}>Effacer les filtres</button>}</div>}</div>
+import { linkCinematic } from '../../shared/game/cinematicManagement.js';
+import {
+  LevelCampaignPosition,
+  DuplicateLevelDialog,
+} from "./LevelPlacement.js";
+import {
+  afterLevel,
+  createProjectLevel,
+  duplicateProjectLevel,
+  deleteProjectLevel,
+  placeLevel,
+  patchProjectLevel,
+  levelPosition,
+  orderedLevels,
+  type LevelPlacement,
+} from "../../shared/game/levelManagement.js";
+import { LevelObjectiveEditor } from "./LevelObjectiveEditor.js";
+import { useProjectSession } from "../project/ProjectSessionContext.js";
+import type { Asset, AssetRef } from "../../shared/model.js";
+import { animationOwnerId } from "../../shared/presentation/ownership.js";
+import type { PresentationSection } from "../../shared/presentation/types.js";
+import {
+  AnimationFields,
+  PresentationEditor,
+} from "../presentation/PresentationEditor.js";
+import { BehaviorEditor } from "./BehaviorEditor.js";
+import { EventEditor } from "./EventEditor.js";
+import { VariableEditor } from "./VariableEditor.js";
+import { LevelRewardsOverview } from "./LevelRewardsOverview.js";
+import { HomeScreenEditor } from "./HomeScreenEditor.js";
+import { CombatEditor } from "./CombatEditor.js";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { type HistoryAction } from "../../shared/history.js";
+import {
+  activeEnemies,
+  CONTINENTS,
+  totalEnemies,
+  isConquest,
+  type GameProject,
+  type LevelDefinition,
+  type GameBuildTarget,
+} from "../../shared/game/types.js";
+import { gameIssues } from "../../shared/game/validation.js";
+import { api } from "../browserBridge.js";
+import { gameAPI } from "./bridge.js";
+import { BalanceEditor, Num } from "./BalanceEditor.js";
+import { ImagePicker } from "../presentation/ImagePicker.js";
+import { TerrainGenerationDialog } from "./TerrainGenerationDialog.js";
+import { AndroidDeploymentStatus, type AndroidDeploymentStatusState } from "./AndroidDeploymentStatus.js";
+import { WaveEditor } from "./WaveEditor.js";
+import { CampaignEditor } from "./CampaignEditor.js";
+import { ensureCampaign } from "../../shared/game/campaign.js";
+import type { CampaignFilm } from "../../shared/game/types.js";
+import { StudioDialog } from "../components/StudioDialog.js";
+import type { GameIssue } from "../../shared/game/validation.js";
+import "./game.css";
+import "./levelsCampaign.css";
+export type GameSection =
+  | "home"
+  | "campaign"
+  | "levels"
+  | "plants"
+  | "enemies"
+  | "abilities"
+  | "behaviors"
+  | "variables"
+  | PresentationSection;
+export interface GameEditorHandle {
+  navigate(section: GameSection): void;
+  createLevel(): void;
+  showChecks(): void;
+}
+interface Props {
+  assets: Asset[];
+  externalUsages: Record<string, string[]>;
+  active: boolean;
+  onOpenFilm: (film: CampaignFilm) => Promise<void>;
+  onBeforePublish: () => Promise<boolean>;
+  onBackupCampaign: () => void;
+}
+export const GameEditor = forwardRef<GameEditorHandle, Props>(
+  function GameEditor(
+    {
+      assets,
+      externalUsages,
+      active,
+      onOpenFilm,
+      onBeforePublish,
+      onBackupCampaign,
+    },
+    ref,
+  ) {
+    const {
+      session,
+      project,
+      path,
+      busy,
+      ready: booted,
+      dirty,
+      message,
+      recoveryStatus,
+      epoch,
+      navigation,
+    } = useProjectSession();
+    const setMessage = (value: string) => session.message(value);
+    const [section, setSection] = useState<GameSection>("campaign"),
+      [levelId, setLevelId] = useState(project.levels[0]?.id ?? "");
+    const [combatId, setCombatId] = useState("");
+    const [toolsOpen, setToolsOpen] = useState(false);
+    const [terrainTarget, setTerrainTarget] = useState<{
+      levelId: string;
+      projectId: string;
+      token: string;
+      terrainRef?: AssetRef;
+      restoredTerrainRef?: AssetRef;
+    } | null>(null);
+    const deliveryRef = useRef<HTMLDetailsElement>(null);
+    const [androidDeployment,setAndroidDeployment]=useState<AndroidDeploymentStatusState|null>(null);
+    useEffect(() => {
+      if (["abilities", "behaviors", "variables", "animations", "profiles", "audio", "vfx"].includes(section))
+        setToolsOpen(true);
+    }, [section]);
+    useEffect(() => {
+      const close = (event: PointerEvent) => {
+        if (
+          deliveryRef.current &&
+          !deliveryRef.current.contains(event.target as Node)
+        )
+          deliveryRef.current.open = false;
+      };
+      document.addEventListener("pointerdown", close);
+      return () => document.removeEventListener("pointerdown", close);
+    }, []);
+    const [species, setSpecies] = useState("radish"),
+      [detail, setDetail] = useState<
+        "settings" | "waves" | "plants" | "events"
+      >("waves");
+    const [speciesTab, setSpeciesTab] = useState<
+        "details" | "capabilities" | "behavior" | "rules" | "animations"
+      >("details"),
+      [focusAnimationId, setFocusAnimationId] = useState("");
+    const [campaignStepId, setCampaignStepId] = useState("");
+    const [levelScope, setLevelScope] = useState("all");
+    const [compareRewards, setCompareRewards] = useState(false);
+    useEffect(() => { if (section !== "levels") setCompareRewards(false); }, [section]);
+    const [duplicateOpen, setDuplicateOpen] = useState(false);
+    const [query, setQuery] = useState(""),
+      [continent, setContinent] = useState(-1);
+    const [showIssues, setShowIssues] = useState(false);
+    const issues = useMemo(() => gameIssues(project), [project]),
+      errors = issues.filter((x) => x.severity === "error");
+    const level =
+      project.levels.find((l) => l.id === levelId) ?? project.levels[0];
+    const location = {
+      mode: "levels" as const,
+      section,
+      levelId,
+      species,
+      detail,
+      speciesTab,
+      campaignStepId,
+    };
+    if (active) session.setLocation(location);
+    function action(a: HistoryAction<GameProject>) {
+      session.action(a, location, true);
+    }
+    function change(
+      edit: (p: GameProject) => void,
+      key = "",
+      label = "",
+      allowBusy = false,
+    ) {
+      const context =
+        section === "levels"
+          ? "le niveau « " + (level?.title ?? "Nouveau niveau") + " »"
+          : section === "plants" || section === "enemies"
+            ? "le personnage « " + species + " »"
+            : ((
+                {
+                  campaign: "la campagne",
+                  home: "l’écran d’accueil",
+                  abilities: "les capacités",
+                  behaviors: "les comportements",
+                  variables: "les variables",
+                } as Record<string, string>
+              )[section] ?? "les animations et sons");
+      session.change(
+        edit,
+        key,
+        label || "Modifier " + context,
+        location,
+        allowBusy,
+      );
+    }
+    function updateLevel(patch: Partial<LevelDefinition>, key = "") {
+      const id = level.id;
+      change(
+        (p) => {
+          patchProjectLevel(p, id, patch);
+        },
+        key ? `${id}:${key}` : "",
+      );
+    }
+    async function run(fn: () => Promise<void>) {
+      await session.run(fn);
+    }
+    const save = (as = false) => session.saveCurrent(as);
+    useImperativeHandle(ref, () => ({
+      navigate: (next) => selectSection(next),
+      createLevel: () => {
+        if (!busy) {
+          addLevel();
+          setSection("levels");
+        }
+      },
+      showChecks: () => {
+        if (!busy) setShowIssues(true);
+      },
+    }));
+    useEffect(() => {
+      setTerrainTarget(null);
+      setCompareRewards(false);
+      setLevelId(session.project.levels[0]?.id ?? "");
+      setSpecies(session.project.balance.plants[0].id);
+      setSection("campaign");
+      setQuery("");
+      setContinent(-1);
+    }, [epoch]);
+    useEffect(() => {
+      const loc = navigation?.location;
+      if (loc?.mode !== "levels") return;
+      setCompareRewards(false);
+      if (loc.section) setSection(loc.section as GameSection);
+      if (loc.levelId) setLevelId(loc.levelId);
+      if (loc.species) setSpecies(loc.species);
+      if (loc.detail) setDetail(loc.detail as typeof detail);
+      if (loc.speciesTab) setSpeciesTab(loc.speciesTab as typeof speciesTab);
+      if (loc.campaignStepId !== undefined)
+        setCampaignStepId(loc.campaignStepId);
+      setLevelScope("all");
+      setQuery("");
+      setContinent(-1);
+    }, [navigation]);
+    function levelChange(
+      edit: (draft: GameProject) => void,
+      label: string,
+    ): boolean {
+      try {
+        change(edit, "", label);
+        return true;
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : String(e));
+        return false;
+      }
+    }
+    const addLevel = (placement?: LevelPlacement) => {
+      const near = afterLevel(project, levelId),
+        destination =
+          placement ??
+          (near.kind === "campaign"
+            ? near
+            : { kind: "campaign" as const, beforeId: null });
+      let id = "";
+      if (
+        !levelChange((p) => {
+          id = createProjectLevel(p, destination, levelId);
+        }, "Créer et placer un niveau")
+      )
+        return;
+      setQuery("");
+      setContinent(-1);
+      setLevelScope("all");
+      setLevelId(id);
+      setDetail("settings");
+      setCompareRewards(false);
+    };
+    const duplicate = (placement: LevelPlacement, title: string) => {
+      let id = "";
+      if (
+        !levelChange((p) => {
+          id = duplicateProjectLevel(p, level.id, placement, title);
+        }, "Dupliquer et placer le niveau")
+      )
+        return;
+      setQuery("");
+      setContinent(-1);
+      setLevelScope("all");
+      setLevelId(id);
+      setDuplicateOpen(false);
+    };
+    const remove = () =>
+      run(async () => {
+        if (!level || !(await api.confirmDelete(level.title))) return;
+        // The asynchronous confirmation may finish after a render; edit from the current state.
+        const next = structuredClone(session.project),
+          i = next.levels.findIndex((l) => l.id === level.id);
+        if (i < 0) return;
+        deleteProjectLevel(next, level.id);
+        action({ type: "commit", value: next, label: "Supprimer le niveau" });
+        setLevelId(next.levels[Math.min(i, next.levels.length - 1)]?.id ?? "");
+      });
+    const playLevel = () =>
+      void run(async () => {
+        if (!level || !(await onBeforePublish()) || !(await save())) return;
+        const id = level.id;
+        const result = await gameAPI.playLevel(session.project, id);
+        if (result)
+          setMessage(
+            `Lunaria lancé sur « ${result.title} » dans une copie temporaire du jeu. La campagne publiée et la progression du joueur sont conservées.`,
+          );
+      });
+    const buildGame = (target: GameBuildTarget) =>
+      void run(async () => {
+        if (!(await onBeforePublish()) || !(await save())) return;
+        const label = target === "windows" ? "PC" : "Android";
+        setMessage(
+          `Export ${label} en cours… La campagne est synchronisée avant l’export.`,
+        );
+        const result = await gameAPI.build(session.project, target);
+        setMessage(
+          result
+            ? `Export ${label} terminé : ${result.artifact}\n${(result.bytes / 1048576).toFixed(1)} Mo · SHA-256 ${result.sha256}`
+            : `Export ${label} annulé.`,
+        );
+      });
+    const deployAndroid = () =>
+      void run(async () => {
+        const startedAt=Date.now();
+        setAndroidDeployment({phase:'save',message:'Enregistrement du projet…',startedAt,status:'running'});
+        try {
+          if (!(await onBeforePublish()) || !(await save())) {
+            const message=session.getSnapshot().conflict?'Le fichier a changé sur le disque. Compare les versions avant de relancer le déploiement.':'Déploiement annulé : le projet doit être enregistré avant son envoi au téléphone.';
+            setAndroidDeployment(current=>current&&({...current,status:'canceled',message}));
+            return;
+          }
+          setMessage("Préparation du déploiement Android…");
+          const result = await gameAPI.deployAndroid(session.project);
+          const message=result
+            ? `Lunaria installé et lancé sur ${result.device.name} (${result.device.serial}).\nAPK : ${result.artifact}\n${(result.bytes / 1048576).toFixed(1)} Mo · SHA-256 ${result.sha256}`
+            : "Déploiement Android annulé.";
+          setMessage(message);
+          setAndroidDeployment(current=>current&&({...current,status:result?'success':'canceled',message}));
+        } catch(error) {
+          setAndroidDeployment(current=>current&&({...current,status:'error',message:error instanceof Error?error.message:String(error)}));
+          throw error;
+        }
+      });
+    useEffect(
+      () =>
+        gameAPI.onAndroidDeploymentProgress((progress) => {
+          setMessage(progress.message);
+          setAndroidDeployment(current=>current?.status==='running'?{...current,...progress}:current);
+        }),
+      [],
+    );
+    useEffect(() => {
+      if (!project.levels.some((l) => l.id === levelId))
+        setLevelId(project.levels[0]?.id ?? "");
+    }, [project, levelId]);
+    const norm = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    const visible = orderedLevels(project).filter(
+      (l) =>
+        (continent < 0 || l.act === continent) &&
+        (levelScope === "all" ||
+          levelPosition(project, l.id).index >= 0 ===
+            (levelScope === "placed")) &&
+        norm(l.title + " " + l.id + " " + l.location).includes(norm(query)),
+    );
+    const selectSection = (next: typeof section) => {
+      if (session.getSnapshot().busy) return;
+      setSection(next);
+      setCompareRewards(false);
+      setSpecies(
+        next === "enemies"
+          ? (activeEnemies(project.balance.enemies)[0]?.id ?? "")
+          : project.balance.plants[0].id,
+      );
+      if (next === "plants" || next === "enemies") {
+        setSpeciesTab("details");
+        setFocusAnimationId("");
+      }
+    };
+    const openAnimationDefinition = (animationId: string) => {
+      const animation = project.presentation?.animations.find(
+          (value) => value.id === animationId,
+        ),
+        owner = animation && animationOwnerId(project, animation);
+      if (owner) {
+        setSpecies(owner);
+        setSpeciesTab("animations");
+        setFocusAnimationId(animationId);
+        setSection(
+          project.balance.plants.some((value) => value.id === owner)
+            ? "plants"
+            : "enemies",
+        );
+      } else {
+        setSection("animations");
+        setCombatId(animationId);
+      }
+    };
+    const openCombatIssue = (path: string) => {
+      const [, kind, id = ""] = path.split(".");
+      let attackId = id;
+      if (kind === "effects")
+        attackId =
+          project.combat!.abilities.find((a) => a.effects.includes(id))?.id ??
+          "";
+      else if (kind === "projectiles")
+        attackId =
+          project.combat!.abilities.find((a) => a.projectileId === id)?.id ??
+          "";
+      setSection("abilities");
+      setCombatId(attackId);
+    };
+    function issueLevel(issue: GameIssue) {
+      const match = issue.path.match(/^projet\.levels\[(\d+)\]/);
+      return (
+        project.levels.find((l) => l.id === issue.levelId) ??
+        (match ? project.levels[Number(match[1])] : undefined)
+      );
+    }
+    function issueLocation(issue: GameIssue) {
+      const target = issueLevel(issue);
+      if (target) return "Niveau · " + target.title;
+      const labels: Record<string, string> = {
+        homeScreen: "Écran d’accueil",
+        rewards: "Récompenses",
+        presentation: "Animations et sons",
+        logic: "Comportements et variables",
+        combat: "Attaques",
+        balance: "Personnages",
+        campaign: "Campagne",
+        cinematics: "Cinématiques",
+      };
+      return (
+        labels[issue.path.replace(/^projet\./, "").split(/[.[]/)[0]] ?? "Projet"
+      );
+    }
+    function openIssue(issue: GameIssue) {
+      const target = issueLevel(issue),
+        path = issue.path.replace(/^projet\./, "");
+      if (target) {
+        setCompareRewards(false);
+        setLevelId(target.id);
+        setSection("levels");
+        setQuery("");
+        setContinent(-1);
+        setDetail(
+          path.includes(".events")
+            ? "events"
+            : path.includes(".waves")
+              ? "waves"
+              : path.includes(".allowedPlants")
+                ? "plants"
+                : "settings",
+        );
+      } else if (path.startsWith("presentation.")) {
+        const parts = path.split(".");
+        setSection(
+          (["animations", "profiles", "audio", "vfx"].includes(parts[1])
+            ? parts[1]
+            : "animations") as PresentationSection,
+        );
+        setCombatId(parts[2] ?? "");
+      } else if (path.startsWith("logic.")) {
+        const parts = path.split(".");
+        setSection(parts[1] === "variables" ? "variables" : "behaviors");
+        setCombatId(parts[2] ?? "");
+      }
+      else if (path.startsWith("homeScreen.")) setSection("home");
+      else if (path.startsWith("combat.")) openCombatIssue(path);
+      else if (path.startsWith("balance.")) {
+        const match = path.match(
+          /^balance\.(plants|enemies)(?:\[(\d+)\]|\.([^.[\]]+))/,
+        );
+        if (match) {
+          const role = match[1] as "plants" | "enemies";
+          setSection(role);
+          setSpecies(
+            match[2]
+              ? (project.balance[role][Number(match[2])]?.id ?? "")
+              : match[3],
+          );
+          setSpeciesTab("details");
+        }
+      } else setSection("campaign");
+      setShowIssues(false);
+      requestAnimationFrame(() => {
+        const root = document.querySelector(".studio-game-host");
+        const label =
+          target && path.endsWith(".title")
+            ? "Nom du niveau"
+            : path === "title"
+              ? "Titre du projet de niveaux"
+              : undefined;
+        const field = label
+          ? root?.querySelector<HTMLElement>('[aria-label="' + label + '"]')
+          : root?.querySelector<HTMLElement>(
+              ".gd-body input,.gd-body select,.gd-body button",
+            );
+        field?.focus();
+      });
+    }
+    return (
+      <div className="gd-shell" aria-label="Éditeur de niveaux">
+        <header className="gd-toolbar">
+          <div className="gd-project-name">
+            <span className="gd-kicker">PROJET DE JEU</span>
+            <input
+              aria-label="Titre du projet de niveaux"
+              maxLength={160}
+              value={project.title}
+              disabled={busy}
+              onChange={(e) =>
+                change(
+                  (p) => {
+                    p.title = e.target.value;
+                  },
+                  "title",
+                  "Renommer le projet",
+                )
+              }
+            />
+            <small title={path}>
+              {path || "Non enregistré · un seul catalogue pour tout le jeu"}
+              {dirty ? " · Modifié" : ""}
+            </small>
+          </div>
+          <div className="gd-inline">
+            <details
+              ref={deliveryRef}
+              className="gd-delivery"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  e.currentTarget.open = false;
+                  e.currentTarget.querySelector("summary")?.focus();
+                }
+              }}
+            >
+              <summary>Publier et exporter</summary>
+              <div
+                className="gd-delivery-menu"
+                onClick={(event) => {
+                  if (
+                    (event.target as Element).closest("button") &&
+                    deliveryRef.current
+                  )
+                    deliveryRef.current.open = false;
+                }}
+              >
+                <p>
+                  <strong>Le projet reste ton fichier de travail.</strong> Ces
+                  actions préparent sa version jouable.
+                </p>
+                {errors.length > 0 && (
+                  <button
+                    className="gd-delivery-errors"
+                    onClick={() => {
+                      if (deliveryRef.current) deliveryRef.current.open = false;
+                      setShowIssues(true);
+                    }}
+                  >
+                    {errors.length} point{errors.length > 1 ? "s" : ""} à
+                    corriger avant de continuer →
+                  </button>
+                )}
+                <button
+                  className="gd-publish"
+                  disabled={busy || errors.length > 0}
+                  onClick={() =>
+                    void run(async () => {
+                      if (!(await onBeforePublish()) || !(await save())) return;
+                      const result = await gameAPI.publish(session.project);
+                      if (result)
+                        setMessage(
+                          "Publié : " +
+                            result.path +
+                            "\nRelance le jeu pour utiliser ces données.",
+                        );
+                    })
+                  }
+                >
+                  Publier la campagne
+                </button>
+                <button
+                  className="gd-build gd-build-pc"
+                  disabled={busy || errors.length > 0}
+                  title="Synchroniser la campagne puis générer build/windows/Lunaria.exe"
+                  onClick={() => buildGame("windows")}
+                >
+                  Exporter pour PC
+                </button>
+                <button
+                  className="gd-build gd-build-android"
+                  disabled={busy || errors.length > 0}
+                  title="Synchroniser la campagne puis générer build/android/Lunaria.apk"
+                  onClick={() => buildGame("android")}
+                >
+                  Exporter pour Android
+                </button>
+                <button
+                  className="gd-build gd-deploy-android"
+                  disabled={busy || errors.length > 0}
+                  title="Compiler l’APK Android, l’installer sur le téléphone autorisé puis lancer Lunaria"
+                  onClick={deployAndroid}
+                >
+                  Builder et Déployer sur le téléphone connecté
+                </button>
+                <small>
+                  La publication met à jour le jeu sélectionné. Un export crée
+                  ensuite son application PC ou Android.
+                </small>
+              </div>
+            </details>
+          </div>
+        </header>
+        {androidDeployment&&<AndroidDeploymentStatus state={androidDeployment} onClose={()=>setAndroidDeployment(null)}/>}
+        <nav className="gd-sections" aria-label="Sections du mode Niveaux">
+          <button
+            className={section === "home" ? "active" : ""}
+            onClick={() => selectSection("home")}
+          >
+            Écran d’accueil
+          </button>
+          <button
+            className={section === "campaign" ? "active" : ""}
+            onClick={() => selectSection("campaign")}
+          >
+            Campagne <small>Ordre de lecture</small>
+          </button>
+          <button
+            className={section === "levels" ? "active" : ""}
+            onClick={() => selectSection("levels")}
+          >
+            Niveaux <small>{project.levels.length}</small>
+          </button>
+          <button
+            className={section === "plants" ? "active" : ""}
+            onClick={() => selectSection("plants")}
+          >
+            Plantes alliées <small>Équilibrage global</small>
+          </button>
+          <button
+            className={section === "enemies" ? "active" : ""}
+            onClick={() => selectSection("enemies")}
+          >
+            Ennemis <small>Équilibrage global</small>
+          </button>
+          <span>Équilibrage global · sans progression</span>
+        </nav>
+        <details
+          className="gd-tools"
+          open={toolsOpen}
+          onToggle={(e) => setToolsOpen(e.currentTarget.open)}
+        >
+          <summary>
+            Options avancées{" "}
+            <span>Modèles partagés, variables et ressources communes</span>
+          </summary>
+          <nav
+            className="lp-navigation"
+            aria-label="Outils partagés avancés"
+          >
+            <div className="lp-navigation-heading">
+              <span aria-hidden="true">✦</span>
+              <div>
+                <b>Modèles et ressources partagés</b>
+                <small>
+                  Les capacités, comportements, animations et sons se règlent depuis la fiche de chaque personnage.
+                </small>
+              </div>
+            </div>
+            <div className="lp-navigation-actions">
+              {(
+                [
+                  ["abilities", "✧", "Modèles de capacités", "Capacités réutilisables"],
+                  ["behaviors", "◇", "Modèles de comportements", "Comportements réutilisables"],
+                  ["variables", "⚑", "Variables", "État scénarisé"],
+                  [
+                    "animations",
+                    "▶",
+                    "Animations communes",
+                    "Pour tous les personnages",
+                  ],
+                  ["profiles", "♟", "Profils avancés", "Liaisons et sons"],
+                  ["audio", "♪", "Sons", "Ambiances et attaques"],
+                  ["vfx", "✦", "Effets visuels", "Impacts et particules"],
+                ] as const
+              ).map(([key, icon, label, hint]) => (
+                <button
+                  key={key}
+                  className={section === key ? "active" : ""}
+                  onClick={() => {
+                    selectSection(key);
+                    setCombatId("");
+                  }}
+                >
+                  <span aria-hidden="true">{icon}</span>
+                  <span>
+                    <b>{label}</b>
+                    <small>{hint}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </nav>
+        </details>
+        <fieldset className="gd-body" disabled={busy}>
+          {section === "home" ? (
+            <HomeScreenEditor
+              project={project}
+              assets={assets}
+              change={(edit, key, label) => change(edit, key, label, true)}
+            />
+          ) : section === "animations" ||
+            section === "profiles" ||
+            section === "audio" ||
+            section === "vfx" ? (
+            <PresentationEditor
+              project={project}
+              section={section}
+              id={combatId}
+              select={setCombatId}
+              assets={assets}
+              externalUsages={externalUsages}
+              change={(edit, key, label) => change(edit, key, label, true)}
+              report={setMessage}
+              run={run}
+              openAnimation={openAnimationDefinition}
+            />
+          ) : section === "behaviors" ? (
+            <BehaviorEditor
+              openSpecies={(id) => {
+                setSection(
+                  project.balance.plants.some((s) => s.id === id)
+                    ? "plants"
+                    : "enemies",
+                );
+                setSpecies(id);
+                setSpeciesTab("behavior");
+              }}
+              project={project}
+              id={combatId}
+              select={setCombatId}
+              change={(edit, key, label) => change(edit, key, label, true)}
+              report={setMessage}
+            />
+          ) : section === "variables" ? (
+            <VariableEditor
+              project={project}
+              change={(edit, key, label) => change(edit, key, label, true)}
+              report={setMessage}
+            />
+          ) : section === "campaign" ? (
+            <CampaignEditor
+              showUnplaced={() => {
+                setLevelScope("outside");
+                setQuery("");
+                setContinent(-1);
+                setSection("levels");
+              }}
+              selectedStepId={campaignStepId}
+              onSelectStep={setCampaignStepId}
+              backup={onBackupCampaign}
+              busy={busy}
+              project={project}
+              change={(edit, key, label) => change(edit, key, label, true)}
+              run={run}
+              report={setMessage}
+              createLevel={(beforeId) => {
+                addLevel({ kind: "campaign", beforeId });
+                setSection("levels");
+              }}
+              selectLevel={(id) => {
+                setQuery("");
+                setContinent(-1);
+                setLevelScope("all");
+                setLevelId(id);
+                setSection("levels");
+              }}
+              openFilm={(film) => run(() => onOpenFilm(film))}
+            />
+          ) : section === "abilities" ? (
+            <CombatEditor
+              assets={assets}
+              project={project}
+              id={combatId}
+              select={setCombatId}
+              change={(edit, key, label) => change(edit, key, label, true)}
+              report={setMessage}
+              run={run}
+            />
+          ) : section !== "levels" ? (
+            <BalanceEditor
+              assets={assets}
+              change={(edit, key, label) => change(edit, key, label, true)}
+              openProfile={(id) => {
+                setSection("profiles");
+                setCombatId(id);
+              }}
+              editBehavior={(id) => {
+                setSection(
+                  project.balance.plants.some((s) => s.id === id)
+                    ? "plants"
+                    : "enemies",
+                );
+                setSpecies(id);
+                setSpeciesTab("behavior");
+              }}
+              project={project}
+              role={section}
+              id={species}
+              select={setSpecies}
+              tab={speciesTab}
+              setTab={setSpeciesTab}
+              focusAnimationId={focusAnimationId}
+              renderAnimationEditor={(animation, patch, speciesId) => (
+                <AnimationFields
+                  value={animation}
+                  project={project}
+                  assets={assets}
+                  patch={patch}
+                  previewSpeciesId={speciesId}
+                />
+              )}
+              update={(id, patch, key) =>
+                change(
+                  (p) => {
+                    const list =
+                      section === "plants"
+                        ? p.balance.plants
+                        : p.balance.enemies;
+                    Object.assign(list.find((x) => x.id === id)!, patch);
+                  },
+                  key,
+                  "Calibrer le catalogue global",
+                )
+              }
+            />
+          ) : (
+            <>
+              <aside className="gd-level-list">
+                <div className="gd-list-controls">
+                  <button aria-pressed={compareRewards} onClick={() => setCompareRewards(!compareRewards)}>
+                    {compareRewards ? "← Fiches des niveaux" : "Comparer les graines"}
+                  </button>
+                  <p className="level-library-note">
+                    Niveaux dans l’ordre du parcours, puis hors parcours. Les
+                    cinématiques se placent dans Campagne.
+                  </p>
+                  <label className="gd-field">
+                    <span>Afficher</span>
+                    <select
+                      aria-label="Filtrer par place dans la campagne"
+                      value={levelScope}
+                      onChange={(e) => setLevelScope(e.target.value)}
+                    >
+                      <option value="all">Tous les niveaux</option>
+                      <option value="placed">Dans le parcours</option>
+                      <option value="outside">Hors parcours</option>
+                    </select>
+                  </label>
+                  <input
+                    aria-label="Rechercher un niveau"
+                    placeholder="Rechercher un niveau…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                  <select
+                    aria-label="Filtrer les niveaux par continent"
+                    value={continent}
+                    onChange={(e) => setContinent(Number(e.target.value))}
+                  >
+                    <option value={-1}>Tous les continents</option>
+                    {CONTINENTS.map((c, i) => (
+                      <option key={c} value={i}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="gd-primary"
+                    disabled={
+                      project.levels.length >= 200 ||
+                      !activeEnemies(project.balance.enemies).length
+                    }
+                    onClick={() => addLevel()}
+                  >
+                    + Créer un niveau
+                  </button>
+                </div>
+                <div className="gd-level-items">
+                  {visible.map((l) => (
+                    <button
+                      key={l.id}
+                      className={level?.id === l.id ? "selected" : ""}
+                      onClick={() => { setLevelId(l.id); setCompareRewards(false); }}
+                    >
+                      <span className="gd-level-index">
+                        {levelPosition(project, l.id).number
+                          ? String(
+                              levelPosition(project, l.id).number,
+                            ).padStart(2, "0")
+                          : "–"}
+                      </span>
+                      <span>
+                        <b>{l.title}</b>
+                        <small className="level-path-badge">
+                          {levelPosition(project, l.id).index < 0
+                            ? "Hors parcours"
+                            : "Étape " +
+                              (levelPosition(project, l.id).index + 1) +
+                              " du parcours"}
+                        </small>
+                        <small>
+                          {CONTINENTS[l.act]} · {l.waves.length} vague
+                          {l.waves.length > 1 ? "s" : ""} · {totalEnemies(l)}{" "}
+                          ennemis
+                        </small>
+                      </span>
+                    </button>
+                  ))}
+                  {!visible.length && (
+                    <div className="gd-empty-search">
+                      <p>
+                        {project.levels.length
+                          ? "Aucun niveau ne correspond à ces filtres."
+                          : "Tes niveaux apparaîtront ici."}
+                      </p>
+                      {!!project.levels.length && (
+                        <button
+                          onClick={() => {
+                            setQuery("");
+                            setContinent(-1);
+                          }}
+                        >
+                          Effacer les filtres
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </aside>
+              {compareRewards ? (
+                <LevelRewardsOverview project={project} openLevel={(id, tab) => {
+                  setQuery(""); setContinent(-1); setLevelScope("all");
+                  setLevelId(id); setDetail(tab); setCompareRewards(false);
+                }} />
+              ) : level ? (
+                <main className="gd-level-main gd-scroll" key={level.id}>
+                  <div className="gd-section-heading">
+                    <div>
+                      <div className="gd-kicker">
+                        FICHE DU NIVEAU · {CONTINENTS[level.act]}
+                      </div>
+                      <h1>{level.title}</h1>
+                      <p>
+                        {level.location || "Lieu à définir"} ·{" "}
+                        <strong>{totalEnemies(level)} ennemis</strong> ·{" "}
+                        {level.allowedPlants.length} plantes autorisées
+                      </p>
+                    </div>
+                    <div className="gd-inline">
+                      <button
+                        className="gd-play-level"
+                        disabled={errors.length > 0}
+                        title="Ouvrir ce niveau dans une copie temporaire du jeu avec une progression de test séparée"
+                        onClick={playLevel}
+                      >
+                        ▶ Jouer ce niveau
+                      </button>
+                      <button
+                        disabled={project.levels.length >= 200}
+                        onClick={() => setDuplicateOpen(true)}
+                      >
+                        Dupliquer
+                      </button>
+                      <button onClick={() => void remove()}>Supprimer</button>
+                    </div>
+                  </div>
+                  <LevelCampaignPosition
+                    project={project}
+                    level={level}
+                    onPlace={(placement) =>
+                      levelChange(
+                        (p) => placeLevel(p, level.id, placement),
+                        "Placer le niveau dans la campagne",
+                      )
+                    }
+                    onView={(stepId) => {
+                      setCampaignStepId(stepId);
+                      setSection("campaign");
+                    }}
+                  />
+                  {duplicateOpen && (
+                    <DuplicateLevelDialog
+                      project={project}
+                      level={level}
+                      onClose={() => setDuplicateOpen(false)}
+                      onDuplicate={duplicate}
+                    />
+                  )}
+                  <nav
+                    className="gd-detail-tabs"
+                    aria-label="Édition du niveau"
+                  >
+                    {(
+                      [
+                        ["settings", "Paramètres"],
+                        ["waves", "Vagues & ennemis"],
+                        ["plants", "Plantes disponibles"],
+                        ["events", "Événements"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        className={detail === key ? "active" : ""}
+                        onClick={() => setDetail(key)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </nav>
+                  {detail === "settings" && (
+                    <>
+                      <div className="gd-form-grid">
+                        <label className="gd-field">
+                          <span>Nom du niveau</span>
+                          <input
+                            aria-label="Nom du niveau"
+                            maxLength={160}
+                            value={level.title}
+                            onChange={(e) =>
+                              updateLevel({ title: e.target.value }, "title")
+                            }
+                          />
+                        </label>
+                        <label className="gd-field">
+                          <span>Continent</span>
+                          <select
+                            aria-label="Continent du niveau"
+                            value={level.act}
+                            onChange={(e) =>
+                              updateLevel({ act: Number(e.target.value) })
+                            }
+                          >
+                            {CONTINENTS.map((c, i) => (
+                              <option key={c} value={i}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="gd-field">
+                          <span>Lieu</span>
+                          <input
+                            aria-label="Lieu du niveau"
+                            maxLength={200}
+                            value={level.location}
+                            onChange={(e) =>
+                              updateLevel(
+                                { location: e.target.value },
+                                "location",
+                              )
+                            }
+                          />
+                        </label>
+                        <Num
+                          label="Graines initiales"
+                          value={level.startingEnergy}
+                          max={100000}
+                          integer
+                          change={(v) => updateLevel({ startingEnergy: v })}
+                        />
+                      </div>
+                      <section
+                        className="gd-terrain-image"
+                        aria-label="Terrain du niveau"
+                      >
+                        <h2>Image du terrain</h2>
+                        <p>
+                          Cette image remplit le fond du combat pour ce niveau.
+                          Choisis de préférence une image au format 16:9 ; la
+                          grille et les personnages restent affichés par-dessus.
+                        </p>
+                        <ImagePicker
+                          label="Image du terrain"
+                          value={level.terrainImage ? [level.terrainImage] : []}
+                          assets={assets}
+                          category="environment"
+                          change={(refs) =>
+                            updateLevel({
+                              terrainImage: refs[0] as
+                                | `library://${string}`
+                                | undefined,
+                            })
+                          }
+                          buttonLabel="Choisir ou importer une image"
+                        />
+                        <button
+                          type="button"
+                          className="gd-primary terrain-generate-trigger"
+                          disabled={
+                            !window.lunaria ||
+                            typeof api.startTerrainGeneration !== "function"
+                          }
+                          title="Créer les états pollué et nettoyé du terrain à partir du décor de la cinématique précédente ou d’une image de ton choix"
+                          onClick={() =>
+                            setTerrainTarget({
+                              levelId: level.id,
+                              projectId: project.id,
+                              token: session.getSnapshot().token,
+                              terrainRef: level.terrainImage,
+                              restoredTerrainRef: level.restoredTerrainImage,
+                            })
+                          }
+                        >
+                          Générer les terrains pollué et nettoyé (IA)
+                        </button>
+                        {level.terrainImage && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateLevel({ terrainImage: undefined })
+                            }
+                          >
+                            Retirer l’image du terrain
+                          </button>
+                        )}
+                        <ImagePicker
+                          label="Décor restauré"
+                          value={level.restoredTerrainImage ? [level.restoredTerrainImage] : []}
+                          assets={assets}
+                          category="environment"
+                          change={(refs) => updateLevel({ restoredTerrainImage: refs[0] as `library://${string}` | undefined })}
+                          buttonLabel="Choisir ou importer le décor restauré"
+                        />
+                        <p>
+                          Le décor initial est remplacé progressivement par cette image au fil du combat.
+                          Utilise le même cadrage pour conserver les bâtiments et le terrain en place.
+                        </p>
+                        {level.restoredTerrainImage && (
+                          <button type="button" onClick={() => updateLevel({ restoredTerrainImage: undefined })}>
+                            Retirer le décor restauré
+                          </button>
+                        )}
+                      </section>
+                      <LevelObjectiveEditor
+                        project={project}
+                        level={level}
+                        assets={assets}
+                        updateLevel={updateLevel}
+                      />
+                      <label className="gd-field">
+                        <span>Conseil</span>
+                        <textarea
+                          rows={2}
+                          maxLength={1000}
+                          value={level.tip}
+                          onChange={(e) =>
+                            updateLevel({ tip: e.target.value }, "tip")
+                          }
+                        />
+                      </label>
+                      {!isConquest(level.objective.type) && (
+                        <p className="gd-callout">
+                          Le plateau comporte 5 allées × 8 cases. Les dégâts
+                          contre la cible utilisent son armure et ses
+                          résistances configurées ici.
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {detail === "waves" && active && (
+                    <WaveEditor
+                      key={level.id}
+                      level={level}
+                      enemies={project.balance.enemies}
+                      assets={assets}
+                      update={updateLevel}
+                    />
+                  )}
+                  {detail === "plants" && (
+                    <>
+                      <div className="gd-section-heading">
+                        <div>
+                          <h2>Choisis les espèces utilisables</h2>
+                          <p>
+                            Toutes les espèces autorisées ici sont disponibles
+                            dès le début du niveau. Le joueur ne compose pas
+                            d’équipe ; l’histoire détermine les compagnons
+                            présents. Plusieurs exemplaires d’une même espèce
+                            peuvent être plantés.
+                          </p>
+                        </div>
+                        <div className="gd-inline">
+                          <button
+                            onClick={() =>
+                              updateLevel({
+                                allowedPlants: project.balance.plants.map(
+                                  (p) => p.id,
+                                ),
+                              })
+                            }
+                          >
+                            Toutes
+                          </button>
+                        </div>
+                      </div>
+                      <div className="gd-plant-picker">
+                        {project.balance.plants.map((p) => (
+                          <label
+                            key={p.id}
+                            className={
+                              level.allowedPlants.includes(p.id)
+                                ? "selected"
+                                : ""
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={`Autoriser ${p.name}`}
+                              checked={level.allowedPlants.includes(p.id)}
+                              onChange={(e) =>
+                                updateLevel({
+                                  allowedPlants: e.target.checked
+                                    ? [...level.allowedPlants, p.id]
+                                    : level.allowedPlants.filter(
+                                        (x) => x !== p.id,
+                                      ),
+                                })
+                              }
+                            />
+                            <span>
+                              <b>{p.name}</b>
+                              <small>{p.role}</small>
+                              <small>
+                                {p.cost} graines · {p.max_hp} PV · {p.damage}{" "}
+                                dégâts
+                              </small>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="gd-note">
+                        Les valeurs sont en lecture seule ici. Pour les modifier
+                        partout, ouvre « Plantes alliées — Équilibrage global ».
+                      </p>
+                    </>
+                  )}
+                  {detail === "events" && (
+                    <>
+                      <EventEditor
+                        project={project}
+                        level={level}
+                        update={(events) => updateLevel({ events })}
+                        linkFilm={(documentId) => change(p => { linkCinematic(p, documentId); }, "", "Lier une cinématique du projet", true)}
+                      />
 
-   </aside>
-   {level?<main className="gd-level-main gd-scroll" key={level.id}>
-    <div className="gd-section-heading"><div><div className="gd-kicker">NIVEAU {String(project.levels.indexOf(level)+1).padStart(2,'0')} · {CONTINENTS[level.act]}</div><h1>{level.title}</h1><p>{level.location||'Lieu à définir'} · <strong>{totalEnemies(level)} ennemis</strong> · {level.allowedPlants.length} plantes autorisées</p></div><div className="gd-inline"><button className="gd-play-level" disabled={errors.length>0} title="Synchroniser les données puis ouvrir ce niveau dans Lunaria avec une progression de test séparée" onClick={playLevel}>▶ Jouer ce niveau</button><button aria-label="Monter le niveau" disabled={project.levels.indexOf(level)===0} onClick={()=>move(-1)}>↑</button><button aria-label="Descendre le niveau" disabled={project.levels.indexOf(level)===project.levels.length-1} onClick={()=>move(1)}>↓</button><button disabled={project.levels.length>=200} onClick={duplicate}>Dupliquer</button><button onClick={()=>void remove()}>Supprimer</button></div></div>
-    <nav className="gd-detail-tabs" aria-label="Édition du niveau">{([['settings','Paramètres'],['waves','Vagues & ennemis'],['plants','Plantes disponibles'],['events','Événements & dialogue']] as const).map(([key,label])=><button key={key} className={detail===key?'active':''} onClick={()=>setDetail(key)}>{label}</button>)}</nav>
-    {detail==='settings'&&<><div className="gd-form-grid">
-     <label className="gd-field"><span>Nom du niveau</span><input aria-label="Nom du niveau" maxLength={160} value={level.title} onChange={e=>updateLevel({title:e.target.value},'title')}/></label>
-     <label className="gd-field"><span>Continent</span><select aria-label="Continent du niveau" value={level.act} onChange={e=>updateLevel({act:Number(e.target.value)})}>{CONTINENTS.map((c,i)=><option key={c} value={i}>{c}</option>)}</select></label>
-     <label className="gd-field"><span>Lieu</span><input aria-label="Lieu du niveau" maxLength={200} value={level.location} onChange={e=>updateLevel({location:e.target.value},'location')}/></label>
-     <Num label="Graines initiales" value={level.startingEnergy} max={100000} integer change={v=>updateLevel({startingEnergy:v})}/>
-     </div><section className="gd-terrain-image" aria-label="Terrain du niveau"><h2>Image du terrain</h2><p>Cette image remplit le fond du combat pour ce niveau. Choisis de préférence une image au format 16:9 ; la grille et les personnages restent affichés par-dessus.</p><ImagePicker label="Image du terrain" value={level.terrainImage?[level.terrainImage]:[]} assets={assets} category="environment" change={refs=>updateLevel({terrainImage:refs[0] as `library://${string}`|undefined})} buttonLabel="Choisir ou importer une image"/>{level.terrainImage&&<button type="button" onClick={()=>updateLevel({terrainImage:undefined})}>Retirer l’image du terrain</button>}</section><div className="gd-form-grid">
-     <label className="gd-field"><span>Type de niveau / objectif</span><select aria-label="Objectif du niveau" value={level.objective.type} onChange={e=>{const type=e.target.value as LevelDefinition['objective']['type'];updateLevel({objective:{type,target:type==='rescue'?3:['defend','advance','escort','invasive_foci','protect_cell'].includes(type)?0:60},...(level.objectiveText==='Repousser les vagues.'||['Conquérir les cinq allées.','Conquérir les cinq allées et escorter toutes les pousses à droite.','Détruire tous les foyers invasifs et leurs derniers renforts.'].includes(level.objectiveText)?{objectiveText:type==='escort'?'Conquérir les cinq allées et escorter toutes les pousses à droite.':type==='advance'?'Conquérir les cinq allées.':type==='invasive_foci'?'Détruire tous les foyers invasifs et leurs derniers renforts.':'Repousser les vagues.'}:{}),...(type==='escort'?{escort:level.escort??defaultEscort()}:{escort:undefined}),...(type==='invasive_foci'?{invasiveFoci:level.invasiveFoci??defaultInvasiveFoci()}:{invasiveFoci:undefined}),...(type==='protect_cell'?{protectedCell:level.protectedCell??{row:2,col:1,image:'' as `library://${string}`,maxHp:300,armor:0.15,resistances:{physical:0,piercing:0,toxic:0}}}:{protectedCell:undefined})});}}>{OBJECTIVES.map(x=><option key={x} value={x}>{OBJECTIVE_LABELS[x]}</option>)}</select></label>
-     {isConquest(level.objective.type)&&<Num label="Graines par allée capturée" value={level.laneCaptureSeedReward??0} max={10000} integer change={laneCaptureSeedReward=>updateLevel({laneCaptureSeedReward})}/>}
-     {level.objective.type==='operation'&&<Num label="Travail à accomplir" value={level.objective.target} max={3600} min={1} integer change={v=>updateLevel({objective:{...level.objective,target:v}})}/>}
-    </div>{level.objective.type==='escort'&&level.escort&&<EscortEditor value={level.escort} assets={assets} change={escort=>updateLevel({escort})}/>} {level.objective.type==='invasive_foci'&&level.invasiveFoci&&<InvasiveFociEditor value={level.invasiveFoci} enemies={project.balance.enemies} change={invasiveFoci=>updateLevel({invasiveFoci})}/>}{level.objective.type==='advance'&&<p className="gd-callout">Place les plantes dans les deux premières colonnes. Elles avancent vers la droite pendant les vagues. Deux adversaires face à face s'arrêtent au contact. Une allée conquise ne reçoit plus de nouveaux ennemis et verse le bonus configuré une seule fois. Le décor se restaure de 20 % par allée capturée ; les cinq allées doivent être conquises pour gagner.</p>}{level.objective.type==='protect_cell'&&level.protectedCell&&<section className="gd-protected-cell" aria-label="Case à protéger"><h2>Case à protéger</h2><p>Choisis la case occupée par le personnage. Le joueur ne pourra pas y planter. Si ses PV tombent à zéro, la mission est perdue.</p><div className="gd-protected-grid" role="group" aria-label="Position de la cible">{Array.from({length:5},(_,row)=>Array.from({length:8},(_,col)=><button key={`${row}:${col}`} type="button" className={level.protectedCell!.row===row&&level.protectedCell!.col===col?'selected':''} aria-label={`Allée ${row+1}, colonne ${col+1}`} aria-pressed={level.protectedCell!.row===row&&level.protectedCell!.col===col} onClick={()=>updateLevel({protectedCell:{...level.protectedCell!,row,col}})}>{level.protectedCell!.row===row&&level.protectedCell!.col===col?'◆':''}</button>))}</div><p>Allée {level.protectedCell.row+1}, colonne {level.protectedCell.col+1} · les ennemis arrivent à droite.</p><ImagePicker label="Image du personnage à protéger (PNG ou WebP transparent)" value={level.protectedCell.image?[level.protectedCell.image]:[]} assets={assets} category="character" change={refs=>updateLevel({protectedCell:{...level.protectedCell!,image:(refs[0]??'') as `library://${string}`}})} buttonLabel="Choisir ou importer une image"/><div className="gd-form-grid"><Num label="Points de vie de la cible" value={level.protectedCell.maxHp} min={1} max={6000} integer change={maxHp=>updateLevel({protectedCell:{...level.protectedCell!,maxHp}})}/><Num label="Armure physique (0 à 0,95)" value={level.protectedCell.armor} max={0.95} change={armor=>updateLevel({protectedCell:{...level.protectedCell!,armor}})}/>{(['physical','piercing','toxic'] as const).map(kind=><Num key={kind} label={`Résistance ${DAMAGE_LABELS[kind]} (0 à 0,95)`} value={level.protectedCell!.resistances[kind]} max={0.95} change={value=>updateLevel({protectedCell:{...level.protectedCell!,resistances:{...level.protectedCell!.resistances,[kind]:value}}})}/>)}</div></section>}<label className="gd-field"><span>Consigne affichée</span><textarea aria-label="Consigne du niveau" rows={2} maxLength={1000} value={level.objectiveText} onChange={e=>updateLevel({objectiveText:e.target.value},'objectiveText')}/></label><label className="gd-field"><span>Conseil</span><textarea rows={2} maxLength={1000} value={level.tip} onChange={e=>updateLevel({tip:e.target.value},'tip')}/></label>{!isConquest(level.objective.type)&&<p className="gd-callout">Le plateau comporte 5 allées × 8 cases. Les dégâts contre la cible utilisent son armure et ses résistances configurées ici.</p>}</>}
-    {detail==='waves'&&active&&<WaveEditor level={level} enemies={project.balance.enemies} update={updateLevel}/>}
-    {detail==='plants'&&<><div className="gd-section-heading"><div><h2>Choisis les espèces utilisables</h2><p>Toutes les espèces autorisées ici sont disponibles dès le début du niveau. Le joueur ne compose pas d’équipe ; l’histoire détermine les compagnons présents. Plusieurs exemplaires d’une même espèce peuvent être plantés.</p></div><div className="gd-inline"><button onClick={()=>updateLevel({allowedPlants:project.balance.plants.map(p=>p.id)})}>Toutes</button></div></div><div className="gd-plant-picker">{project.balance.plants.map(p=><label key={p.id} className={level.allowedPlants.includes(p.id)?'selected':''}><input type="checkbox" aria-label={`Autoriser ${p.name}`} checked={level.allowedPlants.includes(p.id)} onChange={e=>updateLevel({allowedPlants:e.target.checked?[...level.allowedPlants,p.id]:level.allowedPlants.filter(x=>x!==p.id)})}/><span><b>{p.name}</b><small>{p.role}</small><small>{p.cost} graines · {p.max_hp} PV · {p.damage} dégâts</small></span></label>)}</div><p className="gd-note">Les valeurs sont en lecture seule ici. Pour les modifier partout, ouvre « Plantes alliées — Équilibrage global ».</p></>}
-    {detail==='events'&&<><EventEditor project={project} level={level} update={events=>updateLevel({events})} addFilm={()=>void run(async()=>{const imported=await gameAPI.addCampaignFilm();if(!imported)return;change(p=>{const c=ensureCampaign(p);if(!c.cinematics.some(f=>f.documentId===imported.cinematic.id)){c.cinematics.push(imported.film);(p.cinematics??=[]).push(imported.cinematic);}},'','Importer un film pour les événements',true);setMessage('Film intégré au projet. Il peut être sélectionné dans les actions.');})}/><section className="gd-story gd-mid-dialogue"><div className="gd-section-heading"><div><h2>Dialogue pendant la mission</h2><p>Facultatif : ces répliques apparaissent au début de la vague choisie. Les cinématiques avant et après le niveau se règlent dans « Campagne ».</p></div><Num label="Vague (0 = aucun dialogue)" value={level.midWave} max={level.waves.length} integer change={v=>updateLevel({midWave:v})}/></div>{level.midDialogue.map((line,i)=><div className="gd-story-line" key={i}><input aria-label={`Locuteur du dialogue ${i+1}`} maxLength={100} value={line.speaker} onChange={e=>{const lines=structuredClone(level.midDialogue);lines[i].speaker=e.target.value;updateLevel({midDialogue:lines},`midDialogue${i}speaker`);}}/><textarea aria-label={`Texte du dialogue ${i+1}`} rows={2} maxLength={8000} value={line.text} onChange={e=>{const lines=structuredClone(level.midDialogue);lines[i].text=e.target.value;updateLevel({midDialogue:lines},`midDialogue${i}text`);}}/><button aria-label={`Supprimer la réplique ${i+1}`} onClick={()=>updateLevel({midDialogue:level.midDialogue.filter((_,n)=>n!==i)})}>×</button></div>)}<button disabled={level.midDialogue.length>=100} onClick={()=>updateLevel({midDialogue:[...level.midDialogue,{speaker:'Narration',text:'Nouvelle réplique.'}]})}>+ Réplique</button></section></>}
-   </main>:<main className="gd-level-main gd-scroll"><h1>Aucun niveau</h1><p>Crée une première mission quand tu seras prêt.</p><button className="gd-primary" onClick={addLevel}>+ Créer un niveau</button></main>}
-  </>}
-  </fieldset>
-  <footer className="gd-footer"><span>{busy?'Opération en cours…':dirty?'Modifications non enregistrées'+(recoveryStatus==='Copie locale à jour'?' · récupération locale à jour':''):path?'Projet enregistré':'Projet non enregistré'}</span><button className={errors.length?'gd-error':''} onClick={()=>setShowIssues(!showIssues)}>{issues.length?`${errors.length} erreur(s) · ${issues.length-errors.length} avertissement(s)`:'✓ Projet valide'}</button></footer>
-  {showIssues&&<StudioDialog title="Vérifier le projet" onClose={()=>setShowIssues(false)}><div className="gd-issues-list"><p>Choisis un point pour ouvrir la partie à corriger. Les avertissements ne bloquent pas la publication.</p>{issues.length?issues.map((i,n)=><button key={n} onClick={()=>openIssue(i)}><b>{i.severity==='error'?'À corriger':'À vérifier'}</b> {i.message}<small>{issueLocation(i)}</small><span aria-hidden="true"> Ouvrir →</span></button>):<p>Aucune erreur détectée. Ce contrôle n’évalue pas la difficulté réelle d’une partie.</p>}</div></StudioDialog>}
-  {message&&<div className="gd-message" role="status"><span>{message}</span><button aria-label="Fermer le message des niveaux" onClick={()=>setMessage('')}>×</button></div>}
- </div>;
-});
+                    </>
+                  )}
+                </main>
+              ) : (
+                <main className="gd-level-main gd-scroll">
+                  <h1>Aucun niveau</h1>
+                  <p>Crée une première mission quand tu seras prêt.</p>
+                  <button className="gd-primary" onClick={() => addLevel()}>
+                    + Créer un niveau
+                  </button>
+                </main>
+              )}
+            </>
+          )}
+        </fieldset>
+        {message && (
+          <div className="gd-message" role="status">
+            <span>{message}</span>
+            <button
+              aria-label="Fermer le message des niveaux"
+              onClick={() => setMessage("")}
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <footer className="gd-footer">
+          <span>
+            {busy
+              ? "Opération en cours…"
+              : dirty
+                ? "Modifications non enregistrées" +
+                  (recoveryStatus === "Brouillon local à jour"
+                    ? " · récupération locale à jour"
+                    : "")
+                : path
+                  ? "Projet enregistré"
+                  : "Projet non enregistré"}
+          </span>
+          <button
+            className={errors.length ? "gd-error" : ""}
+            onClick={() => setShowIssues(!showIssues)}
+          >
+            {issues.length
+              ? `${errors.length} erreur(s) · ${issues.length - errors.length} avertissement(s)`
+              : "✓ Projet valide"}
+          </button>
+        </footer>
+        {terrainTarget && (
+          <TerrainGenerationDialog
+            project={project}
+            levelId={terrainTarget.levelId}
+            assets={assets}
+            onClose={() => setTerrainTarget(null)}
+            onApply={(ref, restoredRef) => {
+              if (
+                session.getSnapshot().busy ||
+                session.project.id !== terrainTarget.projectId ||
+                session.getSnapshot().token !== terrainTarget.token ||
+                session.project.levels.find(
+                  (item) => item.id === terrainTarget.levelId,
+                )?.terrainImage !== terrainTarget.terrainRef ||
+                session.project.levels.find(
+                  (item) => item.id === terrainTarget.levelId,
+                )?.restoredTerrainImage !== terrainTarget.restoredTerrainRef ||
+                !session.project.levels.some(
+                  (item) => item.id === terrainTarget.levelId,
+                )
+              )
+                throw new Error(
+                  "Le projet ou le niveau a changé. Rouvre la génération du terrain.",
+                );
+              change(
+                (p) => {
+                  p.levels.find(
+                    (item) => item.id === terrainTarget.levelId,
+                  )!.terrainImage = ref;
+                  p.levels.find((item) => item.id === terrainTarget.levelId)!.restoredTerrainImage = restoredRef;
+                },
+                "",
+                "Utiliser les deux terrains générés",
+              );
+              setMessage(
+                "Terrains pollué et nettoyé affectés au niveau. Enregistre le projet pour conserver ces choix.",
+              );
+            }}
+          />
+        )}
+        {showIssues && (
+          <StudioDialog
+            title="Vérifier le projet"
+            onClose={() => setShowIssues(false)}
+          >
+            <div className="gd-issues-list">
+              <p>
+                Choisis un point pour ouvrir la partie à corriger. Les
+                avertissements ne bloquent pas la publication.
+              </p>
+              {issues.length ? (
+                issues.map((i, n) => (
+                  <button key={n} onClick={() => openIssue(i)}>
+                    <b>
+                      {i.severity === "error" ? "À corriger" : "À vérifier"}
+                    </b>{" "}
+                    {i.message}
+                    <small>{issueLocation(i)}</small>
+                    <span aria-hidden="true"> Ouvrir →</span>
+                  </button>
+                ))
+              ) : (
+                <p>
+                  Aucune erreur détectée. Ce contrôle n’évalue pas la difficulté
+                  réelle d’une partie.
+                </p>
+              )}
+            </div>
+          </StudioDialog>
+        )}
+      </div>
+    );
+  },
+);

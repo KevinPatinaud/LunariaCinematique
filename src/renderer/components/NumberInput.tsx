@@ -16,7 +16,7 @@ export function NumberInput({ value, min, max, onCommit, label }: Props) {
   return <input type="text" inputMode="decimal" aria-label={label} aria-invalid={invalid || undefined}
     title={`Entre ${min} et ${max}`} value={text} onChange={e => { setText(e.target.value); setInvalid(parseNumericInput(e.target.value, min, max) === null); }}
     onBlur={commit} onKeyDown={e => {
-      if (e.key === 'Enter') { e.preventDefault(); commit(); e.currentTarget.blur(); }
+      if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
       if (e.key === 'Escape') { e.stopPropagation(); setText(String(value)); setInvalid(false); }
     }}/>
 }

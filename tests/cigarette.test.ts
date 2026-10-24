@@ -75,7 +75,7 @@ test('Cigarette wave, graphics and cell settings survive save/reopen and real pu
   await fs.mkdir(library);await fs.writeFile(path.join(library,'pixel.png'),PIXEL_PNG);
   const graphic=CIGARETTE.visual!.sprite.asset.slice(10);await fs.mkdir(path.dirname(path.join(library,graphic)),{recursive:true});await fs.writeFile(path.join(library,graphic),PIXEL_PNG);
   const fixture=fixturePresentation(opened,'library://pixel.png');fixture.balance.enemies.find(e=>e.id==='cigarette')!.visual!.sprite.asset=CIGARETTE.visual!.sprite.asset;
-  const published=await publishCampaign(fixture,game,'',library);const data=JSON.parse(await fs.readFile(published.path,'utf8'));
+  const published=await publishCampaign(fixture,game,library);const data=JSON.parse(await fs.readFile(published.path,'utf8'));
   assert.equal(data.combat.abilities.find((a:any)=>a.id==='ab_cigarette_smoke').forwardCells,3);
   assert.equal(data.balance.enemies.find((e:any)=>e.id==='cigarette').visual.sprite.asset,CIGARETTE.visual!.sprite.asset);
   assert.deepEqual(await fs.readFile(path.join(game,'LunariaArtLibrary',graphic)),PIXEL_PNG);

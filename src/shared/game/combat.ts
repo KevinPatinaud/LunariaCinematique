@@ -1,6 +1,8 @@
 import { DEFAULT_ABILITY_PRESENTATION, EMPTY_CUE, type AbilityPresentation, type ProjectilePresentation } from '../presentation/types.js';
 import { logicReferences } from './logic.js';
 import type { GameProject, DamageType } from './types.js';
+import type { AbilityMechanics, BindingMechanic } from './combatMechanics.js';
+import { mechanicEffectIds } from './combatMechanics.js';
 import { newId } from './types.js';
 export const EFFECT_KINDS = ['damage','heal','poison','regeneration','slow','root','stun','weaken','armor_break','damage_boost','attack_speed_boost','protection','cleanse','counter_cooldown','reward_mark'] as const;
 export type EffectKind = typeof EFFECT_KINDS[number];
@@ -9,13 +11,19 @@ export const BENEFICIAL:EffectKind[]=['heal','regeneration','damage_boost','atta
 export const PERIODIC:EffectKind[]=['poison','regeneration'];
 export const INSTANT:EffectKind[]=['damage','heal','cleanse'];
 export const FRACTION:EffectKind[]=['slow','weaken','damage_boost','attack_speed_boost','protection'];
-export interface EffectDefinition {id:string;name:string;description:string;kind:EffectKind;valueSource:'fixed'|'attack'|'strength';amount:number;damageType:DamageType|'inherit';duration:number;tickInterval:number}
-export interface ProjectileDefinition {presentation?:ProjectilePresentation;id:string;name:string;description:string;speed:number;lifetime:number;maxHits:number;hitRadius:number;splashRadius:number;rowRadius:number;color:string;size:number}
-export interface AbilityDefinition {presentation?:AbilityPresentation;id:string;name:string;description:string;delivery:'instant'|'projectile';projectileId:string;target:'opponent'|'ally'|'self';excludeSelf?:boolean;requiresActiveAttack?:boolean;allowBehind?:boolean;forwardCells?:number;attachToTarget?:boolean;blocksTargetAttack?:boolean;selection:'one'|'all';priority:'nearest'|'nearest_right'|'rightmost'|'strongest'|'wounded'|'random';rangeSource:'species'|'fixed';range:number;rowRadius:number;cooldownSource:'species'|'fixed';cooldown:number;initialDelay:number;effects:string[]}
+export interface EffectDefinition {binding?:BindingMechanic;counterStacking?:boolean;id:string;name:string;description:string;kind:EffectKind;valueSource:'fixed'|'attack'|'strength';amount:number;damageType:DamageType|'inherit';duration:number;tickInterval:number}
+export interface ProjectileDefinition {visualStyle?:string;presentation?:ProjectilePresentation;id:string;name:string;description:string;speed:number;lifetime:number;maxHits:number;hitRadius:number;splashRadius:number;rowRadius:number;color:string;size:number}
+export interface AbilityDefinition {mechanics?:AbilityMechanics;presentation?:AbilityPresentation;id:string;name:string;description:string;delivery:'instant'|'projectile';projectileId:string;target:'opponent'|'ally'|'self';excludeSelf?:boolean;requiresActiveAttack?:boolean;allowBehind?:boolean;forwardCells?:number;attachToTarget?:boolean;blocksTargetAttack?:boolean;selection:'one'|'all';priority:'nearest'|'nearest_right'|'rightmost'|'strongest'|'wounded'|'random';rangeSource:'species'|'fixed';range:number;rowRadius:number;cooldownSource:'species'|'fixed';cooldown:number;initialDelay:number;effects:string[]}
 export interface CombatCatalog {abilities:AbilityDefinition[];effects:EffectDefinition[];projectiles:ProjectileDefinition[]}
 export type CombatSection='abilities'|'effects'|'projectiles';
 /** Plain-language summary used by the Studio. The storage contract stays normalized. */
 export function attackTypeLabel(ability:AbilityDefinition,catalog:CombatCatalog):string{
+ if(ability.effects.some(id=>catalog.effects.find(e=>e.id===id)?.binding))return 'Fronde : entrave et explosion';
+ if(ability.mechanics?.guard)return 'Attaque et garde des alliés';
+ if(ability.mechanics?.combo)return 'Combo et esquive-riposte';
+ if(ability.mechanics?.ricochet)return 'Projectile à ricochet';
+ if(ability.mechanics?.chain)return 'Propagation de proximité';
+ if(ability.mechanics?.rainBloom)return 'Éclosion sous la pluie';
  if(ability.attachToTarget)return "Étouffement au contact";
  if(ability.forwardCells)return `Souffle sur ${ability.forwardCells} cases devant`;
  if(ability.target==='ally')return 'Soutien des alliés';
@@ -33,7 +41,7 @@ export function newProjectile():ProjectileDefinition{return {presentation:{asset
 export function newAbility(effectId:string):AbilityDefinition{return {presentation:structuredClone(DEFAULT_ABILITY_PRESENTATION),id:newId('ab'),name:'Nouvelle attaque',description:'',delivery:'instant',projectileId:'',target:'opponent',excludeSelf:false,selection:'one',priority:'nearest',rangeSource:'species',range:5,rowRadius:0,cooldownSource:'species',cooldown:1,initialDelay:.35,effects:[effectId]};}
 export function combatReferences(p:GameProject,section:CombatSection,id:string):string[]{
  if(section==='abilities')return [...new Set([...p.balance.plants,...p.balance.enemies].filter(x=>x.ability_ids?.includes(id)).map(x=>x.name).concat(logicReferences(p,'abilities',id)))];
- return [...new Set(p.combat!.abilities.filter(a=>section==='effects'?a.effects.includes(id):a.projectileId===id).map(a=>a.name).concat(section==='effects'?logicReferences(p,'effects',id):[]))];
+ return [...new Set(p.combat!.abilities.filter(a=>section==='effects'?(a.effects.includes(id)||mechanicEffectIds(a.mechanics).includes(id)):a.projectileId===id).map(a=>a.name).concat(section==='effects'?logicReferences(p,'effects',id):[]))];
 }
 export function deleteCombatItem(p:GameProject,section:CombatSection,id:string):void{
  const refs=combatReferences(p,section,id);if(refs.length)throw Error('Encore utilisé par : '+refs.join(', '));

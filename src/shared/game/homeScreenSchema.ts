@@ -29,6 +29,6 @@ const element=obj({
 element.allOf=HOME_ELEMENT_KINDS.map(kind=>({if:{properties:{kind:{const:kind}},required:['kind']},then:{required:HOME_KIND_FIELDS[kind]}}));
 export const HOME_SCREEN_SCHEMA:Rule=obj({
  background:obj({mode:{type:'string',enum:['garden','image','color']},chapter:num(-1,4,true),color,image,fit,opacity:num(0,1),overlayColor:color,overlayOpacity:num(0,1)}),
- continueLabels:obj(Object.fromEntries(['start','continue','battle','outro','epilogue','unavailable','suffix'].map(key=>[key,str(160)]))),
+ continueLabels:obj(Object.fromEntries(['start','continue','battle','cinematic','finished','unavailable','suffix'].map(key=>[key,str(160)]))),
  elements:{type:'array',minItems:0,maxItems:100,items:element},
 });

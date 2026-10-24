@@ -3,6 +3,7 @@ import type { GameIssue } from '../game/validation.js';
 import type { Cinematic } from '../model.js';
 import type { Cue } from './types.js';
 import { duration, resolveAnimation, species, resolveActor, presentationAssets } from './runtime.js';
+import {walkWeight} from './walkRig.js';
 const safeRef=(v:string)=>v.startsWith('library://')&&!/[\\\u0000-\u001f:?#]/.test(v.slice(10))&&v.slice(10).split('/').every(x=>!!x&&x!=='.'&&x!=='..');
 const image=(s:string)=>/\.(png|jpe?g|webp)$/i.test(s);
 export function presentationIssues(p:GameProject):GameIssue[]{
@@ -19,7 +20,12 @@ export function presentationIssues(p:GameProject):GameIssue[]{
   const mids=new Set<string>();let release=0;for(const m of a.markers){if(mids.has(m.id))add(path,'Identifiant de marqueur répété.');mids.add(m.id);if(m.at>d)add(path,'Marqueur après la fin de l’animation.');if(m.type==='release'){release++;if(m.ref)add(path,'Un marqueur release ne référence pas de code ni de ressource.');}if(m.type==='sound'&&!sounds.has(m.ref))add(path,'Marqueur sonore sans son valide.');if(m.type==='vfx'&&!vfx.has(m.ref))add(path,'Marqueur visuel sans VFX valide.');}if(release>1)add(path,'Une seule libération sémantique par animation.');
   if(new Set(a.attachments.map(x=>x.id)).size!==a.attachments.length)add(path,'Point d’attache répété.');for(const f of a.frames)if(!image(f.asset))add(path,'Une frame doit référencer une image.');
  }
- for(const role of ['plants','enemies'] as const)for(const s of p.balance[role]){const path='balance.'+role+'.'+s.id;if(!s.visual||!s.animationProfileId){add(path,'Image de repos et profil d’animation requis.');continue;}if(!image(s.visual.sprite.asset))add(path,'L’image de repos doit être une image.');if(!profiles.has(s.animationProfileId))add(path,'Profil d’animation introuvable.');for(const slot of ['idle','move','attack','hit','death','spawn']){const a=resolveAnimation(p,s,slot);if(!a)add(path,'Slot de base non résolu : '+slot);else if(['attack','hit','death','spawn'].includes(slot)&&a.loop)add(path,'Le slot '+slot+' doit être ponctuel.');}}
+ for(const role of ['plants','enemies'] as const)for(const s of p.balance[role]){const path='balance.'+role+'.'+s.id;if(!s.visual||!s.animationProfileId){add(path,'Image de repos et profil d’animation requis.');continue;}for(const drum of s.visual.rollingDrums??[]){for(const side of [drum.left,drum.right])if(side.top.y>=side.curve.y||side.curve.y>=side.bottom.y)add(path,'Les points du rouleau doivent descendre du haut vers le bas.');for(const point of ['top','curve','bottom'] as const)if(drum.left[point].x>=drum.right[point].x)add(path,'Les bords du rouleau doivent rester dans leur ordre gauche-droite.');}for(const part of s.visual.rollingParts??[])if(part.center.x-part.radius.x<0||part.center.x+part.radius.x>1||part.center.y-part.radius.y<0||part.center.y+part.radius.y>1)add(path,'La roue doit rester entièrement dans l’image.');if(!image(s.visual.sprite.asset))add(path,'L’image de repos doit être une image.');if(!profiles.has(s.animationProfileId))add(path,'Profil d’animation introuvable.');for(const slot of ['idle','move','attack','hit','death','spawn']){const a=resolveAnimation(p,s,slot);if(!a)add(path,'Slot de base non résolu : '+slot);else if(['attack','hit','death','spawn'].includes(slot)&&a.loop)add(path,'Le slot '+slot+' doit être ponctuel.');}}
+ for(const s of [...p.balance.plants,...p.balance.enemies]){
+  const rig=s.visual?.walkRig,path='balance.'+(p.balance.plants.some(p=>p.id===s.id)?'plants':'enemies')+'.'+s.id;
+  if(resolveAnimation(p,s,'move')?.motion.preset==='walk'&&!rig)add(path,'La marche articulée requiert deux jambes configurées.');
+  if(rig)for(let i=0;i<rig.legs.length;i++)if(rig.legs[i].foot.y<=rig.legs[i].hip.y||walkWeight(rig.legs[i].foot,rig,i)<.99)add(path,'Le pied doit se trouver sous la hanche et dans sa zone de jambe.');
+ }
  for(const s of c.audio)if(!/\.(wav|ogg|mp3)$/i.test(s.asset))add('presentation.audio.'+s.id,'Fichier audio attendu.');
  for(const v of c.vfx)if(v.asset&&!image(v.asset))add('presentation.vfx.'+v.id,'Ressource VFX non graphique.');
  for(const a of p.combat?.abilities??[]){if(!a.presentation){if(p.schemaVersion===4)add('combat.abilities.'+a.id,'Présentation de capacité absente.');continue;}const pr=a.presentation,path='combat.abilities.'+a.id;cue(pr.start,path);cue(pr.releaseCue,path);cue(pr.impact,path);

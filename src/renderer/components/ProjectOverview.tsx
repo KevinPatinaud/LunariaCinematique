@@ -10,12 +10,13 @@ interface Props {
   libraryName?: string;
   disabled: boolean;
   onClose(): void;
-  onOpen(): void;
   onSave(): void;
+  onBackup(): void;
   onLibrary(): void;
   onCreateFilm(): void;
   onBrowseFilms(): void;
   onCreateLevel(): void;
+  onLevels(): void;
   onCampaign(): void;
   onCharacters(): void;
   onHome(): void;
@@ -29,30 +30,45 @@ export function ProjectOverview(props: Props) {
   return <StudioDialog title="Vue du projet" onClose={props.onClose} disabled={disabled} wide onKeyDown={event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'&&!event.nativeEvent.isComposing&&!disabled){event.preventDefault();props.onSave();}}}>
     <div className="project-overview">
       <section className="project-overview-file">
-        <div><h3>{project.title}</h3><p>{path ? path.split(/[\\/]/).pop() : 'Choisis un emplacement au premier enregistrement.'}</p>
-          <span className={modified || !path ? 'project-unsaved' : 'project-saved'}>{modified ? 'Modifications non enregistrées' : path ? 'Toutes les modifications sont enregistrées' : 'Projet non enregistré'}</span>
+        <div><h3>{project.title}</h3><p title={path || undefined}>{path ? path.split(/[\\/]/).pop() : 'Projet sans fichier'}</p>
+          <span className={modified || !path ? 'project-unsaved' : 'project-saved'}>{modified || !path ? 'À enregistrer' : '✓ Enregistré'}</span>
         </div>
-        <div className="project-overview-file-actions"><button className="button primary" disabled={disabled} onClick={props.onSave}>Enregistrer</button><button className="button subtle" disabled={disabled} onClick={props.onOpen}>Ouvrir un projet…</button></div>
+        <button className="button primary" disabled={disabled} onClick={props.onSave} title="Enregistrer le projet · Ctrl+S">Enregistrer</button>
       </section>
-      <p className="project-overview-intro">Un seul projet pour raconter l’histoire, construire les niveaux et préparer le parcours du joueur.</p>
-      <div className="project-overview-actions">
-        <button disabled={disabled} onClick={props.onHome}><span className="project-action-icon" aria-hidden="true">⌂</span><strong>Configurer l’accueil</strong><span>Composer l’écran d’accueil, ses textes, décors et boutons.</span><small>Aperçu et réglages de chaque élément</small></button>
-        <button disabled={disabled} onClick={props.onCreateFilm}><span className="project-action-icon" aria-hidden="true">▶</span><strong>Créer une cinématique</strong><span>Assembler des plans, personnages et dialogues.</span><small>{films} cinématique{films > 1 ? 's' : ''} dans le projet</small></button>
-        <button disabled={disabled || project.levels.length >= 200} onClick={props.onCreateLevel}><span className="project-action-icon" aria-hidden="true">⚑</span><strong>Créer un niveau</strong><span>Choisir les plantes, les ennemis et les vagues.</span><small>{project.levels.length} niveau{project.levels.length > 1 ? 'x' : ''} dans le projet</small></button>
-        <button disabled={disabled} onClick={props.onCampaign}><span className="project-action-icon" aria-hidden="true">⇢</span><strong>Organiser la campagne</strong><span>Choisir dans quel ordre les films et niveaux se jouent.</span><small>{steps} étape{steps > 1 ? 's' : ''} dans le parcours</small></button>
-      </div>
-      <section className="project-overview-films" aria-label="Cinématiques du projet">
-        <div><h3>Les cinématiques du projet</h3><p>{films ? (project.cinematics ?? []).slice(0, 3).map(film => film.title).join(' · ') : 'Crée ta première cinématique pour commencer l’histoire.'}</p></div>
-        <button className="button subtle" disabled={disabled} onClick={props.onBrowseFilms}>Voir toutes les cinématiques</button>
+      <section className="project-overview-backup" aria-label="Sauvegarde de la campagne">
+        <div><strong>Conserver une sauvegarde complète</strong><p>Niveaux, cinématiques, personnages, réglages, images et sons. Un nouveau dossier daté conserve aussi les modifications en cours.</p></div>
+        <button className="button subtle" disabled={disabled} onClick={props.onBackup}>Sauvegarder la campagne…</button>
       </section>
-      <section className="project-overview-prepare" aria-label="Préparer le projet">
-        <h3>Pour travailler sereinement</h3>
-        <div><span aria-hidden="true">{props.libraryName ? '✓' : '1'}</span><p><strong>Relier les images et les sons</strong><small>{props.libraryName ? `Bibliothèque connectée : ${props.libraryName}` : 'Connecte ta bibliothèque pour retrouver les décors, personnages et sons.'}</small></p><button className="button subtle" disabled={disabled} onClick={props.onLibrary}>{props.libraryName ? 'Changer' : 'Connecter'}</button></div>
-        <div><span aria-hidden="true">2</span><p><strong>Régler les personnages</strong><small>Caractéristiques, attaques et animations sont partagées entre les niveaux.</small></p><button className="button subtle" disabled={disabled} onClick={props.onCharacters}>Voir les personnages</button></div>
-        <div><span aria-hidden="true">3</span><p><strong>Vérifier avant de publier</strong><small>Repère les erreurs et les avertissements avant la publication.</small></p><button className="button subtle" disabled={disabled} onClick={props.onChecks}>Vérifier le projet</button></div>
+      <section className="project-overview-workspaces" aria-label="Travailler sur le projet">
+        <div className="project-overview-workspace">
+          <button className="project-overview-destination" aria-label="Voir toutes les cinématiques" disabled={disabled} onClick={props.onBrowseFilms}>
+            <span className="project-action-icon" aria-hidden="true">▶</span><strong>Cinématiques</strong><span>{films} cinématique{films > 1 ? 's' : ''}</span><span className="project-action-arrow" aria-hidden="true">→</span>
+          </button>
+          <button className="project-overview-create" disabled={disabled} onClick={props.onCreateFilm}><span aria-hidden="true">＋ </span>Créer une cinématique</button>
+        </div>
+        <div className="project-overview-workspace">
+          <button className="project-overview-destination" aria-label="Voir les niveaux" disabled={disabled} onClick={props.onLevels}>
+            <span className="project-action-icon" aria-hidden="true">⚑</span><strong>Niveaux</strong><span>{project.levels.length} niveau{project.levels.length > 1 ? 'x' : ''}</span><span className="project-action-arrow" aria-hidden="true">→</span>
+          </button>
+          <button className="project-overview-create" disabled={disabled || project.levels.length >= 200} onClick={props.onCreateLevel}><span aria-hidden="true">＋ </span>Créer un niveau</button>
+        </div>
+        <div className="project-overview-workspace">
+          <button className="project-overview-destination project-overview-campaign" aria-label="Organiser la campagne" disabled={disabled} onClick={props.onCampaign}>
+            <span className="project-action-icon" aria-hidden="true">⇢</span><strong>Campagne</strong><span>{steps} étape{steps > 1 ? 's' : ''}</span><small>Ordre des films et niveaux</small><span className="project-action-arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
       </section>
-      <p className="project-overview-save-note"><strong>Enregistrer</strong> conserve ton travail dans le fichier du projet. <strong>Publier et exporter</strong>, dans Niveaux, prépare le jeu pour y jouer. La copie de récupération locale ne remplace pas l’enregistrement.</p>
-      <div className="project-overview-shortcuts"><span><kbd>Ctrl + S</kbd> Enregistrer</span><span><kbd>Ctrl + Z</kbd> Annuler</span><span><kbd>Échap</kbd> Fermer cette vue</span></div>
+      {!props.libraryName&&<div className="project-overview-library" role="status"><span>Images et sons : bibliothèque non connectée</span><button className="button subtle" disabled={disabled} onClick={props.onLibrary}>Connecter</button></div>}
+      <details className="project-overview-settings">
+        <summary>Réglages et outils<span>Accueil · personnages · bibliothèque</span></summary>
+        <div className="project-overview-settings-actions">
+          <button disabled={disabled} onClick={props.onHome}>Configurer l’accueil</button>
+          <button disabled={disabled} onClick={props.onCharacters}>Voir les personnages</button>
+          <button disabled={disabled} onClick={props.onLibrary}>Images et sons<small>{props.libraryName ?? 'Connecter la bibliothèque'}</small></button>
+          <button disabled={disabled} onClick={props.onChecks}>Vérifier le projet</button>
+        </div>
+      </details>
+      <footer className="project-overview-footer">{props.libraryName&&<span title={props.libraryName}>✓ Bibliothèque connectée</span>}</footer>
     </div>
   </StudioDialog>;
 }

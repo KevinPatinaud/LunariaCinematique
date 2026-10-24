@@ -1,9 +1,9 @@
 import type { PresentationCatalog, SpeciesVisual } from '../presentation/types.js';
 import type { LogicCatalog, LevelEvent } from './logic.js';
 import type { CombatCatalog } from './combat.js';
-import type { OpenResult } from '../model.js';
 import type { Cinematic } from '../model.js';
 import type { HomeScreen } from './homeScreen.js';
+import type { EnemyRules } from './enemyRules.js';
 /** Game authoring contract. Level records contain references, never combat-stat overrides. */
 export const DAMAGE_TYPES = ['physical','piercing','toxic','pure'] as const;
 export type DamageType = typeof DAMAGE_TYPES[number];
@@ -18,63 +18,65 @@ export interface PlantDefinition {
  effect_radius:number;effect_strength:number;color:string;chapter:number;unlock:number;
  damage_type:DamageType;armor:number;resistances:Resistances;
 }
-export interface EnemyDefinition {archived?:boolean;animationProfileId?:string;visual?:SpeciesVisual;behaviorId?:string;ability_ids?:string[];id:string;name:string;hp:number;speed:number;attack:number;reward:number;reach:number;damage_type:DamageType;armor:number;resistances:Resistances;special_damage:number}
+export interface EnemyDefinition {rules?:EnemyRules;archived?:boolean;animationProfileId?:string;visual?:SpeciesVisual;behaviorId?:string;ability_ids?:string[];id:string;name:string;hp:number;speed:number;attack:number;reward:number;reach:number;damage_type:DamageType;armor:number;resistances:Resistances;special_damage:number}
 /** Archived enemies remain in saved projects and existing references. */
 export const activeEnemies=(enemies:EnemyDefinition[])=>enemies.filter(enemy=>!enemy.archived);
 export const enemyChoices=(enemies:EnemyDefinition[],selectedId='')=>enemies.filter(enemy=>!enemy.archived||enemy.id===selectedId);
-export const OBJECTIVES = ['defend','advance','escort','invasive_foci','protect_cell','operation','rescue'] as const;
-export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',advance:'Conquérir les allées',escort:'Escorter les jeunes pousses',invasive_foci:'Foyers invasifs',protect_cell:'Protéger une case',operation:'Opération',rescue:'Sauvetage'};
+export const OBJECTIVES = ['defend','occupied_board','advance','escort','invasive_foci','protect_cell','repel_boss'] as const;
+export const OBJECTIVE_LABELS:Record<typeof OBJECTIVES[number],string>={defend:'Repousser les vagues',occupied_board:'Plateau occupé',advance:'Conquérir les allées',escort:'Escorter les jeunes pousses',invasive_foci:'Foyers invasifs',protect_cell:'Protéger une case',repel_boss:'Contraindre un boss au repli'};
 export interface ProtectedCell {row:number;col:number;image:`library://${string}`;maxHp:number;armor:number;resistances:Resistances}
 export interface EscortSettings {laneCounts:number[];speed:number;maxHp:number;departureInterval:number;image:`library://${string}`}
 export const defaultEscort=():EscortSettings=>({laneCounts:[0,0,1,0,0],speed:0.12,maxHp:120,departureInterval:8,image:'library://02_characters/pousses/individuals/Sprite végétal Lunaria en marche.png'});
 export const isConquest=(type:LevelDefinition['objective']['type'])=>type==='advance'||type==='escort';
-export interface InvasiveFoci {positions:{row:number;col:number}[];reinforcementEnemyId:string;interval:number}
-export const defaultInvasiveFoci=():InvasiveFoci=>({positions:[{row:1,col:5},{row:3,col:5}],reinforcementEnemyId:'runner',interval:30});
+export interface InvasiveFoci {focusEnemyId?:string;positions:{row:number;col:number}[];reinforcementEnemyId:string;interval:number}
+export const defaultInvasiveFoci=():InvasiveFoci=>({focusEnemyId:'plaque',positions:[{row:1,col:5},{row:3,col:5}],reinforcementEnemyId:'runner',interval:30});
 /** Inclusive board rectangle. A single cell has equal minimum and maximum coordinates. */
 export interface SpawnArea {rowMin:number;rowMax:number;colMin:number;colMax:number}
 export interface SpawnGroup {id:string;enemyId:string;count:number;lane:number;start:number;interval:number;placement?:SpawnArea}
 export const DEFAULT_WAVE_SEED_REWARD=50;
-export interface ComboReward {enabled:boolean;seedsPerStep:number;maxSeeds:number}
-export interface RewardSettings {combo:ComboReward}
-export const defaultRewards=():RewardSettings=>({combo:{enabled:false,seedsPerStep:3,maxSeeds:12}});
 export interface WaveDefinition {id:string;groups:SpawnGroup[];seedReward?:number}
-export interface StoryLine {speaker:string;text:string}
 export interface LevelDefinition {
- events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;terrainImage?:`library://${string}`;startingEnergy:number;allowedPlants:string[];
- objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;escort?:EscortSettings;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;tip:string;waves:WaveDefinition[];
- briefing:StoryLine[];outro:StoryLine[];midDialogue:StoryLine[];midWave:number;restoration:string;
+ events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;terrainImage?:`library://${string}`;restoredTerrainImage?:`library://${string}`;startingEnergy:number;allowedPlants:string[];
+ objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;escort?:EscortSettings;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;objectiveTextMode?:'automatic'|'custom';tip:string;waves:WaveDefinition[];
 }
 export interface CampaignFilm {id:string;title:string;file:string;documentId:string}
-export interface ImportedCampaignFilm {film:CampaignFilm;cinematic:Cinematic}
-export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean};
+export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean} | {id:string;kind:'end'};
 export interface CampaignSequence {steps:CampaignStep[];cinematics:CampaignFilm[]}
 export interface CampaignCheck {films:number;assets:number;steps:number;levels:number;warnings:string[]}
-export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;rewards?:RewardSettings;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
-export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean}
+export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
+export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean;backup?:boolean;preserved?:string}
+export interface ProjectDiskConflict {path:string;revision:string;base:GameProject;remote:GameProject|null;error?:string}
 export interface GameRecent {path:string;title:string;updatedAt:string}
-export interface GameBootstrap {recovery:GameProject|null;recent:GameRecent[]}
+export interface ProjectRecoveryContext {base:GameProject;path:string}
+export interface GameBootstrap {recovery:GameProject|null;recent:GameRecent[];recoveryContext?:ProjectRecoveryContext;recoveryWarning?:string}
 export interface GamePreviewResult {path:string;levelId:string;title:string;gameRoot:string;executable:string;simulated:boolean}
 export type GameBuildTarget='windows'|'android';
 export interface GameBuildResult {target:GameBuildTarget;artifact:string;logPath:string;sha256:string;bytes:number;durationMs:number;simulated:boolean}
+export interface AndroidDevice {serial:string;state:string;name:string}
+export interface AndroidDeploymentProgress {phase:'device'|'publish'|'build'|'install'|'launch';message:string}
+export interface AndroidDeploymentResult extends GameBuildResult {device:AndroidDevice;packageId:string;deploymentLogPath:string}
+export interface CampaignBackupResult {folder:string;path:string;assets:number;bytes:number}
 export interface GameAPI {
+ inspectConflict(token:string):Promise<ProjectDiskConflict|null>;
+ reconcile(project:GameProject,token:string,revision:string,draft:GameProject):Promise<GameFile>;
  bootstrap():Promise<GameBootstrap>;
  open():Promise<GameFile|null>;openRecent(path:string):Promise<GameFile>;save(project:GameProject,token:string,saveAs:boolean):Promise<GameFile|null>;
- recover(project:GameProject):Promise<void>;clearRecovery():Promise<void>;
+ backup(project:GameProject):Promise<CampaignBackupResult|null>;
+ recover(project:GameProject,context?:ProjectRecoveryContext):Promise<void>;clearRecovery():Promise<void>;
  publish(project:GameProject):Promise<{path:string;films?:number;assets?:number;steps?:number}|null>;
+ testAbility(project:GameProject,sourceId:string,abilityId:string,targetId:string):Promise<{path:string}|null>;
  playLevel(project:GameProject,levelId:string):Promise<GamePreviewResult|null>;
  build(project:GameProject,target:GameBuildTarget):Promise<GameBuildResult|null>;
- campaignFolder():Promise<string>;
- chooseCampaignFolder():Promise<string|null>;
- addCampaignFilm():Promise<ImportedCampaignFilm|null>;
- editCampaignFilm(file:string,documentId:string):Promise<OpenResult>;
+ deployAndroid(project:GameProject):Promise<AndroidDeploymentResult|null>;
+ onAndroidDeploymentProgress(callback:(progress:AndroidDeploymentProgress)=>void):()=>void;
  checkCampaign(project:GameProject):Promise<CampaignCheck>;
  presentationUsages(project:GameProject):Promise<{references:Record<string,string[]>;errors:string[]}>;
 }
 export const newId = (prefix:string) => `${prefix}_${globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12)}`;
 export function newLevel(plants:string[], enemyId:string):LevelDefinition {
  return {events:[],id:newId('level'),title:'Nouveau niveau',subtitle:'',act:0,location:'',startingEnergy:520,allowedPlants:plants.slice(0,2),
- objective:{type:'defend',target:0},objectiveText:'Repousser les vagues.',tip:'',waves:[{id:newId('wave'),seedReward:DEFAULT_WAVE_SEED_REWARD,groups:[{id:newId('group'),enemyId,count:5,lane:-1,start:.25,interval:3.5}]}],
- briefing:[],outro:[],midDialogue:[],midWave:0,restoration:''};
+ objective:{type:'defend',target:0},objectiveText:'Repousser les vagues.',objectiveTextMode:'automatic',tip:'',waves:[{id:newId('wave'),seedReward:DEFAULT_WAVE_SEED_REWARD,groups:[{id:newId('group'),enemyId,count:5,lane:-1,start:.25,interval:3.5}]}],
+};
 }
 export function cloneLevel(level:LevelDefinition):LevelDefinition {
  const copy=structuredClone(level);copy.id=newId('level');copy.title=(copy.title+' — copie').slice(0,160);
@@ -92,10 +94,7 @@ export function damageAfterProtection(amount:number,type:DamageType,target:{armo
  return base*(1-target.resistances[type])*(type==='physical'&&!armorBroken?1-target.armor:1);
 }
 
-/** Keep the authored mid-scene attached to its wave after insertion/deletion.
- * Removing its wave disables that trigger instead of silently selecting another.
- */
-export function replaceWaves(level:LevelDefinition,waves:WaveDefinition[]):Pick<LevelDefinition,'waves'|'midWave'|'events'> {
- const triggerId=level.waves[level.midWave-1]?.id;
- return {waves,midWave:triggerId?waves.findIndex(w=>w.id===triggerId)+1:0,...(level.events?{events:level.events.map(event=>{if(!['wave_start','wave_end'].includes(event.trigger.kind)||event.trigger.value===0)return event;const id=level.waves[event.trigger.value-1]?.id,index=waves.findIndex(w=>w.id===id);return {...event,enabled:index<0?false:event.enabled,trigger:{...event.trigger,value:index<0?0:index+1}};})}:{})};
+/** Preserve event wave targets through insertion/deletion. */
+export function replaceWaves(level:LevelDefinition,waves:WaveDefinition[]):Pick<LevelDefinition,'waves'|'events'> {
+ return {waves,...(level.events?{events:level.events.map(event=>{if(!['wave_start','wave_end'].includes(event.trigger.kind)||event.trigger.value===0)return event;const id=level.waves[event.trigger.value-1]?.id,index=waves.findIndex(w=>w.id===id);return {...event,enabled:index<0?false:event.enabled,trigger:{...event.trigger,value:index<0?0:index+1}};})}:{})};
 }

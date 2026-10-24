@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import type {Asset} from '../../shared/model.js';
 import type {GameProject} from '../../shared/game/types.js';
-import {campaignOf} from '../../shared/game/campaign.js';
+import {playableCampaignSteps} from '../../shared/game/campaign.js';
 import {newHomeElement,type HomeScreen,type HomeElement} from '../../shared/game/homeScreen.js';
 import {SpriteGlyph,useImageSize} from '../presentation/AnimationPreview.js';
 import europe from './home-assets/world_europe.png';
@@ -11,11 +11,11 @@ import oceania from './home-assets/world_oceania.png';
 import americas from './home-assets/world_americas.png';
 
 type RenderElement=Required<HomeElement>;
-export type PreviewState='start'|'continue'|'battle'|'outro'|'epilogue'|'unavailable';
-export const PREVIEW_STATES:Record<PreviewState,string>={start:'Nouvelle aventure',continue:'Voyage en cours',battle:'Bataille à reprendre',outro:'Suite à découvrir',epilogue:'Épilogue terminé',unavailable:'Aucune mission publiée'};
+export type PreviewState='start'|'continue'|'battle'|'cinematic'|'finished'|'unavailable';
+export const PREVIEW_STATES:Record<PreviewState,string>={start:'Nouvelle aventure',continue:'Voyage en cours',battle:'Bataille à reprendre',cinematic:'Cinématique à découvrir',finished:'Parcours terminé',unavailable:'Aucune mission publiée'};
 const gardens=[europe,africa,asia,oceania,americas];
 const fonts={body:'HomeNunito',bold:'HomeNunito',title:'HomeFredoka'};
-export function homePreviewLevels(project:GameProject){return campaignOf(project).steps.flatMap(step=>step.kind==='level'?project.levels.filter(level=>level.id===step.levelId):[]);}
+export function homePreviewLevels(project:GameProject){return playableCampaignSteps(project).flatMap(step=>step.kind==='level'?project.levels.filter(level=>level.id===step.levelId):[]);}
 export function previewText(text:string,completed:number,total:number,continueText=''){return text.replaceAll('{continue}',continueText).replaceAll('{completed}',String(completed)).replaceAll('{total}',String(total)).replaceAll('{version}','7.2');}
 function Garden({chapter}:{chapter:number}){const url=gardens[Math.max(0,Math.min(4,chapter))],size=useImageSize(url);return size?<svg width="1280" height="720" viewBox={`0 ${size.height/2} ${size.width} ${size.height/2}`} preserveAspectRatio="xMidYMid slice"><image href={url} width={size.width} height={size.height}/></svg>:null;}
 function TextGlyph({element,text,button=false}:{element:RenderElement;text:string;button?:boolean}){

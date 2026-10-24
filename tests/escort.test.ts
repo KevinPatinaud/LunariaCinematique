@@ -44,7 +44,7 @@ test('publisher installs the sprout image together with the authored escort sett
   const relative=p.levels[0].escort!.image.slice('library://'.length),source=path.join(library,relative);
   await mkdir(path.dirname(source),{recursive:true});await writeFile(source,PIXEL_PNG);
   await writeFile(path.join(library,'pixel.png'),PIXEL_PNG);
-  const result=await publishCampaign(p,game,'',library);
+  const result=await publishCampaign(p,game,library);
   const published=JSON.parse(await readFile(result.path,'utf8'));
   assert.deepEqual(published.levels[0].escort,p.levels[0].escort);
   assert.deepEqual(await readFile(path.join(game,'LunariaArtLibrary',relative)),PIXEL_PNG);

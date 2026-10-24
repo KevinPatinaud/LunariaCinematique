@@ -1,4 +1,5 @@
 import { logicFilmIds } from './logic.js';
+import {objectiveText} from './levelObjectives.js';
 import type { CampaignSequence, CampaignStep, GameProject } from './types.js';
 /** Authoring projects may contain unused levels; publishing never changes that document. */
 export function campaignOf(project:GameProject):CampaignSequence {
@@ -6,6 +7,11 @@ export function campaignOf(project:GameProject):CampaignSequence {
 }
 export function ensureCampaign(project:GameProject):CampaignSequence {
  return project.campaign ??= structuredClone(campaignOf(project));
+}
+/** The end card and everything after it are outside the playable journey. */
+export function playableCampaignSteps(project:GameProject):CampaignStep[] {
+ const steps=campaignOf(project).steps,end=steps.findIndex(s=>s.kind==='end');
+ return end<0?steps:steps.slice(0,end);
 }
 export function moveCampaignStep(steps:CampaignStep[],id:string,beforeId:string|null):CampaignStep[] {
  if(id===beforeId)return steps;
@@ -22,8 +28,11 @@ export function safeMoviePath(file:unknown):file is string {
 /** Copy only the levels and films reachable from the linear campaign, in playback order. */
 export function compileCampaign(project:GameProject):GameProject {
  const result=structuredClone(project),campaign=ensureCampaign(result);
+ const end=campaign.steps.findIndex(s=>s.kind==='end');
+ if(end>=0)campaign.steps=campaign.steps.slice(0,end+1);
  const levelIds=campaign.steps.filter((s):s is Extract<CampaignStep,{kind:'level'}>=>s.kind==='level').map(s=>s.levelId);
  result.levels=levelIds.map(id=>{const level=result.levels.find(l=>l.id===id);if(!level)throw Error('Niveau absent : '+id);return level;});
+ for(const level of result.levels)level.objectiveText=objectiveText(level);
  const filmIds=new Set(campaign.steps.filter((s):s is Extract<CampaignStep,{kind:'cinematic'}>=>s.kind==='cinematic').map(s=>s.cinematicId));
  for(const id of logicFilmIds(result))filmIds.add(id);
  campaign.cinematics=campaign.cinematics.filter(f=>filmIds.has(f.id));
@@ -34,6 +43,8 @@ export function compileCampaign(project:GameProject):GameProject {
 /** Pure progress model mirrored by campaign_sequence.gd. Replay never advances a frontier. */
 export function advanceCampaign(steps:CampaignStep[],cursor:number,stepId:string,event:'victory'|'finished'|'skip'|'defeat'|'abort'|'error',preview=false):number {
  const step=steps[cursor];if(preview||!step||step.id!==stepId)return cursor;
+ const end=steps.findIndex(s=>s.kind==='end');
+ if(end>=0&&cursor>=end)return cursor;
  if(step.kind==='level')return event==='victory'?cursor+1:cursor;
- return event==='finished'||event==='skip'&&step.skippable?cursor+1:cursor;
+ return step.kind==='cinematic'&&(event==='finished'||event==='skip'&&step.skippable)?cursor+1:cursor;
 }
