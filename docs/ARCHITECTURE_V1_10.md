@@ -6,7 +6,7 @@
 
 `src/renderer/presentation` contient les formulaires, listes de frames, import de grilles, aperçus, édition des profils, sons/VFX et composants de sprites cinématiques. `GameEditor` conserve son historique, sa récupération, ses projets récents et sa publication. Les modifications passent par les commandes d’état existantes.
 
-`src/main/presentationAssets.ts` lit les dimensions réelles PNG/JPEG/WebP avant publication. `presentationUsages.ts` lit les cinématiques liées avec l’autorisation de leur dossier. `campaignPublisher.ts` résout la fermeture des références, prépare les ressources et écrit le contenu actif en dernier. Le petit ancien point d’entrée `publishGameProject` délègue à ce même chemin.
+`src/main/presentationAssets.ts` lit les dimensions réelles PNG/JPEG/WebP avant publication. `presentationUsages.ts` lit les cinématiques liées avec l’autorisation de leur dossier. `campaignPublisher.ts` résout la fermeture des références, prépare les ressources et écrit le contenu actif en dernier. Ce chemin de publication est également celui exercé par les tests du document de jeu.
 
 Côté Godot, dans le sous-projet `C:/dev/Lunaria/game`, `domain/presentation` est composé du registre, des calculs purs, de l’horloge d’animation et de la validation de l’état sauvegardé. `domain/combat/ability_runtime.gd` planifie les capacités sans texture ni callback graphique. `presentation/animation` dessine les images et effets ; `presentation/audio/catalog_audio.gd` gère les sons. Le pont cinématique réutilise ces lecteurs, sans dépendre d’une instance de combat.
 
@@ -60,7 +60,7 @@ La mort est terminale et vide les préparations. L’entité cesse immédiatemen
 
 Une action ponctuelle revient au slot de base, idle ou move. Seul le système de déplacement change cette base ; les plantes utilisent move lorsqu’elles avancent dans un objectif de conquête. Une régénération instantanée sur soi utilisant le geste générique conserve la base idle/move ; une animation dédiée reste autorisée. En fin de bataille les préparations restantes sont annulées, avec une animation victory lorsqu’elle est disponible. Les cadavres et VFX ne figurent pas dans la simulation active.
 
-L’état d’animation sauvegardé a huit champs : slot, elapsed, speed, base, serial, pending, hit_elapsed et current_ability_id. Les formes et références sont strictement validées ; les préparations doivent référencer les timers de capacités autorisés du porteur. Sauvegarde courante v25 seulement, sans conversion d’anciennes sauvegardes joueur.
+L’état d’animation sauvegardé a huit champs : slot, elapsed, speed, base, serial, pending, hit_elapsed et current_ability_id. Les formes et références sont strictement validées ; les préparations doivent référencer les timers de capacités autorisés du porteur. Le format courant des instantanés et la réassociation de la progression sont définis dans le dépôt jeu par `game/domain/serialization/save_schema.gd` et `game/domain/serialization/profile_archive.gd`.
 
 ## Sons et VFX
 

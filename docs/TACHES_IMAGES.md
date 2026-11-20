@@ -1,5 +1,7 @@
 # Tâches de génération d’images
 
+Les **poses de personnages** sont également suivies dans cette file. Depuis les propriétés d’un personnage sélectionné, **Générer une pose avec Codex** ouvre le formulaire. Le filtre **Poses de personnages** retrouve les propositions. **Ajouter à la bibliothèque** importe un nouveau PNG transparent ; **Utiliser cette pose dans le plan** l’affecte à une destination vérifiée et annulable. Voir [le parcours complet](POSES_PERSONNAGES.md).
+
 Le bouton **Tâches et résultats**, dans la barre du Studio, rassemble les adaptations de décors **20:9** et les générations de terrains **16:9**. Il affiche le nombre de travaux en cours ou de propositions à valider. Les formulaires de création restent accessibles depuis le décor d’un plan et les paramètres d’un niveau.
 
 ## Créer, réduire et retrouver

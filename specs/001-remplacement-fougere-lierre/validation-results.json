@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-25",
+  "initiative": "lunaria-lierre-20261025",
+  "studio": {
+    "testsPassed": 1194,
+    "testsSkipped": 4,
+    "electronScenariosPassed": 2,
+    "typecheck": true,
+    "build": true
+  },
+  "godot": {
+    "nodeTestsPassed": 142,
+    "fastScenariosPassed": 45,
+    "campaignScenariosPassed": 7,
+    "cinematicScenariosPassed": 8,
+    "packageScenariosPassed": 6,
+    "visualScenariosPassed": 3
+  },
+  "art": {
+    "newTransparentPoses": 4,
+    "cinematicActorReplacements": 24,
+    "replacedUniqueIllustrations": 17,
+    "cinematicChecksPassed": 49,
+    "handCorrection": {
+      "date": "2026-10-25",
+      "reviewedPoses": 19,
+      "correctedPoses": 3,
+      "actorReferences": 6,
+      "anatomy": "Une feuille continue à trois lobes principaux, sans doigts humains.",
+      "preserved": "Tout le document hors références et géométrie des six acteurs ; repères de pieds et hauteur visible préservés.",
+      "checks": {
+        "studioElectron": 1,
+        "packageScenarios": 6,
+        "cinematicChecks": 49,
+        "cinematicCaptures": 24,
+        "apkReferences": 300,
+        "nativeExportChecks": 45,
+        "correctedActiveTexturesDecoded": 2
+      },
+      "android": {
+        "build": true,
+        "bytes": 110818393,
+        "sha256": "912ea4329aa8f8c409c008dc0454c7c4b904ed1b27fbf8be754b2010380ed4c1",
+        "signature": "debug v2 verified",
+        "hardwareTested": false
+      }
+    }
+  },
+  "invariants": {
+    "fastScenarios": 45,
+    "fastAllPassed": true,
+    "authorReplacedActors": 24,
+    "cinematicFootYMaxError": 0,
+    "otherActorsPreserved": true,
+    "enemyBalancePreserved": true,
+    "campaignBoundaryPreserved": true,
+    "storyMerged": true
+  },
+  "android": {
+    "build": true,
+    "signature": "debug APK, v2 verified",
+    "bytes": 110818393,
+    "sha256": "912ea4329aa8f8c409c008dc0454c7c4b904ed1b27fbf8be754b2010380ed4c1",
+    "assetReferencesVerified": 300,
+    "nativeExportChecksPassed": 45,
+    "animationFrameReferencesDecoded": 9,
+    "hardwareTested": false,
+    "reason": "Aucun appareil retourné par adb devices -l.",
+    "correctedHandTexturesDecoded": 2
+  }
+}

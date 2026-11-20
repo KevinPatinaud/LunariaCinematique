@@ -1,3 +1,8 @@
+<!--
+Bilan de synchronisation
+- Version 1.0.0 → 1.1.0.
+- Ajout du principe VIII sur la langue du code, des URL et des contenus affichés.
+-->
 # Constitution — Lunaria Studio
 
 ## Core Principles
@@ -59,6 +64,19 @@ l'instant ; aucune migration n'est ajoutée sans besoin exprimé. Le format
 courant reste validé. Les tests ne remplacent ni le document d'auteur réel ni
 les sauvegardes du joueur.
 
+### VIII. Anglais dans le code source et les URL
+
+Le code source de Lunaria, de Lunaria Studio et de Lunaria Web doit être en
+anglais, y compris les noms techniques, les commentaires et les diagnostics
+internes. Les URL sous le contrôle de Lunaria Web doivent être en anglais.
+Cette règle couvre les URL canoniques des pages et articles, leurs fragments,
+les chemins d’API et les URL des ressources servies.
+Lorsqu’une adresse publiée change, prévoir une redirection pour conserver les
+liens existants.
+
+Le jeu, le Studio et le site affichent exclusivement du français dans leurs
+interfaces, dialogues, messages destinés aux utilisateurs et contenus éditoriaux.
+
 ## Development Workflow
 
 Le guide `docs/SPEC_KIT.md` décrit les commandes et la coordination entre dépôts.
@@ -76,4 +94,4 @@ templates ou guides concernés. Réserver une hausse majeure aux changements de
 principes, mineure aux ajouts et corrective aux clarifications. Aucun principe
 ne crée une autorisation de publication ou de modification de données externes.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-10-24
+**Version**: 1.1.0 | **Ratified**: 2026-10-24 | **Last Amended**: 2026-11-18

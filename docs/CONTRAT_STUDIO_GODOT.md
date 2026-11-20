@@ -18,6 +18,17 @@ Les chemins côté jeu sont relatifs à `C:/dev/Lunaria`. Le mini-projet `godot/
 du Studio sert aux essais du lecteur et ne remplace pas le jeu Android.
 Consulter les types, schémas et lecteurs réels avant de modifier une interface.
 
+Le lecteur GDScript a pour source `godot/addons/lunaria_cinematics/` dans le
+Studio. `scripts/sync-game-contract.mjs` maintient sa copie dans le jeu, les
+schémas techniques et les modules JavaScript requis par les points d’entrée
+`tools/design/*.js`. Leur fermeture d’imports remplace la copie de tous les
+modules d’édition. Les identifiants `.uid` propres au jeu sont conservés.
+
+`game/tools/design/sync-manifest.json` recense uniquement les chemins techniques
+gérés, afin de retirer leurs anciennes copies lors d’une synchronisation. Les
+fichiers inconnus restent en place ; le catalogue publié, les médias et les
+documents d’auteur ne sont pas gérés par ce manifeste.
+
 ## Invariants du pipeline
 
 1. Le document d'auteur est
@@ -48,12 +59,17 @@ Consulter les types, schémas et lecteurs réels avant de modifier une interface
 
   ```powershell
   npm run schema
+  node scripts/sync-game-contract.mjs --game C:/dev/Lunaria/game --check
   node scripts/sync-game-contract.mjs --game C:/dev/Lunaria/game
+  node scripts/sync-game-contract.mjs --game C:/dev/Lunaria/game --check
   ```
 
-  Ces commandes écrivent des schémas et modules du jeu. Elles ne publient pas la
-  campagne, ne remplacent pas un port GDScript et ne doivent pas servir de simple
-  diagnostic. Ne pas les exécuter pour installer Spec Kit.
+  `--check` compare sans écrire et retourne un échec si une copie gérée manque,
+  diffère ou doit être retirée. Examiner ces écarts avant la synchronisation
+  explicite, qui écrit les copies nécessaires et retire les anciennes copies
+  gérées. La génération et la synchronisation ne publient pas la campagne et ne
+  réalisent pas le port d’une nouvelle règle GDScript. Elles ne sont pas
+  nécessaires pour installer Spec Kit.
 - Valider un exemple représentatif et les erreurs pertinentes des deux côtés,
   puis le parcours exporté dans un projet de test isolé. Une modification
   d'interface doit aussi être essayée dans Electron ; le rendu et le tactile

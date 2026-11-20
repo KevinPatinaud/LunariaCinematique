@@ -38,6 +38,10 @@
   test isolé ; ne pas remplacer la campagne réelle pour vérifier cette tâche.
 - [ ] T008 [US1] Mettre à jour les documents qui font référence et vérifier les
   critères de réception ; conserver les essais non réalisés comme tels.
+- [ ] T009 [US1] Vérifier que le code source ajouté ou modifié est en anglais
+  et que les textes affichés sont en français. Pour tout changement d’URL sur
+  Lunaria Web, vérifier les nouvelles adresses en anglais et les redirections
+  des adresses publiées remplacées.
 
 ## Dependencies & Execution Order
 

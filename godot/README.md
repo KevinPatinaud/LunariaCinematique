@@ -1,6 +1,6 @@
 # Lecteur cinématique commun — projet de test Godot
 
-Ce mini-projet maintient `addons/lunaria_cinematics/` et les tests de parité mouvement, animation et audio. Le lecteur courant accepte les schémas 1 à 4 et inclut les entrées de bulle, catalogues de présentation et musiques multi-plans. Copier l’addon complet lorsqu’une intégration distincte le nécessite ; ne pas remplacer le projet réel de Lunaria par ce mini-projet.
+Ce mini-projet maintient `addons/lunaria_cinematics/` et les tests de parité mouvement, animation et audio. Le lecteur courant accepte les schémas 1 à 4 et inclut les entrées de bulle, catalogues de présentation et musiques multi-plans. Le script `scripts/sync-game-contract.mjs --game C:/dev/Lunaria/game` maintient la copie de l’addon dans le jeu en conservant ses `.uid`. Son option `--check` compare les copies sans les modifier. Voir le [contrat commun](../docs/CONTRAT_STUDIO_GODOT.md) pour la génération préalable. Le projet réel de Lunaria reste distinct de ce mini-projet de test.
 
 Guide : [intégration Godot](../docs/INTEGRATION_GODOT.md). Les commandes ci-dessous se lancent depuis la racine du Studio avec Godot 4.7.2 :
 

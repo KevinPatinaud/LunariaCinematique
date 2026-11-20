@@ -23,6 +23,11 @@
 - [ ] Les frontières de `docs/ARCHITECTURE.md` sont respectées.
 - [ ] Les tests et essais prévus correspondent au risque ; les données sont isolées.
 - [ ] Les modifications en cours et le format de sauvegarde courant sont pris en compte.
+- [ ] Le code source ajouté ou modifié est en anglais, y compris les noms techniques,
+  les commentaires et les diagnostics internes.
+- [ ] Les URL de Lunaria Web concernées sont en anglais et les anciennes adresses
+  publiées disposent d’une redirection si elles sont remplacées.
+- [ ] Les textes affichés aux utilisateurs sont en français.
 
 ## Project Structure
 

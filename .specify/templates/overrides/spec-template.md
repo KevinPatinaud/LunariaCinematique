@@ -31,6 +31,13 @@ pause/reprise, borne de campagne, dimensions tactiles, publication interrompue.]
 - **FR-001**: [comportement attendu et vérifiable].
 - **FR-002**: [contrainte issue de la demande ou des contrats actuels].
 
+### Exigence transversale obligatoire
+
+Le code source et les URL de Lunaria Web doivent être en anglais. Les textes
+affichés aux utilisateurs doivent être en français.
+Pour chaque URL de Lunaria Web ajoutée ou modifiée, indiquer l’adresse canonique
+et la redirection prévue si elle remplace une adresse publiée.
+
 ### Key Entities *(include if feature involves data)*
 
 [Référencer les entités et schémas existants ; éviter une seconde définition.]
