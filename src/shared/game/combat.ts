@@ -18,7 +18,7 @@ export interface CombatCatalog {abilities:AbilityDefinition[];effects:EffectDefi
 export type CombatSection='abilities'|'effects'|'projectiles';
 /** Plain-language summary used by the Studio. The storage contract stays normalized. */
 export function attackTypeLabel(ability:AbilityDefinition,catalog:CombatCatalog):string{
- if(ability.effects.some(id=>catalog.effects.find(e=>e.id===id)?.binding))return 'Fronde : entrave et explosion';
+ if(ability.effects.some(id=>catalog.effects.find(e=>e.id===id)?.binding))return 'Liane : entrave et explosion';
  if(ability.mechanics?.guard)return 'Attaque et garde des alliés';
  if(ability.mechanics?.combo)return 'Combo et esquive-riposte';
  if(ability.mechanics?.ricochet)return 'Projectile à ricochet';

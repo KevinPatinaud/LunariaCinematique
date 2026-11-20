@@ -21,13 +21,13 @@ function animation(row:number,id:string,name:string,times:number[],loop=false):A
   motion:{preset:'none',amplitude:0,period:duration},
   attachments:[{id:'feet',x:.47,y:.98},{id:'center',x:.47,y:.55},{id:'head',x:.47,y:.33},{id:'launch',x:.25,y:.4}],markers:[]};
 }
-export const POUBELLE_ANIMATIONS:AnimationDefinition[]=[
+export const TRASH_BIN_ANIMATIONS:AnimationDefinition[]=[
  animation(0,'poubelle_idle','Poubelle — veille et clignement',[1.1,.55,.12,.65],true),
  animation(1,'poubelle_spawn','Poubelle — ouverture du couvercle',[.14,.12,.18,.2]),
  animation(2,'poubelle_hit','Poubelle — choc sur le métal',[.05,.11,.12,.12]),
  animation(3,'poubelle_death','Poubelle — écrasement',[.16,.22,.24,.38]),
 ];
-export const POUBELLE_PROFILE:AnimationProfile={id:'profile_poubelle',name:'Poubelle fixe',slots:[
+export const TRASH_BIN_PROFILE:AnimationProfile={id:'profile_poubelle',name:'Poubelle fixe',slots:[
  {slot:'idle',animationId:'poubelle_idle'},{slot:'move',animationId:'poubelle_idle'},
  // Base slots must resolve in the shared contract. With no abilities, this
  // fallback is a one-shot lid opening, with no attack or release marker.
@@ -35,5 +35,5 @@ export const POUBELLE_PROFILE:AnimationProfile={id:'profile_poubelle',name:'Poub
  {slot:'hit',animationId:'poubelle_hit'},{slot:'death',animationId:'poubelle_death'},
  {slot:'victory',animationId:'poubelle_idle'},
 ],events:[]};
-export const POUBELLE_VISUAL:SpeciesVisual={sprite:source(0,0),width:110,height:116,baseline:33,mirror:false,tint:'#ffffff',
+export const TRASH_BIN_VISUAL:SpeciesVisual={sprite:source(0,0),width:110,height:116,baseline:33,mirror:false,tint:'#ffffff',
  note:'Poubelle fixe, posée au sol ; 16 poses dessinées (attente, apparition, impact, destruction). Bloque les ennemis de son allée et laisse passer leurs projectiles.'};

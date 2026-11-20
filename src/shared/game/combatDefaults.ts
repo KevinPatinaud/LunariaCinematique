@@ -63,11 +63,11 @@ export const DEFAULT_COMBAT:CombatCatalog={
       ]
     },
     {
-      "id": "ab_fern",
-      "name": "Crosse de rosée",
-      "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
+      "id": "ab_ivy_binding",
+      "name": "Étreinte de lierre",
+      "description": "Enroule une liane qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la liane et provoque une explosion autour de lui.",
       "delivery": "projectile",
-      "projectileId": "proj_fern_frond",
+      "projectileId": "proj_ivy_vine",
       "target": "opponent",
       "selection": "one",
       "priority": "nearest",
@@ -78,8 +78,8 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "cooldown": 1,
       "initialDelay": 0.35,
       "effects": [
-        "fx_fern_impact",
-        "fx_fern_bind"
+        "fx_ivy_impact",
+        "fx_ivy_bind"
       ]
     },
     {
@@ -770,8 +770,8 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "tickInterval": 1
     },
     {
-      "id": "fx_fern_impact",
-      "name": "Impact de la fronde",
+      "id": "fx_ivy_impact",
+      "name": "Accrochage de la liane",
       "description": "Dégâts légers à l’accrochage.",
       "kind": "damage",
       "valueSource": "attack",
@@ -781,8 +781,8 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "tickInterval": 1
     },
     {
-      "id": "fx_fern_bind",
-      "name": "Fronde enroulée",
+      "id": "fx_ivy_bind",
+      "name": "Liane enroulée",
       "description": "Ralentit les déplacements et les attaques de 80 %. Inflige 25 % de l’attaque par seconde. Libération entre la moitié et la totalité de la durée. Une autre plante déclenche 100 % de dégâts sur le porteur et 65 % sur ses voisins à 1,25 case.",
       "kind": "slow",
       "valueSource": "fixed",
@@ -846,17 +846,18 @@ export const DEFAULT_COMBAT:CombatCatalog={
       "size": 0.13
     },
     {
-      "id": "proj_fern_frond",
-      "name": "Fronde en spirale",
-      "description": "Petite fronde humide enroulée, qui s’accroche au premier pollueur.",
+      "id": "proj_ivy_vine",
+      "name": "Liane de lierre",
+      "description": "Une tige souple et feuillue s’accroche au premier pollueur.",
       "speed": 4.8,
       "lifetime": 3,
       "maxHits": 1,
       "hitRadius": 0.18,
       "splashRadius": 0,
       "rowRadius": 0,
-      "color": "#4fba85",
-      "size": 0.12
+      "color": "#83b64e",
+      "size": 0.12,
+      "visualStyle": "vine"
     }
   ]
 };
@@ -865,7 +866,9 @@ DEFAULT_COMBAT.effects.push(structuredClone(PLASTIC_BAG_EFFECT));
 DEFAULT_COMBAT.abilities.push(structuredClone(CIGARETTE_ABILITY));
 DEFAULT_COMBAT.effects.push(structuredClone(CIGARETTE_EFFECT));
 const assignments:Record<string,string[]>={
-  cigarette:['ab_cigarette_smoke'],
+  "cigarette": [
+    "ab_cigarette_smoke"
+  ],
   "radish": [
     "ab_basic_shot"
   ],
@@ -875,14 +878,11 @@ const assignments:Record<string,string[]>={
   "hazel": [
     "ab_personal_regeneration"
   ],
-  "fern": [
-    "ab_fern"
-  ],
   "dandelion": [
     "ab_dandelion"
   ],
   "ivy": [
-    "ab_root_shot"
+    "ab_ivy_binding"
   ],
   "nettle": [
     "ab_nettle"

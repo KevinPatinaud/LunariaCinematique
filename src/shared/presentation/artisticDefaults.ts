@@ -1,8 +1,9 @@
+import {IVY_ANIMATIONS,IVY_PROFILE,IVY_VISUAL} from './ivyPresentation.js';
 import { type PresentationCatalog,type SpeciesVisual } from './types.js';
 import { CIGARETTE, CIGARETTE_ANIMATIONS, CIGARETTE_PROFILE, CIGARETTE_VFX } from '../game/cigarette.js';
 import {PLASTIC_BAG,PLASTIC_BAG_ANIMATIONS,PLASTIC_BAG_PROFILE} from '../game/plasticBag.js';
 import {POLLUTER_ANIMATIONS,POLLUTER_PROFILES,POLLUTER_VISUALS,PLAQUE_SLIME_PRESENTATION} from './polluterAnimations.js';
-import {POUBELLE_ANIMATIONS,POUBELLE_PROFILE,POUBELLE_VISUAL} from './poubelleAnimations.js';
+import {TRASH_BIN_ANIMATIONS,TRASH_BIN_PROFILE,TRASH_BIN_VISUAL} from './trashBinAnimations.js';
 import {improveStarterPresentation} from './starterAnimations.js';
 import {HAZEL_DEFENSE} from './hazelDefense.js';
 import {applyAllyWalk} from './allyWalk.js';
@@ -1995,23 +1996,12 @@ export const DEFAULT_PRESENTATION:PresentationCatalog={
       "events": []
     },
     {
-      "id": "profile_fern",
-      "name": "Profil fern",
-      "slots": [],
-      "events": []
-    },
-    {
       "id": "profile_dandelion",
       "name": "Profil dandelion",
       "slots": [],
       "events": []
     },
-    {
-      "id": "profile_ivy",
-      "name": "Profil ivy",
-      "slots": [],
-      "events": []
-    },
+    structuredClone(IVY_PROFILE),
     {
       "id": "profile_scindapsus",
       "name": "Profil Scindapsus",
@@ -2453,27 +2443,6 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "tint": "#ffffff",
     "note": "Noisetier : défense et régénération personnelle ; déplacement en six poses avec bouclier."
   },
-  "fern": {
-    "sprite": {
-      "asset": "library://combat/illustrations/plants/fern.png",
-      "region": {
-        "x": 0,
-        "y": 0,
-        "width": 195,
-        "height": 268
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    "width": 88,
-    "height": 80,
-    "baseline": 32,
-    "mirror": false,
-    "tint": "#ffffff",
-    "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
-  },
   "dandelion": {
     "sprite": {
       "asset": "library://combat/illustrations/plants/dandelion.png",
@@ -2495,27 +2464,7 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "tint": "#ffffff",
     "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
   },
-  "ivy": {
-    "sprite": {
-      "asset": "library://combat/illustrations/plants/ivy.png",
-      "region": {
-        "x": 0,
-        "y": 0,
-        "width": 209,
-        "height": 224
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 1
-      }
-    },
-    "width": 88,
-    "height": 80,
-    "baseline": 32,
-    "mirror": false,
-    "tint": "#ffffff",
-    "note": "Image de repos existante ; attaque procédurale par défaut. Aucun PNG d’attaque spécifique fourni."
-  },
+  "ivy": structuredClone(IVY_VISUAL),
   "scindapsus": {
     "sprite": {
       "asset": "library://02_characters/scindapsus/stage_01/scindapsus_stage_01_master_v01.png",
@@ -3281,11 +3230,13 @@ export const INITIAL_VISUALS:Record<string,SpeciesVisual>={
     "tint": "#ffffff",
     "note": "Plaque fixe. La grille s’ouvre lors de l’apparition et crache du slime pendant le tir."
   },
-  "poubelle": structuredClone(POUBELLE_VISUAL)
+  "poubelle": structuredClone(TRASH_BIN_VISUAL)
 };
 Object.assign(INITIAL_VISUALS,structuredClone(POLLUTER_VISUALS));
-DEFAULT_PRESENTATION.animations.push(...structuredClone(POUBELLE_ANIMATIONS));
-DEFAULT_PRESENTATION.profiles.push(structuredClone(POUBELLE_PROFILE));
+DEFAULT_PRESENTATION.animations.push(...structuredClone(TRASH_BIN_ANIMATIONS));
+DEFAULT_PRESENTATION.profiles.push(structuredClone(TRASH_BIN_PROFILE));
 improveStarterPresentation(DEFAULT_PRESENTATION);
 DEFAULT_PRESENTATION.animations.push(structuredClone(HAZEL_DEFENSE));
 applyAllyWalk(DEFAULT_PRESENTATION,INITIAL_VISUALS);
+
+DEFAULT_PRESENTATION.animations.push(...structuredClone(IVY_ANIMATIONS));

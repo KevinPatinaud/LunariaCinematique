@@ -46,8 +46,8 @@
       "properties": {
         "plants": {
           "type": "array",
-          "minItems": 28,
-          "maxItems": 29,
+          "minItems": 27,
+          "maxItems": 28,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -81,7 +81,6 @@
                   "radish",
                   "rose",
                   "hazel",
-                  "fern",
                   "dandelion",
                   "ivy",
                   "scindapsus",
@@ -1489,7 +1488,7 @@
           "allowedPlants": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 29,
+            "maxItems": 28,
             "items": {
               "type": "string",
               "maxLength": 100,
@@ -2904,7 +2903,7 @@
                   "lance",
                   "bud",
                   "sprout",
-                  "frond",
+                  "vine",
                   "slime"
                 ]
               },

@@ -51,7 +51,7 @@ export function combatIssues(p: GameProject): GameIssue[] {
     )
       error(
         path,
-        "La fronde utilise un ralentissement fixe et un intervalle au plus égal à la durée minimale avant libération.",
+        "La liane utilise un ralentissement fixe et un intervalle au plus égal à la durée minimale avant libération.",
       );
     if (e.counterStacking && e.kind !== "poison")
       error(path, "Le cumul de riposte est réservé au poison.");

@@ -35,7 +35,7 @@ const dir = await fs.mkdtemp(
 try {
   const project = parseGameProject(seedProject());
   for (const [index, ownerId] of [
-    "fern",
+    "ivy",
     "hazel",
     "litterer",
     "runner",

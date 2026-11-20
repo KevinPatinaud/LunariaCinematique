@@ -240,35 +240,6 @@ export function resolvedEventCue(
     attachSource: position?.source,
   };
 }
-export function animationUsages(
-  project: GameProject,
-  section: string,
-  id: string,
-): string[] {
-  const out: string[] = [];
-  const visit = (v: unknown, path: string) => {
-    if (!v || typeof v !== "object") return;
-    for (const [k, x] of Object.entries(v)) {
-      if (
-        typeof x === "string" &&
-        x === id &&
-        [
-          "animationId",
-          "animationProfileId",
-          "defaultProfileId",
-          "soundId",
-          "vfxId",
-          "trailVfxId",
-          "ref",
-        ].includes(k)
-      )
-        out.push(path + "." + k);
-      else if (x && typeof x === "object") visit(x, path + "." + k);
-    }
-  };
-  visit(project, "projet");
-  return out;
-}
 export function presentationAssets(project: GameProject): string[] {
   const refs = new Set<string>();
   const visit = (v: unknown) => {

@@ -105,14 +105,14 @@ export const GAME_SEED:GameProject={
         "behaviorId": "ai_defender"
       },
       {
-        "id": "fern",
-        "name": "Fougère",
+        "id": "ivy",
+        "name": "Lierre",
         "role": "Entrave et explosion alliée",
-        "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
-        "ability": "Crosse de rosée",
-        "personality": "Discrète et attentive. L'eau lui indique des chemins insoupçonnés.",
+        "description": "Enroule une liane qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la liane et provoque une explosion autour de lui.",
+        "ability": "Étreinte de lierre",
+        "personality": "Discret et attentif. Il écoute l’eau et prépare des passages sûrs pour tous.",
         "cost": 125,
-        "cooldown": 4.5,
+        "cooldown": 0,
         "max_hp": 180,
         "rate": 2,
         "damage": 24,
@@ -120,7 +120,7 @@ export const GAME_SEED:GameProject={
         "behavior": "slow",
         "effect_radius": 0.35,
         "effect_strength": 1,
-        "color": "#73d5b5",
+        "color": "#83b64e",
         "chapter": 0,
         "unlock": 2,
         "damage_type": "physical",
@@ -131,7 +131,7 @@ export const GAME_SEED:GameProject={
           "toxic": 0
         },
         "ability_ids": [
-          "ab_fern"
+          "ab_ivy_binding"
         ],
         "behaviorId": "ai_defender"
       },
@@ -163,37 +163,6 @@ export const GAME_SEED:GameProject={
         },
         "ability_ids": [
           "ab_dandelion"
-        ],
-        "behaviorId": "ai_defender"
-      },
-      {
-        "id": "ivy",
-        "name": "Lierre",
-        "role": "Immobilisation",
-        "description": "Pose une graine dans l'allée ; ses racines jaillissent au passage d'un pollueur.",
-        "ability": "Piège germinant",
-        "personality": "Acrobate et prétentieux. Il construit enfin des passages pour tous.",
-        "cost": 120,
-        "cooldown": 5,
-        "max_hp": 250,
-        "rate": 2.8,
-        "damage": 18,
-        "range": 4,
-        "behavior": "snare",
-        "effect_radius": 0.5,
-        "effect_strength": 1.5,
-        "color": "#5daa71",
-        "chapter": 0,
-        "unlock": 4,
-        "damage_type": "physical",
-        "armor": 0,
-        "resistances": {
-          "physical": 0,
-          "piercing": 0,
-          "toxic": 0
-        },
-        "ability_ids": [
-          "ab_ivy_trap"
         ],
         "behaviorId": "ai_defender"
       },
@@ -1318,26 +1287,6 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_ivy_trap",
-        "name": "Piège germinant",
-        "description": "Dépose une graine devant une cible ; elle germe au passage d'un pollueur, le blesse et l'immobilise.",
-        "delivery": "projectile",
-        "projectileId": "proj_germinating",
-        "target": "opponent",
-        "selection": "one",
-        "priority": "nearest",
-        "rangeSource": "species",
-        "range": 5,
-        "rowRadius": 0,
-        "cooldownSource": "species",
-        "cooldown": 1,
-        "initialDelay": 0.35,
-        "effects": [
-          "fx_attack",
-          "fx_root"
-        ]
-      },
-      {
         "id": "ab_personal_regeneration",
         "name": "Régénération personnelle",
         "description": "Modèle partagé entre les espèces qui utilisent exactement la même attaque.",
@@ -1357,11 +1306,11 @@ export const GAME_SEED:GameProject={
         ]
       },
       {
-        "id": "ab_fern",
-        "name": "Crosse de rosée",
-        "description": "Enroule une fronde qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la fronde et provoque une explosion autour de lui.",
+        "id": "ab_ivy_binding",
+        "name": "Étreinte de lierre",
+        "description": "Enroule une liane qui ralentit et grignote la vie du pollueur. Il se libère après un délai aléatoire ; un coup d’une autre plante brise la liane et provoque une explosion autour de lui.",
         "delivery": "projectile",
-        "projectileId": "proj_fern_frond",
+        "projectileId": "proj_ivy_vine",
         "target": "opponent",
         "selection": "one",
         "priority": "nearest",
@@ -1372,8 +1321,8 @@ export const GAME_SEED:GameProject={
         "cooldown": 1,
         "initialDelay": 0.35,
         "effects": [
-          "fx_fern_impact",
-          "fx_fern_bind"
+          "fx_ivy_impact",
+          "fx_ivy_bind"
         ]
       },
       {
@@ -2318,8 +2267,8 @@ export const GAME_SEED:GameProject={
         "tickInterval": 1
       },
       {
-        "id": "fx_fern_impact",
-        "name": "Impact de la fronde",
+        "id": "fx_ivy_impact",
+        "name": "Accrochage de la liane",
         "description": "Dégâts légers à l’accrochage.",
         "kind": "damage",
         "valueSource": "attack",
@@ -2329,8 +2278,8 @@ export const GAME_SEED:GameProject={
         "tickInterval": 1
       },
       {
-        "id": "fx_fern_bind",
-        "name": "Fronde enroulée",
+        "id": "fx_ivy_bind",
+        "name": "Liane enroulée",
         "description": "Ralentit les déplacements et les attaques de 80 %. Inflige 25 % de l’attaque par seconde. Libération entre la moitié et la totalité de la durée. Une autre plante déclenche 100 % de dégâts sur le porteur et 65 % sur ses voisins à 1,25 case.",
         "kind": "slow",
         "valueSource": "fixed",
@@ -2366,19 +2315,6 @@ export const GAME_SEED:GameProject={
         "rowRadius": 0,
         "color": "#f8a1a6",
         "size": 0.11
-      },
-      {
-        "id": "proj_germinating",
-        "name": "Graine dormante",
-        "description": "Graine immobile qui germe au passage d'un pollueur.",
-        "speed": 0,
-        "lifetime": 8,
-        "maxHits": 1,
-        "hitRadius": 0.18,
-        "splashRadius": 0,
-        "rowRadius": 0,
-        "color": "#76b779",
-        "size": 0.12
       },
       {
         "id": "proj_piercing",
@@ -2420,17 +2356,18 @@ export const GAME_SEED:GameProject={
         "size": 0.13
       },
       {
-        "id": "proj_fern_frond",
-        "name": "Fronde en spirale",
-        "description": "Petite fronde humide enroulée, qui s’accroche au premier pollueur.",
+        "id": "proj_ivy_vine",
+        "name": "Liane de lierre",
+        "description": "Une tige souple et feuillue s’accroche au premier pollueur.",
         "speed": 4.8,
         "lifetime": 3,
         "maxHits": 1,
         "hitRadius": 0.18,
         "splashRadius": 0,
         "rowRadius": 0,
-        "color": "#4fba85",
-        "size": 0.12
+        "color": "#83b64e",
+        "size": 0.12,
+        "visualStyle": "vine"
       }
     ]
   },

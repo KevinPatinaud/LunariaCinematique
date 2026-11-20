@@ -54,8 +54,10 @@ export type GameBuildTarget='windows'|'android';
 export interface GameBuildResult {target:GameBuildTarget;artifact:string;logPath:string;sha256:string;bytes:number;durationMs:number;simulated:boolean}
 export interface AndroidDevice {serial:string;state:string;name:string}
 export interface AndroidDeploymentProgress {phase:'device'|'publish'|'build'|'install'|'launch';message:string}
+export interface AndroidDeploymentEvent extends AndroidDeploymentProgress {requestId:string}
 export interface AndroidDeploymentResult extends GameBuildResult {device:AndroidDevice;packageId:string;deploymentLogPath:string}
 export interface CampaignBackupResult {folder:string;path:string;assets:number;bytes:number}
+export interface WebPublicationResult {title:string;target:'local'|'live';path?:string;url?:string;logPath:string}
 export interface GameAPI {
  inspectConflict(token:string):Promise<ProjectDiskConflict|null>;
  reconcile(project:GameProject,token:string,revision:string,draft:GameProject):Promise<GameFile>;
@@ -64,13 +66,13 @@ export interface GameAPI {
  backup(project:GameProject):Promise<CampaignBackupResult|null>;
  recover(project:GameProject,context?:ProjectRecoveryContext):Promise<void>;clearRecovery():Promise<void>;
  publish(project:GameProject):Promise<{path:string;films?:number;assets?:number;steps?:number}|null>;
+ publishWeb(project:GameProject):Promise<WebPublicationResult|null>;
  testAbility(project:GameProject,sourceId:string,abilityId:string,targetId:string):Promise<{path:string}|null>;
  playLevel(project:GameProject,levelId:string):Promise<GamePreviewResult|null>;
  build(project:GameProject,target:GameBuildTarget):Promise<GameBuildResult|null>;
- deployAndroid(project:GameProject):Promise<AndroidDeploymentResult|null>;
- onAndroidDeploymentProgress(callback:(progress:AndroidDeploymentProgress)=>void):()=>void;
+ deployAndroid(project:GameProject,requestId:string):Promise<AndroidDeploymentResult|null>;
+ onAndroidDeploymentProgress(callback:(progress:AndroidDeploymentEvent)=>void):()=>void;
  checkCampaign(project:GameProject):Promise<CampaignCheck>;
- presentationUsages(project:GameProject):Promise<{references:Record<string,string[]>;errors:string[]}>;
 }
 export const newId = (prefix:string) => `${prefix}_${globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12)}`;
 export function newLevel(plants:string[], enemyId:string):LevelDefinition {

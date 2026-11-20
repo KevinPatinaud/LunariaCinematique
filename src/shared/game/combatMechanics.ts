@@ -41,7 +41,6 @@ export const BINDING_DEFAULT: BindingMechanic = {
 const IMPORTED_MECHANICS: Record<string, AbilityMechanics> = {
   ab_enemy_contact: { contact: true },
   ab_radish_ricochet: { ricochet: { chance: 0.2, power: 0.65 } },
-  ab_ivy_trap: { trap: { offset: 0.7, armDelay: 0.25 } },
   ab_mushroom: { chain: { range: 2 } },
   ab_dandelion: { rainBloom: { range: 0.8, power: 0.45 } },
   ab_rose_combo: {
@@ -72,7 +71,7 @@ export function importCombatMechanics(catalog: CombatCatalog): void {
     proj_ricochet: "radish",
     proj_piercing: "lance",
     proj_splash: "bud",
-    proj_fern_frond: "frond",
+    proj_ivy_vine: "vine",
     proj_plaque_slime: "slime",
   };
   for (const projectile of catalog.projectiles)
@@ -84,7 +83,7 @@ export function importCombatMechanics(catalog: CombatCatalog): void {
           ? {}
           : (IMPORTED_MECHANICS[ability.id] ?? {}),
       );
-  const binding = catalog.effects.find((e) => e.id === "fx_fern_bind");
+  const binding = catalog.effects.find((e) => e.id === "fx_ivy_bind");
   if (binding && binding.binding === undefined)
     binding.binding = { ...BINDING_DEFAULT };
   const poison = catalog.effects.find((e) => e.id === "fx_poison_light");

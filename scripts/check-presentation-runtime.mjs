@@ -68,7 +68,7 @@ try {
   s.animationProfileId = own.id;
   const plans = [],
     expectedPlans = [];
-  for (const kind of ["radish", "rose", "fern", "cigarette"])
+  for (const kind of ["radish", "rose", "ivy", "cigarette"])
     for (const mode of ["marker", "delay", "immediate"])
       for (const interval of [0.05, 0.4, 2])
         for (const fitCadence of [false, true]) {

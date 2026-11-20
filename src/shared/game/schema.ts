@@ -42,8 +42,8 @@ export const GAME_SCHEMA: Rule = {
       "properties": {
         "plants": {
           "type": "array",
-          "minItems": 28,
-          "maxItems": 29,
+          "minItems": 27,
+          "maxItems": 28,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -77,7 +77,6 @@ export const GAME_SCHEMA: Rule = {
                   "radish",
                   "rose",
                   "hazel",
-                  "fern",
                   "dandelion",
                   "ivy",
                   "scindapsus",
@@ -449,7 +448,7 @@ export const GAME_SCHEMA: Rule = {
           "allowedPlants": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 29,
+            "maxItems": 28,
             "items": {
               "type": "string",
               "maxLength": 100,
@@ -796,7 +795,7 @@ const effect=obj({...base,kind:enumeration('damage','heal','poison','regeneratio
 const projectile=obj({...base,speed:num(0,20),lifetime:num(.1,30),maxHits:num(1,16,true),hitRadius:num(.01,.5),splashRadius:num(0,4),rowRadius:num(0,4,true),color:{...str(7,7),pattern:'^#[0-9a-fA-F]{6}$'},size:num(.02,.3)});
 const ability=obj({...base,delivery:enumeration('instant','projectile'),projectileId:{...str(100),pattern:'^[a-zA-Z0-9_-]*$'},target:enumeration('opponent','ally','self'),selection:enumeration('one','all'),priority:enumeration('nearest','nearest_right','rightmost','strongest','wounded','random'),rangeSource:enumeration('species','fixed'),range:num(0,12),rowRadius:num(0,4,true),cooldownSource:enumeration('species','fixed'),cooldown:num(.1,120),initialDelay:num(0,120),effects:{...ids,minItems:1}});
 effect.properties!.binding=bindingSchema;
-projectile.properties!.visualStyle=enumeration('auto','nut','radish','aigrette','lance','bud','sprout','frond','slime');
+projectile.properties!.visualStyle=enumeration('auto','nut','radish','aigrette','lance','bud','sprout','vine','slime');
 effect.properties!.counterStacking={type:'boolean'};
 ability.properties!.mechanics=mechanicsSchema;
 ability.properties!.allowBehind={type:'boolean'};
