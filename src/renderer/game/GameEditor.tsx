@@ -27,6 +27,7 @@ import { BehaviorEditor } from "./BehaviorEditor.js";
 import { EventEditor } from "./EventEditor.js";
 import { VariableEditor } from "./VariableEditor.js";
 import { LevelRewardsOverview } from "./LevelRewardsOverview.js";
+import { BalanceAuditView } from "./BalanceAuditView.js";
 import { HomeScreenEditor } from "./HomeScreenEditor.js";
 import { CombatEditor } from "./CombatEditor.js";
 import React, {
@@ -67,6 +68,7 @@ export type GameSection =
   | "levels"
   | "plants"
   | "enemies"
+  | "audit"
   | "abilities"
   | "behaviors"
   | "variables"
@@ -600,6 +602,12 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
           >
             Ennemis <small>Équilibrage global</small>
           </button>
+          <button
+            className={section === "audit" ? "active" : ""}
+            onClick={() => selectSection("audit")}
+          >
+            Audit <small>Plantes & niveaux</small>
+          </button>
           <span>Équilibrage global · sans progression</span>
         </nav>
         <details
@@ -732,6 +740,24 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
                 setSection("levels");
               }}
               openFilm={(film) => run(() => onOpenFilm(film))}
+            />
+          ) : section === "audit" ? (
+            <BalanceAuditView
+              project={project}
+              openPlant={(plantId) => {
+                setSpecies(plantId);
+                setSpeciesTab("details");
+                setSection("plants");
+              }}
+              openLevel={(id, tab) => {
+                setQuery("");
+                setContinent(-1);
+                setLevelScope("all");
+                setLevelId(id);
+                setDetail(tab);
+                setCompareRewards(false);
+                setSection("levels");
+              }}
             />
           ) : section === "abilities" ? (
             <CombatEditor
