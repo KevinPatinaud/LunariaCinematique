@@ -23,6 +23,7 @@ function Field({ label, children, hint }: { label: string; children: React.React
   return <label className="field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
 interface Props {
+  generatePose?: () => void;
   editAudio: () => void;
   presentationProject:GameProject;setCatalog:(value:CatalogLink)=>void;
   previewMotion: () => void; previewText: (id: string) => void;
@@ -101,6 +102,7 @@ export function Inspector(p: Props) {
         {p.shot.audio && <><div className="section-label"><Icon name="music" size={15}/> AUDIO DU PLAN</div><p className="asset-reference">{p.shot.audio.asset.split('/').pop()}</p><Field label="Volume"><input type="range" min="0" max="1" step="0.05" value={p.shot.audio.volume} onChange={e => p.updateShot({ audio: { ...p.shot.audio!, volume: +e.target.value } }, 'volume')}/></Field><label className="check-field"><input type="checkbox" checked={p.shot.audio.loop} onChange={e => p.updateShot({ audio: { ...p.shot.audio!, loop: e.target.checked } })}/> Lire en boucle</label><button className="link-button" onClick={() => p.updateShot({ audio: null })}>Retirer l’audio</button></>}
       </>}
       {actor && <>
+        {(!actor.role || actor.role === 'character') && p.generatePose && <button className="button subtle full" disabled={p.disabled || p.objectLocked || !window.lunaria} onClick={p.generatePose}><Icon name="wand" size={15}/> Générer une pose avec Codex</button>}
         <Field label={actor.role === 'enemy' ? "Nom de l’ennemi" : actor.role === 'prop' ? "Nom de l’objet" : "Nom du personnage"}><input maxLength={180} value={actor.name} onChange={e => changeActor({ name: e.target.value }, 'actor-name')}/></Field>
         <Field label="Type d’élément"><select aria-label="Type d’élément" value={actor.role ?? 'character'} onChange={e => changeActor({role: e.target.value as Actor['role']})}><option value="character">Personnage</option><option value="enemy">Ennemi</option><option value="prop">Objet de décoration</option></select></Field>
         <button className="button subtle full" onClick={() => changeActor(centeredObject(actor))}>Recentrer dans le cadre</button><p className="field-hint">Déplace-le dans l’image. Les poignées conservent ses proportions.</p>

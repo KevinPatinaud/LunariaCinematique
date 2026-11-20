@@ -1,14 +1,14 @@
 import { VfxGlyph } from "./CuePrimitives.js";
-import { gameAPI } from "../game/bridge.js";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { Asset } from "../../shared/model.js";
 import type { GameProject } from "../../shared/game/types.js";
 import { enemyChoices, newId } from "../../shared/game/types.js";
 import { newAnimation } from "../../shared/presentation/defaults.js";
+import { duration } from "../../shared/presentation/runtime.js";
 import {
-  animationUsages,
-  duration,
-} from "../../shared/presentation/runtime.js";
+  presentationUsages,
+  presentationRemovalIndex,
+} from "../../shared/presentation/usages.js";
 import { animationOwnerId } from "../../shared/presentation/ownership.js";
 import {
   BASE_SLOTS,
@@ -101,7 +101,6 @@ interface Props {
   report: (s: string) => void;
   run: (fn: () => Promise<void>) => Promise<void>;
   openAnimation: (id: string) => void;
-  externalUsages?: Record<string, string[]>;
 }
 export function PresentationEditor({
   project,
@@ -113,7 +112,6 @@ export function PresentationEditor({
   report,
   run,
   openAnimation,
-  externalUsages = {},
 }: Props) {
   const [query, setQuery] = useState(""),
     c = project.presentation!,
@@ -124,49 +122,8 @@ export function PresentationEditor({
           )
         : c[section],
     item = list.find((x) => x.id === id) ?? list[0];
-  const [filmUses, setFilmUses] = useState<{
-      references: Record<string, string[]>;
-      errors: string[];
-    }>({ references: {}, errors: [] }),
-    [checking, setChecking] = useState(false);
-  const refreshUses = async () => {
-    setChecking(true);
-    try {
-      setFilmUses(await gameAPI.presentationUsages(project));
-    } catch (e) {
-      setFilmUses({ references: {}, errors: [String(e)] });
-    } finally {
-      setChecking(false);
-    }
-  };
-  const filmKey = JSON.stringify(project.campaign?.cinematics ?? []);
-  useEffect(() => {
-    let live = true;
-    setChecking(true);
-    void gameAPI
-      .presentationUsages(project)
-      .then(
-        (r) => {
-          if (live) setFilmUses(r);
-        },
-        (e) => {
-          if (live) setFilmUses({ references: {}, errors: [String(e)] });
-        },
-      )
-      .finally(() => {
-        if (live) setChecking(false);
-      });
-    return () => {
-      live = false;
-    };
-  }, [project.id, filmKey]);
-  const refs = item
-    ? [
-        ...animationUsages(project, section, item.id),
-        ...(externalUsages[item.id] ?? []),
-        ...(filmUses.references[item.id] ?? []),
-      ]
-    : [];
+  const usages = useMemo(() => presentationUsages(project), [project]);
+  const refs = item ? usages.references[item.id] ?? [] : [];
   const patch = (data: Record<string, unknown>, key = "") =>
     item &&
     change(
@@ -248,32 +205,20 @@ export function PresentationEditor({
   }
   async function remove() {
     if (!item) return;
+    if (usages.errors.length) {
+      report("Suppression bloquée : " + usages.errors.join("; "));
+      return;
+    }
     if (refs.length) {
       report("Suppression impossible : " + refs.join(", "));
       return;
     }
     await run(async () => {
-      const fresh = await gameAPI.presentationUsages(project);
-      setFilmUses(fresh);
-      if (fresh.errors.length)
-        throw Error(
-          "Suppression bloquée : les usages des films liés ne peuvent pas être vérifiés. " +
-            fresh.errors.join("; "),
-        );
-      if ((fresh.references[item.id] ?? []).length)
-        throw Error(
-          "Cette animation est utilisée par " +
-            fresh.references[item.id].join(", "),
-        );
       if (!(await api.confirmDelete(item.name))) return;
       change(
         (p) => {
-          const current = animationUsages(p, section, item.id);
-          if (current.length) throw Error("La définition est encore utilisée.");
-          (p.presentation![section] as typeof list).splice(
-            p.presentation![section].findIndex((x) => x.id === item.id),
-            1,
-          );
+          const index = presentationRemovalIndex(p, section, item.id);
+          p.presentation![section].splice(index, 1);
         },
         "",
         "Supprimer " + item.name,
@@ -358,8 +303,7 @@ export function PresentationEditor({
                 <button onClick={duplicate}>Dupliquer</button>
                 <button
                   disabled={
-                    checking ||
-                    filmUses.errors.length > 0 ||
+                    usages.errors.length > 0 ||
                     refs.length > 0 ||
                     (section === "profiles" && c.profiles.length === 1)
                   }
@@ -393,10 +337,8 @@ export function PresentationEditor({
                 ) : (
                   <p>Cet élément n’est encore utilisé nulle part.</p>
                 )}
-                <button disabled={checking} onClick={() => void refreshUses()}>
-                  Vérifier les films liés
-                </button>
-                {filmUses.errors.map((e, i) => (
+                <p>Les utilisations sont mises à jour automatiquement.</p>
+                {usages.errors.map((e, i) => (
                   <p key={"error" + i} role="alert">
                     {e} — suppression bloquée.
                   </p>

@@ -1,0 +1,23 @@
+.studio-dialog.wide:has(>.pose-generation) { width: min(920px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; overflow: hidden; }
+.studio-dialog[open]:has(>.pose-generation) { display: flex; flex-direction: column; }
+.studio-dialog:has(>.pose-generation)>header { flex: 0 0 auto; margin: 0; padding: 20px 24px; border-bottom: 1px solid #40533f; }
+.pose-generation { display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px; scrollbar-gutter: stable; }
+.pose-generation p, .pose-task-actions p { margin: 0; line-height: 1.5; }
+.pose-generation fieldset { display: flex; flex-direction: column; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.pose-generation label { display: flex; flex-direction: column; gap: 6px; }
+.pose-generation textarea { width: 100%; resize: vertical; min-height: 84px; }
+.pose-generation .lp-image-current .lp-image-preview { max-height: 130px; width: 130px; }
+.pose-generation .lp-image-current { display: flex; align-items: center; gap: 14px; overflow-wrap: anywhere; }
+.pose-help { font-size: 12px; color: #b5c7ad; }
+.pose-model { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+.pose-model label { flex: 1; min-width: 180px; }
+.pose-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.pose-comparison figure { margin: 0; min-width: 0; }
+.pose-comparison figcaption { font-size: 13px; margin-bottom: 8px; }
+.pose-preview, .image-task-candidate.pose-preview { display: flex; align-items: center; justify-content: center; height: 260px; border: 1px solid #506748; border-radius: 10px; overflow: hidden; background: repeating-conic-gradient(#24332c 0% 25%, #35463c 0% 50%) 0 0 / 20px 20px; }
+.pose-preview img { height: 100%; width: 100%; object-fit: contain; }
+.pose-task-previews figure>img { height: 260px; aspect-ratio: auto; object-fit: contain; background: repeating-conic-gradient(#24332c 0% 25%, #35463c 0% 50%) 0 0 / 20px 20px; }
+.pose-task-previews .pose-preview>img { background: transparent; }
+.pose-preview span { padding: 20px; background: #15241ce6; text-align: center; line-height: 1.5; }
+.pose-task-actions { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 680px) { .pose-preview { height: 190px; } .pose-comparison { gap: 10px; } }

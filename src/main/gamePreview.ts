@@ -55,7 +55,7 @@ export async function launchGodotLevel(executable:string,gameRoot:string,levelId
 
 /** Copy the runtime into an owned, disposable directory. No link can write back
  * into the author's checkout. Cached imports are copies, just like media. */
-export async function prepareLevelPreview(project:GameProject,gameRoot:string,libraryRoot:string,previewsRoot:string):Promise<{path:string;gameRoot:string;dispose:()=>Promise<void>}>{
+export async function prepareLevelPreview(project:GameProject,gameRoot:string,libraryRoot:string,previewsRoot:string,copyImports=true):Promise<{path:string;gameRoot:string;dispose:()=>Promise<void>}>{
  const source=await validGameRoot(gameRoot);if(!source)throw Error('Projet Godot Lunaria introuvable.');
  const base=path.resolve(previewsRoot);
  if(isWithin(source,base))throw Error('La copie temporaire doit être située hors du projet Godot.');
@@ -65,7 +65,8 @@ export async function prepareLevelPreview(project:GameProject,gameRoot:string,li
  try{
   const options={recursive:true,force:false,errorOnExist:true,filter:async (file:string)=>{
    const rel=path.relative(source,file).split(path.sep),first=rel[0];
-   if(['.git','tests','tools','docs','build','exports'].includes(first))return false;
+   if(['.git','tests','tools','docs','build','exports','work'].includes(first))return false;
+   if(first==='.godot'&&!copyImports)return false;
    if(first==='.godot'&&rel.length>1&&!['imported','uid_cache.bin','.gdignore'].includes(rel[1]))return false;
    if(path.basename(file)==='.lunaria-campaign-publish.lock')return false;
    if((await fs.lstat(file)).isSymbolicLink())throw Error('Lien interdit dans la copie temporaire : '+file);

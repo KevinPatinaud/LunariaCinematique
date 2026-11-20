@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { AndroidDeploymentProgress } from '../../shared/game/types.js';
-
-export interface AndroidDeploymentStatusState {
- phase:AndroidDeploymentProgress['phase']|'save';
- message:string;
- startedAt:number;
- status:'running'|'success'|'error'|'canceled';
-}
+import type { AndroidDeploymentStatusState } from './ProjectDelivery.js';
 
 const STEPS=[['save','Enregistrer'],['device','Téléphone'],['publish','Publier'],['build','Compiler'],['install','Installer'],['launch','Lancer']] as const;
 

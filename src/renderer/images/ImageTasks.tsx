@@ -12,6 +12,8 @@ import { StudioDialog } from "../components/StudioDialog.js";
 import { useProjectSession } from "../project/ProjectSessionContext.js";
 import { useImageTasks } from "./ImageTasksContext.js";
 import "./imageTasks.css";
+import './poseGeneration.css';
+import { PoseTaskActions } from './PoseTaskActions.js';
 
 export function ImageTasks({
   library,
@@ -75,7 +77,7 @@ export function ImageTasks({
             : task.kind === filter);
     return (
       matches &&
-      `${task.context?.title ?? ""} ${task.kind === "terrain" ? task.job.sourceRef : task.job.ref} ${task.job.codexModel ?? ""}`
+      `${task.context?.title ?? ""} ${task.kind !== "background" ? task.job.sourceRef : task.job.ref} ${task.request.instructions} ${task.job.codexModel ?? ""}`
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase())
     );
@@ -189,7 +191,7 @@ export function ImageTasks({
         >
           <div className="image-tasks">
             <p className="image-tasks-intro">
-              Décors 20:9 et terrains 16:9, réunis dans une même file. Tu peux
+              Poses de personnages, décors 20:9 et terrains 16:9, réunis dans une même file. Tu peux
               fermer les fenêtres pendant la génération. Les propositions
               restent disponibles au prochain démarrage.
             </p>
@@ -209,6 +211,7 @@ export function ImageTasks({
                   <option value="finished">Terminées</option>
                   <option value="background">Décors 20:9</option>
                   <option value="terrain">Terrains 16:9</option>
+                  <option value="pose">Poses de personnages</option>
                 </select>
               </label>
               <label>
@@ -253,7 +256,7 @@ export function ImageTasks({
                   <li className="image-task-empty">
                     {tasks.length
                       ? "Aucune tâche ne correspond aux filtres."
-                      : "Aucune génération pour le moment. Commence depuis un décor ou les paramètres d’un niveau."}
+                      : "Aucune génération pour le moment. Commence depuis un personnage, un décor ou les paramètres d’un niveau."}
                   </li>
                 )}
                 {visible.map((task) => (
@@ -276,14 +279,14 @@ export function ImageTasks({
                         <small>
                           {task.kind === "background"
                             ? "Décor · 20:9"
-                            : "Terrain · 16:9"}
+                            : task.kind === 'pose' ? 'Pose de personnage' : "Terrain · 16:9"}
                         </small>
                         <strong>
                           {task.context?.title ||
                             (task.kind === "terrain"
                               ? (task.request as { levelTitle: string })
                                   .levelTitle
-                              : task.job.ref.slice(10))}
+                              : task.kind === 'pose' ? task.request.characterName : task.job.ref.slice(10))}
                         </strong>
                         <span className={`image-task-state ${task.job.status}`}>
                           {projectLabel(task)}
@@ -313,7 +316,7 @@ export function ImageTasks({
                       </span>
                     </div>
                     <p role="status">{selected.job.message}</p>
-                    <div className="image-task-previews">
+                    <div className={`image-task-previews${selected.kind === 'pose' ? ' pose-task-previews' : ''}`}>
                       <figure>
                         <figcaption>Référence</figcaption>
                         <img
@@ -329,10 +332,10 @@ export function ImageTasks({
                             : ""}
                         </figcaption>
                         <div
-                          className="image-task-candidate"
+                          className={`image-task-candidate${selected.kind === 'pose' ? ' pose-preview' : ''}`}
                           style={{
                             aspectRatio:
-                              selected.kind === "terrain" ? "16 / 9" : "20 / 9",
+                              selected.kind === 'pose' ? undefined : selected.kind === "terrain" ? "16 / 9" : "20 / 9",
                           }}
                         >
                           {selected.job.candidateUrl ? (
@@ -482,7 +485,8 @@ export function ImageTasks({
                           disabled={pending}
                           onClick={() =>
                             void perform(async () => {
-                              if (selected.kind === "terrain")
+                              if (selected.kind === 'pose') await api.cancelPoseGeneration(selected.job.id);
+                              else if (selected.kind === "terrain")
                                 await api.cancelTerrainGeneration(
                                   selected.job.id,
                                 );
@@ -496,7 +500,7 @@ export function ImageTasks({
                           Annuler la génération
                         </button>
                       )}
-                      {(selected.job.status === "ready" ||
+                      {selected.kind !== 'pose' && (selected.job.status === "ready" ||
                         (selected.kind === "terrain" &&
                           selected.job.status === "applied")) &&
                         (selected.kind !== "terrain" || !terrainDestination?.assigned.length || showDestinationPicker) && (
@@ -572,6 +576,7 @@ export function ImageTasks({
                         </button>
                       )}
                     </div>
+                    {selected.kind === 'pose' && <PoseTaskActions key={selected.job.id} task={selected} library={library} updateLibrary={updateLibrary} notify={notify} />}
                   </>
                 )}
               </section>

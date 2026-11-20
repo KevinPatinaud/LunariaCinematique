@@ -29,6 +29,7 @@ import {
 import { api } from "./browserBridge.js";
 import { ImageCache } from "./images.js";
 import { useMotionPreview } from "./hooks/useMotionPreview.js";
+import { useCinematicPlayback } from "./hooks/useCinematicPlayback.js";
 import { useLibraryLayout } from "./hooks/useLibraryLayout.js";
 import { Library, type LibraryTab } from "./components/Library.js";
 import { LibraryPickerContext } from "./components/LibraryPickerContext.js";
@@ -90,18 +91,12 @@ import { validationIssues } from "../shared/schema.js";
 import { clamp } from "../shared/geometry.js";
 import { centeredObject } from "../shared/editing.js";
 import { isAudio, isImage } from "../shared/assets.js";
-import {
-  advanceDialogue,
-  beginPlayback,
-  playbackStartIndex,
-  tickPlayback,
-  type Playback,
-} from "../shared/playback.js";
+import { playbackStartIndex } from "../shared/playback.js";
 import { repairAudioLinks, musicRange } from "../shared/cinematicAudio.js";
-import { CinematicAudioPlayer } from "./audio/CinematicAudioPlayer.js";
 import { AudioEditor } from "./components/AudioEditor.js";
 import { ImageTasksProvider } from "./images/ImageTasksContext.js";
 import { ImageTasks } from "./images/ImageTasks.js";
+import { PoseGenerationDialog, type PoseSelection } from './images/PoseGenerationDialog.js';
 
 type CopiedObject =
   | { kind: "actor"; actor: Actor; catalog?: Cinematic["presentationCatalog"] }
@@ -140,16 +135,6 @@ function StudioApp() {
     presentationProject.cinematics?.find((f) => f.id === selectedFilmId) ??
     presentationProject.cinematics?.[0];
   const doc = selectedFilm ?? emptyFilm.current;
-  const presentationUsages = useMemo(() => {
-    const uses: Record<string, string[]> = {};
-    for (const s of doc.shots)
-      for (const a of s.actors)
-        if (a.animation?.mode === "animation" && a.animation.animationId)
-          (uses[a.animation.animationId] ??= []).push(
-            "Film ouvert : " + doc.title + " / " + s.name + " / " + a.name,
-          );
-    return uses;
-  }, [doc]);
   const filmReferences = useMemo(
     () =>
       Object.fromEntries(
@@ -177,9 +162,11 @@ function StudioApp() {
     | "project"
     | "films"
     | "audio"
+    | "pose"
     | null
   >(null);
   const [audioAsset, setAudioAsset] = useState<Asset["ref"]>();
+  const [poseSelection, setPoseSelection] = useState<PoseSelection>();
   const filmTitleInput = useRef<HTMLInputElement>(null);
   const recentProjects = {
     projects: recent.map((p) => ({
@@ -192,15 +179,12 @@ function StudioApp() {
   };
   const [snap, setSnap] = useState(true);
   const [textPreviewId, setTextPreviewId] = useState<string | null>(null);
-  const [playback, setPlayback] = useState<Playback | null>(null),
-    [guides, setGuides] = useState(false);
+  const [guides, setGuides] = useState(false);
   const [busy, setBusy] = useState(true),
     [booted, setBooted] = useState(false),
     [toast, setToast] = useState("");
   const [modal, setModal] = useState<"help" | "issues" | null>(null);
   const [desktop, setDesktop] = useState(!!window.lunaria);
-  const [readyShot, setReadyShot] = useState(-1),
-    [playbackRun, setPlaybackRun] = useState(0);
   const docRef = useRef(doc);
   docRef.current = doc;
   const activeFilmId = useRef("");
@@ -209,19 +193,18 @@ function StudioApp() {
   libraryRef.current = library;
   const currentShotRef = useRef(shotId);
   currentShotRef.current = shotId;
-  const playbackRef = useRef(playback);
-  playbackRef.current = playback;
-  // Remember the origin of the last preview, not its last displayed plan.
-  const playbackStartId = useRef<string | undefined>(undefined);
   const running = useRef(false),
-    documentEpoch = useRef(0),
-    readyShotRef = useRef(-1);
+    documentEpoch = useRef(0);
   const closeAction = useRef<() => void>(() => undefined);
-  const filmAudio = useRef<CinematicAudioPlayer | null>(null);
   const assetCache = useRef(new ImageCache());
   const dirty = gameDirty;
   const assets = library?.assets ?? [];
-  const assetRefs = useMemo(() => new Set(assets.map((a) => a.ref)), [library]);
+  const notify = useCallback((message: string) => setToast(message), []);
+  const preview = useCinematicPlayback({
+    document: doc, library, contextKey: String(epoch), active: studioMode === "cinematics",
+    cache: assetCache.current, notify,
+  });
+  const { playback, readyShot } = preview;
   const selectedShot = doc.shots.find((s) => s.id === shotId) ?? doc.shots[0];
   const selectedShotIndex = doc.shots.findIndex(
     (s) => s.id === selectedShot.id,
@@ -258,7 +241,6 @@ function StudioApp() {
   const shot = playback
     ? (doc.shots[playback.shotIndex] ?? selectedShot)
     : selectedShot;
-  const notify = useCallback((message: string) => setToast(message), []);
   useEffect(() => {
     if (projectMessage) notify(projectMessage);
   }, [projectMessage, notify]);
@@ -288,7 +270,7 @@ function StudioApp() {
         );
         return false;
       }
-      setPlayback(null);
+      preview.stop();
       motionPreview.stop();
       setStudioMode("cinematics");
       selectFilm(target.documentId);
@@ -395,7 +377,7 @@ function StudioApp() {
     label = "Modifier la sélection",
     key = "",
   ) {
-    if (playbackRef.current || running.current) return;
+    if (preview.isActive() || running.current) return;
     const allowed = changes.filter((c) => !workspaceObjects.locked.has(c.id));
     if (!allowed.length) return;
     const id = selectedShot.id;
@@ -416,7 +398,7 @@ function StudioApp() {
   }
   function reorderLayer(kind: ObjectKind, source: string, target: string) {
     if (
-      playbackRef.current ||
+      preview.isActive() ||
       running.current ||
       workspaceObjects.locked.has(source)
     )
@@ -472,10 +454,7 @@ function StudioApp() {
     activeFilmId.current = next.id;
     docRef.current = next;
     selectShot(next.shots[0].id);
-    setPlayback(null);
-    playbackStartId.current = undefined;
-    readyShotRef.current = -1;
-    setReadyShot(-1);
+    preview.stop();
   }
   useEffect(() => {
     emptyFilm.current = newCinematic();
@@ -708,15 +687,10 @@ function StudioApp() {
       );
       if (!embedded) throw new Error("Cette cinématique est absente du projet.");
       replaceDocument(copy(embedded));
-      setPlayback(null);
+      preview.stop();
       motionPreview.stop();
       setStudioMode("cinematics");
     });
-  async function prepareCampaignPublish(): Promise<boolean> {
-    if (document.activeElement instanceof HTMLElement)
-      document.activeElement.blur();
-    return true;
-  }
   closeAction.current = () => {
     void operation(async () => {
       if (await session.prepareClose()) await api.closeWindow();
@@ -841,7 +815,7 @@ function StudioApp() {
     as: LibraryTab,
     position?: { x: number; y: number },
   ): Promise<boolean> {
-    if (playbackRef.current || running.current) return false;
+    if (preview.isActive() || running.current) return false;
     const targetId = selectedShot.id,
       epoch = documentEpoch.current,
       sourceRoot = libraryRef.current?.rootPath;
@@ -901,7 +875,7 @@ function StudioApp() {
         if (
           epoch !== documentEpoch.current ||
           sourceRoot !== libraryRef.current?.rootPath ||
-          playbackRef.current ||
+          preview.isActive() ||
           running.current
         ) {
           notify("Insertion annulée : le projet ou la bibliothèque a changé.");
@@ -1003,7 +977,7 @@ function StudioApp() {
   function pasteSelection() {
     if (
       !copiedObject ||
-      playbackRef.current ||
+      preview.isActive() ||
       running.current ||
       busy ||
       gameBusy
@@ -1108,7 +1082,7 @@ function StudioApp() {
       index < 0 ||
       index >= shots.length ||
       from === index ||
-      playbackRef.current ||
+      preview.isActive() ||
       running.current
     )
       return;
@@ -1133,50 +1107,16 @@ function StudioApp() {
       docRef.current.shots.findIndex((s) => s.id === target),
     );
   }
-  async function preloadShot(index: number) {
-    const refs = referencedAssets({
-      ...docRef.current,
-      shots: docRef.current.shots.slice(index, index + 2),
-    });
-    const toLoad =
-      libraryRef.current?.assets.filter(
-        (a) => refs.includes(a.ref) && isImage(a.path),
-      ) ?? [];
-    await Promise.all(
-      toLoad.map((a) => assetCache.current.load(a.url, a.name)),
-    );
-  }
   const startPlayback = (fromShotId?: string) =>
     operation(async () => {
       motionPreview.stop();
-      const current = docRef.current;
-      // Resolve by stable ID after committing pending edits; reordering cannot
-      // leave a cached index pointing at a different plan.
-      const index = playbackStartIndex(current, fromShotId);
-      const needed = referencedAssets({
-        ...current,
-        shots: current.shots.slice(index),
-      });
-      if (
-        needed.some((ref) => !assetRefs.has(ref)) ||
-        validationIssues(current).length
-      ) {
-        setModal("issues");
-        return;
-      }
-      await preloadShot(index);
-      playbackStartId.current = current.shots[index]?.id;
-      readyShotRef.current = index;
-      setReadyShot(index);
-      setPlaybackRun((n) => n + 1);
-      setPlayback(beginPlayback(index));
+      if (await preview.start(fromShotId) === "invalid") setModal("issues");
     });
-  const advance = () =>
-    setPlayback((current) =>
-      current && readyShotRef.current === current.shotIndex
-        ? advanceDialogue(docRef.current, current)
-        : current,
-    );
+  const restartPlayback = () => operation(async () => {
+    motionPreview.stop();
+    if (await preview.restart() === "invalid") setModal("issues");
+  });
+  const advance = preview.advance;
   useEffect(() => {
     let live = true;
     api
@@ -1241,72 +1181,6 @@ function StudioApp() {
     return () => window.removeEventListener("beforeunload", listener);
   }, [desktop, dirty, gameDirty]);
   useEffect(() => {
-    if (!playback || playback.finished) return;
-    let live = true;
-    const index = playback.shotIndex;
-    if (readyShotRef.current !== index) setReadyShot(-1);
-    void preloadShot(index)
-      .then(() => {
-        if (live) {
-          readyShotRef.current = index;
-          setReadyShot(index);
-        }
-      })
-      .catch((error) => {
-        if (live) {
-          setPlayback(null);
-          errors(error);
-        }
-      });
-    return () => {
-      live = false;
-    };
-  }, [playback?.shotIndex, playbackRun, !!playback]);
-  useEffect(() => {
-    if (!playback) return;
-    let frame = 0,
-      last = performance.now();
-    function tick(now: number) {
-      const delta = (now - last) / 1000;
-      last = now;
-      setPlayback((state) =>
-        state && state.shotIndex === readyShotRef.current && !document.hidden
-          ? tickPlayback(docRef.current, state, delta)
-          : state,
-      );
-      frame = requestAnimationFrame(tick);
-    }
-    const visibility = () => {
-      last = performance.now();
-      if (document.hidden) {
-        setPlayback((s) => (s ? { ...s, paused: true } : s));
-        notify("Aperçu mis en pause pendant que le studio était masqué.");
-      }
-    };
-    document.addEventListener("visibilitychange", visibility);
-    frame = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frame);
-      document.removeEventListener("visibilitychange", visibility);
-    };
-  }, [!!playback]);
-  useEffect(() => {
-    const player = new CinematicAudioPlayer(notify);
-    filmAudio.current = player;
-    return () => {
-      player.stop();
-      if (filmAudio.current === player) filmAudio.current = null;
-    };
-  }, [playbackRun, notify]);
-  useEffect(() => {
-    filmAudio.current?.sync(
-      doc,
-      playback,
-      assets,
-      readyShot === playback?.shotIndex,
-    );
-  }, [doc, playback, assets, readyShot]);
-  useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (studioMode !== "cinematics") return;
       if (
@@ -1328,7 +1202,7 @@ function StudioApp() {
         return;
       }
       if (event.key === "Escape") {
-        if (playback) setPlayback(null);
+        if (preview.isActive()) preview.stop();
         else setSelection({ kind: "shot" });
         return;
       }
@@ -1536,7 +1410,7 @@ function StudioApp() {
           aria-pressed={studioMode === "levels"}
           disabled={busy || !!modal || !!studioModal}
           onClick={() => {
-            setPlayback(null);
+            preview.stop();
             motionPreview.stop();
             commitFocusedInput();
             session.boundary();
@@ -1657,10 +1531,10 @@ function StudioApp() {
               Exporter en JPG
             </button>
             <div className="toolbar-divider" />
-            {playback ? (
+            {playback || preview.loading ? (
               <button
                 className="button primary"
-                onClick={() => setPlayback(null)}
+                onClick={preview.stop}
               >
                 <Icon name="stop" size={16} /> Quitter l’aperçu
               </button>
@@ -1986,16 +1860,13 @@ function StudioApp() {
                         <button
                           className="button primary"
                           title="Rejouer depuis le même plan de départ"
-                          onClick={() => {
-                            setPlayback(null);
-                            void startPlayback(playbackStartId.current);
-                          }}
+                          onClick={() => void restartPlayback()}
                         >
                           <Icon name="play" size={16} /> Rejouer
                         </button>
                         <button
                           className="button subtle"
-                          onClick={() => setPlayback(null)}
+                          onClick={() => preview.stop()}
                         >
                           Retour à l’édition
                         </button>
@@ -2022,13 +1893,7 @@ function StudioApp() {
                       disabled={
                         playback.finished || readyShot !== playback.shotIndex
                       }
-                      onClick={() =>
-                        setPlayback((current) =>
-                          current
-                            ? { ...current, paused: !current.paused }
-                            : current,
-                        )
-                      }
+                      onClick={preview.togglePause}
                     >
                       <Icon
                         name={playback.paused ? "play" : "pause"}
@@ -2364,6 +2229,13 @@ function StudioApp() {
             </section>
           </section>
           <Inspector
+            generatePose={() => {
+              if (selection.kind !== 'actor') return;
+              const actor = selectedShot.actors.find(actor => actor.id === selection.id);
+              if (!actor) return;
+              setPoseSelection({ actor: structuredClone(actor), documentId: doc.id, shotId: selectedShot.id, projectId: presentationProject.id, projectPath: session.getSnapshot().path });
+              setStudioModal('pose');
+            }}
             editAudio={() => {
               setAudioAsset(undefined);
               setStudioModal("audio");
@@ -2727,14 +2599,13 @@ function StudioApp() {
         <section className="studio-game-host" hidden={studioMode !== "levels"}>
           <GameEditor
             assets={assets}
-            externalUsages={presentationUsages}
             ref={gameEditor}
             active={studioMode === "levels"}
             onOpenFilm={openCampaignFilm}
-            onBeforePublish={prepareCampaignPublish}
             onBackupCampaign={() => void backupCampaign()}
           />
         </section>
+        {studioModal === 'pose' && poseSelection && <PoseGenerationDialog target={poseSelection} onClose={() => setStudioModal(null)} notify={notify} />}
       </LibraryPickerContext.Provider>
     </div>
   );

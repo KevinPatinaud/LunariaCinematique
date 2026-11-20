@@ -1,5 +1,7 @@
 import type { AssetRef } from "./model.js";
 import type { GameProject } from "./game/types.js";
+import type { PoseGenerationJob, PoseGenerationRequest } from './poseGeneration.js';
+import { poseTaskDestination } from './poseGeneration.js';
 import type {
   BackgroundCorrectionJob,
   BackgroundCorrectionRequest,
@@ -18,13 +20,16 @@ export type ImageTaskStatus =
   | "failed"
   | "cancelled"
   | "interrupted";
-export type ImageTaskKind = "background" | "terrain";
+export type ImageTaskKind = "background" | "terrain" | "pose";
 export interface ImageTaskContext {
   projectId: string;
   projectPath: string;
   levelId?: string;
   documentId?: string;
   shotId?: string;
+  actorId?: string;
+  actorRef?: AssetRef;
+  actorSignature?: string;
   title: string;
   terrainRef?: AssetRef;
   restoredTerrainRef?: AssetRef;
@@ -37,10 +42,11 @@ export type ImageTask = {
   kind: ImageTaskKind;
   libraryRoot: string;
   context?: ImageTaskContext;
-  request: BackgroundCorrectionRequest | TerrainGenerationRequest;
+  request: BackgroundCorrectionRequest | TerrainGenerationRequest | PoseGenerationRequest;
 } & (
   | { kind: "background"; job: BackgroundCorrectionJob }
   | { kind: "terrain"; job: TerrainGenerationJob }
+  | { kind: "pose"; job: PoseGenerationJob; request: PoseGenerationRequest }
 );
 export const imageTaskActive = (status: ImageTaskStatus) =>
   ["queued", "generating", "applying"].includes(status);
@@ -77,6 +83,10 @@ export function terrainTaskDestination(task: ImageTask, project: GameProject, pr
 }
 
 export function imageTaskProjectLabel(task: ImageTask, project: GameProject, projectPath: string, libraryRoot?: string) {
+  if (task.kind === 'pose' && ['ready', 'applied'].includes(task.job.status)) {
+    if (task.libraryRoot === libraryRoot && poseTaskDestination(task.request, task.job.poseRef, project, projectPath).assigned.length) return 'Affectée';
+    return task.job.status === 'applied' ? 'À affecter' : 'À valider';
+  }
   if (task.kind === "terrain" && ["ready", "applied"].includes(task.job.status)) {
     if (terrainTaskDestination(task, project, projectPath, libraryRoot)?.assigned.length) return "Affectée";
     return task.job.status === "applied" ? "À affecter" : "À valider";
@@ -92,7 +102,7 @@ export function imageTaskContext(input: unknown): ImageTaskContext | undefined {
   for (const key of ["projectId", "projectPath", "title"])
     if (typeof value[key] !== "string" || (value[key] as string).length > 2000)
       throw Error("Destination de génération invalide.");
-  for (const key of ["levelId", "documentId", "shotId", "terrainRef", "restoredTerrainRef"])
+  for (const key of ["levelId", "documentId", "shotId", "terrainRef", "restoredTerrainRef", "actorId", "actorRef", "actorSignature"])
     if (
       value[key] !== undefined &&
       (typeof value[key] !== "string" || (value[key] as string).length > 2000)
@@ -106,6 +116,9 @@ export function imageTaskContext(input: unknown): ImageTaskContext | undefined {
       "levelId",
       "documentId",
       "shotId",
+      "actorId",
+      "actorRef",
+      "actorSignature",
       "terrainRef",
       "restoredTerrainRef",
     ]

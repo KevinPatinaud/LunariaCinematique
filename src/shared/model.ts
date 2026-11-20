@@ -97,7 +97,11 @@ export interface StudioAPI {
   listImageTasks(): Promise<import('./imageTasks.js').ImageTask[]>;
   removeImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<void>;
   clearImageTaskHistory(): Promise<number>;
-  retryImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<BackgroundCorrectionJob | TerrainGenerationJob>;
+  retryImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<BackgroundCorrectionJob | TerrainGenerationJob | PoseGenerationJob>;
+  startPoseGeneration(request: PoseGenerationRequest): Promise<PoseGenerationJob>;
+  getPoseGeneration(id: string): Promise<PoseGenerationJob>;
+  cancelPoseGeneration(id: string): Promise<PoseGenerationJob>;
+  applyPoseGeneration(id: string): Promise<{ job: PoseGenerationJob; library: LibrarySnapshot | null }>;
   listBackgroundModels(): Promise<CodexModelOption[]>;
   startBackgroundCorrection(request: BackgroundCorrectionRequest): Promise<BackgroundCorrectionJob>;
   getBackgroundCorrection(id: string): Promise<BackgroundCorrectionJob>;
@@ -228,3 +232,4 @@ export function referencedAssets(cinematic: Cinematic): AssetRef[] {
 
 import type { BackgroundCorrectionJob, BackgroundCorrectionRequest, BackgroundPreparation, CodexModelOption } from './backgroundCorrection.js';
 import type { TerrainGenerationJob, TerrainGenerationRequest } from './terrainGeneration.js';
+import type { PoseGenerationJob, PoseGenerationRequest } from './poseGeneration.js';

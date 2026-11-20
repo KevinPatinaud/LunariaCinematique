@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { StudioAPI, LibrarySnapshot } from '../shared/model.js';
-import type { AndroidDeploymentProgress } from '../shared/game/types.js';
+import type { AndroidDeploymentEvent } from '../shared/game/types.js';
 const api: StudioAPI = {
   bootstrap: () => ipcRenderer.invoke('studio:bootstrap'),
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
@@ -18,6 +18,10 @@ const api: StudioAPI = {
   applyBackgroundCorrection: id => ipcRenderer.invoke('background-correction:apply', id),
   revealBackgroundBackup: id => ipcRenderer.invoke('background-correction:reveal-backup', id),
   startTerrainGeneration: request => ipcRenderer.invoke('terrain-generation:start', request),
+  startPoseGeneration: request => ipcRenderer.invoke('pose-generation:start', request),
+  getPoseGeneration: id => ipcRenderer.invoke('pose-generation:get', id),
+  cancelPoseGeneration: id => ipcRenderer.invoke('pose-generation:cancel', id),
+  applyPoseGeneration: id => ipcRenderer.invoke('pose-generation:apply', id),
   getTerrainGeneration: id => ipcRenderer.invoke('terrain-generation:get', id),
   cancelTerrainGeneration: id => ipcRenderer.invoke('terrain-generation:cancel', id),
   applyTerrainGeneration: id => ipcRenderer.invoke('terrain-generation:apply', id),
@@ -56,13 +60,13 @@ contextBridge.exposeInMainWorld('lunariaGame', {
   testAbility:(project:unknown,sourceId:string,abilityId:string,targetId:string)=>ipcRenderer.invoke('game:test-ability',project,sourceId,abilityId,targetId),
   playLevel:(project:unknown,levelId:string)=>ipcRenderer.invoke('game:play-level',project,levelId),
   build:(project:unknown,target:'windows'|'android')=>ipcRenderer.invoke('game:build',project,target),
-  deployAndroid:(project:unknown)=>ipcRenderer.invoke('game:deploy-android',project),
-  onAndroidDeploymentProgress:(callback:(progress:AndroidDeploymentProgress)=>void)=>{
-    const listener=(_event:unknown,progress:AndroidDeploymentProgress)=>callback(progress);
+  deployAndroid:(project:unknown,requestId:string)=>ipcRenderer.invoke('game:deploy-android',project,requestId),
+  onAndroidDeploymentProgress:(callback:(progress:AndroidDeploymentEvent)=>void)=>{
+    const listener=(_event:unknown,progress:AndroidDeploymentEvent)=>callback(progress);
     ipcRenderer.on('game:android-deployment-progress',listener);
     return()=>ipcRenderer.removeListener('game:android-deployment-progress',listener);
   },
   publish:(project:unknown)=>ipcRenderer.invoke('game:publish',project),
-  checkCampaign:(project:unknown)=>ipcRenderer.invoke('campaign:check',project),
-  presentationUsages:(project:unknown)=>ipcRenderer.invoke('presentation:usages',project)
+  publishWeb:(project:unknown)=>ipcRenderer.invoke('game:publish-web',project),
+  checkCampaign:(project:unknown)=>ipcRenderer.invoke('campaign:check',project)
 });

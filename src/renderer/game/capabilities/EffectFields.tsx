@@ -52,7 +52,7 @@ export function EffectFields({
       <div className="gd-section-heading">
         <h3>
           {binding
-            ? "Fronde : entrave et explosion"
+            ? "Liane : entrave et explosion"
             : EFFECT_LABELS[effect.kind]}
         </h3>
         <div className="gd-inline">
@@ -216,7 +216,7 @@ export function EffectFields({
             />
           </div>
           <p className="cap-result">
-            Un coup d’une autre espèce alliée brise la fronde. Les dégâts
+            Un coup d’une autre espèce alliée brise la liane. Les dégâts
             périodiques et les explosions ne déclenchent pas de réaction en
             chaîne.
           </p>

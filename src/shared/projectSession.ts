@@ -451,15 +451,18 @@ export class ProjectSession {
   ): Promise<boolean> {
     clearTimeout(this.timer);
     const epoch = this.state.epoch,
+      token = this.state.token,
       current = value,
       original = this.project;
     let result: GameFile | null;
     try {
-      result = await this.io.save(current, this.state.token, as);
+      result = await this.io.save(current, token, as);
     } catch (error) {
+      if (epoch !== this.state.epoch) return false;
       const disk = await this.io
-        .inspectConflict(this.state.token)
+        .inspectConflict(token)
         .catch(() => null);
+      if (epoch !== this.state.epoch) return false;
       if (disk) {
         this.patch({
           conflict: { disk, local: structuredClone(this.project) },
@@ -498,6 +501,7 @@ export class ProjectSession {
       await this.recoveryJob(() => this.io.clearRecovery()).catch((e) => {
         cleanupError = e instanceof Error ? e.message : String(e);
       });
+    if (epoch !== this.state.epoch) return false;
     this.message(
       cleanupError
         ? "Projet enregistré. Le nettoyage du brouillon local sera réessayé : " +
@@ -505,6 +509,7 @@ export class ProjectSession {
         : "Niveaux et cinématiques enregistrés dans le même fichier.",
     );
     await this.refreshRecent().catch(() => {});
+    if (epoch !== this.state.epoch) return false;
     return true;
   }
   closeConflict() {

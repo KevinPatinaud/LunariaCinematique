@@ -566,7 +566,7 @@ export function AbilityEditor({
                 ["radish", "Radis"],
                 ["lance", "Épine"],
                 ["bud", "Bourgeon"],
-                ["frond", "Fronde"],
+                ["vine", "Liane"],
                 ["slime", "Bave"],
               ]}
               change={(v) =>

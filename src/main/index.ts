@@ -1,5 +1,4 @@
 import {prepareCapabilityWorkshop,launchCapabilityWorkshop} from './capabilityWorkshop.js';
-import {presentationFilmUsages} from './presentationUsages.js';
 import { app, BrowserWindow, dialog, ipcMain, protocol, net, session, nativeImage, shell, type IpcMainInvokeEvent } from 'electron';
 import { promises as fs, constants as fsConstants, watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
@@ -11,6 +10,7 @@ import { createCampaignBackup, campaignBackupLibrary } from './campaignBackup.js
 import { planCampaign, publishCampaign } from './campaignPublisher.js';
 import { discoverGodot, installedGodotExecutables, launchGodotLevel, prepareLevelPreview, importPreview, loadGamePreviewSettings, saveGamePreviewSettings, validGameRoot, validGodotExecutable, type GamePreviewSettings } from './gamePreview.js';
 import { runGameBuild, simulateGameBuild, type GameBuildTarget } from './gameBuild.js';
+import { firstWebLevel, publishFirstWebLevel, validWebsite } from './webPublication.js';
 import { runAndroidDeployment, type AdbCommand } from './androidDeployment.js';
 import { parseGameProject, parseGameDraft } from '../shared/game/validation.js';
 import { ensureCampaign, moveCampaignStep } from '../shared/game/campaign.js';
@@ -22,6 +22,8 @@ import { BackgroundCorrections } from './backgroundCorrections.js';
 import { ImageTaskQueue } from './imageJobs.js';
 import { imageTaskFinished } from '../shared/imageTasks.js';
 import { TerrainGenerations, generateTerrainWithCodex } from './terrainGenerations.js';
+import { PoseGenerations, generatePoseWithCodex } from './poseGenerations.js';
+import { validatePosePixels } from './poseImages.js';
 import { codexImagesRoot, generateWithCodex } from './codexImageCorrection.js';
 import { listCodexModels } from './codexModels.js';
 import { cropPanoramaCore, panoramaCanvas, finalizePanorama } from './panoramaImages.js';
@@ -110,6 +112,35 @@ const terrainGenerations = new TerrainGenerations({
     const pixels = image.toBitmap();
     for (let i = 3; i < pixels.length; i += 4) if (pixels[i] !== 255) throw new Error('Le terrain généré contient des zones transparentes. Relance une proposition.');
     if (targetSize) image=image.resize({...targetSize,quality:'best'});
+    return image.toPNG();
+  },
+});
+const poseGenerations = new PoseGenerations({
+  queue: imageTaskQueue,
+  jobsRoot: dataFile('pose-generations'), generatedRoot: codexImagesRoot(),
+  generate: async task => {
+    const fixture = e2e ? process.env.LUNARIA_E2E_POSE_RESULT : undefined;
+    if (!fixture) return generatePoseWithCodex(task);
+    const real = await fs.realpath(fixture), profile = await fs.realpath(app.getPath('userData'));
+    if (!isWithin(profile, real)) throw Error('Fixture de pose hors du profil isolé.');
+    await fs.writeFile(path.join(task.folder, 'fixture-request.json'), JSON.stringify(task.request));
+    if (process.env.LUNARIA_E2E_POSE_MANUAL === '1') {
+      const deadline = Date.now() + 60000;
+      while (!task.signal.aborted && !(await fs.stat(path.join(task.folder, 'fixture-release')).catch(() => undefined))) {
+        if (Date.now() > deadline) throw Error('Fixture de pose non libérée.');
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    if (task.signal.aborted) throw Error('Génération annulée.');
+    const output = path.join(task.folder, 'fixture-result.png');
+    await fs.copyFile(real, output); return output;
+  },
+  inspect: bytes => nativeImage.createFromBuffer(bytes).getSize(),
+  png: bytes => nativeImage.createFromBuffer(bytes).toPNG(),
+  finalize: bytes => {
+    const image = nativeImage.createFromBuffer(bytes);
+    if (image.isEmpty()) throw Error('Pose générée illisible.');
+    validatePosePixels(image.toBitmap(), image.getSize());
     return image.toPNG();
   },
 });
@@ -222,15 +253,49 @@ function setupIpc() {
   });
   handle('game:clear-recovery',()=>gameDocuments.clearRecovery());
   handle('campaign:check',async value=>(await planCampaign(value,root)).check);
-  handle('presentation:usages',value=>presentationFilmUsages(parseGameDraft(value)));
   handle('game:publish',async value=>{
     const project=parseGameProject(value);
     const result=await dialog.showOpenDialog(window!,{title:'Choisir le dossier du jeu V1.10 contenant project.godot',properties:['openDirectory']});
     if(result.canceled||!result.filePaths[0])return null;
     const check=(await planCampaign(project,root)).check;
-    const answer=await dialog.showMessageBox(window!,{type:'warning',title:'Publier la campagne',message:`Publier ${check.steps} étapes : ${check.levels} niveaux et ${check.films} films ?`,detail:`${check.assets} ressources uniques seront réutilisées ou copiées dans la bibliothèque commune du jeu. Les images existantes différentes ne seront jamais écrasées. Le contenu actif est remplacé en dernier, avec une copie .bak. Ferme le jeu puis relance-le. ${check.warnings.join(' ')} Une publication modifiée démarre un nouveau profil, sans migration.`,buttons:['Annuler','Publier'],defaultId:0,cancelId:0});
+    const answer=await dialog.showMessageBox(window!,{type:'warning',title:'Publier la campagne',message:`Publier ${check.steps} étapes : ${check.levels} niveaux et ${check.films} films ?`,detail:`${check.assets} ressources uniques seront réutilisées ou copiées dans la bibliothèque commune du jeu. Les images existantes différentes ne seront jamais écrasées. Le contenu actif est remplacé en dernier, avec une copie .bak. Ferme le jeu puis relance-le. ${check.warnings.join(' ')} La progression est conservée lors des mises à jour. Un combat suspendu devenu incompatible devra être recommencé.`,buttons:['Annuler','Publier'],defaultId:0,cancelId:0});
     if(answer.response!==1)return null;const published=await publishCampaign(project,result.filePaths[0],root);await rememberPreview({gameRoot:await validGameRoot(result.filePaths[0])??undefined});return published;
   });
+  handle('game:publish-web', value => withNativeBuild(async () => {
+    firstWebLevel(value);
+    const gameRoot = await choosePreviewGameRoot(await previewSettings());
+    if (!gameRoot) return null;
+    const executable = await chooseGodot(await previewSettings());
+    if (!executable) return null;
+    const settingsPath = dataFile('web-publication.json');
+    const saved = await readJson(settingsPath).catch(() => null) as { website?: string } | null;
+    let website = await validWebsite(typeof saved?.website === 'string' ? saved.website : '');
+    if (!website && !e2e) website = await validWebsite(path.resolve(gameRoot, '..', '..', 'LunariaWebsite'));
+    if (!website) {
+      const selection = await dialog.showOpenDialog(window!, { title: 'Choisir le dossier LunariaWebsite', properties: ['openDirectory'] });
+      if (selection.canceled || !selection.filePaths[0]) return null;
+      website = await validWebsite(selection.filePaths[0]);
+      if (!website) throw Error('Choisis le dépôt LunariaWebsite avec les outils d’export et de publication Web.');
+    }
+    // The desktop tests may only execute tools inside their own profile.
+    if (e2e && !isWithin(await fs.realpath(app.getPath('userData')), website)) throw Error('Le site de test doit être dans le profil isolé.');
+    await atomicJson(settingsPath, { website });
+    return publishFirstWebLevel(value, {
+      website, gameRoot, libraryRoot: root, godot: executable, work: dataFile('web-publications'), allowLive: !e2e,
+      confirm: async (title, destination, canPublishLive) => {
+        const { response } = await dialog.showMessageBox(window!, {
+          type: 'question', title: 'Publier le premier niveau sur le Web',
+          message: `« ${title} » est prêt. Où veux-tu le publier ?`,
+          detail: `Site local : ${destination}.\n${canPublishLive
+            ? 'La mise en ligne remplace la démo jouable sur savelunaria.com.'
+            : 'Pour publier en ligne, le lecteur Godot Web et sa configuration Nginx doivent être installés sur savelunaria.com.'}`,
+          buttons: ['Annuler', 'Mettre à jour le site local', ...(canPublishLive ? ['Publier sur savelunaria.com'] : [])],
+          cancelId: 0, defaultId: 0, noLink: true,
+        });
+        return response === 1 ? 'local' : response === 2 && canPublishLive ? 'live' : null;
+      },
+    });
+  }));
   handle('game:test-ability',async(value,sourceId,abilityId,targetId)=>{
     if(typeof sourceId!=='string'||typeof abilityId!=='string'||typeof targetId!=='string'||[sourceId,abilityId,targetId].some(id=>!id||id.length>100))throw Error('Choix de capacité invalide.');
     const gameRoot=await choosePreviewGameRoot(await previewSettings());if(!gameRoot)return null;
@@ -261,10 +326,11 @@ function setupIpc() {
     await publishCampaign(project,gameRoot,root);
     return e2e?simulateGameBuild(gameRoot,target):runGameBuild(gameRoot,executable,target);
   }));
-  handle('game:deploy-android',async value=>withNativeBuild(async()=>{
+  handle('game:deploy-android',async(value,requestId)=>withNativeBuild(async()=>{
+    if(typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{1,80}$/.test(requestId))throw Error('Requête de déploiement invalide.');
     const project=parseGameProject(value),gameRoot=await choosePreviewGameRoot(await previewSettings());if(!gameRoot)return null;
     const executable=await chooseGodot(await previewSettings());if(!executable)return null;
-    const progress=(event:import('../shared/game/types.js').AndroidDeploymentProgress)=>window?.webContents.send('game:android-deployment-progress',event);
+    const progress=(event:import('../shared/game/types.js').AndroidDeploymentProgress)=>window?.webContents.send('game:android-deployment-progress',{...event,requestId});
     // Simulation is restricted to the isolated, unpackaged E2E profile.
     const simulatedCommand:AdbCommand=async(_adb,args)=>{
       if(args[0]==='devices')return process.env.LUNARIA_E2E_ANDROID_DEVICES??'e2e-phone device model:Téléphone_test';
@@ -309,12 +375,12 @@ function setupIpc() {
   handle('library:example', () => selectRoot(devUrl ? path.join(appRoot(), 'example-library') : rendererRoot()));
   handle('library:refresh', () => refresh());
   handle('background-correction:prepare', ref => { if (!root) throw new Error('Connecte une bibliothèque avant d’adapter un décor.'); return backgroundCorrections.prepare(root, ref); });
-  const imageProcessor = (kind: unknown) => { if (kind === 'terrain') return terrainGenerations; if (kind === 'background') return backgroundCorrections; throw Error('Type de tâche inconnu.'); };
-  handle('image-tasks:list', async () => (await Promise.all([backgroundCorrections.list(), terrainGenerations.list()])).flat().sort((a,b) => (b.job.createdAt ?? '').localeCompare(a.job.createdAt ?? '')));
+  const imageProcessor = (kind: unknown) => { if (kind === 'pose') return poseGenerations; if (kind === 'terrain') return terrainGenerations; if (kind === 'background') return backgroundCorrections; throw Error('Type de tâche inconnu.'); };
+  handle('image-tasks:list', async () => (await Promise.all([backgroundCorrections.list(), terrainGenerations.list(), poseGenerations.list()])).flat().sort((a,b) => (b.job.createdAt ?? '').localeCompare(a.job.createdAt ?? '')));
   handle('image-tasks:remove', async (kind, id) => { if (typeof id !== 'string') throw Error('Tâche invalide.'); return imageProcessor(kind).remove(id); });
   handle('image-tasks:clear', async () => {
     let count = 0;
-    for (const task of (await Promise.all([backgroundCorrections.list(), terrainGenerations.list()])).flat()) if (imageTaskFinished(task.job.status)) { await imageProcessor(task.kind).remove(task.job.id); count++; }
+    for (const task of (await Promise.all([backgroundCorrections.list(), terrainGenerations.list(), poseGenerations.list()])).flat()) if (imageTaskFinished(task.job.status)) { await imageProcessor(task.kind).remove(task.job.id); count++; }
     return count;
   });
   handle('image-tasks:retry', async (kind, id) => { if (!root) throw Error('Connecte la bibliothèque de cette tâche.'); if (typeof id !== 'string') throw Error('Tâche invalide.'); return imageProcessor(kind).retry(root, id); });
@@ -323,6 +389,17 @@ function setupIpc() {
     return terrainGenerations.start(root, request);
   });
   handle('terrain-generation:get', id => terrainGenerations.get(id));
+  handle('pose-generation:start', request => {
+    if (!root || isWithin(appRoot(), root)) throw Error('Choisis une bibliothèque de production avant de générer une pose.');
+    return poseGenerations.start(root, request);
+  });
+  handle('pose-generation:get', id => poseGenerations.get(id));
+  handle('pose-generation:cancel', async id => { const job = poseGenerations.cancel(id); await poseGenerations.flush(); return job; });
+  handle('pose-generation:apply', async id => {
+    if (!root) throw Error('La bibliothèque est déconnectée.');
+    const job = await poseGenerations.apply(root, id);
+    return { job, library: await refresh(true) };
+  });
   handle('terrain-generation:cancel', async id => { const job = terrainGenerations.cancel(id); await terrainGenerations.flush(); return job; });
   handle('terrain-generation:apply', async id => {
     if (!root) throw new Error('La bibliothèque est déconnectée.');
@@ -413,7 +490,7 @@ function setupIpc() {
   });
   ipcMain.on('studio:dirty', (event, value: unknown) => {
     try { validateSender(event); if (typeof value === 'boolean') { dirty = value; window?.setDocumentEdited(dirty); } }
-    catch (error) { console.warn('Message IPC ignoré :', error); }
+    catch (error) { console.warn('Skipped IPC message:', error); }
   });
 }
 function setupProtocols() {
@@ -430,8 +507,8 @@ function setupProtocols() {
   protocol.handle('lunaria-correction', async request => {
     try {
       const url = new URL(request.url), parts = url.pathname.split('/').filter(Boolean);
-      if (!['image', 'terrain'].includes(url.hostname) || parts.length !== 2) return new Response('Introuvable', { status: 404 });
-      const result = await (url.hostname === 'terrain' ? terrainGenerations : backgroundCorrections).image(parts[0], parts[1]);
+      if (!['image', 'terrain', 'pose'].includes(url.hostname) || parts.length !== 2) return new Response('Introuvable', { status: 404 });
+      const result = await (url.hostname === 'pose' ? poseGenerations : url.hostname === 'terrain' ? terrainGenerations : backgroundCorrections).image(parts[0], parts[1]);
       return new Response(new Uint8Array(result.bytes), { headers: { 'Content-Type': result.mime, 'Cache-Control': 'no-store' } });
     } catch { return new Response('Introuvable', { status: 404 }); }
   });
@@ -494,8 +571,8 @@ else {
     setupProtocols(); setupIpc();
     try { const settings = await readJson(dataFile('settings.json')) as { libraryRoot?: string }; if (typeof settings.libraryRoot === 'string') await selectRoot(settings.libraryRoot); }
     catch { /* Reconnect explicitly if the saved location is unavailable. */ }
-    await Promise.all([backgroundCorrections.ready, terrainGenerations.ready]);
+    await Promise.all([backgroundCorrections.ready, terrainGenerations.ready, poseGenerations.ready]);
     createWindow();
   }).catch(error => { console.error(error); app.quit(); });
 }
-app.on('window-all-closed', () => { watcher?.close(); clearTimeout(changeTimer); void Promise.all([backgroundCorrections.close(), terrainGenerations.close()]).finally(() => app.quit()); });
+app.on('window-all-closed', () => { watcher?.close(); clearTimeout(changeTimer); void Promise.all([backgroundCorrections.close(), terrainGenerations.close(), poseGenerations.close()]).finally(() => app.quit()); });

@@ -45,15 +45,14 @@ import {
   isConquest,
   type GameProject,
   type LevelDefinition,
-  type GameBuildTarget,
 } from "../../shared/game/types.js";
 import { gameIssues } from "../../shared/game/validation.js";
 import { api } from "../browserBridge.js";
-import { gameAPI } from "./bridge.js";
 import { BalanceEditor, Num } from "./BalanceEditor.js";
 import { ImagePicker } from "../presentation/ImagePicker.js";
 import { TerrainGenerationDialog } from "./TerrainGenerationDialog.js";
-import { AndroidDeploymentStatus, type AndroidDeploymentStatusState } from "./AndroidDeploymentStatus.js";
+import { AndroidDeploymentStatus } from "./AndroidDeploymentStatus.js";
+import { useProjectDelivery } from "./useProjectDelivery.js";
 import { WaveEditor } from "./WaveEditor.js";
 import { CampaignEditor } from "./CampaignEditor.js";
 import { ensureCampaign } from "../../shared/game/campaign.js";
@@ -79,20 +78,16 @@ export interface GameEditorHandle {
 }
 interface Props {
   assets: Asset[];
-  externalUsages: Record<string, string[]>;
   active: boolean;
   onOpenFilm: (film: CampaignFilm) => Promise<void>;
-  onBeforePublish: () => Promise<boolean>;
   onBackupCampaign: () => void;
 }
 export const GameEditor = forwardRef<GameEditorHandle, Props>(
   function GameEditor(
     {
       assets,
-      externalUsages,
       active,
       onOpenFilm,
-      onBeforePublish,
       onBackupCampaign,
     },
     ref,
@@ -122,7 +117,8 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       restoredTerrainRef?: AssetRef;
     } | null>(null);
     const deliveryRef = useRef<HTMLDetailsElement>(null);
-    const [androidDeployment,setAndroidDeployment]=useState<AndroidDeploymentStatusState|null>(null);
+    const delivery = useProjectDelivery(session);
+    const { androidDeployment } = delivery;
     useEffect(() => {
       if (["abilities", "behaviors", "variables", "animations", "profiles", "audio", "vfx"].includes(section))
         setToolsOpen(true);
@@ -211,7 +207,6 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
     async function run(fn: () => Promise<void>) {
       await session.run(fn);
     }
-    const save = (as = false) => session.saveCurrent(as);
     useImperativeHandle(ref, () => ({
       navigate: (next) => selectSection(next),
       createLevel: () => {
@@ -306,60 +301,9 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
         action({ type: "commit", value: next, label: "Supprimer le niveau" });
         setLevelId(next.levels[Math.min(i, next.levels.length - 1)]?.id ?? "");
       });
-    const playLevel = () =>
-      void run(async () => {
-        if (!level || !(await onBeforePublish()) || !(await save())) return;
-        const id = level.id;
-        const result = await gameAPI.playLevel(session.project, id);
-        if (result)
-          setMessage(
-            `Lunaria lancé sur « ${result.title} » dans une copie temporaire du jeu. La campagne publiée et la progression du joueur sont conservées.`,
-          );
-      });
-    const buildGame = (target: GameBuildTarget) =>
-      void run(async () => {
-        if (!(await onBeforePublish()) || !(await save())) return;
-        const label = target === "windows" ? "PC" : "Android";
-        setMessage(
-          `Export ${label} en cours… La campagne est synchronisée avant l’export.`,
-        );
-        const result = await gameAPI.build(session.project, target);
-        setMessage(
-          result
-            ? `Export ${label} terminé : ${result.artifact}\n${(result.bytes / 1048576).toFixed(1)} Mo · SHA-256 ${result.sha256}`
-            : `Export ${label} annulé.`,
-        );
-      });
-    const deployAndroid = () =>
-      void run(async () => {
-        const startedAt=Date.now();
-        setAndroidDeployment({phase:'save',message:'Enregistrement du projet…',startedAt,status:'running'});
-        try {
-          if (!(await onBeforePublish()) || !(await save())) {
-            const message=session.getSnapshot().conflict?'Le fichier a changé sur le disque. Compare les versions avant de relancer le déploiement.':'Déploiement annulé : le projet doit être enregistré avant son envoi au téléphone.';
-            setAndroidDeployment(current=>current&&({...current,status:'canceled',message}));
-            return;
-          }
-          setMessage("Préparation du déploiement Android…");
-          const result = await gameAPI.deployAndroid(session.project);
-          const message=result
-            ? `Lunaria installé et lancé sur ${result.device.name} (${result.device.serial}).\nAPK : ${result.artifact}\n${(result.bytes / 1048576).toFixed(1)} Mo · SHA-256 ${result.sha256}`
-            : "Déploiement Android annulé.";
-          setMessage(message);
-          setAndroidDeployment(current=>current&&({...current,status:result?'success':'canceled',message}));
-        } catch(error) {
-          setAndroidDeployment(current=>current&&({...current,status:'error',message:error instanceof Error?error.message:String(error)}));
-          throw error;
-        }
-      });
-    useEffect(
-      () =>
-        gameAPI.onAndroidDeploymentProgress((progress) => {
-          setMessage(progress.message);
-          setAndroidDeployment(current=>current?.status==='running'?{...current,...progress}:current);
-        }),
-      [],
-    );
+    const playLevel = () => {
+      if (level) void delivery.execute({ kind: "playLevel", levelId: level.id });
+    };
     useEffect(() => {
       if (!project.levels.some((l) => l.id === levelId))
         setLevelId(project.levels[0]?.id ?? "");
@@ -580,26 +524,23 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
                 <button
                   className="gd-publish"
                   disabled={busy || errors.length > 0}
-                  onClick={() =>
-                    void run(async () => {
-                      if (!(await onBeforePublish()) || !(await save())) return;
-                      const result = await gameAPI.publish(session.project);
-                      if (result)
-                        setMessage(
-                          "Publié : " +
-                            result.path +
-                            "\nRelance le jeu pour utiliser ces données.",
-                        );
-                    })
-                  }
+                  onClick={() => void delivery.execute({ kind: "publish" })}
                 >
                   Publier la campagne
+                </button>
+                <button
+                  className="gd-build"
+                  disabled={busy || errors.length > 0}
+                  title="Préparer le premier niveau jouable du parcours et choisir où le publier"
+                  onClick={() => void delivery.execute({ kind: "publishWeb" })}
+                >
+                  Publier le premier niveau sur le Web
                 </button>
                 <button
                   className="gd-build gd-build-pc"
                   disabled={busy || errors.length > 0}
                   title="Synchroniser la campagne puis générer build/windows/Lunaria.exe"
-                  onClick={() => buildGame("windows")}
+                  onClick={() => void delivery.execute({ kind: "build", target: "windows" })}
                 >
                   Exporter pour PC
                 </button>
@@ -607,7 +548,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
                   className="gd-build gd-build-android"
                   disabled={busy || errors.length > 0}
                   title="Synchroniser la campagne puis générer build/android/Lunaria.apk"
-                  onClick={() => buildGame("android")}
+                  onClick={() => void delivery.execute({ kind: "build", target: "android" })}
                 >
                   Exporter pour Android
                 </button>
@@ -615,7 +556,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
                   className="gd-build gd-deploy-android"
                   disabled={busy || errors.length > 0}
                   title="Compiler l’APK Android, l’installer sur le téléphone autorisé puis lancer Lunaria"
-                  onClick={deployAndroid}
+                  onClick={() => void delivery.execute({ kind: "deployAndroid" })}
                 >
                   Builder et Déployer sur le téléphone connecté
                 </button>
@@ -627,7 +568,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
             </details>
           </div>
         </header>
-        {androidDeployment&&<AndroidDeploymentStatus state={androidDeployment} onClose={()=>setAndroidDeployment(null)}/>}
+        {androidDeployment&&<AndroidDeploymentStatus state={androidDeployment} onClose={delivery.dismiss}/>}
         <nav className="gd-sections" aria-label="Sections du mode Niveaux">
           <button
             className={section === "home" ? "active" : ""}
@@ -735,7 +676,6 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
               id={combatId}
               select={setCombatId}
               assets={assets}
-              externalUsages={externalUsages}
               change={(edit, key, label) => change(edit, key, label, true)}
               report={setMessage}
               run={run}

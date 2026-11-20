@@ -406,18 +406,3 @@ export class GameDocuments {
     });
   }
 }
-/** Compatibility API for level-only publication. The same transitive preflight is mandatory.
- * Resources must already exist in the selected game's shared library. The Electron UI publishes project films with its connected library. */
-export async function publishGameProject(
-  value: unknown,
-  gameRoot: string,
-): Promise<string> {
-  const project = parseGameProject(value);
-  const { publishCampaign } = await import("./campaignPublisher.js");
-  const result = await publishCampaign(
-    project,
-    gameRoot,
-    path.join(gameRoot, "LunariaArtLibrary"),
-  );
-  return result.path;
-}

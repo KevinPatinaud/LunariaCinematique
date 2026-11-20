@@ -12,12 +12,12 @@ const browser:GameAPI={
  async backup(){throw new Error('La sauvegarde complète avec images et sons nécessite l’application Lunaria Studio pour ordinateur.');},
  async recover(project,context){const source=JSON.stringify(project);localStorage.setItem('lunaria-game-recovery',source);if(context)localStorage.setItem('lunaria-game-recovery-meta',JSON.stringify({...context,source}));else localStorage.removeItem('lunaria-game-recovery-meta');},
  async clearRecovery(){localStorage.removeItem('lunaria-game-recovery');localStorage.removeItem('lunaria-game-recovery-meta');},
- async presentationUsages(project){return {references:{},errors:project.campaign?.cinematics.length?['La lecture des films liés nécessite le Studio Electron.']:[]};},
  async checkCampaign(){throw new Error('La vérification des ressources locales nécessite le Studio desktop.');},
  async testAbility(){throw new Error('Le test de combat nécessite Lunaria Studio pour ordinateur.');},
  async playLevel(){throw new Error('Le lancement d’un niveau nécessite l’application Lunaria Studio pour ordinateur.');},
  async build(){throw new Error('La construction PC et Android nécessite l’application Lunaria Studio pour ordinateur.');},
  async deployAndroid(){throw new Error('Le déploiement sur téléphone nécessite l’application Lunaria Studio pour ordinateur.');},
+ async publishWeb(){throw Error('La publication du niveau Web nécessite Lunaria Studio pour ordinateur.');},
  onAndroidDeploymentProgress(){return()=>{};},
  async publish(){throw new Error('La publication groupée (parcours, films et bibliothèque partagée) est disponible dans Electron. Le navigateur permet seulement d’enregistrer le projet du Studio.');}
 };

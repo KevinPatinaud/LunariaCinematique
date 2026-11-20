@@ -24,10 +24,10 @@ const outputSchema = {
   required: ['status', 'imagePath', 'message'],
 };
 
-export function codexImageArguments(folder: string, canvasPath: string, model?: string, reasoningEffort?: CodexReasoningEffort): string[] {
+export function codexImageArguments(folder: string, canvasPath: string | string[], model?: string, reasoningEffort?: CodexReasoningEffort): string[] {
   const selectedModel = normalizeCodexModel(model);
   const effort = normalizeCodexReasoningEffort(reasoningEffort);
-  return ['-a', 'never', 'exec', '--ignore-user-config', '--skip-git-repo-check', '--ephemeral', '--sandbox', 'read-only', '--enable', 'image_generation', '--disable', 'multi_agent', '--disable', 'apps', '--disable', 'plugins', '--disable', 'memories', '--json', '-C', folder, '-i', canvasPath, '--output-schema', path.join(folder, 'response.schema.json'), '-o', path.join(folder, 'response.json'), ...(selectedModel ? ['--model', selectedModel] : []), ...(effort ? ['-c', `model_reasoning_effort="${effort}"`] : []), '-'];
+  return ['-a', 'never', 'exec', '--ignore-user-config', '--skip-git-repo-check', '--ephemeral', '--sandbox', 'read-only', '--enable', 'image_generation', '--disable', 'multi_agent', '--disable', 'apps', '--disable', 'plugins', '--disable', 'memories', '--json', '-C', folder, ...(Array.isArray(canvasPath) ? canvasPath : [canvasPath]).flatMap(input => ['-i', input]), '--output-schema', path.join(folder, 'response.schema.json'), '-o', path.join(folder, 'response.json'), ...(selectedModel ? ['--model', selectedModel] : []), ...(effort ? ['-c', `model_reasoning_effort="${effort}"`] : []), '-'];
 }
 
 export const generateWithCodex: ImageGenerator = async task => {
@@ -50,7 +50,7 @@ export const generateWithCodex: ImageGenerator = async task => {
 };
 
 /** Shared native Codex transport. Authentication stays with the installed CLI. */
-export async function runCodexImage(task: { folder: string; inputPath: string; codexModel?: string; codexReasoningEffort?: CodexReasoningEffort; signal: AbortSignal; prompt: string }): Promise<string> {
+export async function runCodexImage(task: { folder: string; inputPath: string | string[]; codexModel?: string; codexReasoningEffort?: CodexReasoningEffort; signal: AbortSignal; prompt: string }): Promise<string> {
   if (task.signal.aborted) throw new Error('Génération annulée.');
   const executable = await findCodexExecutable();
   const schemaPath = path.join(task.folder, 'response.schema.json'), responsePath = path.join(task.folder, 'response.json');
