@@ -76,7 +76,7 @@ async function saveFilm() {
   return JSON.parse(await fs.readFile(projectFile, 'utf8')).cinematics[0] as Cinematic;
 }
 
-test('le délai saisi reste sur le personnage après un clic direct sur un ennemi', async ({}, info) => {
+test('The edited delay stays with the character after selecting an enemy', async ({}, info) => {
   await selectActor(0);
   const delay=page.getByRole('textbox', {name:'Délai d’apparition', exact:true});
   await delay.fill('2,4');
@@ -95,7 +95,7 @@ test('le délai saisi reste sur le personnage après un clic direct sur un ennem
   await selectActor(1); await expect(delay).toHaveValue('0');
 });
 
-test('les durées, délais et transformations restent sur leur élément lors des clics dans la scène', async () => {
+test('Durations, delays and transforms stay with their items during scene selection', async () => {
   test.setTimeout(90000);
   const cases: {label:string; text:string; read:(actor:Actor)=>number; expected:number; details?:string}[]=[
     {label:'Durée de l’apparition', text:'1,7', read:actor=>actor.entry.duration, expected:1.7},
@@ -121,7 +121,7 @@ test('les durées, délais et transformations restent sur leur élément lors de
   }
 });
 
-test('la saisie reste attachée à une bulle lors du passage direct à une autre bulle ou un personnage', async () => {
+test('Input stays with its bubble when another bubble or a character is selected', async () => {
   test.setTimeout(90000);
   const cases: {label:string; text:string; read:(bubble:Bubble)=>number; expected:number}[]=[
     {label:'Durée de l’animation de la bulle', text:'.7', read:bubble=>bubble.bubbleEntry!.duration, expected:.7},
@@ -145,7 +145,7 @@ test('la saisie reste attachée à une bulle lors du passage direct à une autre
   expect(saved.shots[0].actors).toEqual(film.shots[0].actors);
 });
 
-test('les calques, le fond et les sélections multiples valident le champ d’origine', async () => {
+test('Layer, background and multiple selections commit the original field', async () => {
   const delay=page.getByRole('textbox', {name:'Délai d’apparition', exact:true});
   await selectActor(0); await delay.fill('2.3');
   await selectActor(1); await expect(delay).toHaveValue('0');
@@ -175,7 +175,7 @@ test('un glisser après une saisie valide conserve la modification et le déplac
   expect(saved.shots[0].actors[1].y).toBeGreaterThan(film.shots[0].actors[1].y+.01);
 });
 
-test('les champs du plan ne transmettent pas leur brouillon au plan suivant', async () => {
+test('Shot fields do not carry unsaved edits into the next shot', async () => {
   await page.getByRole('textbox', {name:'Durée du plan', exact:true}).fill('18,5');
   await page.getByTestId('shot-card-1').click();
   await expect(page.getByRole('textbox', {name:'Durée du plan', exact:true})).toHaveValue('15');
@@ -186,7 +186,7 @@ test('les champs du plan ne transmettent pas leur brouillon au plan suivant', as
   expect(saved.shots.map(shot=>shot.dialogueStart)).toEqual([film.shots[0].dialogueStart,2.8]);
 });
 
-test('les saisies incomplètes sont annulées et Entrée, Échap, Tab et Ctrl+S conservent leur comportement', async () => {
+test('Incomplete edits are discarded and Enter, Escape, Tab and Ctrl+S retain their behavior', async () => {
   await selectActor(0);
   const delay=page.getByRole('textbox', {name:'Délai d’apparition', exact:true});
   for (const invalid of ['', '-', 'abc', '2,,4']) {

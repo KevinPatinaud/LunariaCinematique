@@ -8,15 +8,24 @@ import {
   type GameBootstrap,
   type GameFile,
   type GameProject,
+  type ProjectDiskConflict,
   type ProjectRecoveryContext,
 } from "../src/shared/game/types.js";
+function deferred<T>() {
+  let resolve!: (value: T) => void, reject!: (error: Error) => void;
+  const promise = new Promise<T>((accept, fail) => {
+    resolve = accept;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
 function fixture(t: test.TestContext) {
   const initial = emptyProject();
   let snapshot: GameBootstrap = { recovery: null, recent: [] },
     writes: GameProject[] = [],
     draft: GameProject | null = null,
     context: ProjectRecoveryContext | undefined;
-  let saveImpl = async (p: GameProject): Promise<GameFile | null> => {
+  let saveImpl: GameAPI["save"] = async (p): Promise<GameFile | null> => {
     writes.push(structuredClone(p));
     return { project: p, path: "project.json", token: "token" };
   };
@@ -43,8 +52,8 @@ function fixture(t: test.TestContext) {
     async openRecent() {
       return file!;
     },
-    async save(p) {
-      return saveImpl(p);
+    async save(p, token, as) {
+      return saveImpl(p, token, as);
     },
     async recover(p, c) {
       draft = structuredClone(p);
@@ -227,6 +236,99 @@ test("edits arriving during save remain unsaved", async (t) => {
   s.action({ type: "undo" });
   assert.equal(s.project.title, "Avant");
   assert.equal(s.getSnapshot().dirty, false);
+});
+
+test("a failed save of the previous project does not inspect or change the newly opened project", async (t) => {
+  const f = fixture(t), s = f.session, saving = deferred<GameFile | null>();
+  await s.boot();
+  f.file = { project: f.initial, path: "original.json", token: "original" };
+  assert.equal(await s.open(), true);
+  const savedTokens: string[] = [], inspectedTokens: string[] = [];
+  f.save = async (_project, token) => {
+    savedTokens.push(token);
+    return saving.promise;
+  };
+  f.io.inspectConflict = async (token) => {
+    inspectedTokens.push(token);
+    return null;
+  };
+  const pending = s.saveCurrent();
+  const next = emptyProject();
+  next.title = "Projet suivant";
+  f.file = { project: next, path: "next.json", token: "next" };
+  assert.equal(await s.open(), true);
+  const opened = s.getSnapshot();
+  saving.reject(Error("Échec de l’ancien fichier"));
+  assert.equal(await pending, false);
+  assert.deepEqual(savedTokens, ["original"]);
+  assert.deepEqual(inspectedTokens, []);
+  assert.deepEqual(s.getSnapshot(), opened);
+  assert.equal(s.project.title, "Projet suivant");
+});
+
+test("a conflict inspection finishing after a real project opening leaves the new project untouched", async (t) => {
+  const f = fixture(t), s = f.session;
+  const inspecting = deferred<void>(), conflict = deferred<ProjectDiskConflict | null>();
+  await s.boot();
+  f.file = { project: f.initial, path: "original.json", token: "original" };
+  assert.equal(await s.open(), true);
+  f.save = async () => { throw Error("Fichier modifié"); };
+  const inspectedTokens: string[] = [];
+  f.io.inspectConflict = async (token) => {
+    inspectedTokens.push(token);
+    inspecting.resolve();
+    return conflict.promise;
+  };
+  const pending = s.saveCurrent();
+  await inspecting.promise;
+  const next = emptyProject();
+  next.title = "Projet suivant";
+  f.file = { project: next, path: "next.json", token: "next" };
+  assert.equal(await s.open(), true);
+  const opened = s.getSnapshot();
+  conflict.resolve({ path: "original.json", revision: "revision", base: f.initial, remote: f.initial });
+  assert.equal(await pending, false);
+  assert.deepEqual(inspectedTokens, ["original"]);
+  assert.deepEqual(s.getSnapshot(), opened);
+  assert.equal(s.getSnapshot().conflict, null);
+});
+
+test("a conflict on the current project still preserves its local draft for review", async (t) => {
+  const f = fixture(t), s = f.session;
+  await s.boot();
+  f.file = { project: f.initial, path: "original.json", token: "original" };
+  assert.equal(await s.open(), true);
+  s.change(project => { project.title = "Brouillon local"; });
+  f.save = async () => { throw Error("Fichier modifié"); };
+  f.io.inspectConflict = async (token) => {
+    assert.equal(token, "original");
+    return { path: "original.json", revision: "revision", base: f.initial, remote: f.initial };
+  };
+  assert.equal(await s.saveCurrent(), false);
+  assert.equal(s.getSnapshot().conflict?.local.title, "Brouillon local");
+  assert.equal(s.project.title, "Brouillon local");
+  assert.match(s.getSnapshot().message, /Compare les versions/);
+  assert.equal(s.getSnapshot().dirty, true);
+});
+
+test("save as accepts its new file token without treating it as a project replacement", async (t) => {
+  const f = fixture(t), s = f.session;
+  await s.boot();
+  f.file = { project: f.initial, path: "original.json", token: "original" };
+  assert.equal(await s.open(), true);
+  const epoch = s.getSnapshot().epoch;
+  s.change(project => { project.title = "Copie enregistrée"; });
+  f.save = async (project, token, as) => {
+    assert.equal(token, "original");
+    assert.equal(as, true);
+    return { project, path: "copy.json", token: "copy" };
+  };
+  assert.equal(await s.saveCurrent(true), true);
+  assert.equal(s.getSnapshot().epoch, epoch);
+  assert.equal(s.getSnapshot().token, "copy");
+  assert.equal(s.getSnapshot().path, "copy.json");
+  assert.equal(s.getSnapshot().dirty, false);
+  assert.equal(s.project.title, "Copie enregistrée");
 });
 test("replacement canceled by the user preserves history, path and draft", async (t) => {
   const f = fixture(t),
@@ -447,4 +549,43 @@ test("a written save remains successful if optional recovery cleanup fails", asy
   assert.equal(await s.save(), true);
   assert.equal(s.getSnapshot().dirty, false);
   assert.match(s.getSnapshot().message, /Projet enregistré/);
+});
+
+test("save cleanup finishing after another project opens cannot announce the previous save", async (t) => {
+  const f = fixture(t), s = f.session;
+  await s.boot();
+  f.file = { project: f.initial, path: "original.json", token: "original" };
+  assert.equal(await s.open(), true);
+  const originalEpoch = s.getSnapshot().epoch;
+  const cleaning = deferred<void>(), cleanup = deferred<void>(), replaced = deferred<void>();
+  let clears = 0;
+  f.io.clearRecovery = async () => {
+    if (clears++ === 0) {
+      cleaning.resolve();
+      await cleanup.promise;
+    }
+  };
+  const pending = s.saveCurrent();
+  await cleaning.promise;
+  const messages: string[] = [];
+  const unsubscribe = s.subscribe(() => {
+    if (s.getSnapshot().epoch !== originalEpoch) {
+      messages.push(s.getSnapshot().message);
+      replaced.resolve();
+    }
+  });
+  t.after(unsubscribe);
+  const next = emptyProject();
+  next.title = "Projet suivant";
+  f.file = { project: next, path: "next.json", token: "next" };
+  const opening = s.open();
+  await replaced.promise;
+  cleanup.resolve();
+  assert.equal(await pending, false);
+  assert.equal(await opening, true);
+  assert.equal(s.project.title, "Projet suivant");
+  assert.equal(s.getSnapshot().path, "next.json");
+  assert.equal(s.getSnapshot().token, "next");
+  assert.equal(s.getSnapshot().message, "Projet ouvert.");
+  assert.ok(messages.every(message => !message.includes("cinématiques enregistrés")));
 });

@@ -10,7 +10,7 @@ import {fixturePresentation,PIXEL_PNG} from '../presentation-fixture.js';
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 
-test('Poubelle: position fixe et règle de blocage enregistrées puis rouvertes',async()=>{
+test('Trash bin: fixed placement and lane blocking persist after reopening',async()=>{
  const temp=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-poubelle-e2e-'));
  const target=path.join(temp,'poubelle.game.json'),library=path.join(temp,'library'),profile=path.join(temp,'profile');
  let app:ElectronApplication|undefined,page:Page|undefined;

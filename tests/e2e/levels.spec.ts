@@ -101,7 +101,7 @@ test('configurer et enregistrer un niveau qui protège une case',async()=>{
  expect(data.levels[0].objective).toEqual({type:'protect_cell',target:0});
  expect(data.levels[0].protectedCell).toMatchObject({row:1,col:2,image:'library://pixel.png',maxHp:450,armor:.25});
 });
-test('les objectifs abandonnés ne sont plus proposés',async()=>{
+test('Removed objectives stay out of the editor',async()=>{
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();
  const objective=page.getByLabel('Objectif du niveau');
  await expect(objective.locator('option')).toHaveText(Object.values(OBJECTIVE_LABELS));
@@ -163,7 +163,7 @@ test('image du personnage et animations par planche ou fichiers séparés',async
  await page.getByRole('button',{name:'Agrandir la bibliothèque'}).click();
  await expect(page.getByRole('dialog',{name:'Bibliothèque agrandie'})).toBeVisible();
 });
-test('une planche transparente est découpée automatiquement et reste corrigeable',async()=>{
+test('A transparent sprite sheet is sliced automatically and remains editable',async()=>{
  const spriteSheet=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAA60lEQVR42u3doRWAMAxAwZRZmArNEKgKFEOgmaq7wAIg+lCBO9uavF9XkQgAAKBPeTpo83RmHmzcj9Jzv63J56338w7e+LcJLDACIzACIzACI7DACIzACIzACIzAAiMwAiMwAiMwAiOwwAiMwAiMwAiMwAIjMAIjMAIjMAILjMAIjMAIjMAIjMACAwAAAAAAxJvdhUvy3YVb5+7C5PPWze7C8F2IwAiMwAiMwAgsMAIjMAIjMAIjMAILjMAIjMAIjMAILDACIzACIzACIzACC4zACIzACIzACCwwAiMwAiMwAiOwwAgMAADwCxe8WxC/YWj0ugAAAABJRU5ErkJggg==','base64');
  await fs.writeFile(path.join(library,'auto-sheet.png'),spriteSheet);
  await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
@@ -239,8 +239,8 @@ test('effectif de vague et roster sont enregistrés sans recopier les statistiqu
  await page.getByLabel('Graines pour la vague éliminée').fill('80');await page.getByLabel('Graines pour la vague éliminée').press('Tab');
  await page.screenshot({path:testInfo.outputPath('wave-reward.png')});
  await page.getByRole('button',{name:'Plantes disponibles',exact:true}).click();
- await page.getByLabel('Autoriser Fougère',{exact:true}).check();
- const data=await save();expect(data.levels[0].waves[0].groups[0].count).toBe(7);expect(data.levels[0].waves[0].seedReward).toBe(125);expect(data.levels[0].waves[1].seedReward).toBe(80);expect(data.levels[0].allowedPlants).toContain('fern');
+ await page.getByLabel('Autoriser Lierre',{exact:true}).check();
+ const data=await save();expect(data.levels[0].waves[0].groups[0].count).toBe(7);expect(data.levels[0].waves[0].seedReward).toBe(125);expect(data.levels[0].waves[1].seedReward).toBe(80);expect(data.levels[0].allowedPlants).toContain('ivy');
  expect(Object.hasOwn(data.levels[0],'damage')).toBe(false);
 });
 test('interface simplifiée sans récit ni objectifs bonus',async()=>{
@@ -276,7 +276,7 @@ for(const changedAsset of [false,true])test(`le niveau sélectionné est lancé 
  const settings=JSON.parse(await fs.readFile(path.join(profile,'game-preview.json'),'utf8'));
  expect(settings.gameRoot).toBe(await fs.realpath(game));expect(typeof settings.godotPath).toBe('string');
 });
-test('les builds PC et Android synchronisent le projet et produisent leurs artefacts',async()=>{
+test('Desktop and Android builds sync the project and produce their artifacts',async()=>{
  const repository=path.join(temp,'build-repository'),game=path.join(repository,'game');
  for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});
  for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,...marker.split('/')),'marker');

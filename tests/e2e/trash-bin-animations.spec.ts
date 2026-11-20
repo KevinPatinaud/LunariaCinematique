@@ -5,7 +5,7 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const FILE='C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json';
-test('Poubelle: les quatre animations du projet réel se prévisualisent et restent après réouverture',async({},info)=>{
+test('Trash bin: preview all four project animations and retain them after reopening',async({},info)=>{
  const before=await fs.readFile(FILE),temp=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-poubelle-art-')),profile=path.join(temp,'profile'),target=path.join(temp,'poubelle.game.json');
  let app:ElectronApplication|undefined;
  try{

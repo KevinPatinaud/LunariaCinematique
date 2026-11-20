@@ -18,23 +18,18 @@ function fixture(): Cinematic {
   shot.bubbles=[newBubble(shot.actors[0].id)];shot.bubbles[0].text='Une réplique de test.';return doc;
 }
 async function openFixture(doc=fixture()) {
-  const source=path.join(temp,'source.json');await fs.writeFile(source,JSON.stringify(doc));
-  await app.evaluate(({dialog},source)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[source]});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},source);
-  await page.getByRole('button',{name:'Ouvrir',exact:true}).click();
-  await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');return doc;
+  await openProjectFilm(doc,path.join(temp,'source.json'));
+  return doc;
 }
 async function saveCurrent(): Promise<Cinematic> {
   const oldStamp=await fs.stat(target,{bigint:true}).then(s=>s.mtimeNs.toString()).catch(()=>null);
-  await page.getByRole('button',{name:'Enregistrer sous',exact:true}).click();
+  await page.keyboard.press('Control+Shift+s');
   await expect.poll(async()=>fs.stat(target,{bigint:true}).then(s=>s.mtimeNs.toString()!==oldStamp).catch(()=>false)).toBe(true);
-  await expect.poll(async()=>{try{return JSON.parse(await fs.readFile(target,'utf8')).shots.length;}catch{return 0;}}).toBeGreaterThan(0);
-  // The completion status ensures the native request, backup and version writes have finished.
-  await expect(page.locator('.toast')).toContainText(/enregistr/i);
-  return JSON.parse(await fs.readFile(target,'utf8')) as Cinematic;
+  await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
+  return JSON.parse(await fs.readFile(target,'utf8')).cinematics[0] as Cinematic;
 }
-async function openProjectFilm(film=fixture()) {
-  const projectFile=path.join(temp,'effects.game.json');
-  const project=seedProject();project.cinematics=[film];
+async function openProjectFilm(film=fixture(),projectFile=path.join(temp,'effects.game.json')) {
+  const project=seedProject();project.title=film.title;project.cinematics=[prepareCinematic(film)];
   await fs.writeFile(projectFile,JSON.stringify(project));
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},projectFile);
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
@@ -168,7 +163,7 @@ test('objet animé : catégorie dédiée, poignée B, aperçu sans mutation et J
   await page.getByRole('button',{name:'Retour au placement',exact:true}).click();expect(await object.getAttribute('transform')).toBe(rest);
 });
 
-test('réouverture v2 et continuité de la destination du déplacement',async()=>{
+test('Reopening V2 preserves the movement destination',async()=>{
   const doc=fixture();doc.schemaVersion=2;
   const actor=doc.shots[0].actors[0];actor.role='prop';actor.motion={preset:'float',intensity:.4,period:3,delay:0,loop:true,reverse:false};
   actor.movement={enabled:true,dx:.2,dy:-.05,duration:2,delay:0,easing:'smooth',repeat:'once'};
@@ -570,7 +565,7 @@ test('préréglage Cri et réglages texte sauvegardés sans images dupliquées',
   await page.getByRole('button',{name:'Annuler',exact:true}).click();
   await expect(page.getByLabel('Effet du texte',{exact:true})).toHaveValue('shout');
 });
-test('la bulle entière s’anime dans l’aperçu et son réglage est sauvegardé',async()=>{
+test('The preview animates the whole bubble and saves its setting',async()=>{
   const doc=fixture(),source=path.join(temp,'bubble-source.json');
   await fs.writeFile(source,JSON.stringify(prepareCinematic(doc)));
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},source);
@@ -596,7 +591,7 @@ test('la bulle entière s’anime dans l’aperçu et son réglage est sauvegard
   }).toBeLessThan(784);
   await page.screenshot({path:path.join(ROOT,'test-results','bubble-entry-preview.png')});
 });
-test('Cri déclenche et sauvegarde une explosion visible autour de la bulle',async()=>{
+test('Shouting triggers and saves a visible burst around the bubble',async()=>{
   const doc=fixture(),source=path.join(temp,'shout-source.json');
   await fs.writeFile(source,JSON.stringify(prepareCinematic(doc)));
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},source);

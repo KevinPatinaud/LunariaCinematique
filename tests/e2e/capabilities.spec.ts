@@ -91,8 +91,8 @@ async function save() {
   await expect(page.locator(".gd-message")).toContainText("enregistrés");
   return JSON.parse(await fs.readFile(target, "utf8"));
 }
-test("Fougère edits named mechanics on its own sheet, persists and opens an isolated workshop", async () => {
-  await owner("Fougère");
+test("Lierre edits named mechanics on its own sheet, persists and opens an isolated workshop", async () => {
+  await owner("Lierre");
   await expect(
     page.getByLabel("Ralentissement des déplacements et attaques (%)"),
   ).toHaveValue("80");
@@ -104,7 +104,7 @@ test("Fougère edits named mechanics on its own sheet, persists and opens an iso
   await radius.press("Tab");
   const document = await save();
   expect(
-    document.combat.effects.find((x: any) => x.id === "fx_fern_bind").binding
+    document.combat.effects.find((x: any) => x.id === "fx_ivy_bind").binding
       .radius,
   ).toBe(1.7);
   // Clicking Test commits the focused draft without requiring a prior save.
@@ -124,7 +124,7 @@ test("Fougère edits named mechanics on its own sheet, persists and opens an iso
     ),
   );
   expect(
-    snapshot.combat.effects.find((x: any) => x.id === "fx_fern_bind").binding
+    snapshot.combat.effects.find((x: any) => x.id === "fx_ivy_bind").binding
       .radius,
   ).toBe(1.9);
   expect(snapshot.levels).toEqual([]);
@@ -135,7 +135,7 @@ test("Fougère edits named mechanics on its own sheet, persists and opens an iso
     .locator(".gd-sections")
     .getByRole("button", { name: /^Plantes alliées/ })
     .click();
-  await owner("Fougère");
+  await owner("Lierre");
   await expect(radius).toHaveValue("1.7");
   await page.locator(".gd-message button").click();
   await page.getByText('Projet Lunaria enregistré : niveaux et cinématiques dans un seul fichier.',{exact:true}).waitFor({state:'hidden'});
@@ -202,7 +202,7 @@ test("personalizing Noisetier copies its dependency graph and preserves Baobab a
   await owner("Noisetier");
   await expect(value).toHaveValue("11");
 });
-test("a full duplicate keeps frond behavior while its effect edits stay independent", async () => {
+test("a full duplicate keeps vine behavior while its effect edits stay independent", async () => {
   await page
     .locator(".gd-sections")
     .getByRole("button", { name: /^Bibliothèque/ })
@@ -210,7 +210,7 @@ test("a full duplicate keeps frond behavior while its effect edits stay independ
   await page.getByLabel("Rechercher une capacité").fill("Crosse");
   await page
     .locator(".cap-library .gd-catalog")
-    .getByRole("button", { name: /Crosse de rosée/ })
+    .getByRole("button", { name: /Étreinte de lierre/ })
     .click();
   await page.getByRole("button", { name: "Dupliquer entièrement" }).click();
   const radius = page.getByLabel("Rayon de l’explosion (cases)");
@@ -218,15 +218,15 @@ test("a full duplicate keeps frond behavior while its effect edits stay independ
   await radius.press("Tab");
   const doc = await save(),
     copy = doc.combat.abilities.find(
-      (x: any) => x.name === "Crosse de rosée — copie",
+      (x: any) => x.name === "Étreinte de lierre — copie",
     );
-  expect(copy.effects).not.toContain("fx_fern_bind");
-  expect(copy.projectileId).not.toBe("proj_fern_frond");
+  expect(copy.effects).not.toContain("fx_ivy_bind");
+  expect(copy.projectileId).not.toBe("proj_ivy_vine");
   expect(
     doc.combat.effects.find((x: any) => x.id === copy.effects[1]).binding
       .radius,
   ).toBe(2);
   expect(
-    doc.combat.effects.find((x: any) => x.id === "fx_fern_bind").binding.radius,
+    doc.combat.effects.find((x: any) => x.id === "fx_ivy_bind").binding.radius,
   ).toBe(1.25);
 });

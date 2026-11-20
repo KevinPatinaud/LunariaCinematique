@@ -10,14 +10,15 @@ import {parseGameProject,parseGameDraft,gameIssues} from '../src/shared/game/val
 import {newCinematic,newActor,upgradeCinematicFormat} from '../src/shared/model.js';
 import {parseCinematic} from '../src/shared/schema.js';
 import {createHistory,historyReducer} from '../src/shared/history.js';
-import {resolveAnimation,species,duration,frameAt,sample,attachmentPoint,releasePlan,eventCue,crossedMarkers,presentationAssets,animationUsages} from '../src/shared/presentation/runtime.js';
+import {resolveAnimation,species,duration,frameAt,sample,attachmentPoint,releasePlan,eventCue,crossedMarkers,presentationAssets} from '../src/shared/presentation/runtime.js';
+import {presentationUsages,presentationRemovalIndex} from '../src/shared/presentation/usages.js';
+import {newAnimation} from '../src/shared/presentation/factories.js';
 import {animationOwnerId,setSpeciesAnimation} from '../src/shared/presentation/ownership.js';
 import {presentationIssues,cinematicPresentationIssues} from '../src/shared/presentation/validation.js';
 import {sheetGrid,sheetGridFromPixels} from '../src/renderer/presentation/sheetGrid.js';
 import {filmCues} from '../src/shared/presentation/cinematic.js';
 import {GameDocuments} from '../src/main/gameDocuments.js';
 import {imageDimensions,validatePresentationRegions} from '../src/main/presentationAssets.js';
-import {presentationFilmUsages} from '../src/main/presentationUsages.js';
 import {planCampaign,publishCampaign} from '../src/main/campaignPublisher.js';
 import {fixturePresentation,PIXEL_PNG} from './presentation-fixture.js';
 import type {GameProject} from '../src/shared/game/types.js';
@@ -41,10 +42,10 @@ test('Rose, Radis and Noisetier articulate two legs from one stable original dra
  }
  assert.deepEqual(errors(x),[]);
 });
-test('Scindapsus appears in the Studio and resolves in a cinematic',()=>{const x=mainSeedProject(),s=species(x,'scindapsus');assert.ok(s);assert.equal(x.balance.plants.length,29);assert.equal(s.visual?.sprite.asset,'library://02_characters/scindapsus/stage_01/scindapsus_stage_01_master_v01.png');assert.equal(s.animationProfileId,'profile_scindapsus');assert.ok(resolveAnimation(x,s,'idle'));assert.deepEqual(errors(x),[]);const d=newCinematic(),a=newActor(fixtureAsset,1);a.animation={mode:'species',animationId:'',speciesId:s.id,slot:'idle',speed:1};d.shots[0].actors.push(a);d.presentationCatalog={projectId:x.id,file:'content/design/game_content.json'};assert.deepEqual(cinematicPresentationIssues(d,x),[]);});
+test('Scindapsus appears in the Studio and resolves in a cinematic',()=>{const x=mainSeedProject(),s=species(x,'scindapsus');assert.ok(s);assert.equal(x.balance.plants.length,28);assert.equal(s.visual?.sprite.asset,'library://02_characters/scindapsus/stage_01/scindapsus_stage_01_master_v01.png');assert.equal(s.animationProfileId,'profile_scindapsus');assert.ok(resolveAnimation(x,s,'idle'));assert.deepEqual(errors(x),[]);const d=newCinematic(),a=newActor(fixtureAsset,1);a.animation={mode:'species',animationId:'',speciesId:s.id,slot:'idle',speed:1};d.shots[0].actors.push(a);d.presentationCatalog={projectId:x.id,file:'content/design/game_content.json'};assert.deepEqual(cinematicPresentationIssues(d,x),[]);});
 function film(x:GameProject){const d=newCinematic();d.presentationCatalog={projectId:x.id,file:'content/design/game_content.json'};const a=newActor(fixtureAsset,1);a.name='Radis';a.animation={mode:'species',animationId:'',speciesId:'radish',slot:'attack',speed:1};d.shots[0].actors.push(a);d.shots[0].duration=5;upgradeCinematicFormat(d);return d;}
 async function temp(run:(root:string)=>Promise<void>){const root=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-presentation-'));try{await run(root);}finally{await fs.rm(root,{recursive:true,force:true});}}
-test('presentation v4 has forty-one species, explicit profiles and real data defaults',()=>{const x=p();assert.equal(x.schemaVersion,4);assert.equal(x.balance.plants.length+x.balance.enemies.length,41);assert.deepEqual(errors(x),[]);for(const s of [...x.balance.plants,...x.balance.enemies])assert.ok(s.visual?.sprite.asset.startsWith('library://')&&s.animationProfileId);});
+test('presentation v4 has forty species, explicit profiles and real data defaults',()=>{const x=p();assert.equal(x.schemaVersion,4);assert.equal(x.balance.plants.length+x.balance.enemies.length,40);assert.deepEqual(errors(x),[]);for(const s of [...x.balance.plants,...x.balance.enemies])assert.ok(s.visual?.sprite.asset.startsWith('library://')&&s.animationProfileId);});
 for(const slot of ['idle','move','attack','hit','death','spawn'])test('every species resolves '+slot,()=>{const x=p();for(const s of [...x.balance.plants,...x.balance.enemies])assert.ok(resolveAnimation(x,s,slot),s.id);});
 test('optional victory may be explicitly absent without a broken reference',()=>{const x=p(),pr=x.presentation!.profiles.find(q=>q.id===species(x,'radish')!.animationProfileId)!;pr.slots=pr.slots.filter(s=>s.slot!=='victory');pr.slots.push({slot:'victory',animationId:''});assert.equal(clip(x,'radish','victory'),undefined);assert.deepEqual(errors(x),[]);});
 test('missing custom slot is not silently converted to attack',()=>assert.equal(clip(p(),'radish','missing_slot'),undefined));
@@ -59,7 +60,7 @@ test('transparent gutters identify a new sheet while an opaque image stays uncer
  assert.equal(sheetGridFromPixels(120,120,opaque),null);
 });
 test('existing character clips are found on their character while shared clips stay common',()=>{const x=p(),animations=x.presentation!.animations;assert.equal(animationOwnerId(x,animations.find(a=>a.id==='radish_throw')!),'radish');assert.equal(animationOwnerId(x,animations.find(a=>a.id==='move_litterer')!),'litterer');assert.equal(animationOwnerId(x,animations.find(a=>a.id==='default_idle')!),undefined);const clip=animations.find(a=>a.id==='radish_throw')!;clip.ownerSpeciesId='';assert.equal(animationOwnerId(x,clip),undefined);clip.ownerSpeciesId='radish';assert.deepEqual(errors(x),[]);assert.equal(parseGameProject(JSON.parse(JSON.stringify(x))).presentation!.animations.find(a=>a.id===clip.id)!.ownerSpeciesId,'radish');});
-test('seed catalog marks every personal animation explicitly',()=>{const x=p(),animations=x.presentation!.animations;assert.equal(animations.filter(a=>!!a.ownerSpeciesId).length,37);assert.equal(animations.filter(a=>!a.ownerSpeciesId).length,8);assert.equal(animationOwnerId(x,animations.find(a=>a.id==='rose_punch_combo')!),'rose');assert.equal(animationOwnerId(x,animations.find(a=>a.id==='hazel_defense')!),'hazel');assert.deepEqual(errors(x),[]);});
+test('seed catalog marks every personal animation explicitly',()=>{const x=p(),animations=x.presentation!.animations;assert.equal(animations.filter(a=>!!a.ownerSpeciesId).length,41);assert.equal(animations.filter(a=>!a.ownerSpeciesId).length,8);assert.equal(animationOwnerId(x,animations.find(a=>a.id==='rose_punch_combo')!),'rose');assert.equal(animationOwnerId(x,animations.find(a=>a.id==='hazel_defense')!),'hazel');assert.deepEqual(errors(x),[]);});
 test('a character animation cannot be assigned to the shared profile',()=>{const x=p(),a=x.presentation!.animations.find(a=>a.id==='radish_throw')!;a.ownerSpeciesId='radish';x.presentation!.profiles.find(pr=>pr.id===x.presentation!.defaultProfileId)!.slots.find(s=>s.slot==='attack')!.animationId=a.id;assert.ok(errors(x).some(e=>e.path==='presentation.animations.radish_throw'&&e.message.includes('profil commun')));});
 test('changing one character action isolates a shared profile',()=>{const x=p(),radish=species(x,'radish')!,other=species(x,'rose')!,original=x.presentation!.defaultProfileId;radish.animationProfileId=original;other.animationProfileId=original;setSpeciesAnimation(x,'radish','attack','radish_throw');assert.notEqual(radish.animationProfileId,original);assert.equal(other.animationProfileId,original);assert.equal(resolveAnimation(x,radish,'attack')?.id,'radish_throw');assert.equal(resolveAnimation(x,other,'attack')?.id,'default_attack');assert.deepEqual(errors(x),[]);});
 for(const [t,index] of [[0,0],[.051,0],[.052,1],[.181,1],[.182,2],[.2301,3],[100,3]])test('atlas frame sampling at '+t,()=>assert.equal(frameAt(clip(p()),t).index,index));
@@ -92,10 +93,54 @@ for(const [name,mutate] of [
 test('v4 recovery does not silently regenerate a removed catalog',()=>{const x=p();delete x.presentation;assert.throws(()=>parseGameDraft(x));});
 test('all optional sounds absent remains valid',()=>{const x=fixturePresentation(p(),'library://pixel.png');assert.deepEqual(errors(x),[]);assert.ok(presentationIssues(x).every(e=>e.severity!=='error'));});
 test('one sound and one VFX channel use species then ability then default priorities',()=>{const x=p(),s=species(x,'radish')!,profile=x.presentation!.profiles.find(q=>q.id===s.animationProfileId)!;profile.events=profile.events.filter(e=>e.event!=='release');profile.events.push({event:'release',soundId:'species_sound',vfxId:'',attach:'head'});const value=eventCue(x,s,'release',{soundId:'ability_sound',vfxId:'ability_vfx',attach:'launch'});assert.equal(value.soundId,'species_sound');assert.equal(value.vfxId,'ability_vfx');});
-test('shared asset closure contains a repeated atlas once',()=>{const x=p(),refs=presentationAssets(x);assert.equal(refs.length,new Set(refs).size);assert.equal(refs.filter(r=>r===clip(x).frames[0].asset).length,1);assert.ok(animationUsages(x,'animations','radish_throw').length>=1);});
+test('shared asset closure contains a repeated atlas once',()=>{const x=p(),refs=presentationAssets(x);assert.equal(refs.length,new Set(refs).size);assert.equal(refs.filter(r=>r===clip(x).frames[0].asset).length,1);assert.ok(presentationUsages(x).references.radish_throw.length>=1);});
 test('catalog edits participate in undo and redo without copying external files',()=>{const x=p(),y=structuredClone(x);clip(y).frames[0].duration=.06;let h=historyReducer(createHistory(x),{type:'commit',value:y});h=historyReducer(h,{type:'undo'});assert.deepEqual(h.present,x);h=historyReducer(h,{type:'redo'});assert.deepEqual(h.present,y);});
 test('real JSON save, reopen and crash recovery retain profiles and markers',()=>temp(async root=>{const x=p(),docs=new GameDocuments(path.join(root,'profile'));clip(x).markers[0].at=.19;const saved=await docs.save(x,'',path.join(root,'scene.game.json'));assert.deepEqual((await docs.open(saved.path)).project.presentation,x.presentation);await docs.recover(x);assert.deepEqual((await new GameDocuments(path.join(root,'profile')).bootstrap()).recovery!.presentation,x.presentation);}));
 test('PNG header and real region preflight reject out-of-bounds atlas',()=>temp(async root=>{assert.deepEqual(imageDimensions(PIXEL_PNG),{width:1,height:1});assert.throws(()=>imageDimensions(Buffer.from('not an image')));await fs.writeFile(path.join(root,'pixel.png'),PIXEL_PNG);const x=fixturePresentation(p(),'library://pixel.png');await validatePresentationRegions(x,root);clip(x).frames[0].region={x:0,y:0,width:2,height:1};await assert.rejects(validatePresentationRegions(x,root),/hors image/);}));
-test('linked unopened cinematic protects directly used clip; unreadable film is reported',()=>temp(async root=>{const x=p();ensureCampaign(x);const d=film(x);d.shots[0].actors[0].animation={mode:'animation',animationId:'radish_throw',speciesId:'radish',slot:'attack',speed:1};await fs.writeFile(path.join(root,'film.json'),JSON.stringify(d));x.cinematics=[d];x.campaign!.cinematics=[{id:'film',title:'Atelier',file:'film.json',documentId:d.id}];x.cinematics=[d];let usages=await presentationFilmUsages(x);assert.equal(usages.references.radish_throw.length,1);assert.deepEqual(usages.errors,[]);x.cinematics=[];usages=await presentationFilmUsages(x);assert.equal(usages.errors.length,1);}));
+test('linked unopened cinematic protects directly used clip; missing embedded film is reported',()=>{const x=p();ensureCampaign(x);const d=film(x);d.title='Atelier';d.shots[0].actors[0].animation={mode:'animation',animationId:'radish_throw',speciesId:'radish',slot:'attack',speed:1};x.cinematics=[d];x.campaign!.cinematics=[{id:'film',title:'Atelier',file:'film.json',documentId:d.id}];let usages=presentationUsages(x);assert.ok(usages.references.radish_throw.some(ref=>ref.startsWith('Film « Atelier »')));assert.deepEqual(usages.errors,[]);x.cinematics=[];usages=presentationUsages(x);assert.deepEqual(usages.errors,['Atelier : Cinématique absente du projet.']);});
+
+function unusedAnimation(x:GameProject,id='unused_animation') {
+ const animation={...newAnimation(),id,ownerSpeciesId:''};x.presentation!.animations.push(animation);return animation;
+}
+test('one index includes closed films, unplaced films and the continuation after the endpoint exactly once',()=>{
+ const x=p(),animation=unusedAnimation(x),before=structuredClone(x);
+ x.cinematics=['Film fermé','Suite après la fin','Film hors parcours'].map((title,index)=>{const d=film(x);d.id='usage_film_'+index;d.title=title;d.shots[0].actors[0].animation={mode:'animation',animationId:animation.id,speciesId:'radish',slot:'attack',speed:1};return d;});
+ x.campaign={cinematics:x.cinematics.slice(0,2).map((d,index)=>({id:'usage_link_'+index,title:d.title,file:d.id+'.json',documentId:d.id})),steps:[{id:'usage_step',kind:'cinematic',cinematicId:'usage_link_0',skippable:true},{id:'usage_end',kind:'end'},{id:'usage_after_end',kind:'cinematic',cinematicId:'usage_link_1',skippable:true}]};
+ const snapshot=structuredClone(x),usages=presentationUsages(x);
+ assert.equal(usages.references[animation.id].length,3);assert.equal(new Set(usages.references[animation.id]).size,3);
+ for(const d of x.cinematics)assert.ok(usages.references[animation.id].some(ref=>ref.includes(d.title)));
+ assert.deepEqual(usages.errors,[]);assert.deepEqual(x,snapshot);assert.equal(presentationUsages(before).references[animation.id],undefined);
+});
+test('presentation references update immediately when a film binding is changed or undone',()=>{
+ const x=p(),animation=unusedAnimation(x),d=film(x);x.cinematics=[d];
+ const actor=d.shots[0].actors[0];actor.animation={mode:'animation',animationId:animation.id,speciesId:'radish',slot:'attack',speed:1};
+ let history=historyReducer(createHistory(x),{type:'commit',value:{...structuredClone(x),cinematics:[]}});
+ assert.equal(presentationUsages(history.present).references[animation.id],undefined);
+ history=historyReducer(history,{type:'undo'});assert.equal(presentationUsages(history.present).references[animation.id].length,1);
+ history=historyReducer(history,{type:'redo'});assert.equal(presentationUsages(history.present).references[animation.id],undefined);
+});
+test('removal revalidates newly added references against the current draft',()=>{
+ const x=p(),animation=unusedAnimation(x);assert.ok(presentationRemovalIndex(x,'animations',animation.id)>=0);
+ const d=film(x);d.shots[0].actors[0].animation={mode:'animation',animationId:animation.id,speciesId:'radish',slot:'attack',speed:1};x.cinematics=[d];
+ const before=structuredClone(x);assert.throws(()=>presentationRemovalIndex(x,'animations',animation.id),/encore utilisée/);assert.deepEqual(x,before);
+});
+test('removal of an already missing definition cannot select the final list item',()=>{
+ const x=p(),animation=unusedAnimation(x),last=unusedAnimation(x,'keep_last');
+ assert.ok(presentationRemovalIndex(x,'animations',animation.id)>=0);x.presentation!.animations=x.presentation!.animations.filter(a=>a.id!==animation.id);
+ const before=structuredClone(x);assert.throws(()=>presentationRemovalIndex(x,'animations',animation.id),/n’existe plus/);assert.equal(x.presentation!.animations.at(-1)!.id,last.id);assert.deepEqual(x,before);
+});
+test('missing campaign films block deletion even of an otherwise unused definition',()=>{
+ const x=p(),animation=unusedAnimation(x);x.campaign={steps:[],cinematics:[{id:'missing_link',title:'Film manquant',file:'missing.json',documentId:'missing_document'}]};
+ const before=structuredClone(x);assert.throws(()=>presentationRemovalIndex(x,'animations',animation.id),/Film manquant/);assert.deepEqual(x,before);
+});
+test('all presentation reference families protect definitions, including marker and projectile cues',()=>{
+ const x=p(),profile=x.presentation!.profiles[0],sound=x.presentation!.audio[0],vfx=x.presentation!.vfx[0];
+ for(const [section,id] of [['profiles',profile.id],['audio',sound.id],['vfx',vfx.id]] as const)assert.throws(()=>presentationRemovalIndex(x,section,id),/encore utilisée/);
+ const usages=presentationUsages(x);assert.ok(usages.references[sound.id].some(ref=>ref.endsWith('.ref')||ref.endsWith('.soundId')));assert.ok(usages.references[vfx.id].some(ref=>ref.endsWith('.vfxId')||ref.endsWith('.trailVfxId')||ref.endsWith('.ref')));
+});
+test('reference indexing safely handles author IDs that match object prototype names',()=>{
+ const x=p(),animation=unusedAnimation(x,'constructor'),d=film(x);d.shots[0].actors[0].animation={mode:'animation',animationId:animation.id,speciesId:'radish',slot:'attack',speed:1};x.cinematics=[d];
+ assert.equal(presentationUsages(x).references.constructor.length,1);assert.throws(()=>presentationRemovalIndex(x,'animations',animation.id),/encore utilisée/);
+});
 test('film serialization preserves the shared animation binding',()=>{const x=p(),d=film(x);assert.deepEqual(parseCinematic(JSON.parse(JSON.stringify(d))).shots[0].actors[0].animation,d.shots[0].actors[0].animation);});
 test('publication resolves shared catalog and film closure once with no duplicate image',()=>temp(async root=>{const x=fixturePresentation(p(),'library://pixel.png');ensureCampaign(x);const d=film(x);d.presentationCatalog!.file='authoring/custom.game.json';await fs.writeFile(path.join(root,'pixel.png'),PIXEL_PNG);await fs.writeFile(path.join(root,'film.json'),JSON.stringify(d));x.cinematics=[d];x.campaign!.cinematics=[{id:'film',title:'Atelier',file:'film.json',documentId:d.id}];x.campaign!.steps.unshift({id:'intro_presentation',kind:'cinematic',cinematicId:'film',skippable:true});const plan=await planCampaign(x,root);assert.equal(plan.check.assets,1);const file=plan.files.find(f=>f.relative.endsWith('.cinematic.json'))!;assert.equal(JSON.parse(file.text!).presentationCatalog.file,'content/design/game_content.json');const target=path.join(root,'game');for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd']){await fs.mkdir(path.dirname(path.join(target,marker)),{recursive:true});await fs.writeFile(path.join(target,marker),'fixture');}await fs.mkdir(path.join(target,'content/design'),{recursive:true});await publishCampaign(x,target,root);await publishCampaign(x,target,root);assert.deepEqual(await fs.readdir(path.join(target,'LunariaArtLibrary')),['pixel.png']);assert.equal((await fs.readdir(path.join(target,'content/cinematics/studio'))).length,1);assert.equal(d.presentationCatalog!.file,'authoring/custom.game.json');}));

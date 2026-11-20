@@ -35,7 +35,7 @@ test("workshop launcher opens a visible Godot window with isolated content argum
       "Godot.exe",
       root,
       path.join(root, "unsaved project.json"),
-      "fern",
+      "ivy",
       "ab_private",
       "litterer",
       (command, args, options) => {
@@ -67,11 +67,11 @@ test("workshop launcher opens a visible Godot window with isolated content argum
 test("complete copies own effects, projectile and reaction dependencies; mechanics survive arbitrary IDs", () => {
   const p = fixture();
   for (const id of [
-    "ab_fern",
+    "ab_ivy_binding",
     "ab_rose_combo",
     "ab_nettle",
     "ab_radish_ricochet",
-    "ab_ivy_trap",
+    "ab_dandelion",
   ]) {
     const source = p.combat!.abilities.find((a) => a.id === id)!,
       before = structuredClone(source);
@@ -160,7 +160,7 @@ test("templates create independent playable definitions", () => {
     "slow",
   ] as const) {
     const p = fixture();
-    createAbility(p, template, "fern");
+    createAbility(p, template, "ivy");
     assert.deepEqual(
       gameIssues(p).filter((i) => i.severity === "error"),
       [],
@@ -175,20 +175,20 @@ test("workshop snapshot isolates chosen ability and does not mutate the authored
       before = JSON.stringify(p);
     const file = await prepareCapabilityWorkshop(
       p,
-      "fern",
-      "ab_fern",
+      "ivy",
+      "ab_ivy_binding",
       "litterer",
       root,
     );
     const snapshot = parseGameProject(JSON.parse(await readFile(file, "utf8")));
     assert.equal(JSON.stringify(p), before);
     assert.deepEqual(
-      snapshot.balance.plants.find((x) => x.id === "fern")!.ability_ids,
-      ["ab_fern"],
+      snapshot.balance.plants.find((x) => x.id === "ivy")!.ability_ids,
+      ["ab_ivy_binding"],
     );
     assert.deepEqual(snapshot.levels, []);
     assert.ok(
-      snapshot.combat!.effects.find((e) => e.id === "fx_fern_bind")!.binding,
+      snapshot.combat!.effects.find((e) => e.id === "fx_ivy_bind")!.binding,
     );
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -249,9 +249,9 @@ test("a personalized graph includes its own phase and effect actions without req
 
 test("shared effects are detected by identity even when copies have identical names", () => {
   const p = fixture(),
-    original = p.combat!.abilities.find((a) => a.id === "ab_fern")!,
+    original = p.combat!.abilities.find((a) => a.id === "ab_ivy_binding")!,
     copy = cloneAbility(p, original.id);
   copy.name = original.name;
   copy.effects = original.effects.slice();
-  assert.equal(hasSharedDependencies(p, original.id, "fern"), true);
+  assert.equal(hasSharedDependencies(p, original.id, "ivy"), true);
 });

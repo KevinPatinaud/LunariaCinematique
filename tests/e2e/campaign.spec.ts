@@ -52,7 +52,7 @@ test('native grouped publisher installs film before committing the sequence',asy
  expect(published.campaign.cinematics[0].file).toMatch(/^content\/cinematics\/studio\//);const d=JSON.parse(await fs.readFile(path.join(game,published.campaign.cinematics[0].file),'utf8'));expect(d.id).toBe('CIN_TEST_CAMPAIGN');
 });
 
-test('la fin actuelle est déplaçable, annulable, persistée et coupe la publication',async()=>{
+test('The campaign endpoint can be moved, undone and saved, and it limits publication',async()=>{
  test.setTimeout(60000);
  await page.getByRole('button',{name:'Insérer entre les étapes 2 et 3',exact:true}).click();
  await page.getByRole('button',{name:'Insérer la fin actuelle ici',exact:true}).click();
@@ -95,7 +95,7 @@ test('la fin actuelle est déplaçable, annulable, persistée et coupe la public
  await page.keyboard.press('Control+z');await expect(end).toHaveCount(1);
 });
 
-test('la borne se déplace par glisser-déposer et reste accessible dans une fenêtre étroite',async()=>{
+test('The endpoint can be dragged and remains accessible in a narrow window',async()=>{
  await app.evaluate(({BrowserWindow})=>{BrowserWindow.getAllWindows()[0].setSize(1440,1280);});
  await page.getByRole('button',{name:'Insérer entre les étapes 2 et 3',exact:true}).click();
  await page.getByRole('button',{name:'Insérer la fin actuelle ici',exact:true}).click();

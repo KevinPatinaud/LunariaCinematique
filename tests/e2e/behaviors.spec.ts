@@ -85,7 +85,7 @@ test.afterEach(async () => {
   await fs.rm(dir, { recursive: true, force: true });
   expect(errors).toEqual([]);
 });
-async function species(name = "Fougère", team = "Plantes alliées") {
+async function species(name = "Lierre", team = "Plantes alliées") {
   await page
     .locator(".gd-sections")
     .getByRole("button", { name: new RegExp("^" + team) })
@@ -121,28 +121,28 @@ async function capture(name: string) {
 test("personal phases preserve the shared model, undo completely, and survive save/reopen", async () => {
   await species();
   const initial = original.balance.plants.find(
-    (p) => p.id === "fern",
+    (p) => p.id === "ivy",
   )!.behaviorId!;
   await expect(page.locator(".behavior-scope")).toContainText(
-    "Réglages personnels · Fougère",
+    "Réglages personnels · Lierre",
   );
   await sub("Phases").click();
   await page.getByRole("button", { name: "+ Phase", exact: true }).click();
-  await page.getByLabel("Nom phase 2", { exact: true }).fill("Fronde tenace");
+  await page.getByLabel("Nom phase 2", { exact: true }).fill("Liane tenace");
   await page.getByLabel("Seuil PV phase 2 (%)", { exact: true }).fill("40");
   await page.getByLabel("Seuil PV phase 2 (%)", { exact: true }).press("Tab");
   await capture("comportement-phases.png");
   let doc = await save();
-  let fern = doc.balance.plants.find((s: any) => s.id === "fern"),
-    model = doc.logic.behaviors.find((b: any) => b.id === fern.behaviorId);
-  expect(fern.behaviorId).not.toBe(initial);
+  let ivy = doc.balance.plants.find((s: any) => s.id === "ivy"),
+    model = doc.logic.behaviors.find((b: any) => b.id === ivy.behaviorId);
+  expect(ivy.behaviorId).not.toBe(initial);
   expect(model.phases[1].healthBelow).toBe(40);
-  expect(model.phases[1].name).toBe("Fronde tenace");
+  expect(model.phases[1].name).toBe("Liane tenace");
   expect(doc.logic.behaviors.find((b: any) => b.id === initial)).toEqual(
     original.logic!.behaviors.find((b) => b.id === initial),
   );
-  expect(doc.balance.plants.filter((s: any) => s.id !== "fern")).toEqual(
-    original.balance.plants.filter((s) => s.id !== "fern"),
+  expect(doc.balance.plants.filter((s: any) => s.id !== "ivy")).toEqual(
+    original.balance.plants.filter((s) => s.id !== "ivy"),
   );
   await page.getByRole("button", { name: "Actions du fichier projet", exact: true }).click();
   await page.getByRole("button", { name: "Ouvrir un projet…", exact: true }).click();
@@ -151,14 +151,14 @@ test("personal phases preserve the shared model, undo completely, and survive sa
   await sub("Phases").click();
   await page
     .getByRole("navigation", { name: "Phases du comportement" })
-    .getByRole("button", { name: /Fronde tenace/ })
+    .getByRole("button", { name: /Liane tenace/ })
     .click();
   await expect(page.getByLabel("Seuil PV phase 2 (%)")).toHaveValue("40");
   await page.getByRole("button", { name: "Supprimer cette phase" }).click();
   await page.getByRole("button", { name: "Annuler", exact: true }).click();
   await expect(
     page.getByRole("navigation", { name: "Phases du comportement" }),
-  ).toContainText("Fronde tenace");
+  ).toContainText("Liane tenace");
 });
 test("the capability shortcut keeps the selected owner and decision trace explains the winning rule", async () => {
   await species("Noisetier");
@@ -234,7 +234,7 @@ test("preview retains crossed phases after healing and never edits the project",
 test("shared editing is an explicit choice and keeps the selected group linked", async () => {
   await species();
   const initial = original.balance.plants.find(
-    (p) => p.id === "fern",
+    (p) => p.id === "ivy",
   )!.behaviorId!;
   const count = original.balance.plants.filter(
     (p) => p.behaviorId === initial,
@@ -245,7 +245,7 @@ test("shared editing is an explicit choice and keeps the selected group linked",
   const dialog = page.getByRole("dialog", {
     name: "Modifier le comportement partagé",
   });
-  await expect(dialog).toContainText("Fougère");
+  await expect(dialog).toContainText("Lierre");
   await dialog
     .getByRole("button", {
       name: "Modifier pour les " + count + " personnages",
@@ -255,7 +255,7 @@ test("shared editing is an explicit choice and keeps the selected group linked",
     .getByLabel("Nom du comportement", { exact: true })
     .fill("Défense commune");
   const doc = await save();
-  expect(doc.balance.plants.find((s: any) => s.id === "fern").behaviorId).toBe(
+  expect(doc.balance.plants.find((s: any) => s.id === "ivy").behaviorId).toBe(
     initial,
   );
   expect(doc.logic.behaviors.find((b: any) => b.id === initial).name).toBe(
@@ -278,12 +278,12 @@ test("template application defaults to a personal copy and remains undoable", as
     .click();
   let doc = await save();
   expect(
-    doc.balance.plants.find((s: any) => s.id === "fern").behaviorId,
-  ).not.toBe(original.balance.plants.find((s) => s.id === "fern")!.behaviorId);
+    doc.balance.plants.find((s: any) => s.id === "ivy").behaviorId,
+  ).not.toBe(original.balance.plants.find((s) => s.id === "ivy")!.behaviorId);
   await page.getByRole("button", { name: "Annuler", exact: true }).click();
   doc = await save();
-  expect(doc.balance.plants.find((s: any) => s.id === "fern").behaviorId).toBe(
-    original.balance.plants.find((s) => s.id === "fern")!.behaviorId,
+  expect(doc.balance.plants.find((s: any) => s.id === "ivy").behaviorId).toBe(
+    original.balance.plants.find((s) => s.id === "ivy")!.behaviorId,
   );
 });
 test("the advanced model library protects live users and requires an explicit test carrier", async () => {
@@ -301,14 +301,14 @@ test("the advanced model library protects live users and requires an explicit te
       { exact: false },
     ),
   ).toBeVisible();
-  await page.getByLabel("Porteur de l’essai du modèle").selectOption("fern");
+  await page.getByLabel("Porteur de l’essai du modèle").selectOption("ivy");
   await expect(page.getByLabel("Décision du comportement")).toContainText(
-    "Porteur : Fougère",
+    "Porteur : Lierre",
   );
   await capture("modeles-comportements.png");
-  await page.getByRole("button", { name: "Fougère →", exact: true }).click();
+  await page.getByRole("button", { name: "Lierre →", exact: true }).click();
   await expect(
-    page.getByRole("region", { name: "Comportement de Fougère" }),
+    page.getByRole("region", { name: "Comportement de Lierre" }),
   ).toBeVisible();
   for (const width of [1462, 1024]) {
     await page.setViewportSize({ width, height: 820 });
@@ -326,7 +326,7 @@ test("the advanced model library protects live users and requires an explicit te
 
 test("numeric phase drafts commit to their owner across immediate phase and character changes", async () => {
   const sharedId = original.balance.plants.find(
-    (s) => s.id === "fern",
+    (s) => s.id === "ivy",
   )!.behaviorId!;
   original
     .logic!.behaviors.find((b) => b.id === sharedId)!
@@ -358,13 +358,13 @@ test("numeric phase drafts commit to their owner across immediate phase and char
   await phases().getByRole("button").nth(2).click();
   await expect(page.getByLabel("Seuil PV phase 3 (%)")).toHaveValue("20");
   const doc = await save(),
-    privateId = doc.balance.plants.find((s: any) => s.id === "fern").behaviorId;
+    privateId = doc.balance.plants.find((s: any) => s.id === "ivy").behaviorId;
   expect(privateId).not.toBe(sharedId);
   expect(doc.logic.behaviors.find((b: any) => b.id === sharedId)).toEqual(
     original.logic!.behaviors.find((b) => b.id === sharedId),
   );
-  expect(doc.balance.plants.filter((s: any) => s.id !== "fern")).toEqual(
-    original.balance.plants.filter((s) => s.id !== "fern"),
+  expect(doc.balance.plants.filter((s: any) => s.id !== "ivy")).toEqual(
+    original.balance.plants.filter((s) => s.id !== "ivy"),
   );
   await page.getByRole("button", { name: "Actions du fichier projet", exact: true }).click();
   await page.getByRole("button", { name: "Ouvrir un projet…", exact: true }).click();

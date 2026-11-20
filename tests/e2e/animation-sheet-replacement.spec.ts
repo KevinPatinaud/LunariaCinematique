@@ -78,9 +78,9 @@ test('Radis et Rose: une planche par action, édition, remplacement, réouvertur
    expect(new Set(animations.map(a=>a.frames[0].asset)).size).toBe(animations.length);
    for(const animation of animations){
     expect(new Set(animation.frames.map(f=>f.asset)).size).toBe(1);
-    await page.locator('.lp-owned-list').getByRole('button',{name:animation.name+' '+animation.frames.length+' images',exact:true}).click();
+    await page.locator('.lp-owned-list').getByRole('button',{name:animation.name+' '+animation.frames.length+' image'+(animation.frames.length>1?'s':''),exact:true}).click();
     await expect(page.getByLabel('Images de l’animation').getByRole('button')).toHaveCount(animation.frames.length);
-    await expect(page.getByLabel('Planche utilisée par l’animation')).toContainText(path.basename(animation.frames[0].asset));
+    await expect(page.locator('.lp-frame-editor')).toContainText(path.basename(animation.frames[0].asset));
     await page.getByLabel('Curseur temporel de l’animation').fill('0.2');
     await expect(page.locator('.lp-owned-editor .lp-preview svg image').first()).toHaveAttribute('href',/asset/);
     await expect(page.locator('.lp-owned-editor')).not.toContainText('Ressource à relier');

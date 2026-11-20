@@ -28,7 +28,7 @@ test.afterEach(async()=>{
  await fs.rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200});
 });
 
-test('les graines se règlent dans les niveaux sans page de récompenses ni bonus de combo',async()=>{
+test('Seed rewards are configured in levels without a separate rewards page or combo bonuses',async()=>{
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  await page.getByRole('button',{name:'Créer un premier niveau'}).click();
  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
@@ -54,7 +54,7 @@ test('les graines se règlent dans les niveaux sans page de récompenses ni bonu
  await expect(page.getByRole('heading',{name:'Dialogue pendant la mission'})).toHaveCount(0);
 });
 
-test('les fiches regroupent les outils du personnage et les modèles restent avancés',async()=>{
+test('Character sheets group character tools and keep templates under advanced controls',async()=>{
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
  const main=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
  await expect(main.getByRole('button',{name:/Modèles|Bibliothèque|Comportements|Récompenses/})).toHaveCount(0);

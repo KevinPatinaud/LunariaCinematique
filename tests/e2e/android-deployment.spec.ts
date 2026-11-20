@@ -5,6 +5,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { seedProject } from '../fixtures/seed40.js';
 import { fixturePresentation, PIXEL_PNG } from '../presentation-fixture.js';
+import type { AndroidDeploymentEvent } from '../../src/shared/game/types.js';
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const BUTTON='Builder et Déployer sur le téléphone connecté';
@@ -28,6 +29,10 @@ test.beforeEach(async()=>{
 test.afterEach(async()=>{await app?.close();await fs.rm(temp,{recursive:true,force:true});});
 
 test('new button saves, publishes, builds, installs and launches through the native bridge',async({},info)=>{
+ await page.evaluate(()=>{
+  const observed=window as unknown as {deploymentEvents:AndroidDeploymentEvent[];lunariaGame:{onAndroidDeploymentProgress(callback:(event:AndroidDeploymentEvent)=>void):()=>void}};
+  observed.deploymentEvents=[];observed.lunariaGame.onAndroidDeploymentProgress(event=>observed.deploymentEvents.push(event));
+ });
  await page.getByLabel('Titre du projet de niveaux').fill('Campagne pour mon téléphone');
  await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:BUTTON,exact:true})).toBeInViewport();
  await page.screenshot({path:info.outputPath('android-menu.png')});
@@ -41,6 +46,8 @@ test('new button saves, publishes, builds, installs and launches through the nat
  expect(JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8')).title).toBe('Campagne pour mon téléphone');
  const log=await fs.readFile(path.resolve(game,'../tools/build/.local/lunaria-android-deploy.log'),'utf8');
  expect(log).toContain('install -r');expect(log).toContain('Status: ok');
+ const events=await page.evaluate(()=>(window as unknown as {deploymentEvents:AndroidDeploymentEvent[]}).deploymentEvents);
+ expect(events.length).toBeGreaterThan(0);expect(new Set(events.map(event=>event.requestId)).size).toBe(1);expect(events[0].requestId).toMatch(/^[a-f0-9-]{36}$/);
  await page.screenshot({path:info.outputPath('android-success.png')});
 });
 
@@ -65,4 +72,19 @@ test('multiple devices can be selected or canceled and project errors disable de
  await expect(page.locator('.gd-message')).toContainText('Lunaria installé et lancé sur Second (second)');
  await page.getByLabel('Titre du projet de niveaux').fill('');await page.locator('.gd-delivery > summary').click();
  await expect(page.getByRole('button',{name:BUTTON,exact:true})).toBeDisabled();
+});
+
+test('completed deployment ignores late progress and its status is cleared when another project opens',async()=>{
+ await page.locator('.gd-delivery > summary').click();await page.getByRole('button',{name:BUTTON,exact:true}).click();
+ const status=page.getByRole('region',{name:'Suivi du déploiement Android'});
+ await expect(status).toContainText('Lunaria installé et lancé');
+ await app.evaluate(({BrowserWindow})=>{
+  BrowserWindow.getAllWindows()[0].webContents.send('game:android-deployment-progress',{requestId:'old-deployment',phase:'build',message:'Ancien événement à ignorer'});
+ });
+ await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+ await expect(page.locator('.gd-message')).not.toContainText('Ancien événement à ignorer');
+ await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},file);
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
+ await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
+ await expect(status).toHaveCount(0);
 });

@@ -1,3 +1,4 @@
+import {useCurrentPlants} from './currentPlants.js';
 import {importCombatMechanics} from '../../src/shared/game/combatMechanics.js';
 import { ensurePresentation } from '../../src/shared/presentation/defaults.js';
 import type { GameProject } from '../../src/shared/game/types.js';
@@ -16847,5 +16848,6 @@ export const GAME_SEED:GameProject={
   }
 };
 import {ensureEnemyRules} from '../../src/shared/game/enemyRules.js';
+useCurrentPlants(GAME_SEED);
 ensureEnemyRules(GAME_SEED);
 export function seedProject():GameProject{const p=structuredClone(GAME_SEED);ensurePresentation(p);importCombatMechanics(p.combat!);return p;}

@@ -50,30 +50,30 @@ const ctx = (extra: Partial<LogicContext> = {}): LogicContext => ({
 test("first personal change detaches only its owner and preserves every other behavior user", () => {
   const p = fixture(),
     old = structuredClone(p),
-    source = ownerBehavior(p, "fern"),
+    source = ownerBehavior(p, "ivy"),
     users = behaviorUsers(p, source.id);
   assert.ok(users.length > 1);
-  const id = editOwnerBehavior(p, "fern", (b) => {
+  const id = editOwnerBehavior(p, "ivy", (b) => {
     appendPhase(b);
   });
   assert.notEqual(id, source.id);
-  assert.equal(ownerBehavior(p, "fern").phases.length, 2);
+  assert.equal(ownerBehavior(p, "ivy").phases.length, 2);
   assert.deepEqual(
     p.logic!.behaviors.find((b) => b.id === source.id),
     old.logic!.behaviors.find((b) => b.id === source.id),
   );
   assert.deepEqual(
-    p.balance.plants.filter((s) => s.id !== "fern"),
-    old.balance.plants.filter((s) => s.id !== "fern"),
+    p.balance.plants.filter((s) => s.id !== "ivy"),
+    old.balance.plants.filter((s) => s.id !== "ivy"),
   );
   assert.equal(gameIssues(p).filter((i) => i.severity === "error").length, 0);
 });
 test("no-op and viewing a shared model never create personal data", () => {
   const p = fixture(),
     before = JSON.stringify(p),
-    id = ownerBehavior(p, "fern").id;
+    id = ownerBehavior(p, "ivy").id;
   assert.equal(
-    editOwnerBehavior(p, "fern", () => {}),
+    editOwnerBehavior(p, "ivy", () => {}),
     id,
   );
   assert.equal(JSON.stringify(p), before);
@@ -81,7 +81,7 @@ test("no-op and viewing a shared model never create personal data", () => {
 
 test("duplicating a library model is independent and enforces the catalog limit before mutation", () => {
   const p = fixture(),
-    source = ownerBehavior(p, "fern"),
+    source = ownerBehavior(p, "ivy"),
     before = structuredClone(source),
     copy = duplicateBehavior(p, source.id);
   assert.notEqual(copy.id, source.id);
@@ -94,35 +94,35 @@ test("duplicating a library model is independent and enforces the catalog limit 
 });
 test("later personal changes reuse the private graph and keep IDs stable", () => {
   const p = fixture();
-  detachBehavior(p, "fern");
-  const b = ownerBehavior(p, "fern"),
+  detachBehavior(p, "ivy");
+  const b = ownerBehavior(p, "ivy"),
     before = structuredClone(b),
     count = p.logic!.behaviors.length;
-  editOwnerBehavior(p, "fern", (d) => {
+  editOwnerBehavior(p, "ivy", (d) => {
     d.stopToAttack = false;
   });
   assert.equal(p.logic!.behaviors.length, count);
-  assert.equal(ownerBehavior(p, "fern").id, b.id);
+  assert.equal(ownerBehavior(p, "ivy").id, b.id);
   assert.deepEqual(
-    ownerBehavior(p, "fern").phases.map((f) => f.id),
+    ownerBehavior(p, "ivy").phases.map((f) => f.id),
     before.phases.map((f) => f.id),
   );
 });
 test("personal name is kept as authored instead of appending an owner suffix to typed text", () => {
   const p = fixture();
-  editOwnerBehavior(p, "fern", (b) => {
-    b.name = "Fronde prudente";
+  editOwnerBehavior(p, "ivy", (b) => {
+    b.name = "Liane prudente";
   });
-  assert.equal(ownerBehavior(p, "fern").name, "Fronde prudente");
+  assert.equal(ownerBehavior(p, "ivy").name, "Liane prudente");
 });
 test("explicit shared edits keep attribution and affect the selected common model", () => {
   const p = fixture(),
-    b = ownerBehavior(p, "fern"),
+    b = ownerBehavior(p, "ivy"),
     users = behaviorUsers(p, b.id).map((s) => s.id),
     length = p.logic!.behaviors.length;
   editOwnerBehavior(
     p,
-    "fern",
+    "ivy",
     (d) => {
       d.description = "Commun";
     },
@@ -150,17 +150,17 @@ test("copying a model gives every rule and phase a new identity and independent 
 });
 test("applying a model copies by default; sharing and detaching are explicit", () => {
   const p = fixture(),
-    source = ownerBehavior(p, "fern"),
-    copyId = assignBehavior(p, "fern", source.id);
+    source = ownerBehavior(p, "ivy"),
+    copyId = assignBehavior(p, "ivy", source.id);
   assert.notEqual(copyId, source.id);
-  assignBehavior(p, "fern", source.id, true);
-  assert.equal(ownerBehavior(p, "fern").id, source.id);
-  assert.notEqual(detachBehavior(p, "fern"), source.id);
+  assignBehavior(p, "ivy", source.id, true);
+  assert.equal(ownerBehavior(p, "ivy").id, source.id);
+  assert.notEqual(detachBehavior(p, "ivy"), source.id);
 });
 test("opposite teams and models requiring absent abilities cannot be assigned", () => {
   const p = fixture(),
     before = JSON.stringify(p);
-  assert.throws(() => assignBehavior(p, "fern", "ai_ground"), /autre camp/);
+  assert.throws(() => assignBehavior(p, "ivy", "ai_ground"), /autre camp/);
   assert.equal(JSON.stringify(p), before);
   const b = createBehavior(p, "plants");
   b.mode = "priority";
@@ -171,8 +171,8 @@ test("opposite teams and models requiring absent abilities cannot be assigned", 
         .ability_ids![0],
     },
   ];
-  assert.ok(behaviorCompatibility(p, "fern", b).length);
-  assert.throws(() => assignBehavior(p, "fern", b.id), /capacités absentes/);
+  assert.ok(behaviorCompatibility(p, "ivy", b).length);
+  assert.throws(() => assignBehavior(p, "ivy", b.id), /capacités absentes/);
 });
 test("phase-provided capabilities make a model compatible without changing the species base list", () => {
   const p = fixture(),
@@ -182,15 +182,15 @@ test("phase-provided capabilities make a model compatible without changing the s
   b.phases[0].abilityIds = [id];
   b.rules = [{ ...newRule(), abilityId: id }];
   const original = [
-    ...p.balance.plants.find((s) => s.id === "fern")!.ability_ids!,
+    ...p.balance.plants.find((s) => s.id === "ivy")!.ability_ids!,
   ];
-  assignBehavior(p, "fern", b.id);
+  assignBehavior(p, "ivy", b.id);
   assert.deepEqual(
-    behaviorCompatibility(p, "fern", ownerBehavior(p, "fern")),
+    behaviorCompatibility(p, "ivy", ownerBehavior(p, "ivy")),
     [],
   );
   assert.deepEqual(
-    p.balance.plants.find((s) => s.id === "fern")!.ability_ids,
+    p.balance.plants.find((s) => s.id === "ivy")!.ability_ids,
     original,
   );
 });
@@ -208,14 +208,14 @@ test("self actions lose a source-species restriction when copied to a new owner"
       duration: 1,
     },
   ];
-  assignBehavior(p, "fern", b.id);
-  assert.equal(ownerBehavior(p, "fern").phases[0].onEnter[0].speciesId, "");
+  assignBehavior(p, "ivy", b.id);
+  assert.equal(ownerBehavior(p, "ivy").phases[0].onEnter[0].speciesId, "");
   assert.equal(b.phases[0].onEnter[0].speciesId, "radish");
 });
 test("a model with live users cannot be deleted; a free model can", () => {
   const p = fixture();
   assert.throws(
-    () => removeBehavior(p, ownerBehavior(p, "fern").id),
+    () => removeBehavior(p, ownerBehavior(p, "ivy").id),
     /Encore utilisé/,
   );
   const b = createBehavior(p, "plants");
@@ -226,7 +226,7 @@ test("the catalog limit rejects cloning without altering attribution", () => {
   const p = fixture();
   while (p.logic!.behaviors.length < 128) createBehavior(p, "plants");
   const before = JSON.stringify(p);
-  assert.throws(() => detachBehavior(p, "fern"), /128/);
+  assert.throws(() => detachBehavior(p, "ivy"), /128/);
   assert.equal(JSON.stringify(p), before);
   assert.throws(() => createBehavior(p, "enemies"), /128/);
 });
@@ -258,25 +258,25 @@ test("plants cannot receive a retreat template", () => {
 });
 test("preview uses the chosen owner rather than the first shared model user", () => {
   const p = fixture(),
-    b = ownerBehavior(p, "fern"),
+    b = ownerBehavior(p, "ivy"),
     result = inspectOwnerBehavior(
       p,
-      "fern",
+      "ivy",
       b,
       initialBehaviorPreview(),
       ctx(),
     );
-  assert.equal(result.owner.id, "fern");
+  assert.equal(result.owner.id, "ivy");
   assert.deepEqual(
     result.candidates,
-    p.balance.plants.find((s) => s.id === "fern")!.ability_ids,
+    p.balance.plants.find((s) => s.id === "ivy")!.ability_ids,
   );
   assert.notDeepEqual(result.candidates, p.balance.plants[0].ability_ids);
 });
 test("preview applies phase replacements, disabled abilities, and per-ability target/readiness", () => {
   const p = fixture(),
     b = createBehavior(p, "plants", "boss"),
-    owner = p.balance.plants.find((s) => s.id === "fern")!,
+    owner = p.balance.plants.find((s) => s.id === "ivy")!,
     id = owner.ability_ids![0],
     other = p.balance.plants[0].ability_ids![0];
   b.phases[1].inheritAbilities = false;
@@ -284,14 +284,14 @@ test("preview applies phase replacements, disabled abilities, and per-ability ta
   let state = advanceBehaviorPreview(b, initialBehaviorPreview(), 60);
   let result = inspectOwnerBehavior(
     p,
-    "fern",
+    "ivy",
     b,
     state,
     ctx({ health: 60, ready: (ability) => ability !== other }),
   );
   assert.deepEqual(result.candidates, [other]);
   assert.deepEqual(result.decision.abilities, []);
-  result = inspectOwnerBehavior(p, "fern", b, state, ctx(), [other]);
+  result = inspectOwnerBehavior(p, "ivy", b, state, ctx(), [other]);
   assert.deepEqual(result.candidates, []);
   assert.deepEqual(phaseAbilities(owner, b.phases[0]), [id]);
 });
@@ -318,7 +318,7 @@ test("a dead actor neither enters new phases nor produces decisions", () => {
     b = createBehavior(p, "plants", "boss"),
     state = advanceBehaviorPreview(b, initialBehaviorPreview(), 100);
   assert.deepEqual(advanceBehaviorPreview(b, state, 0), state);
-  const result = inspectOwnerBehavior(p, "fern", b, state, ctx({ health: 0 }));
+  const result = inspectOwnerBehavior(p, "ivy", b, state, ctx({ health: 0 }));
   assert.equal(result.active, false);
   assert.deepEqual(result.decision.abilities, []);
 });
@@ -398,7 +398,7 @@ test("support capabilities do not trigger stop-to-attack and explicit movement w
 });
 test("personalizing a capability updates its behavior without accumulating unused private models", () => {
   const p = fixture(),
-    owner = p.balance.plants.find((s) => s.id === "fern")!,
+    owner = p.balance.plants.find((s) => s.id === "ivy")!,
     id = owner.ability_ids![0];
   editOwnerBehavior(p, owner.id, (b) => {
     b.mode = "priority";
@@ -420,9 +420,9 @@ test("a personal behavior survives save, recovery and reopen without rewriting s
   try {
     const p = fixture(),
       old = structuredClone(p);
-    editOwnerBehavior(p, "fern", (b) => {
+    editOwnerBehavior(p, "ivy", (b) => {
       appendPhase(b);
-      b.phases[1].name = "Fronde renforcée";
+      b.phases[1].name = "Liane renforcée";
     });
     const d = new GameDocuments(root),
       file = await d.save(p, "", path.join(root, "project.game.json"));
@@ -430,8 +430,8 @@ test("a personal behavior survives save, recovery and reopen without rewriting s
     await d.recover(p);
     assert.deepEqual((await d.bootstrap()).recovery, p);
     assert.deepEqual(
-      p.balance.plants.filter((s) => s.id !== "fern"),
-      old.balance.plants.filter((s) => s.id !== "fern"),
+      p.balance.plants.filter((s) => s.id !== "ivy"),
+      old.balance.plants.filter((s) => s.id !== "ivy"),
     );
   } finally {
     await rm(root, { recursive: true, force: true });
