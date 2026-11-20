@@ -101,3 +101,40 @@ test("buildBalanceAudit detects HP spikes, energy drops, reinforcements and plan
   const updated = buildBalanceAudit(project);
   assert.equal(updated.alerts.some((a) => a.kind === "plant_efficiency"), false);
 });
+
+test("buildBalanceAudit flags fixed-placement enemy groups stacked on a single cell", () => {
+  const project = seedProject();
+  const levelId = createProjectLevel(project, { kind: "campaign", beforeId: null });
+  const level = project.levels.find((l) => l.id === levelId)!;
+  level.title = "Test empilement";
+  level.waves = [
+    {
+      id: "w1",
+      seedReward: 100,
+      groups: [
+        {
+          id: "g_stack",
+          enemyId: "plaque",
+          count: 5,
+          lane: -1,
+          start: 30,
+          interval: 3,
+          placement: { rowMin: 2, rowMax: 2, colMin: 6, colMax: 6 },
+        },
+      ],
+    },
+  ];
+
+  const audit = buildBalanceAudit(project);
+  const stacked = audit.alerts.find((a) => a.kind === "stacked_spawn");
+  assert.ok(stacked);
+  assert.equal(stacked.levelId, levelId);
+  assert.match(stacked.detail, /allée 3, colonne 7/);
+
+  // Expanding the placement zone clears the stacked alert
+  level.waves[0].groups[0].placement = { rowMin: 0, rowMax: 4, colMin: 4, colMax: 7 };
+  assert.equal(
+    buildBalanceAudit(project).alerts.some((a) => a.kind === "stacked_spawn"),
+    false,
+  );
+});

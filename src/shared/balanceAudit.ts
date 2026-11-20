@@ -62,7 +62,7 @@ export interface LevelAuditRow {
 
 export interface BalanceAuditAlert {
   id: string;
-  kind: "hp_spike" | "energy_drop" | "plant_efficiency";
+  kind: "hp_spike" | "energy_drop" | "plant_efficiency" | "stacked_spawn";
   title: string;
   detail: string;
   levelId?: string;
@@ -280,6 +280,26 @@ export function buildBalanceAudit(project: GameProject): BalanceAudit {
   });
 
   const alerts: BalanceAuditAlert[] = [];
+  for (const level of ordered) {
+    if (level.objective.type === "occupied_board") continue;
+    level.waves.forEach((wave, waveIndex) => {
+      for (const group of wave.groups) {
+        if (group.count <= 1 || !group.placement) continue;
+        const enemy = enemyById.get(group.enemyId);
+        if (enemy?.rules?.spawn.mode !== "placement") continue;
+        const { rowMin, rowMax, colMin, colMax } = group.placement;
+        if (rowMin === rowMax && colMin === colMax) {
+          alerts.push({
+            id: `stacked_spawn:${level.id}:${wave.id}:${group.id}`,
+            kind: "stacked_spawn",
+            title: `Empilement sur une seule case dans « ${level.title} » (vague ${waveIndex + 1})`,
+            detail: `${group.count} ${enemy.name} apparaissent exactement sur la case allée ${rowMin + 1}, colonne ${colMin + 1} (superposition et tirs simultanés).`,
+            levelId: level.id,
+          });
+        }
+      }
+    });
+  }
   for (let i = 1; i < playableLevelRows.length; i++) {
     const prev = playableLevelRows[i - 1];
     const curr = playableLevelRows[i];
