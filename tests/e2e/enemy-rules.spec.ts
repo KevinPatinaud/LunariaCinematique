@@ -99,7 +99,7 @@ test.afterEach(async ({}, info) => {
 async function enemy(id: string, tab = "Règles du plateau") {
   const source = original.balance.enemies.find((e) => e.id === id)!;
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Ennemis/ })
     .click();
   const toggle = page.locator(".gd-archive-toggle");
@@ -129,14 +129,16 @@ async function save() {
 }
 async function reopen() {
   await page
-    .locator(".gd-toolbar")
-    .getByRole("button", { name: "Ouvrir", exact: true })
+    .getByRole("button", { name: "Actions du fichier projet" })
+    .click();
+  await page
+    .getByRole("button", { name: "Ouvrir un projet…", exact: true })
     .click();
   await expect(page.locator(".gd-message")).toContainText("Projet ouvert.");
 }
 async function waves() {
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Niveaux/ })
     .click();
   await page
@@ -266,13 +268,13 @@ test("copying an archived boss selects its active copy and preserves private ani
   ).toBeChecked();
   await page
     .getByRole("checkbox", {
-      name: "Compter comme cible à libérer dans un sauvetage",
+      name: "Présenter cet ennemi comme un boss",
     })
-    .check();
+    .uncheck();
   const doc = await save();
   expect(
-    doc.balance.enemies.find((e: any) => e.name === name).rules.rescueTarget,
-  ).toBe(true);
+    doc.balance.enemies.find((e: any) => e.name === name).rules.boss,
+  ).toBe(false);
   expect(doc.balance.enemies.find((e: any) => e.id === "collector")).toEqual(
     source,
   );
@@ -321,7 +323,7 @@ test("a copied focus species is selectable and level generation explicitly repla
   const before = await save(),
     copy = before.balance.enemies.find((e: any) => e.name === name);
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Niveaux/ })
     .click();
   await page.getByRole("button", { name: "Paramètres", exact: true }).click();
@@ -344,7 +346,7 @@ test("a copied focus species is selectable and level generation explicitly repla
   await capture("ennemi-foyers.png");
   await reopen();
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Niveaux/ })
     .click();
   await page.getByRole("button", { name: "Paramètres", exact: true }).click();

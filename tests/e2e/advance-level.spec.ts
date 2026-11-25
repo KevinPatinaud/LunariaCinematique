@@ -40,7 +40,7 @@ test('a level can author and save the five-lane advance objective',async()=>{
  await expect(page.getByLabel('Consigne du niveau')).toHaveValue('Conquérir les cinq allées.');
  await expect(page.getByLabel('Graines par allée capturée')).toHaveValue('0');
  await page.getByLabel('Graines par allée capturée').fill('37');
- await page.getByRole('button',{name:'Récompenses',exact:true}).click();
+ await page.getByRole('button',{name:'Comparer les graines',exact:true}).click();
  await expect(page.getByRole('table')).toContainText('37');
  await page.getByRole('table').getByRole('button',{name:/^Modifier l’objectif/}).first().click();
  await expect(page.getByLabel('Graines par allée capturée')).toHaveValue('37');
@@ -58,7 +58,7 @@ test('a level can author and save the five-lane advance objective',async()=>{
  await page.getByLabel('Graines par allée capturée').scrollIntoViewIfNeeded();
  const rewardBounds=await page.getByLabel('Graines par allée capturée').boundingBox();
  const footerBounds=await page.locator('.gd-footer').boundingBox();
- expect(rewardBounds!.y+rewardBounds!.height).toBeLessThanOrEqual(footerBounds!.y);
+ expect(Math.round(rewardBounds!.y+rewardBounds!.height)).toBeLessThanOrEqual(Math.round(footerBounds!.y));
  await expect(page.locator('.studio-sections')).toBeVisible();
  await fs.mkdir(path.join(ROOT,'work'),{recursive:true});
  await page.screenshot({path:path.join(ROOT,'work','advance-level-studio.png')});

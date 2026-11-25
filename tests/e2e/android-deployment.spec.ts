@@ -13,6 +13,9 @@ let app:ElectronApplication,page:Page,temp:string,game:string,file:string;
 test.beforeEach(async()=>{
  temp=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-android-e2e-'));game=path.join(temp,'repository/game');file=path.join(temp,'project.game.json');
  const library=path.join(temp,'library'),profile=path.join(temp,'profile');await fs.mkdir(library);await fs.mkdir(profile);
+ const godot=path.join(temp,'fake-godot.exe');
+ await fs.writeFile(godot,'fake');
+ await fs.writeFile(path.join(profile,'game-preview.json'),JSON.stringify({godotPath:godot}));
  await fs.writeFile(path.join(library,'pixel.png'),PIXEL_PNG);await fs.writeFile(path.join(profile,'settings.json'),JSON.stringify({libraryRoot:library}));
  await fs.writeFile(file,JSON.stringify(fixturePresentation(seedProject(),'library://pixel.png')));
  for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});

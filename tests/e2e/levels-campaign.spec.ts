@@ -144,7 +144,7 @@ test.afterEach(async ({}, info) => {
 });
 async function levels(name = "A") {
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Niveaux/ })
     .click();
   await page
@@ -167,8 +167,10 @@ async function save() {
 }
 async function reopen() {
   await page
-    .locator(".gd-toolbar")
-    .getByRole("button", { name: "Ouvrir", exact: true })
+    .getByRole("button", { name: "Actions du fichier projet" })
+    .click();
+  await page
+    .getByRole("button", { name: "Ouvrir un projet…", exact: true })
     .click();
   await expect(page.locator(".gd-message")).toContainText("Projet ouvert.");
   await page.locator(".gd-message button").click();
@@ -222,7 +224,7 @@ test("duplicate directly in the campaign, undo atomically, redo, save and reopen
 });
 test("new level is created at the exact insertion rail, preserving the surrounding cinematics", async () => {
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Campagne/ })
     .click();
   await page
@@ -250,7 +252,7 @@ test("new level is created at the exact insertion rail, preserving the surroundi
 });
 test("outside levels can be found, placed before a film and removed without deleting their content", async () => {
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Campagne/ })
     .click();
   await page
@@ -348,10 +350,8 @@ test("occupied-board conversion previews the timing loss and remains one undoabl
   );
 });
 test("rewards compare all levels and link to the sole wave editor, with zero preserved on save", async () => {
-  await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: "Récompenses", exact: true })
-    .click();
+  await page.locator(".studio-sections").getByRole("button", { name: "Niveaux", exact: true }).click();
+  await page.getByRole("button", { name: "Comparer les graines", exact: true }).click();
   const table = page.getByRole("table");
   await expect(table.getByRole("row")).toHaveCount(4);
   await expect(table.locator("input")).toHaveCount(0);
@@ -360,10 +360,7 @@ test("rewards compare all levels and link to the sole wave editor, with zero pre
     .click();
   await page.getByLabel("Graines pour la vague éliminée").fill("0");
   await page.getByLabel("Graines pour la vague éliminée").press("Tab");
-  await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: "Récompenses", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Comparer les graines", exact: true }).click();
   await expect(
     table
       .getByRole("row")

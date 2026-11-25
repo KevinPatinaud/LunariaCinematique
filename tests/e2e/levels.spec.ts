@@ -278,6 +278,9 @@ for(const changedAsset of [false,true])test(`le niveau sélectionné est lancé 
 });
 test('Desktop and Android builds sync the project and produce their artifacts',async()=>{
  const repository=path.join(temp,'build-repository'),game=path.join(repository,'game');
+ const godot=path.join(temp,'fake-godot.exe');
+ await fs.writeFile(godot,'fake');
+ await fs.writeFile(path.join(profile,'game-preview.json'),JSON.stringify({godotPath:godot}));
  for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});
  for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,...marker.split('/')),'marker');
  await fs.writeFile(path.join(game,'content/design/game_content.json'),'{}');
