@@ -8,6 +8,7 @@ import {seedProject} from '../fixtures/seed40.js';
 import {fixturePresentation,PIXEL_PNG} from '../presentation-fixture.js';
 import type {GameProject} from '../../src/shared/game/types.js';
 import {SLOT_LABELS} from '../../src/shared/presentation/types.js';
+import {isGameAnimation} from '../../src/shared/presentation/ownership.js';
 import {presentationAssets} from '../../src/shared/presentation/runtime.js';
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -27,7 +28,7 @@ test('Radis et Rose: une planche par action, édition, remplacement, réouvertur
   for(const id of ['radish','rose']){
    project.balance.plants.find(s=>s.id===id)!.visual=structuredClone(source.balance.plants.find(s=>s.id===id)!.visual);
    project.presentation!.animations=project.presentation!.animations.filter(a=>a.ownerSpeciesId!==id);
-   project.presentation!.animations.push(...structuredClone(source.presentation!.animations.filter(a=>a.ownerSpeciesId===id)));
+   project.presentation!.animations.push(...structuredClone(source.presentation!.animations.filter(a=>a.ownerSpeciesId===id&&isGameAnimation(a))));
    const index=project.presentation!.profiles.findIndex(p=>p.id===`profile_${id}`);
    project.presentation!.profiles[index]=structuredClone(source.presentation!.profiles.find(p=>p.id===`profile_${id}`)!);
   }
