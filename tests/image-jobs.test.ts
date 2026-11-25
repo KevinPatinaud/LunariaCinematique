@@ -4,7 +4,7 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { ImageTaskQueue } from "../src/main/imageJobs.js";
+import { ImageJobStore, ImageTaskQueue } from "../src/main/imageJobs.js";
 import { BackgroundCorrections } from "../src/main/backgroundCorrections.js";
 import {
   TerrainGenerations,
@@ -36,6 +36,30 @@ const backgroundRequest = {
   codexModel: "model-b",
 };
 const delay = () => new Promise((resolve) => setTimeout(resolve, 5));
+
+test("task files work through a directory alias without accepting a redirected job", async () => {
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), "lunaria-image-paths-"));
+  try {
+    const jobs = path.join(temp, "jobs");
+    const alias = path.join(temp, "alias");
+    const job = path.join(jobs, "job");
+    const outside = path.join(temp, "outside");
+    await fs.mkdir(job, { recursive: true });
+    await fs.mkdir(outside);
+    await fs.writeFile(path.join(job, "pose.png"), "pose");
+    const linkType = process.platform === "win32" ? "junction" : "dir";
+    await fs.symlink(jobs, alias, linkType);
+    await fs.symlink(outside, path.join(jobs, "redirected"), linkType);
+
+    const store = new ImageJobStore(alias);
+    const pose = await store.localFile(path.join(alias, "job"), "pose.png");
+    assert.equal(await fs.readFile(pose, "utf8"), "pose");
+    await assert.rejects(store.localFile(path.join(alias, "redirected"), "pose.png"), /Dossier de tâche invalide/);
+  } finally {
+    await fs.rm(temp, { recursive: true, force: true });
+  }
+});
+
 async function until(check: () => boolean | Promise<boolean>) {
   for (let i = 0; i < 400; i++) {
     if (await check()) return;

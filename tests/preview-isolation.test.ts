@@ -32,5 +32,9 @@ test('level preview publishes a disposable runtime and preserves the selected ga
   assert.deepEqual(await fs.readdir(previews),[]);
   assert.equal(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'),'SENTINEL');
   await assert.rejects(prepareLevelPreview(project,game,library,path.join(game,'nested')),/hors du projet/);
+  const alias = path.join(temp, 'game-alias');
+  await fs.symlink(game, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  await assert.rejects(prepareLevelPreview(project, game, library, path.join(alias, 'nested', 'previews')), /hors du projet/);
+  await assert.rejects(fs.stat(path.join(game, 'nested')), { code: 'ENOENT' });
  }finally{await fs.rm(temp,{recursive:true,force:true});}
 });

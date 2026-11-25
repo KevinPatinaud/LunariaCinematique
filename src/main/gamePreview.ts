@@ -53,11 +53,21 @@ export async function launchGodotLevel(executable:string,gameRoot:string,levelId
  });
 }
 
+async function resolvePreviewDirectory(directory: string): Promise<string> {
+  try {
+    return await fs.realpath(directory);
+  } catch (error) {
+    const parent = path.dirname(directory);
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT' || parent === directory) throw error;
+    return path.join(await resolvePreviewDirectory(parent), path.basename(directory));
+  }
+}
+
 /** Copy the runtime into an owned, disposable directory. No link can write back
  * into the author's checkout. Cached imports are copies, just like media. */
 export async function prepareLevelPreview(project:GameProject,gameRoot:string,libraryRoot:string,previewsRoot:string,copyImports=true):Promise<{path:string;gameRoot:string;dispose:()=>Promise<void>}>{
  const source=await validGameRoot(gameRoot);if(!source)throw Error('Projet Godot Lunaria introuvable.');
- const base=path.resolve(previewsRoot);
+ const base=await resolvePreviewDirectory(path.resolve(previewsRoot));
  if(isWithin(source,base))throw Error('La copie temporaire doit être située hors du projet Godot.');
  await fs.mkdir(base,{recursive:true});
  const snapshot=await fs.mkdtemp(path.join(base,'level-'));

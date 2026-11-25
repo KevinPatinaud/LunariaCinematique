@@ -86,8 +86,12 @@ export class ImageJobStore<R extends ImageRecord> {
   async localFile(folder: string, name: unknown) {
     if (typeof name !== "string" || path.basename(name) !== name)
       throw Error("Fichier de tâche invalide.");
-    const file = path.join(folder, name);
-    if (!isWithin(folder, await fs.realpath(file)))
+    const root = await fs.realpath(this.root);
+    const jobFolder = path.join(root, path.basename(folder));
+    if (await fs.realpath(folder) !== jobFolder)
+      throw Error("Dossier de tâche invalide.");
+    const file = path.join(jobFolder, name);
+    if (!isWithin(jobFolder, await fs.realpath(file)))
       throw Error("Fichier de tâche hors du dossier.");
     return file;
   }
