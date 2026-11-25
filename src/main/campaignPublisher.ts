@@ -6,8 +6,10 @@ import { promises as fs, createReadStream } from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { atomicJson, isWithin, resolveAsset } from './files.js';
-import { parseGameProject } from '../shared/game/validation.js';
-import { compileCampaign, safeMoviePath } from '../shared/game/campaign.js';
+import { parseGameProject, walkRule, type GameIssue } from '../shared/game/validation.js';
+import type { Rule } from '../shared/game/schema.js';
+import { compileCampaign, isProgressionMilestone, safeMoviePath } from '../shared/game/campaign.js';
+import { defaultHomeScreen } from '../shared/game/homeScreen.js';
 import { parseCinematic } from '../shared/schema.js';
 import { referencedAssets } from '../shared/model.js';
 import type { CampaignCheck, GameProject } from '../shared/game/types.js';
@@ -21,7 +23,7 @@ interface Plan {project:GameProject;files:PlannedFile[];check:CampaignCheck}
 function remapAssets(value:unknown,refs:Map<string,string>):void{
  if(!value||typeof value!=='object')return;
  for(const [key,item] of Object.entries(value)){
-  if(typeof item==='string'&&['asset','frameAsset','image','terrainImage','restoredTerrainImage'].includes(key)&&refs.has(item))
+  if(typeof item==='string'&&['asset','frameAsset','image','sourceAssetRef','terrainImage','restoredTerrainImage'].includes(key)&&refs.has(item))
    (value as Record<string,unknown>)[key]=refs.get(item)!;
   else if(item&&typeof item==='object')remapAssets(item,refs);
  }
@@ -29,6 +31,14 @@ function remapAssets(value:unknown,refs:Map<string,string>):void{
 /** Preflight performs no writes. A missing/invalid film or asset aborts the entire publication. */
 export async function planCampaign(value:unknown,libraryRoot:string,gameRoot?:string):Promise<Plan>{
  const original=parseGameProject(value),project=compileCampaign(original),files:PlannedFile[]=[],assets=new Map<string,string>();
+ // The living greenhouse uses the labels. Keep the existing schema with a media-free layout.
+ if(project.homeScreen){
+  project.homeScreen={
+   background:defaultHomeScreen().background,
+   continueLabels:project.homeScreen.continueLabels,
+   elements:[],
+  };
+ }
  const movies=project.campaign!.cinematics;
  const embedded=new Map((original.cinematics??[]).map(doc=>[doc.id,doc]));
  const folded=new Map<string,string>(), canonicalMovies=new Map<string,string>();
@@ -82,10 +92,27 @@ export async function planCampaign(value:unknown,libraryRoot:string,gameRoot?:st
  }
  remapAssets(project,assets);
  parseGameProject(project);
+ if(gameRoot){
+  const schemaPath=await target(gameRoot,'content/design/game-project.schema.json');
+  const rawSchema=await fs.readFile(schemaPath,'utf8').catch((e:NodeJS.ErrnoException)=>{if(e.code==='ENOENT')return null;throw e;});
+  if(rawSchema!==null){
+   let targetSchema:Rule;
+   try{targetSchema=JSON.parse(rawSchema) as Rule;}catch{throw Error('Le schéma du jeu cible est invalide : content/design/game-project.schema.json.');}
+   const targetIssues:GameIssue[]=[];
+   walkRule(targetSchema,project,'projet',targetIssues);
+   if(targetIssues.length)throw Error(`Le jeu cible utilise un contrat obsolète (${targetIssues[0].path} : ${targetIssues[0].message}). Synchronise le contrat Studio → Godot avant de publier.`);
+  }
+ }
  const skipped=original.levels.length-project.levels.length;
- const deferred=(original.campaign?.steps.length??project.campaign!.steps.length)-project.campaign!.steps.length;
+ const originalEnd=original.campaign?.steps.findIndex(s=>s.kind==='end')??-1;
+ const afterEnd=originalEnd<0?[]:original.campaign!.steps.slice(originalEnd+1);
+ const deferred=afterEnd.filter(s=>!isProgressionMilestone(s)).length;
+ const unlockAfterEnd=afterEnd.some(s=>s.kind==='unlock_travel_book');
+ const herbariumAfterEnd=afterEnd.some(s=>s.kind==='unlock_herbarium');
  const warnings=skipped?[`${skipped} niveau(x) hors de la partie jouable conservé(s) dans le projet du Studio, non publié(s).`]:[];
  if(deferred>0)warnings.push(`${deferred} étape(s) après la fin actuelle conservée(s) dans le Studio, non publiée(s).`);
+ if(unlockAfterEnd)warnings.push('Le déblocage du carnet de voyage est placé après la fin actuelle : il restera verrouillé dans la version publiée.');
+ if(herbariumAfterEnd)warnings.push('Le déblocage de L’herbier est placé après la fin actuelle : il restera verrouillé dans la version publiée.');
  return {project,files,check:{films:project.campaign!.cinematics.length,assets:assets.size,steps:project.campaign!.steps.length,levels:project.levels.length,warnings}};
 }
 /** Refuse symlinked destinations (including internal ones) and non-regular files. */

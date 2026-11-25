@@ -20,7 +20,7 @@ test.afterEach(async()=>{
 test('paint mixed stacks, copy, erase, duplicate waves and reopen the exact board',async()=>{
  test.setTimeout(90000);
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();await page.getByRole('button',{name:'Créer un premier niveau'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();await page.getByRole('button',{name:'Créer un premier niveau'}).click();
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();await page.getByLabel('Objectif du niveau').selectOption('occupied_board');await page.getByRole('button',{name:'Appliquer le nouvel objectif',exact:true}).click();
  await page.getByRole('button',{name:'Vagues & ennemis'}).click();
  const editor=page.getByRole('region',{name:'Placement des ennemis'}),board=editor.getByRole('group',{name:'Plateau de la vague'}),palette=editor.getByRole('group',{name:'Ennemi à placer'});
@@ -37,8 +37,8 @@ test('paint mixed stacks, copy, erase, duplicate waves and reopen the exact boar
  await expect.poll(async()=>{try{return JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves.map((w:any)=>w.groups.reduce((n:number,g:any)=>n+g.count,0));}catch{return [];}}).toEqual([12,5]);
  const saved=JSON.parse(await fs.readFile(target,'utf8'));expect(saved.levels[0].waves[0].groups.filter((g:any)=>g.placement.colMin===4).map((g:any)=>[g.enemyId,g.count])).toEqual([['runner',4],['plaque',1]]);
  await expect(page.locator('.gd-footer')).not.toContainText('Opération en cours');await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
- await page.getByRole('button',{name:'Ouvrir',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
- await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();await page.getByRole('button',{name:'Vagues & ennemis'}).click();
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();await page.getByRole('button',{name:'Vagues & ennemis'}).click();
  await expect(page.getByRole('tab',{name:'Vague 1 12 ennemis'})).toBeVisible();await expect(page.getByRole('tab',{name:'Vague 2 5 ennemis'})).toBeVisible();
  await editor.getByRole('button',{name:'Sélectionner une case',exact:true}).click();await board.getByRole('button',{name:'Allée 3, colonne 5',exact:true}).click();await expect(editor.getByLabel('Quantité de Canette pressée')).toHaveValue('4');
  await fs.mkdir(path.join(ROOT,'work','occupied-board'),{recursive:true});await editor.screenshot({path:path.join(ROOT,'work','occupied-board','studio.png')});await board.screenshot({path:path.join(ROOT,'work','occupied-board','studio-board.png')});

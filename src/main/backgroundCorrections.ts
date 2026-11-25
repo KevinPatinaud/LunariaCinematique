@@ -25,6 +25,7 @@ import { isWithin, resolveAsset } from "./files.js";
 import type { ImageGenerator } from "./codexImageCorrection.js";
 import { ImageJobStore, type ImageTaskQueue } from "./imageJobs.js";
 import { imageTaskContext, type ImageTask } from "../shared/imageTasks.js";
+import { normalizeAiProvider } from "../shared/aiProviders.js";
 import { isSafeAssetRef } from "../shared/schema.js";
 
 type Size = { width: number; height: number };
@@ -80,6 +81,7 @@ export class BackgroundCorrections {
       const request = {
         ...data.request,
         context: imageTaskContext(data.request.context),
+        aiProvider: normalizeAiProvider(data.request.aiProvider),
         codexModel: normalizeCodexModel(data.request.codexModel),
       };
       const extension = path.extname(request.ref).toLowerCase();
@@ -316,6 +318,7 @@ export class BackgroundCorrections {
     const request = {
       ...(input as BackgroundCorrectionRequest),
       context: imageTaskContext((input as BackgroundCorrectionRequest).context),
+      aiProvider: normalizeAiProvider((input as BackgroundCorrectionRequest).aiProvider),
       codexModel: normalizeCodexModel(
         (input as BackgroundCorrectionRequest).codexModel,
       ),
@@ -395,6 +398,7 @@ export class BackgroundCorrections {
         core: rect,
         usedOriginal: !!original,
         outputWidth: request.outputWidth,
+        aiProvider: request.aiProvider,
         codexModel: request.codexModel,
       },
     };

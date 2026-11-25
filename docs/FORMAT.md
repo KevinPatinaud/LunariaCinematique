@@ -4,7 +4,7 @@ Le contrat exécutable est [cinematic.schema.json](cinematic.schema.json), gén�
 
 ## Racine et chemin des assets
 
-Ce document décrit les films. La composition du menu d’accueil est un contrat distinct, `homeScreen` dans `lunaria.game.json`, documenté dans [Écran d’accueil](ACCUEIL.md) ; elle ne nécessite pas de cinématique.
+Ce document décrit les films. Les [données d’accueil](ACCUEIL.md) relèvent du champ `homeScreen` de `lunaria.game.json` et suivent leur propre contrat.
 
 ```json
 {
@@ -108,6 +108,8 @@ Ce fragment complète un acteur existant : il ne remplace pas ses champs `asset`
 `motion.preset` : `none`, `float`, `sway`, `pulse`, `spin`, `shake`, `bounce`. Amplitude 0…1, période 0,2…60 s, délai 0…300 s. Les effets sont déterministes à partir du temps du plan. La rotation continue fait un tour par période et ne dépend pas d’`intensity`. Un cycle non bouclé revient à la pose de repos.
 
 `movement` : décalages normalisés −3…3, durée 0,1…300 s, délai 0…300 s ; `smooth` ou `linear` ; `once` maintient l’arrivée, `pingpong` parcourt des branches de même durée en boucle. Les délais commencent après la fin de l’entrée. Le trajet et l’effet se superposent ; les paramètres de l’acteur ne sont jamais réécrits à chaque frame.
+
+Le champ facultatif `movement.bend` (−1 à 1) décale le milieu du trajet de part et d’autre de la ligne A → B, en proportion de la hauteur du plan. Une valeur nulle produit une ligne droite. La vitesse et la cadence de marche s’appliquent à la distance le long de la courbe. Le retour suit le même tracé en sens inverse.
 
 Ordre de transformation : calcul entrée + translation du trajet + décalage de l’effet, puis transformation autour du pivot (angle statique + effet, taille uniforme) et miroir local de la texture. La caméra est appliquée ensuite. Les queues automatiques utilisent le point (0,5 ; 0,22) de l’image après ces mêmes transformations.
 

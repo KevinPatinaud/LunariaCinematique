@@ -9,11 +9,13 @@ import type {
   PanoramaResolution,
 } from "../../shared/backgroundCorrection.js";
 import { normalizeCodexModel } from "../../shared/backgroundCorrection.js";
+import type { AiImageProvider, AiModelOption } from "../../shared/aiProviders.js";
 import { useProjectSession } from "../project/ProjectSessionContext.js";
 import { useImageTasks } from "../images/ImageTasksContext.js";
 import type { ImageTaskContext } from "../../shared/imageTasks.js";
 
 interface ModelPreference {
+  aiProvider: AiImageProvider;
   codexModel: string;
 }
 const MODEL_PREFERENCE_KEY = "lunaria.backgroundCorrection.model";
@@ -29,7 +31,9 @@ function modelPreference(): ModelPreference {
       typeof saved.codexModel === "string" &&
       saved.codexModel.length <= 128
     ) {
+      const provider = "aiProvider" in saved && saved.aiProvider === "gemini" ? "gemini" : "openai";
       return {
+        aiProvider: provider,
         codexModel:
           "customModel" in saved && saved.customModel === false
             ? ""
@@ -39,7 +43,7 @@ function modelPreference(): ModelPreference {
   } catch {
     /* Missing, corrupt or unavailable local storage keeps automatic. */
   }
-  return { codexModel: "" };
+  return { aiProvider: "openai", codexModel: "" };
 }
 
 interface Target {
@@ -90,30 +94,46 @@ export function useBackgroundCorrection(
   const selectedRef = useRef<string | undefined>(undefined);
   const [opened, setOpened] = useState(false);
   const [models, setModels] = useState<{
-    items: CodexModelOption[];
+    provider: AiImageProvider;
+    items: AiModelOption[];
     loading: boolean;
     loaded: boolean;
     error: string;
-  }>({ items: [], loading: false, loaded: false, error: "" });
+  }>({ provider: "openai", items: [], loading: false, loaded: false, error: "" });
   const modelsRef = useRef(models);
-  const refreshModels = useCallback(async () => {
-    if (modelsRef.current.loading) return;
+  const refreshModels = useCallback(async (requestedProvider?: AiImageProvider) => {
+    const targetProvider =
+      requestedProvider ??
+      entriesRef.current.find((entry) => entry.id === selectedRef.current)?.aiProvider ??
+      modelsRef.current.provider;
+    if (modelsRef.current.loading && modelsRef.current.provider === targetProvider) return;
     const update = (patch: Partial<typeof models>) => {
       modelsRef.current = { ...modelsRef.current, ...patch };
       setModels(modelsRef.current);
     };
-    update({ loading: true, error: "" });
+    update({ provider: targetProvider, loading: true, error: "" });
     try {
-      if (typeof api.listBackgroundModels !== "function")
-        throw new Error(
-          "Relance le Studio pour activer la détection des modèles.",
-        );
-      const items = await api.listBackgroundModels();
-      update({ items, loaded: true });
+      const items =
+        typeof api.listAiModels === "function"
+          ? await api.listAiModels(targetProvider)
+          : targetProvider === "openai" && typeof api.listBackgroundModels === "function"
+            ? await api.listBackgroundModels()
+            : (() => {
+                throw new Error(
+                  "Relance le Studio pour activer la détection des modèles.",
+                );
+              })();
+      if (modelsRef.current.provider === targetProvider) {
+        update({ items, loaded: true });
+      }
     } catch (reason) {
-      update({ error: message(reason) });
+      if (modelsRef.current.provider === targetProvider) {
+        update({ error: message(reason) });
+      }
     } finally {
-      update({ loading: false });
+      if (modelsRef.current.provider === targetProvider) {
+        update({ loading: false });
+      }
     }
   }, []);
   const trigger = useRef<HTMLElement | null>(null);
@@ -187,7 +207,10 @@ export function useBackgroundCorrection(
     selectedRef.current = id;
     setSelectedId(id);
     setOpened(true);
-    if (!modelsRef.current.loaded) void refreshModels();
+    const entry = entriesRef.current.find((item) => item.id === id);
+    if (!modelsRef.current.loaded || (entry && modelsRef.current.provider !== entry.aiProvider)) {
+      void refreshModels(entry?.aiProvider ?? "openai");
+    }
   }
   function close(id = selectedRef.current) {
     if (selectedRef.current !== id) return;
@@ -264,7 +287,7 @@ export function useBackgroundCorrection(
         cropPosition: request?.cropPosition ?? 0.5,
         outputWidth: request?.outputWidth ?? "native",
         ...modelPreference(),
-        ...(request ? { codexModel: request.codexModel ?? "" } : {}),
+        ...(request ? { aiProvider: request.aiProvider ?? "openai", codexModel: request.codexModel ?? "" } : {}),
         job: recovered?.kind === "background" ? recovered.job : undefined,
       },
     ]);
@@ -341,6 +364,7 @@ export function useBackgroundCorrection(
         useOriginal: mode === "rebuild" && useOriginal,
         cropPosition,
         outputWidth,
+        aiProvider: entry.aiProvider,
         codexModel,
         context: entry.context,
       });
@@ -469,6 +493,19 @@ export function useBackgroundCorrection(
     const entry = current();
     if (entry && !busy(entry)) patch(entry.id, update);
   }
+  function setProvider(aiProvider: AiImageProvider) {
+    const entry = current();
+    if (!entry || busy(entry) || entry.job?.status === "applied") return;
+    if (entry.aiProvider === aiProvider) return;
+    const preference: ModelPreference = { aiProvider, codexModel: "" };
+    patch(entry.id, { ...preference, error: "" });
+    try {
+      localStorage.setItem(MODEL_PREFERENCE_KEY, JSON.stringify(preference));
+    } catch {
+      /* Selection still works for this treatment. */
+    }
+    void refreshModels(aiProvider);
+  }
   function setModel(codexModel: string) {
     const entry = current();
     if (!entry || busy(entry) || entry.job?.status === "applied") return;
@@ -477,7 +514,7 @@ export function useBackgroundCorrection(
       !modelsRef.current.items.some((model) => model.id === codexModel)
     )
       return;
-    const preference = { codexModel };
+    const preference: ModelPreference = { aiProvider: entry.aiProvider, codexModel };
     patch(entry.id, { ...preference, error: "" });
     try {
       localStorage.setItem(MODEL_PREFERENCE_KEY, JSON.stringify(preference));
@@ -507,10 +544,12 @@ export function useBackgroundCorrection(
     outputWidth: selected?.outputWidth ?? "native",
     setOutputWidth: (outputWidth: PanoramaResolution) =>
       setting({ outputWidth }),
+    aiProvider: selected?.aiProvider ?? "openai",
+    setAiProvider: setProvider,
     codexModel: selected?.codexModel ?? "",
     setCodexModel: setModel,
     models,
-    refreshModels,
+    refreshModels: () => refreshModels(selected?.aiProvider ?? "openai"),
     modelUnavailable:
       !!selected?.codexModel &&
       !models.items.some((model) => model.id === selected.codexModel),

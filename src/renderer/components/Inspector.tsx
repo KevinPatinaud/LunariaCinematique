@@ -2,13 +2,17 @@ import React from 'react';
 import type {GameProject} from '../../shared/game/types.js';
 import type {CatalogLink} from '../../shared/presentation/types.js';
 import {ActorBindingFields} from '../presentation/PresentationFields.js';
+import {cinematicWalkOptionsForActor, inferActorSpecies} from '../../shared/presentation/cinematicMotion.js';
+import {resolveAnimation} from '../../shared/presentation/runtime.js';
 import type { Actor, Asset, Bubble, Cinematic, EntryPreset, Shot } from '../../shared/model.js';
+import { STAGE } from '../../shared/model.js';
 import { TextAnimationInspector } from './TextAnimationInspector.js';
 import { ExitInspector } from './ExitInspector.js';
 import { MotionInspector } from './MotionInspector.js';
 import { NumberInput } from './NumberInput.js';
 import { centeredObject, proportionalSize } from '../../shared/editing.js';
-import { bubbleLayout } from '../../shared/geometry.js';
+import { bubbleLayout, clamp } from '../../shared/geometry.js';
+import { actorAnchor } from '../../shared/motion.js';
 import { bubbleEntryLabels, effectiveBubbleEntry } from '../../shared/bubbleEntry.js';
 import type { Selection } from './Scene.js';
 import { Icon } from './Icon.js';
@@ -24,6 +28,8 @@ function Field({ label, children, hint }: { label: string; children: React.React
 }
 interface Props {
   generatePose?: () => void;
+  openAnimationWorkshop?: (speciesId?: string, animationId?: string) => void;
+  generateAnimation?: (speciesId?: string, historyOnly?: boolean) => void;
   editAudio: () => void;
   presentationProject:GameProject;setCatalog:(value:CatalogLink)=>void;
   previewMotion: () => void; previewText: (id: string) => void;
@@ -40,6 +46,10 @@ export function Inspector(p: Props) {
   const pendingAnimationScroll = React.useRef<number | null>(null);
   const selectedId = p.selection.kind === 'shot' ? null : p.selection.id;
   const actor = (p.multiCount??0)<=1 && p.selection.kind === 'actor' ? p.shot.actors.find(a => a.id === selectedId) : undefined;
+  const elementAnimation = actor?.animation?.elementPlayback ? actor.animation : undefined;
+  const elementPlayback = elementAnimation?.elementPlayback;
+  const exhale = p.presentationProject.presentation?.animations.find(clip =>
+    clip.id === elementAnimation?.animationId && clip.element?.preset === 'exhale')?.element;
   const bubble = (p.multiCount??0)<=1 && p.selection.kind === 'bubble' ? p.shot.bubbles.find(b => b.id === selectedId) : undefined;
   const formKey = `${p.doc.id}:${p.shot.id}:${actor ? `actor:${actor.id}` : bubble ? `bubble:${bubble.id}` : (p.multiCount??0)>1 ? 'group' : 'shot'}`;
   React.useLayoutEffect(() => {
@@ -59,6 +69,14 @@ export function Inspector(p: Props) {
     p.updateObject('actor', actor.id, patch, key);
   };
   const changeBubble = (patch: Partial<Bubble>, key = '') => bubble && p.updateObject('bubble', bubble.id, patch, key);
+  const orientActor = (patch: Partial<Actor>, key = '') => {
+    if (!actor || !exhale) return changeActor(patch, key);
+    const { x, y } = exhale.pivot;
+    const before = actorAnchor(actor, 0, false, x, y);
+    const after = actorAnchor({ ...actor, ...patch }, 0, false, x, y);
+    changeActor({ ...patch, x: clamp(actor.x + (before.x - after.x) / STAGE.width, -1, 2),
+      y: clamp(actor.y + (before.y - after.y) / STAGE.height, -1, 2) }, key);
+  };
   function setStyle(style: Bubble['style']) {
     if (style === 'simple' || style === 'ornate') {
       const name = style === 'simple' ? 'dialogue_panel_simple_v01.png' : 'tooltip_ornate_v01.png';
@@ -69,7 +87,7 @@ export function Inspector(p: Props) {
   const textureExists = (s: string) => p.assets.some(a => a.path.endsWith(s));
   return <aside className="inspector panel">
     <div className="audio-summary"><small>{p.shot.sounds?.length??0} son(s) sur ce plan · {p.doc.musicTracks?.length??0} musique(s) dans le film</small><button className="button subtle" disabled={p.disabled} onClick={p.editAudio}><Icon name="music" size={15}/> Configurer le son</button></div>
-    <div className="panel-heading"><span>{actor ? actor.role === 'enemy' ? 'ENNEMI' : actor.role === 'prop' ? 'OBJET DE DÉCORATION' : 'PERSONNAGE' : bubble ? 'BULLE DE DIALOGUE' : 'MISE EN SCÈNE'}</span><Icon name={actor ? actor.role === 'enemy' ? 'enemy' : actor.role === 'prop' ? 'prop' : 'actor' : bubble ? 'bubble' : 'camera'} size={16}/></div>
+    <div className="panel-heading"><span>{actor ? elementPlayback ? 'ÉLÉMENT ANIMÉ' : actor.role === 'enemy' ? 'ENNEMI' : actor.role === 'prop' ? 'OBJET DE DÉCORATION' : 'PERSONNAGE' : bubble ? 'BULLE DE DIALOGUE' : 'MISE EN SCÈNE'}</span><Icon name={actor ? elementPlayback ? 'motion' : actor.role === 'enemy' ? 'enemy' : actor.role === 'prop' ? 'prop' : 'actor' : bubble ? 'bubble' : 'camera'} size={16}/></div>
     {p.children}
     {p.objectLocked && <p className="locked-note"><Icon name="lock" size={13}/> Calque verrouillé. Déverrouille-le dans la liste pour le modifier.</p>}
     <fieldset ref={scrollArea} disabled={p.disabled || p.objectLocked} className="inspector-content">
@@ -104,16 +122,118 @@ export function Inspector(p: Props) {
       {actor && <>
         {(!actor.role || actor.role === 'character') && p.generatePose && <button className="button subtle full" disabled={p.disabled || p.objectLocked || !window.lunaria} onClick={p.generatePose}><Icon name="wand" size={15}/> Générer une pose avec Codex</button>}
         <Field label={actor.role === 'enemy' ? "Nom de l’ennemi" : actor.role === 'prop' ? "Nom de l’objet" : "Nom du personnage"}><input maxLength={180} value={actor.name} onChange={e => changeActor({ name: e.target.value }, 'actor-name')}/></Field>
-        <Field label="Type d’élément"><select aria-label="Type d’élément" value={actor.role ?? 'character'} onChange={e => changeActor({role: e.target.value as Actor['role']})}><option value="character">Personnage</option><option value="enemy">Ennemi</option><option value="prop">Objet de décoration</option></select></Field>
+        {!elementPlayback && <Field label="Type d’élément"><select aria-label="Type d’élément" value={actor.role ?? 'character'} onChange={e => changeActor({role: e.target.value as Actor['role']})}><option value="character">Personnage</option><option value="enemy">Ennemi</option><option value="prop">Objet de décoration</option></select></Field>}
         <button className="button subtle full" onClick={() => changeActor(centeredObject(actor))}>Recentrer dans le cadre</button><p className="field-hint">Déplace-le dans l’image. Les poignées conservent ses proportions.</p>
-        <Field label="Taille"><input type="range" min="0.03" max="2" step="0.01" value={actor.height} onChange={e => { changeActor(proportionalSize(actor.width, actor.height, +e.target.value / actor.height), 'actor-size'); }}/></Field>
-        <button className={`button subtle full ${actor.flipX ? 'toggled' : ''}`} onClick={() => changeActor({ flipX: !actor.flipX })}><Icon name="flip" size={16}/> Retourner horizontalement</button>
+        <Field label="Taille"><input type="range" min="0.03" max="2" step="0.01" value={actor.height} onChange={e => { orientActor(proportionalSize(actor.width, actor.height, +e.target.value / actor.height), 'actor-size'); }}/></Field>
+        <button className={`button subtle full ${actor.flipX ? 'toggled' : ''}`} onClick={() => orientActor({ flipX: !actor.flipX })}><Icon name="flip" size={16}/> {exhale ? 'Inverser le sens de la fumée' : 'Retourner horizontalement'}</button>
+        {exhale && <p className="field-hint">Aligne le repère blanc sur la bouche. Ajuste la taille et la rotation pour orienter le souffle.</p>}
         <div className="field-row"><button className="button subtle" disabled={p.shot.actors.indexOf(actor) === 0} onClick={() => p.layer(-1)}>Derrière</button><button className="button subtle" disabled={p.shot.actors.indexOf(actor) === p.shot.actors.length - 1} onClick={() => p.layer(1)}>Devant</button></div>
         <details className="motion-precision"><summary>Orientation et transparence</summary>
-          <Field label="Rotation (°)"><NumberInput label="Rotation de l’élément" min={-180} max={180} value={actor.rotation ?? 0} onCommit={rotation => changeActor({rotation}, 'actor-rotation')}/></Field>
+          <Field label="Rotation (°)"><NumberInput label="Rotation de l’élément" min={-180} max={180} value={actor.rotation ?? 0} onCommit={rotation => orientActor({rotation}, 'actor-rotation')}/></Field>
           <Field label="Opacité"><input aria-label="Opacité de l’élément" type="range" min={0} max={1} step={0.05} value={actor.opacity} onChange={e => changeActor({opacity: +e.target.value}, 'actor-opacity')}/></Field>
         </details>
-        <MotionInspector actor={actor} change={changeActor} preview={p.previewMotion}/>
+        {elementAnimation && elementPlayback && <>
+          <div className="section-label"><Icon name="motion" size={15}/> LECTURE DE L’ÉLÉMENT</div>
+          <div className="field-row">
+            <Field label="Déclenchement (s)"><NumberInput min={0} max={300} value={elementPlayback.start}
+              onCommit={start => changeActor({ animation: { ...elementAnimation, elementPlayback: { ...elementPlayback, start } } }, 'element-start')}/></Field>
+            <Field label="Vitesse (×)"><NumberInput min={0.05} max={10} value={elementAnimation.speed}
+              onCommit={speed => changeActor({ animation: { ...elementAnimation, speed } }, 'element-speed')}/></Field>
+          </div>
+          <Field label="Répétition"><select value={elementPlayback.loop ? 'loop' : 'once'}
+            onChange={event => changeActor({ animation: { ...elementAnimation,
+              elementPlayback: { ...elementPlayback, loop: event.target.value === 'loop' } } })}>
+            <option value="loop">En boucle</option><option value="once">Une fois</option>
+          </select></Field>
+          <button className="button subtle full" onClick={p.previewMotion}><Icon name="play" size={15}/> Prévisualiser dans le plan</button>
+        </>}
+        <MotionInspector
+          actor={actor}
+          change={changeActor}
+          preview={p.previewMotion}
+          walkControl={(() => {
+            if (actor.role === 'prop') return undefined;
+            const matched = inferActorSpecies(actor, p.presentationProject);
+            const speciesId = actor.animation?.speciesId || matched?.id || '';
+            const catalog = p.presentationProject.presentation;
+            const options: Array<{ value: string; label: string }> = cinematicWalkOptionsForActor(
+              actor,
+              p.presentationProject,
+              speciesId || undefined,
+            ).map(({ value, label }) => ({ value, label }));
+            // If an existing shot already references a legacy binding, keep only that active choice visible without listing gameplay animations.
+            const currentValue = !actor.animation?.syncWithMovement
+              ? ''
+              : actor.animation.mode === 'animation'
+                ? `anim:${actor.animation.animationId}`
+                : actor.animation.mode === 'species' && actor.animation.slot === 'move'
+                  ? `species:${actor.animation.speciesId}:move`
+                  : '';
+            const currentCinematicClip = currentValue.startsWith('anim:')
+              ? catalog?.animations.find(a => a.scope === 'cinematic' && a.id === actor.animation?.animationId)
+              : undefined;
+            if (currentValue && !options.some(opt => opt.value === currentValue)) {
+              const activeClip = actor.animation?.mode === 'animation'
+                ? catalog?.animations.find(a => a.id === actor.animation?.animationId)
+                : matched
+                  ? resolveAnimation(p.presentationProject, matched, actor.animation?.slot || 'move')
+                  : undefined;
+              if (activeClip) {
+                options.push({ value: currentValue, label: `${activeClip.name} (héritage)` });
+              }
+            }
+            return {
+              options,
+              value: currentValue,
+              onSelect: (selectedValue: string) => {
+                if (!selectedValue) {
+                  changeActor({ animation: undefined });
+                  return;
+                }
+                p.setCatalog({
+                  projectId: p.presentationProject.id,
+                  file: p.doc.presentationCatalog?.projectId === p.presentationProject.id ? p.doc.presentationCatalog.file : '',
+                });
+                if (selectedValue.startsWith('anim:')) {
+                  const animationId = selectedValue.slice(5);
+                  changeActor({
+                    animation: {
+                      mode: 'animation',
+                      speciesId,
+                      slot: 'move',
+                      animationId,
+                      speed: actor.animation?.syncWithMovement ? actor.animation.speed : 1,
+                      syncWithMovement: true,
+                      autoFlip: true,
+                    },
+                  });
+                } else if (selectedValue.startsWith('species:')) {
+                  const [, spId, slot] = selectedValue.split(':');
+                  changeActor({
+                    animation: {
+                      mode: 'species',
+                      speciesId: spId,
+                      slot: slot || 'move',
+                      animationId: '',
+                      speed: actor.animation?.syncWithMovement ? actor.animation.speed : 1,
+                      syncWithMovement: true,
+                      autoFlip: true,
+                    },
+                  });
+                }
+              },
+              onGenerateWalk: p.generateAnimation && window.lunaria
+                ? () => p.generateAnimation?.(speciesId || undefined)
+                : undefined,
+              onWalkHistory: p.generateAnimation && window.lunaria
+                ? () => p.generateAnimation?.(speciesId || undefined, true)
+                : undefined,
+              onEditWalk: currentCinematicClip && p.openAnimationWorkshop
+                ? () => p.openAnimationWorkshop?.(speciesId || undefined, currentCinematicClip.id)
+                : undefined,
+            };
+          })()}
+        />
         <div className="section-label"><Icon name="actor" size={15}/> APPARITION</div>
         <Field label="Entrée"><select value={actor.entry.preset} onChange={e => changeActor({ entry: { ...actor.entry, preset: e.target.value as EntryPreset } })}>{Object.entries(entryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
         {entryDescriptions[actor.entry.preset] && <p className="field-hint">{entryDescriptions[actor.entry.preset]}</p>}
@@ -121,7 +241,13 @@ export function Inspector(p: Props) {
         <p className="field-hint">{actor.entry.preset === 'none' ? '« Déjà présent » affiche cet élément dès le début du plan. Choisis une autre entrée pour régler un délai.' : 'Le délai commence au début du plan. La composition garde l’élément visible pour le placer ; teste les animations ou lis le plan pour voir son apparition réelle.'}</p>
         <ExitInspector actor={actor} change={changeActor} duration={p.shot.duration} preview={p.previewMotion}/>
         <p className="field-hint">Les effets animent le PNG entier, pas une marche articulée. Ils fonctionnent aussi pour les ennemis et les objets.</p>
-        <ActorBindingFields actor={actor} doc={p.doc} project={p.presentationProject} change={changeActor} setCatalog={p.setCatalog}/>
+        {!elementPlayback && <ActorBindingFields
+          actor={actor}
+          doc={p.doc}
+          project={p.presentationProject}
+          change={changeActor}
+          setCatalog={p.setCatalog}
+        />}
         <div className="section-label">SOURCE PARTAGÉE</div><p className="asset-reference">{actor.asset}</p>
       </>}
       {bubble && <>
@@ -145,7 +271,7 @@ export function Inspector(p: Props) {
       </React.Fragment>
     </fieldset>
     {(actor || bubble || p.copiedKind) && <div className="inspector-clipboard-actions">
-      {actor && <button className="button subtle" disabled={p.disabled} title="Copier ce personnage pour le coller dans un autre plan (Ctrl+C)" onClick={p.copySelection}>Copier le personnage</button>}
+      {actor && <button className="button subtle" disabled={p.disabled} title="Copier ce calque pour le coller dans un autre plan (Ctrl+C)" onClick={p.copySelection}>{elementPlayback ? 'Copier l’élément' : 'Copier le personnage'}</button>}
       {bubble && <button className="button subtle" disabled={p.disabled} title="Copier cette bulle pour la coller dans un autre plan (Ctrl+C)" onClick={p.copySelection}>Copier la bulle</button>}
       {p.copiedKind && <button className="button subtle" disabled={p.disabled} title={p.copiedKind === 'actor' ? `Coller « ${p.copiedName} » ici, à sa position et à sa taille d’origine (Ctrl+V)` : 'Coller la bulle ici, à sa position et à sa taille d’origine (Ctrl+V)'} onClick={p.pasteSelection}>{p.copiedKind === 'bubble' ? 'Coller la bulle' : 'Coller ici'}</button>}
     </div>}

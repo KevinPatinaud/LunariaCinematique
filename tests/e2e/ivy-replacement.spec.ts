@@ -20,7 +20,7 @@ test('the actual campaign opens all four replaced films and one ivy with its own
   const page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
   await page.waitForURL('app://studio/index.html');
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},file);
-  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
   await page.getByRole('button',{name:'Actions du fichier projet',exact:true}).click();
   await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
@@ -30,9 +30,9 @@ test('the actual campaign opens all four replaced films and one ivy with its own
    await page.getByRole('button',{name:'Ouvrir dans l’éditeur de cinématiques',exact:true}).click();
    await expect(page.getByLabel('Titre de la cinématique',{exact:true})).toHaveValue(title);
    await page.screenshot({path:info.outputPath(title.slice(0,2)+'-studio.png')});
-   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+   await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
   }
-  await page.locator('.gd-sections').getByRole('button',{name:/^Plantes alliées/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Plantes/}).click();
   const plants=page.getByRole('complementary',{name:'Catalogue des plantes'});
   await expect(plants.getByRole('button',{name:/^Lierre/})).toHaveCount(1);
   await expect(plants.getByRole('button',{name:/^Fougère/})).toHaveCount(0);

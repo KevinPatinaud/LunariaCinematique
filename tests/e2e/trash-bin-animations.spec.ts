@@ -19,7 +19,7 @@ test('Trash bin: preview all four project animations and retain them after reope
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
   await page.locator('.gd-message button').click();
   async function selectBin(){
-   await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+   await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
    await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Poubelle/}).click();
    await page.getByRole('button',{name:'Animations et sons de Poubelle',exact:true}).click();
    await page.getByRole('button',{name:/^Ses animations \(/}).click();

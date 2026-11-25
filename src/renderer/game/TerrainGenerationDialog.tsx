@@ -1,7 +1,9 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import type { Asset, AssetRef } from "../../shared/model.js";
 import type { GameProject } from "../../shared/game/types.js";
-import type { CodexModelOption } from "../../shared/backgroundCorrection.js";
+import type { AiImageProvider } from "../../shared/aiProviders.js";
+import { AiModelSelector, rememberAiProvider, saveAiProvider } from "../images/AiModelSelector.js";
+import { useAiModels } from "../images/useAiModels.js";
 import {
   precedingTerrainReferences,
   type TerrainGenerationJob,
@@ -16,6 +18,7 @@ import { useImageTasks } from "../images/ImageTasksContext.js";
 import type { TerrainGenerationRequest } from "../../shared/terrainGeneration.js";
 
 const preferenceKey = "lunaria.terrainGeneration.model";
+const providerPreferenceKey = "lunaria.terrainGeneration.provider";
 const message = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
 function rememberedModel() {
@@ -54,10 +57,9 @@ export function TerrainGenerationDialog({
   );
   const [customRef, setCustomRef] = useState<AssetRef>();
   const [instructions, setInstructions] = useState("");
+  const [aiProvider, setAiProvider] = useState<AiImageProvider>(() => rememberAiProvider(providerPreferenceKey));
   const [codexModel, setCodexModel] = useState(rememberedModel);
-  const [models, setModels] = useState<CodexModelOption[]>([]),
-    [loadingModels, setLoadingModels] = useState(false),
-    [modelError, setModelError] = useState("");
+  const { models, loadingModels, modelError, refreshModels } = useAiModels(aiProvider);
   const [job, setJob] = useState<TerrainGenerationJob>(),
     [pending, setPending] = useState(false),
     [error, setError] = useState("");
@@ -65,8 +67,7 @@ export function TerrainGenerationDialog({
   const live = useRef(true),
     locked = useRef(false),
     jobRef = useRef(job),
-    jobRoot = useRef(""),
-    modelsLoading = useRef(false);
+    jobRoot = useRef("");
   const libraryRoot = services?.library?.rootPath ?? "";
   const currentAssets = services?.library?.assets ?? assets;
   const ref =
@@ -88,24 +89,6 @@ export function TerrainGenerationDialog({
     return () => {
       live.current = false;
     };
-  }, []);
-  async function refreshModels() {
-    if (modelsLoading.current) return;
-    modelsLoading.current = true;
-    setLoadingModels(true);
-    setModelError("");
-    try {
-      const items = await api.listBackgroundModels();
-      if (live.current) setModels(items);
-    } catch (reason) {
-      if (live.current) setModelError(message(reason));
-    } finally {
-      modelsLoading.current = false;
-      if (live.current) setLoadingModels(false);
-    }
-  }
-  useEffect(() => {
-    void refreshModels();
   }, []);
   useEffect(() => {
     if (locked.current) return;
@@ -131,6 +114,7 @@ export function TerrainGenerationDialog({
       setSource("custom");
       setCustomRef(request.ref);
       setInstructions(request.instructions);
+      setAiProvider(request.aiProvider ?? "openai");
       setCodexModel(request.codexModel ?? "");
       update(found.job);
     }
@@ -171,6 +155,7 @@ export function TerrainGenerationDialog({
         ref,
         levelTitle: level.title,
         instructions,
+        aiProvider,
         codexModel,
         context: {
           projectId: project.id,
@@ -374,45 +359,34 @@ export function TerrainGenerationDialog({
                 onChange={(event) => setInstructions(event.target.value)}
               />
             </label>
-            <div className="terrain-model">
-              <label className="field">
-                <span>Modèle Codex</span>
-                <select
-                  aria-label="Modèle Codex du terrain"
-                  disabled={loadingModels}
-                  value={codexModel}
-                  onChange={(event) => {
-                    setCodexModel(event.target.value);
-                    try {
-                      localStorage.setItem(preferenceKey, event.target.value);
-                    } catch {
-                      /* The current selection still applies. */
-                    }
-                  }}
-                >
-                  <option value="">Automatique · choix de Codex</option>
-                  {modelUnavailable && (
-                    <option value={codexModel} disabled>
-                      {codexModel} · non détecté
-                    </option>
-                  )}
-                  {models.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.label}
-                      {model.isDefault ? " · par défaut" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                className="button subtle"
-                disabled={loadingModels}
-                onClick={() => void refreshModels()}
-              >
-                {loadingModels ? "Détection…" : "Actualiser les modèles"}
-              </button>
-            </div>
+            <AiModelSelector
+              provider={aiProvider}
+              onProviderChange={(nextProvider) => {
+                setAiProvider(nextProvider);
+                setCodexModel("");
+                saveAiProvider(providerPreferenceKey, nextProvider);
+                try {
+                  localStorage.setItem(preferenceKey, "");
+                } catch {
+                  /* Optional. */
+                }
+              }}
+              model={codexModel}
+              onModelChange={(nextModel) => {
+                setCodexModel(nextModel);
+                try {
+                  localStorage.setItem(preferenceKey, nextModel);
+                } catch {
+                  /* The current selection still applies. */
+                }
+              }}
+              models={models}
+              loading={loadingModels}
+              error=""
+              onRefresh={refreshModels}
+              disabled={pending || generating || job?.status === "applied"}
+              selectAriaLabel={aiProvider === "gemini" ? "Modèle Gemini du terrain" : "Modèle Codex du terrain"}
+            />
           </fieldset>
           {modelError && (
             <p className="terrain-error" role="alert">

@@ -6,19 +6,21 @@ import { assetMatchesTab, buildFolderTree, filterLibraryAssets, folderLabel, nor
 import { ASSET_MIME, ASSET_KIND_MIME, isImage } from '../../shared/assets.js';
 import { Icon } from './Icon.js';
 import { LibraryResizeHandle } from './LibraryResizeHandle.js';
+import { AnimatedElementLibrary, type ElementLibraryActions } from '../presentation/AnimatedElementLibrary.js';
 export type { LibraryTab } from '../../shared/libraryBrowser.js';
 export { folderLabel } from '../../shared/libraryBrowser.js';
 
 const tabs = [
   ['environment', 'image', 'Décors'], ['character', 'actor', 'Personnages'], ['enemy', 'enemy', 'Ennemis'], ['prop', 'prop', 'Objets'],
-  ['ui', 'bubble', 'Bulles'], ['audio', 'music', 'Audio']
+  ['ui', 'bubble', 'Bulles'], ['audio', 'music', 'Audio'], ['animated', 'motion', 'Éléments animés']
 ] as const;
-const allLabels: Record<LibraryTab, string> = { environment: 'Tous les lieux', character: 'Tous les personnages', enemy: 'Tous les ennemis', prop: 'Tous les objets', ui: 'Tous les modèles', audio: 'Tous les sons' };
-const actionLabels: Record<LibraryTab, string> = { environment: 'Utiliser comme décor', character: 'Ajouter le personnage', enemy: 'Ajouter l’ennemi', prop: 'Ajouter l’objet', ui: 'Appliquer à la bulle', audio: 'Configurer ce son' };
+const allLabels: Record<LibraryTab, string> = { environment: 'Tous les lieux', character: 'Tous les personnages', enemy: 'Tous les ennemis', prop: 'Tous les objets', ui: 'Tous les modèles', audio: 'Tous les sons', animated: 'Tous les éléments animés' };
+const actionLabels: Record<LibraryTab, string> = { environment: 'Utiliser comme décor', character: 'Ajouter le personnage', enemy: 'Ajouter l’ennemi', prop: 'Ajouter l’objet', ui: 'Appliquer à la bulle', audio: 'Configurer ce son', animated: 'Ajouter au plan' };
 export interface LibraryProps {
   library: LibrarySnapshot | null; tab: LibraryTab; setTab: (tab: LibraryTab) => void;
   choose: () => void; refresh: () => void; useAsset: (asset: Asset, as: LibraryTab) => boolean | Promise<boolean>;
   disabled: boolean; busy: boolean;
+  animatedElements?: ElementLibraryActions;
   collections: {favorites: readonly string[]; recent: readonly string[]; favoriteFolders: readonly string[];
     toggle: (ref: Asset['ref']) => void; toggleFolder: (path: string) => void; use: (ref: Asset['ref']) => void; clearRecent: () => void};
   layout: { preferences: LibraryPreferences; width: number; maxWidth: number; update: (patch: Partial<LibraryPreferences>) => void };
@@ -112,10 +114,11 @@ function AssetResults({ assets, selectedRef, chosenRefs, onPick, onUse, disabled
 export function Library(props: LibraryProps) {
   const { library, tab, setTab, layout } = props;
   const picker = props.picker;
+  const elements = tab === 'animated' ? props.animatedElements : undefined;
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<'all'|'favorites'|'recent'>('all');
-  const [folders, setFolders] = useState<Record<LibraryTab, string>>({ environment: '', character: '', enemy: '', prop: '', ui: '', audio: '' });
-  const folder = folders[tab];
+  const [folders, setFolders] = useState<Partial<Record<LibraryTab, string>>>({});
+  const folder = folders[tab] ?? '';
   const [picked, setPicked] = useState<string | null>(null), [folderOpen, setFolderOpen] = useState(false);
   const [large, setLarge] = useState(false), [inserting, setInserting] = useState(false);
   const [openPaths, setOpenPaths] = useState(new Set<string>());
@@ -125,7 +128,7 @@ export function Library(props: LibraryProps) {
   const insertLock = useRef(false);
   const [insertError, setInsertError] = useState('');
   useEffect(() => {
-    setFolders({ environment: '', character: '', enemy: '', prop: '', ui: '', audio: '' }); setPicked(null); setQuery(''); setFolderOpen(false);
+    setFolders({}); setPicked(null); setQuery(''); setFolderOpen(false);
     setOpenPaths(new Set()); setScope('all');
   }, [library?.rootPath]);
   useEffect(() => { setPicked(null); setFolderOpen(false); setQuery(''); }, [tab]);
@@ -158,7 +161,7 @@ export function Library(props: LibraryProps) {
     if (folder && !tabAssets.some(a => a.folder === folder || a.folder.startsWith(folder + '/'))) setFolders(previous => ({ ...previous, [tab]: '' }));
   }, [tabAssets, folder, tab]);
   const selected = results.find(a => a.ref === picked);
-  const counts = useMemo(() => Object.fromEntries(tabs.map(([key]) => [key, library?.assets.filter(a => assetMatchesTab(a, key) && (!picker || isImage(a.path))).length ?? 0])), [library, !!picker]);
+  const counts = useMemo(() => Object.fromEntries(tabs.map(([key]) => [key, key === 'animated' ? props.animatedElements?.clips.length ?? 0 : library?.assets.filter(a => assetMatchesTab(a, key) && (!picker || isImage(a.path))).length ?? 0])), [library, !!picker, props.animatedElements?.clips.length]);
   const folderTabs = useMemo(() => {
     const available = new Map<string, LibraryTab>();
     for (const asset of library?.assets ?? []) {
@@ -197,7 +200,7 @@ export function Library(props: LibraryProps) {
       <button title={`Retirer le dossier ${label} des favoris`} aria-label={`Retirer le dossier ${label} des favoris`} onClick={()=>props.collections.toggleFolder(path)}><Icon name="close" size={12}/></button>
     </div>;})}</div>
   </div> : null;
-  const tabStrip = () => <div className="library-tabs" role="tablist" aria-label="Types de ressources">{tabs.filter(([id]) => !picker || id !== 'audio').map(([id, icon, label]) =>
+  const tabStrip = () => <div className="library-tabs" role="tablist" aria-label="Types de ressources">{tabs.filter(([id]) => id === 'animated' ? !picker && !!props.animatedElements : !picker || id !== 'audio').map(([id, icon, label]) =>
     <button key={id} data-tab={id} role="tab" disabled={props.busy || inserting} aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => changeTab(id)} title={`${label} (${counts[id]})`}>
       <Icon name={icon} size={15}/><span>{label}</span><small>{counts[id]}</small>
     </button>)}</div>;
@@ -239,7 +242,8 @@ export function Library(props: LibraryProps) {
         <button ref={expandButton} className="button library-expand" title="Parcourir en grand" aria-label="Agrandir la bibliothèque" onClick={() => { setFolderOpen(false); setLarge(true); }} disabled={disabled}><Icon name="expand" size={14}/><span>Agrandir</span></button>
       </div></div>
       <button className="library-root" onClick={props.choose} disabled={disabled || props.busy} title={library?.rootPath ?? 'Choisir le dossier commun'}><Icon name="folder" size={16}/><span>{props.busy ? 'Lecture de la bibliothèque…' : library?.rootName ?? 'Connecter ma bibliothèque'}</span><Icon name="chevron" size={12}/></button>
-      {tabStrip()}{collectionControls()}{search()}
+      {tabStrip()}{elements ? <>{search()}<AnimatedElementLibrary actions={elements} assets={library?.assets ?? []} disabled={disabled} query={query}/></> : <>
+      {collectionControls()}{search()}
       <div className="folder-navigation" ref={navRef}>
         <button ref={folderTrigger} className={`folder-trigger ${folderOpen ? 'active' : ''}`} aria-expanded={folderOpen} aria-label="Choisir un dossier" disabled={!library || disabled || scope!=='all'} onClick={() => setFolderOpen(!folderOpen)}><Icon name="folder" size={15}/><span>{folder ? folderLabel(folder.split('/').pop()!) : allLabels[tab]}</span><small>{results.length}</small><Icon name="down" size={13}/></button>
         {!!folder && scope==='all' && breadcrumbs()}
@@ -258,6 +262,7 @@ export function Library(props: LibraryProps) {
         <button className="button primary" disabled={disabled} title={actionLabels[tab]} aria-label={actionLabels[tab]} onClick={() => void useAsset(selected)}><Icon name="plus" size={16}/></button>
       </div>}
       {!!insertError && <p className="library-inline-error" role="alert">{insertError}</p>}
+      </>}
       {!!library?.warnings.length && <details className="library-warnings"><summary>{library.warnings.length} avertissement(s) bibliothèque</summary>{library.warnings.map((w,i) => <p key={i}>{w}</p>)}</details>}
       <div className="library-note"><span className="status-dot"/> Double-clic pour ajouter · Glisser vers la scène</div>
       <LibraryResizeHandle width={layout.width} maxWidth={layout.maxWidth} resize={width => layout.update({ width })}/>
@@ -268,8 +273,8 @@ export function Library(props: LibraryProps) {
         <header className="asset-browser-header"><div><span className="overline">LUNARIA · BIBLIOTHÈQUE COMMUNE</span><h2>{picker ? picker.label : 'Choisis les éléments de ton plan.'}</h2><p>{picker ? picker.multiple ? 'Choisis plusieurs images dans l’ordre, puis confirme la sélection.' : 'Double-clique sur une image pour la choisir.' : 'Double-clique sur une ressource pour l’ajouter et revenir à la scène.'}</p></div>
           <button className="button subtle" onClick={picker ? picker.close : () => setLarge(false)}><Icon name="close" size={16}/> {picker ? 'Fermer' : 'Retour à la scène'} <kbd>ÉCHAP</kbd></button>
         </header>
-        <div className="asset-browser-toolbar">{tabStrip()}{collectionControls()}{search(true)}{viewControls()}{picker && <button className="button subtle" disabled={picker.importing} onClick={picker.importFiles}>{picker.importing ? 'Import en cours…' : 'Importer des fichiers…'}</button>}</div>
-        <div className="asset-browser-body">
+        <div className="asset-browser-toolbar">{tabStrip()}{!elements && collectionControls()}{search(true)}{!elements && viewControls()}{picker && <button className="button subtle" disabled={picker.importing} onClick={picker.importFiles}>{picker.importing ? 'Import en cours…' : 'Importer des fichiers…'}</button>}</div>
+        {elements ? <AnimatedElementLibrary actions={elements} assets={library?.assets ?? []} disabled={disabled} query={query} close={() => setLarge(false)}/> : <div className="asset-browser-body">
           <aside className="asset-browser-folders"><div className="browser-section-label"><Icon name="folder" size={14}/> DOSSIERS <button className="link-button" onClick={() => setOpenPaths(new Set())}>Replier</button></div>{favoriteFolderLinks()}{folderTree()}</aside>
           <section className="asset-browser-gallery"><div className="asset-browser-location">{breadcrumbs()}<strong aria-live="polite">{results.length} élément{results.length > 1 ? 's' : ''}</strong></div>{assetResults(true)}</section>
           <aside className="asset-browser-preview"><div className="browser-section-label">APERÇU</div>
@@ -281,7 +286,7 @@ export function Library(props: LibraryProps) {
             </> : <div className="asset-preview-empty"><Icon name="image" size={32}/><p>Sélectionne une ressource pour l’examiner ici.</p><small>Un clic pour choisir.<br/>Double-clic pour l’utiliser.</small></div>}
              {!!(picker?.error || insertError) && <p className="library-inline-error" role="alert">{picker?.error || insertError}</p>}<div className="asset-preview-note"><Icon name="leaf" size={16}/><span>Les images restent dans ta bibliothèque. Seul leur chemin est enregistré.</span></div>
            </aside>
-        </div>
+        </div>}
         {picker?.multiple && <div className="asset-browser-picker-actions"><span>{picker.chosen.length} image{picker.chosen.length > 1 ? 's' : ''} choisie{picker.chosen.length > 1 ? 's' : ''}</span><button className="button primary" disabled={!picker.chosen.length} onClick={() => picker.select([...picker.chosen])}>Ajouter {picker.chosen.length} image{picker.chosen.length > 1 ? 's' : ''}</button></div>}
       </div>
     </dialog>, document.body)}

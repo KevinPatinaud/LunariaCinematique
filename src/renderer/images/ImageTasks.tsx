@@ -14,6 +14,9 @@ import { useImageTasks } from "./ImageTasksContext.js";
 import "./imageTasks.css";
 import './poseGeneration.css';
 import { PoseTaskActions } from './PoseTaskActions.js';
+import { AnimationTaskActions } from './AnimationTaskActions.js';
+import { SpritesheetCyclePlayer } from './AnimationGenerationDialog.js';
+import { providerLabel } from '../../shared/aiProviders.js';
 
 export function ImageTasks({
   library,
@@ -168,14 +171,22 @@ export function ImageTasks({
   return (
     <>
       <button
-        className="image-tasks-launcher"
+        className={`image-tasks-launcher${running > 0 || ready > 0 ? " has-activity" : ""}`}
+        aria-label={
+          running > 0
+            ? `Tâches et résultats · ${running} en cours`
+            : ready > 0
+              ? `Tâches et résultats · ${ready} à valider`
+              : "Tâches et résultats"
+        }
+        title="Tâches et résultats IA"
         disabled={disabled || !window.lunaria}
         onClick={() => {
           setOpened(true);
           void refresh();
         }}
       >
-        Tâches et résultats
+        Tâches IA
         {running > 0
           ? ` · ${running} en cours`
           : ready > 0
@@ -191,7 +202,7 @@ export function ImageTasks({
         >
           <div className="image-tasks">
             <p className="image-tasks-intro">
-              Poses de personnages, décors 20:9 et terrains 16:9, réunis dans une même file. Tu peux
+              Animations de personnages, poses, décors 20:9 et terrains 16:9, réunis dans une même file. Tu peux
               fermer les fenêtres pendant la génération. Les propositions
               restent disponibles au prochain démarrage.
             </p>
@@ -212,6 +223,7 @@ export function ImageTasks({
                   <option value="background">Décors 20:9</option>
                   <option value="terrain">Terrains 16:9</option>
                   <option value="pose">Poses de personnages</option>
+                  <option value="animation">Animations de personnages</option>
                 </select>
               </label>
               <label>
@@ -279,14 +291,22 @@ export function ImageTasks({
                         <small>
                           {task.kind === "background"
                             ? "Décor · 20:9"
-                            : task.kind === 'pose' ? 'Pose de personnage' : "Terrain · 16:9"}
+                            : task.kind === 'pose'
+                              ? 'Pose de personnage'
+                              : task.kind === 'animation'
+                                ? `Animation ${task.job.scope === 'cinematic' || task.context?.documentId || task.context?.actorId ? '(cinématique)' : '(niveau)'} · ${task.job.frameCount} frames`
+                                : "Terrain · 16:9"}
                         </small>
                         <strong>
                           {task.context?.title ||
                             (task.kind === "terrain"
                               ? (task.request as { levelTitle: string })
                                   .levelTitle
-                              : task.kind === 'pose' ? task.request.characterName : task.job.ref.slice(10))}
+                              : task.kind === 'pose'
+                                ? task.request.characterName
+                                : task.kind === 'animation'
+                                  ? task.job.animationName
+                                  : task.job.ref.slice(10))}
                         </strong>
                         <span className={`image-task-state ${task.job.status}`}>
                           {projectLabel(task)}
@@ -316,7 +336,7 @@ export function ImageTasks({
                       </span>
                     </div>
                     <p role="status">{selected.job.message}</p>
-                    <div className={`image-task-previews${selected.kind === 'pose' ? ' pose-task-previews' : ''}`}>
+                    <div className={`image-task-previews${selected.kind === 'pose' || selected.kind === 'animation' ? ' pose-task-previews' : ''}`}>
                       <figure>
                         <figcaption>Référence</figcaption>
                         <img
@@ -326,35 +346,48 @@ export function ImageTasks({
                       </figure>
                       <figure>
                         <figcaption>
-                          {selected.kind === "terrain" ? "Terrain pollué" : "Proposition"}
+                          {selected.kind === "terrain" ? "Terrain pollué" : selected.kind === "animation" ? `Cycle · ${selected.job.frameCount} poses` : "Proposition"}
                           {selected.job.width
                             ? ` · ${selected.job.width} × ${selected.job.height}`
                             : ""}
                         </figcaption>
                         <div
-                          className={`image-task-candidate${selected.kind === 'pose' ? ' pose-preview' : ''}`}
+                          className={`image-task-candidate${selected.kind === 'pose' || selected.kind === 'animation' ? ' pose-preview' : ''}`}
                           style={{
                             aspectRatio:
-                              selected.kind === 'pose' ? undefined : selected.kind === "terrain" ? "16 / 9" : "20 / 9",
+                              selected.kind === 'pose' || selected.kind === 'animation' ? undefined : selected.kind === "terrain" ? "16 / 9" : "20 / 9",
                           }}
                         >
                           {selected.job.candidateUrl ? (
-                            <>
-                              <img
-                                src={selected.job.candidateUrl}
-                                alt={selected.kind === "terrain" ? "Terrain pollué de la tâche" : "Proposition de la tâche"}
+                            selected.kind === 'animation' ? (
+                              <SpritesheetCyclePlayer
+                                url={selected.job.candidateUrl}
+                                columns={selected.job.columns}
+                                rows={selected.job.rows}
+                                fps={selected.job.fps}
+                                loop={selected.job.loop}
+                                width={selected.job.width}
+                                height={selected.job.height}
+                                facing={selected.job.facing}
                               />
-                              {grid && selected.kind === "terrain" && (
-                                <div
-                                  className="image-task-grid"
-                                  aria-label="Grille indicative de 5 allées et 8 colonnes"
-                                >
-                                  {Array.from({ length: 40 }, (_, i) => (
-                                    <span key={i} />
-                                  ))}
-                                </div>
-                              )}
-                            </>
+                            ) : (
+                              <>
+                                <img
+                                  src={selected.job.candidateUrl}
+                                  alt={selected.kind === "terrain" ? "Terrain pollué de la tâche" : "Proposition de la tâche"}
+                                />
+                                {grid && selected.kind === "terrain" && (
+                                  <div
+                                    className="image-task-grid"
+                                    aria-label="Grille indicative de 5 allées et 8 colonnes"
+                                  >
+                                    {Array.from({ length: 40 }, (_, i) => (
+                                      <span key={i} />
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )
                           ) : (
                             <p>
                               {selected.job.status === "queued"
@@ -389,11 +422,13 @@ export function ImageTasks({
                       )}
                     <details className="image-task-technical">
                       <summary>
-                        Détails de la tâche ·{" "}
+                        Détails de la tâche · {providerLabel(selected.job.aiProvider)} ·{" "}
                         {selected.job.codexModel ?? "Modèle automatique"}
                       </summary>
                       <dl className="image-task-metadata">
-                        <dt>Modèle Codex</dt>
+                        <dt>Fournisseur IA</dt>
+                        <dd>{providerLabel(selected.job.aiProvider)}</dd>
+                        <dt>Modèle</dt>
                         <dd>{selected.job.codexModel ?? "Automatique"}</dd>
                           {selected.kind === "terrain" && selected.job.codexReasoningEffort && <><dt>Raisonnement</dt><dd>{selected.job.codexReasoningEffort === "xhigh" ? "Très élevé" : selected.job.codexReasoningEffort}</dd></>}
                         <dt>Création</dt>
@@ -485,7 +520,8 @@ export function ImageTasks({
                           disabled={pending}
                           onClick={() =>
                             void perform(async () => {
-                              if (selected.kind === 'pose') await api.cancelPoseGeneration(selected.job.id);
+                              if (selected.kind === 'animation') await api.cancelAnimationGeneration(selected.job.id);
+                              else if (selected.kind === 'pose') await api.cancelPoseGeneration(selected.job.id);
                               else if (selected.kind === "terrain")
                                 await api.cancelTerrainGeneration(
                                   selected.job.id,
@@ -500,7 +536,7 @@ export function ImageTasks({
                           Annuler la génération
                         </button>
                       )}
-                      {selected.kind !== 'pose' && (selected.job.status === "ready" ||
+                      {selected.kind !== 'pose' && selected.kind !== 'animation' && (selected.job.status === "ready" ||
                         (selected.kind === "terrain" &&
                           selected.job.status === "applied")) &&
                         (selected.kind !== "terrain" || !terrainDestination?.assigned.length || showDestinationPicker) && (
@@ -577,6 +613,25 @@ export function ImageTasks({
                       )}
                     </div>
                     {selected.kind === 'pose' && <PoseTaskActions key={selected.job.id} task={selected} library={library} updateLibrary={updateLibrary} notify={notify} />}
+                    {selected.kind === 'animation' && (
+                      <AnimationTaskActions
+                        key={selected.job.id}
+                        task={selected}
+                        library={library}
+                        updateLibrary={updateLibrary}
+                        actorTarget={(() => {
+                          const ctx = selected.context;
+                          if (!ctx?.documentId || !ctx.shotId || !ctx.actorId) return undefined;
+                          const film = project.cinematics?.find(f => f.id === ctx.documentId);
+                          const shot = film?.shots.find(s => s.id === ctx.shotId);
+                          const actor = shot?.actors.find(a => a.id === ctx.actorId);
+                          return actor
+                            ? { documentId: ctx.documentId, shotId: ctx.shotId, actorId: actor.id, actorName: actor.name }
+                            : undefined;
+                        })()}
+                        notify={notify}
+                      />
+                    )}
                   </>
                 )}
               </section>

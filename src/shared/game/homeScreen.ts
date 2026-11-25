@@ -27,8 +27,7 @@ export interface HomeScreen {
  continueLabels:{start:string;continue:string;battle:string;cinematic:string;finished:string;unavailable:string;suffix:string};
  elements:HomeElement[];
 }
-export const HOME_ELEMENT_LABELS:Record<HomeElementKind,string>={panel:'Panneau',text:'Texte',button:'Bouton',image:'Image',plant:'Plante',line:'Ligne',progress:'Progression',halo:'Halo'};
-export const HOME_ACTION_LABELS:Record<HomeAction,string>={continue:'Continuer l’aventure',map:'Carnet de voyage',collection:'La troupe',options:'Paramètres'};
+const HOME_ELEMENT_LABELS:Record<HomeElementKind,string>={panel:'Panneau',text:'Texte',button:'Bouton',image:'Image',plant:'Plante',line:'Ligne',progress:'Progression',halo:'Halo'};
 const INK='#183e37',FOREST='#345a49',CREAM='#fff5de',GOLD='#f6c864',MINT='#d0e3bb';
 export function newHomeElement(kind:HomeElementKind,id=`home_${globalThis.crypto.randomUUID().replaceAll('-','').slice(0,12)}`):HomeElement {
  const base:HomeElement={id,name:HOME_ELEMENT_LABELS[kind],kind,visible:true,rect:{x:640,y:300,w:240,h:80},opacity:1};

@@ -1,0 +1,98 @@
+.ai-provider-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(197, 222, 169, 0.16);
+  background: rgba(18, 28, 24, 0.55);
+}
+
+.ai-provider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ai-provider-caption {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cfe0bd;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ai-provider-tabs {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.ai-provider-tabs .button.active {
+  background: #c7dda3;
+  color: #16221b;
+  border-color: #c7dda3;
+  font-weight: 600;
+}
+
+.ai-model-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ai-model-row .field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.ai-gemini-config {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(197, 222, 169, 0.12);
+}
+
+.ai-gemini-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-key-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.ai-key-badge.ok {
+  background: rgba(141, 214, 146, 0.18);
+  color: #b7e5b4;
+}
+
+.ai-key-badge.missing {
+  background: rgba(232, 180, 96, 0.18);
+  color: #f3d28f;
+}
+
+.ai-gemini-key-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ai-gemini-key-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-provider-hint {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(232, 238, 224, 0.72);
+}

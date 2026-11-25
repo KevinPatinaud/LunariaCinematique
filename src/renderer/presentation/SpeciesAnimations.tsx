@@ -8,6 +8,7 @@ import {
 import { species } from "../../shared/presentation/runtime.js";
 import {
   animationOwnerId,
+  isGameAnimation,
   setSpeciesAnimation,
   personalizeAnimation,
 } from "../../shared/presentation/ownership.js";
@@ -15,6 +16,7 @@ import { speciesActionSlots } from "../../shared/presentation/actions.js";
 import { SpeciesAction } from "./SpeciesAction.js";
 import { AssetChoice, Choose } from "./PresentationFields.js";
 import { Num } from "../game/CombatFields.js";
+import { AnimationGenerationDialog } from "../images/AnimationGenerationDialog.js";
 import type { Change } from "./PresentationEditor.js";
 
 interface Props {
@@ -48,7 +50,7 @@ export function SpeciesAnimations({
   )!;
   const slots = speciesActionSlots(project, item);
   const owned = catalog.animations.filter(
-    (animation) => animationOwnerId(project, animation) === id,
+    (animation) => isGameAnimation(animation) && animationOwnerId(project, animation) === id,
   );
 
   const [selectedId, setSelectedId] = useState(
@@ -58,6 +60,7 @@ export function SpeciesAnimations({
     focusAnimationId ? "own" : "actions",
   );
   const [error, setError] = useState("");
+  const [generatingAnimation, setGeneratingAnimation] = useState(false);
   const safeChange: Change = (edit, key, label) => {
     try {
       change(edit, key, label);
@@ -126,9 +129,20 @@ export function SpeciesAnimations({
             restent propres à {item.name}.
           </p>
         </div>
-        <strong>
-          {owned.length} personnelle{owned.length > 1 ? "s" : ""}
-        </strong>
+        <div className="gd-inline">
+          {window.lunaria && (
+            <button
+              type="button"
+              className="gd-primary"
+              onClick={() => setGeneratingAnimation(true)}
+            >
+              Générer une animation (IA)
+            </button>
+          )}
+          <strong>
+            {owned.length} personnelle{owned.length > 1 ? "s" : ""}
+          </strong>
+        </div>
       </header>
       <nav
         className="gd-detail-tabs lp-species-subtabs"
@@ -452,6 +466,17 @@ export function SpeciesAnimations({
           </details>
         )}
       </details>
+      {generatingAnimation && (
+        <AnimationGenerationDialog
+          target={{ speciesId: id, defaultPreset: "walk", scope: "game" }}
+          onClose={() => setGeneratingAnimation(false)}
+          notify={() => undefined}
+          onApplied={(animationId) => {
+            setSelectedId(animationId);
+            setView("own");
+          }}
+        />
+      )}
     </section>
   );
 }

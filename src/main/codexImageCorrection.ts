@@ -5,6 +5,9 @@ import { spawn } from 'node:child_process';
 import type { BackgroundCorrectionRequest } from '../shared/backgroundCorrection.js';
 import { normalizeCodexModel, normalizeCodexReasoningEffort, type CodexReasoningEffort } from '../shared/backgroundCorrection.js';
 import { findCodexExecutable } from './codexExecutable.js';
+import { runGeminiImage } from './geminiImageGeneration.js';
+import { runAgyImage } from './agyImageGeneration.js';
+import { findAgyExecutable } from './agyExecutable.js';
 
 export interface ImageGenerationTask {
   folder: string;
@@ -45,9 +48,43 @@ export const generateWithCodex: ImageGenerator = async task => {
     'Ne lance aucune commande et ne modifie aucun fichier de la bibliothèque. Ne copie pas l’image générée : le Studio se charge de la copie et de la validation.',
     'Après la génération, réponds selon le schéma JSON avec status=completed et imagePath égal au chemin absolu du vrai fichier produit par l’outil natif. Ne renvoie pas un chemin supposé.',
   ].join('\n\n');
-  task.progress(`Codex${task.request.codexModel ? ` (${task.request.codexModel})` : ''} génère les côtés du panorama 20:9…`);
+  task.progress(`${task.request.aiProvider === 'gemini' ? 'Gemini' : 'Codex'}${task.request.codexModel ? ` (${task.request.codexModel})` : ''} génère les côtés du panorama 20:9…`);
   return runCodexImage({ folder: task.folder, inputPath: task.canvasPath, codexModel: task.request.codexModel, signal: task.signal, prompt });
 };
+
+export function createBackgroundGenerator(getGeminiApiKey?: () => Promise<string | undefined>): ImageGenerator {
+  return async task => {
+    if ((task.request.aiProvider ?? 'openai') !== 'gemini') return generateWithCodex(task);
+    const prompt = [
+      'Élargis ce décor 16:9 en panorama 20:9 par outpainting pour une cinématique du jeu Lunaria.',
+      'IMAGE 1 : le canevas 20:9 joint contient le décor de référence 16:9 au centre et deux bandes latérales transparentes à compléter. Produis une image complète 20:9, entièrement opaque, harmonieuse et détaillée.',
+      'Prolonge naturellement le lieu à gauche et à droite tout en préservant l’identité du lieu, la perspective, la lumière, les textures et la composition. Aucune couture verticale, aucun motif cloné, aucun texte ni personnage.',
+      `DEMANDE DE L’AUTEUR :\n${task.request.instructions}`,
+    ].join('\n\n');
+    task.progress(`Gemini${task.request.codexModel ? ` (${task.request.codexModel})` : ''} génère les côtés du panorama 20:9…`);
+    const agy = await findAgyExecutable().catch(() => undefined);
+    if (agy) {
+      return runAgyImage({
+        folder: task.folder,
+        inputPath: task.canvasPath,
+        model: task.request.codexModel,
+        prompt,
+        aspectRatio: '20:9',
+        signal: task.signal,
+        executable: agy,
+      });
+    }
+    const apiKey = await getGeminiApiKey?.();
+    return runGeminiImage({
+      folder: task.folder,
+      inputPath: task.canvasPath,
+      model: task.request.codexModel,
+      prompt,
+      apiKey,
+      signal: task.signal,
+    });
+  };
+}
 
 /** Shared native Codex transport. Authentication stays with the installed CLI. */
 export async function runCodexImage(task: { folder: string; inputPath: string | string[]; codexModel?: string; codexReasoningEffort?: CodexReasoningEffort; signal: AbortSignal; prompt: string }): Promise<string> {

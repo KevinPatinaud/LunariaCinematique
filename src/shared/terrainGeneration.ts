@@ -3,6 +3,7 @@ import type { GameProject } from './game/types.js';
 import { campaignOf } from './game/campaign.js';
 import type { ImageTaskContext, ImageTaskMetadata, ImageTaskStatus } from './imageTasks.js';
 import type { CodexReasoningEffort } from './backgroundCorrection.js';
+import type { AiImageProvider } from './aiProviders.js';
 
 export interface TerrainReference { shotId: string; shotName: string; ref: AssetRef }
 /** Follow the authored campaign, never the storage order or archived films. */
@@ -25,6 +26,7 @@ export interface TerrainGenerationRequest {
   ref: AssetRef;
   levelTitle: string;
   instructions: string;
+  aiProvider?: AiImageProvider;
   codexModel?: string;
   codexReasoningEffort?: CodexReasoningEffort;
 }
@@ -36,6 +38,7 @@ export interface TerrainGenerationJob extends ImageTaskMetadata {
   sourceUrl: string;
   candidateUrl?: string;
   restoredCandidateUrl?: string;
+  aiProvider?: AiImageProvider;
   codexModel?: string;
   codexReasoningEffort?: CodexReasoningEffort;
   width?: number;

@@ -10,6 +10,7 @@ interface Props {
   libraryName?: string;
   disabled: boolean;
   onClose(): void;
+  onRenameTitle?(title: string): void;
   onSave(): void;
   onBackup(): void;
   onLibrary(): void;
@@ -19,7 +20,6 @@ interface Props {
   onLevels(): void;
   onCampaign(): void;
   onCharacters(): void;
-  onHome(): void;
   onChecks(): void;
 }
 
@@ -30,7 +30,20 @@ export function ProjectOverview(props: Props) {
   return <StudioDialog title="Vue du projet" onClose={props.onClose} disabled={disabled} wide onKeyDown={event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='s'&&!event.nativeEvent.isComposing&&!disabled){event.preventDefault();props.onSave();}}}>
     <div className="project-overview">
       <section className="project-overview-file">
-        <div><h3>{project.title}</h3><p title={path || undefined}>{path ? path.split(/[\\/]/).pop() : 'Projet sans fichier'}</p>
+        <div>
+          {props.onRenameTitle ? (
+            <input
+              className="project-overview-title-input"
+              aria-label="Titre du projet"
+              maxLength={160}
+              disabled={disabled}
+              value={project.title}
+              onChange={(event) => props.onRenameTitle?.(event.target.value)}
+            />
+          ) : (
+            <h3>{project.title}</h3>
+          )}
+          <p title={path || undefined}>{path ? path.split(/[\\/]/).pop() : 'Projet sans fichier'}</p>
           <span className={modified || !path ? 'project-unsaved' : 'project-saved'}>{modified || !path ? 'À enregistrer' : '✓ Enregistré'}</span>
         </div>
         <button className="button primary" disabled={disabled} onClick={props.onSave} title="Enregistrer le projet · Ctrl+S">Enregistrer</button>
@@ -60,9 +73,8 @@ export function ProjectOverview(props: Props) {
       </section>
       {!props.libraryName&&<div className="project-overview-library" role="status"><span>Images et sons : bibliothèque non connectée</span><button className="button subtle" disabled={disabled} onClick={props.onLibrary}>Connecter</button></div>}
       <details className="project-overview-settings">
-        <summary>Réglages et outils<span>Accueil · personnages · bibliothèque</span></summary>
+        <summary>Réglages et outils<span>Personnages · bibliothèque</span></summary>
         <div className="project-overview-settings-actions">
-          <button disabled={disabled} onClick={props.onHome}>Configurer l’accueil</button>
           <button disabled={disabled} onClick={props.onCharacters}>Voir les personnages</button>
           <button disabled={disabled} onClick={props.onLibrary}>Images et sons<small>{props.libraryName ?? 'Connecter la bibliothèque'}</small></button>
           <button disabled={disabled} onClick={props.onChecks}>Vérifier le projet</button>

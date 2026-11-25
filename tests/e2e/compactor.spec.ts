@@ -25,8 +25,7 @@ test('level ten, retreat objective and editable pushing settings survive saving 
    dialog.showSaveDialog=async()=>({canceled:false,filePath:file});
    dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});
   },file);
-  await page.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
   await page.locator('.gd-level-items').getByRole('button',{name:/10 - Faire reculer l’acier/}).click();
   await page.getByRole('navigation',{name:'Édition du niveau'}).getByRole('button',{name:'Paramètres',exact:true}).click();
   await expect(page.getByLabel('Objectif du niveau')).toHaveValue('repel_boss');
@@ -35,7 +34,7 @@ test('level ten, retreat objective and editable pushing settings survive saving 
   await fs.mkdir(out,{recursive:true});
   await page.getByLabel('Objectif du niveau').scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(out,'studio-niveau-10.png')});
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await page.locator('.gd-catalog').getByRole('button',{name:/^Le Compresseur/}).click();
   await page.getByRole('navigation',{name:'Fiche de Le Compresseur'}).getByRole('button',{name:'Règles du plateau',exact:true}).click();
   await expect(page.getByLabel('Poussées et surchauffe',{exact:true})).toBeChecked();
@@ -96,8 +95,7 @@ test('level ten, retreat objective and editable pushing settings survive saving 
   await app.close();
   app=await _electron.launch({args:[ROOT],env:env as Record<string,string>});
   const reopened=await app.firstWindow();await reopened.waitForURL('app://studio/index.html');
-  await reopened.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
-  await reopened.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await reopened.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await reopened.locator('.gd-catalog').getByRole('button',{name:/^Le Compresseur/}).click();
   await reopened.getByRole('navigation',{name:'Fiche de Le Compresseur'}).getByRole('button',{name:'Règles du plateau',exact:true}).click();
   await expect(reopened.getByLabel('Résistance par poussée',{exact:true})).toHaveValue('321');

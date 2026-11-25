@@ -23,7 +23,6 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
   await expect(page.getByRole('button',{name:'Enregistrer le projet'})).toHaveCount(1);
   await expect(page.getByRole('button',{name:'Enregistrer sous',exact:true})).toHaveCount(0);
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
   await expect(page.getByRole('heading',{name:'Aucun niveau'})).toBeVisible();
   await page.getByRole('button',{name:'+ Créer un niveau'}).first().click();
   await page.getByLabel('Continent du niveau').selectOption('2');
@@ -43,7 +42,6 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Film dans le projet');
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
   await expect(page.locator('.gd-level-items button')).toHaveCount(1);
   await page.locator('.studio-modebar').getByRole('button',{name:/^Cinématiques/}).click();
   await expect(page.getByLabel('Cinématique du projet')).toHaveCount(0);
@@ -77,13 +75,14 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
   await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Film dans le projet');
   await expect(page.getByLabel('Cinématique du projet').locator('option')).toHaveCount(3);
+  await page.locator('.studio-modebar').getByRole('button',{name:'Campagne',exact:true}).click();
+  await expect(page.getByLabel('Titre du projet')).toHaveValue(saved.title);
+  await expect(page.locator('.gd-campaign-project-path')).toContainText(file);
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
-  await expect(page.getByLabel('Titre du projet de niveaux')).toHaveValue(saved.title);
-  await expect(page.locator('.gd-project-name small')).toContainText(file);
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
   await expect(page.locator('.gd-level-items button')).toHaveCount(1);
   await app.evaluate(({dialog})=>{dialog.showSaveDialog=async()=>{throw new Error('Le projet rouvert doit garder son fichier.');};});
-  await page.getByLabel('Titre du projet de niveaux').fill('Projet rouvert automatiquement');
+  await page.locator('.studio-modebar').getByRole('button',{name:'Campagne',exact:true}).click();
+  await page.getByLabel('Titre du projet').fill('Projet rouvert automatiquement');
   await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
   await expect.poll(async()=>JSON.parse(await fs.readFile(file,'utf8')).title).toBe('Projet rouvert automatiquement');
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
@@ -92,11 +91,11 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   await fs.writeFile(path.join(profile,'game-recovery.json'),JSON.stringify(draft));
   app=await _electron.launch({args:[ROOT],env:env as Record<string,string>});
   page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
-  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
-  await expect(page.getByLabel('Titre du projet de niveaux')).toHaveValue('Projet rouvert automatiquement');
+  await page.locator('.studio-modebar').getByRole('button',{name:'Campagne',exact:true}).click();
+  await expect(page.getByLabel('Titre du projet')).toHaveValue('Projet rouvert automatiquement');
   await expect(page.locator('.gd-recovery')).toContainText('Brouillon local du même projet');
   await page.locator('.gd-recovery').getByRole('button',{name:'Reprendre'}).click();
-  await expect(page.getByLabel('Titre du projet de niveaux')).toHaveValue('Brouillon local du même projet');
+  await expect(page.getByLabel('Titre du projet')).toHaveValue('Brouillon local du même projet');
   await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
   await expect.poll(async()=>JSON.parse(await fs.readFile(file,'utf8')).title).toBe('Brouillon local du même projet');
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
@@ -105,7 +104,7 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();
   await page.getByRole('button',{name:'Enregistrer sous…',exact:true}).click();
   await expect.poll(async()=>{try{return JSON.parse(await fs.readFile(copyFile,'utf8')).title;}catch{return '';}}).toBe('Brouillon local du même projet');
-  await expect(page.locator('.gd-project-name small')).toContainText(copyFile);
+  await expect(page.locator('.gd-campaign-project-path')).toContainText(copyFile);
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
   await page.screenshot({path:info.outputPath('studio-niveaux-simplifie.png')});
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();

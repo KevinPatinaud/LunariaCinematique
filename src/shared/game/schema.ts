@@ -717,6 +717,8 @@ export const GAME_SCHEMA: Rule = {
                 "enum": [
                   "level",
                   "cinematic",
+                  "unlock_herbarium",
+                  "unlock_travel_book",
                   "end"
                 ]
               },
@@ -843,3 +845,6 @@ enemySchema.items!.properties!.rules=ENEMY_RULES_SCHEMA;
 enemySchema.items!.required!.push('rules');
 GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci.properties!.focusEnemyId=idRule;
 GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci.required!.push('focusEnemyId');
+import { LEVEL_LUNA_REWARDS_SCHEMA, LUNA_ECONOMY_SCHEMA } from './lunasSchema.js';
+GAME_SCHEMA.properties!.lunas = LUNA_ECONOMY_SCHEMA;
+GAME_SCHEMA.properties!.levels.items!.properties!.lunaRewards = LEVEL_LUNA_REWARDS_SCHEMA;

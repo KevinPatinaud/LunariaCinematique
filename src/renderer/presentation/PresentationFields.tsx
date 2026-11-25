@@ -12,7 +12,11 @@ import {
   BASE_SLOTS,
   DEFAULT_ABILITY_PRESENTATION,
   EMPTY_CUE,
+  SLOT_LABELS,
 } from "../../shared/presentation/types.js";
+import { inferActorSpecies } from "../../shared/presentation/cinematicMotion.js";
+import { isCinematicAnimation, isGameAnimation } from "../../shared/presentation/ownership.js";
+import { speciesActionSlots } from "../../shared/presentation/actions.js";
 import { Num } from "../game/CombatFields.js";
 export function Choose({
   label,
@@ -237,7 +241,7 @@ export function ProjectilePresentationFields({
       <Choose
         label="Animation du tir"
         value={p.animationId}
-        options={project.presentation!.animations}
+        options={project.presentation!.animations.filter(isGameAnimation)}
         empty
         change={(animationId) => change({ ...p, animationId })}
       />
@@ -263,24 +267,41 @@ export function ActorBindingFields({
   project,
   change,
   setCatalog,
+  onOpenWorkshop,
+  onGenerateAnimation,
 }: {
   actor: Actor;
   doc: Cinematic;
   project: GameProject;
   change: (patch: Partial<Actor>) => void;
   setCatalog: (value: CatalogLink) => void;
+  onOpenWorkshop?: (speciesId?: string) => void;
+  onGenerateAnimation?: (speciesId?: string) => void;
 }) {
   const binding = actor.animation,
     all = [
       ...project.balance.plants,
       ...enemyChoices(project.balance.enemies, binding?.speciesId),
     ];
+  const cinematicAnimations = (project.presentation?.animations ?? []).filter(clip => isCinematicAnimation(clip) && !clip.element);
+  const cinematicOptions = binding?.mode === "animation" && binding.animationId && !cinematicAnimations.some((a) => a.id === binding.animationId)
+    ? [
+        ...cinematicAnimations,
+        ...(project.presentation?.animations.filter((a) => a.id === binding.animationId) ?? []),
+      ]
+    : cinematicAnimations;
+  const inferred = inferActorSpecies(actor, project);
+  const activeSpecies = all.find((x) => x.id === (binding?.speciesId || inferred?.id));
+  const knownSlots = activeSpecies
+    ? [...new Set(['move', 'idle', 'talk', 'run', 'jump', ...speciesActionSlots(project, activeSpecies)])]
+    : ['move', 'idle', 'talk', 'run', 'jump', ...BASE_SLOTS];
   const fallback: ActorAnimation = {
-    mode: "species",
-    speciesId: all[0].id,
-    slot: "idle",
-    animationId: "",
+    mode: "animation",
+    speciesId: inferred?.id ?? all[0].id,
+    slot: actor.movement?.enabled ? "move" : "idle",
+    animationId: cinematicAnimations[0]?.id ?? "",
     speed: 1,
+    ...(actor.movement?.enabled ? { syncWithMovement: true, autoFlip: true } : {}),
   };
   const set = (p: ActorAnimation) => {
     setCatalog({
@@ -294,14 +315,14 @@ export function ActorBindingFields({
   };
   return (
     <section>
-      <h3>Animation partagée</h3>
+      <h3>Animation de cinématique</h3>
       <Choose
         label="Source de l’acteur"
         value={binding?.mode ?? "static"}
         options={[
           { id: "static", name: "Image fixe" },
-          { id: "species", name: "Espèce → profil → slot" },
-          { id: "animation", name: "Animation du catalogue" },
+          { id: "animation", name: "Animation de cinématique" },
+          { id: "species", name: "Espèce → profil → slot (héritage)" },
         ]}
         change={(mode) => {
           if (mode === "static") change({ animation: undefined });
@@ -310,16 +331,29 @@ export function ActorBindingFields({
               ...(binding ?? fallback),
               mode: mode as ActorAnimation["mode"],
               animationId:
-                binding?.animationId || project.presentation!.animations[0].id,
+                binding?.animationId || cinematicAnimations[0]?.id || "",
             });
         }}
       />
+      {(onOpenWorkshop || onGenerateAnimation) && (
+        <div className="field-row">
+          {onOpenWorkshop && (
+            <button
+              type="button"
+              className="button subtle"
+              onClick={() => onOpenWorkshop(binding?.speciesId || inferred?.id)}
+            >
+              Atelier d’animations
+            </button>
+          )}
+        </div>
+      )}
       {binding && (
         <>
           <p className="field-hint">
             Catalogue : {doc.presentationCatalog?.projectId ?? "non relié"}.
-            Ouvre le projet correspondant dans Niveaux. Aucun marqueur ne
-            provoque une attaque.
+            Seules les animations dédiées aux cinématiques sont proposées ici,
+            séparément des animations des niveaux.
           </p>
           {doc.presentationCatalog?.projectId !== project.id && (
             <p role="alert">
@@ -344,20 +378,56 @@ export function ActorBindingFields({
           />
           {binding.mode === "animation" ? (
             <Choose
-              label="Animation partagée"
+              label="Animation de cinématique"
               value={binding.animationId}
-              options={project.presentation!.animations}
+              options={cinematicOptions}
+              empty
+              emptyLabel="Aucune animation de cinématique"
               change={(animationId) => set({ ...binding, animationId })}
             />
           ) : (
             <label className="field">
               <span>Slot de l’acteur</span>
               <input
+                list="lp-actor-slots"
                 value={binding.slot}
                 onChange={(e) => set({ ...binding, slot: e.target.value })}
               />
+              <datalist id="lp-actor-slots">
+                {knownSlots.map((slot) => (
+                  <option key={slot} value={slot}>
+                    {SLOT_LABELS[slot] ?? slot}
+                  </option>
+                ))}
+              </datalist>
             </label>
           )}
+          <label className="check-field">
+            <input
+              type="checkbox"
+              checked={!!binding.syncWithMovement}
+              onChange={(e) =>
+                set({
+                  ...binding,
+                  syncWithMovement: e.target.checked || undefined,
+                })
+              }
+            />
+            Synchroniser avec le déplacement A → B (repos à l’arrêt)
+          </label>
+          <label className="check-field">
+            <input
+              type="checkbox"
+              checked={!!binding.autoFlip}
+              onChange={(e) =>
+                set({
+                  ...binding,
+                  autoFlip: e.target.checked || undefined,
+                })
+              }
+            />
+            Retourner selon le sens du trajet
+          </label>
           <Num
             label="Vitesse de lecture"
             value={binding.speed}

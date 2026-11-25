@@ -5,6 +5,8 @@ import { IMAGE_LIMIT, imageHash, readImage } from './imageFiles.js';
 import { isWithin, resolveAsset } from './files.js';
 import { ImageJobStore, type ImageTaskQueue } from './imageJobs.js';
 import { runCodexImage } from './codexImageCorrection.js';
+import { runProviderImage } from './aiImageRouter.js';
+import { normalizeAiProvider } from '../shared/aiProviders.js';
 import { normalizeCodexModel, type ImageSize } from '../shared/backgroundCorrection.js';
 import { imageTaskContext, type ImageTask } from '../shared/imageTasks.js';
 import { isSafeAssetRef } from '../shared/schema.js';
@@ -20,6 +22,21 @@ export type PoseGenerator = (task: PoseGenerationTask) => Promise<string>;
 export const generatePoseWithCodex: PoseGenerator = task => runCodexImage({
   ...task, codexModel: task.request.codexModel, prompt: poseGenerationPrompt(task.request, task.inputPath.length > 1),
 });
+export function createPoseGenerator(getGeminiApiKey?: () => Promise<string | undefined>): PoseGenerator {
+  return task => {
+    const prompt = poseGenerationPrompt(task.request, task.inputPath.length > 1);
+    return runProviderImage({
+      provider: task.request.aiProvider,
+      model: task.request.codexModel,
+      folder: task.folder,
+      inputPath: task.inputPath,
+      codexPrompt: prompt,
+      geminiPrompt: prompt,
+      signal: task.signal,
+      getGeminiApiKey,
+    });
+  };
+}
 interface Dependencies {
   jobsRoot: string;
   generatedRoot: string;
@@ -27,7 +44,7 @@ interface Dependencies {
   generate: PoseGenerator;
   inspect: (bytes: Buffer) => ImageSize;
   png: (bytes: Buffer) => Buffer;
-  finalize: (bytes: Buffer) => Buffer;
+  finalize: (bytes: Buffer, provider?: import('../shared/aiProviders.js').AiImageProvider) => Buffer;
 }
 interface PoseRecord {
   request: PoseGenerationRequest;
@@ -45,7 +62,7 @@ function normalizeRequest(input: unknown): PoseGenerationRequest {
   const value = input as PoseGenerationRequest;
   if (!isSafeAssetRef(value.ref) || !isSafeAssetRef(value.currentRef) || typeof value.characterName !== 'string' || !value.characterName.trim() || value.characterName.length > 180 || typeof value.instructions !== 'string' || !value.instructions.trim() || value.instructions.length > 5000)
     throw Error('Choisis une référence et décris la pose souhaitée (5 000 caractères maximum).');
-  return { ref: value.ref, currentRef: value.currentRef, characterName: value.characterName.trim(), instructions: value.instructions.trim(), codexModel: normalizeCodexModel(value.codexModel), context: imageTaskContext(value.context) };
+  return { ref: value.ref, currentRef: value.currentRef, characterName: value.characterName.trim(), instructions: value.instructions.trim(), aiProvider: normalizeAiProvider(value.aiProvider), codexModel: normalizeCodexModel(value.codexModel), context: imageTaskContext(value.context) };
 }
 export class PoseGenerations {
   private store: ImageJobStore<PoseRecord>;
@@ -58,7 +75,7 @@ export class PoseGenerations {
       await this.store.localFile(folder, 'reference.png');
       if (request.ref !== request.currentRef) await this.store.localFile(folder, 'current.png');
       const record: PoseRecord = { ...data, request, folder, abort: new AbortController(), job: {
-        ...data.job, sourceRef: request.ref, codexModel: request.codexModel, sourceUrl: this.url(data.job.id, 'source'), candidateUrl: undefined, poseRef: undefined,
+        ...data.job, sourceRef: request.ref, aiProvider: request.aiProvider, codexModel: request.codexModel, sourceUrl: this.url(data.job.id, 'source'), candidateUrl: undefined, poseRef: undefined,
       } };
       const wasApplying = record.job.status === 'applying', wasApplied = record.job.status === 'applied';
       if (['queued','generating','applying'].includes(record.job.status)) Object.assign(record.job, { status: 'interrupted', message: 'Génération interrompue. Relance cette tâche quand tu le souhaites.' });
@@ -113,7 +130,7 @@ export class PoseGenerations {
     await fs.writeFile(path.join(folder, 'reference.png'), staged[0], { flag: 'wx' });
     if (staged[1]) await fs.writeFile(path.join(folder, 'current.png'), staged[1], { flag: 'wx' });
     const record: PoseRecord = { request, libraryRoot: root, folder, sourceHash: imageHash(source), currentHash: imageHash(current), stagedHashes: staged.map(imageHash), abort: new AbortController(), job: {
-      id, sourceRef: request.ref, codexModel: request.codexModel, status: 'queued', message: 'Préparation de la pose…', sourceUrl: this.url(id, 'source'),
+      id, sourceRef: request.ref, aiProvider: request.aiProvider, codexModel: request.codexModel, status: 'queued', message: 'Préparation de la pose…', sourceUrl: this.url(id, 'source'),
     } };
     await this.store.register(record, () => this.run(record));
     return this.get(id);
@@ -133,7 +150,7 @@ export class PoseGenerations {
     if (!isWithin(folder, real) && (!generated || !isWithin(generated, real))) throw Error('Le résultat est hors des dossiers de génération autorisés.');
     const bytes = await readImage(real);
     this.size(bytes);
-    const png = this.deps.finalize(bytes), size = this.size(png), fingerprint = imageHash(png);
+    const png = this.deps.finalize(bytes, record.request.aiProvider), size = this.size(png), fingerprint = imageHash(png);
     if (!png.length || png.length > IMAGE_LIMIT) throw Error('La pose dépasse 40 Mo.');
     if (record.stagedHashes.includes(fingerprint)) throw Error('Codex a recopié une référence au lieu de générer une pose.');
     if (record.abort.signal.aborted) return;

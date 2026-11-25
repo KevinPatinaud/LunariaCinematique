@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,readFile,readdir,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {defaultHomeScreen,newHomeElement} from '../src/shared/game/homeScreen.js';
 import {seedProject} from '../src/shared/game/seed.js';
 import {gameIssues,parseGameProject,parseGameDraft} from '../src/shared/game/validation.js';
 import {compileCampaign} from '../src/shared/game/campaign.js';
+import {GAME_SCHEMA} from '../src/shared/game/schema.js';
 import {presentationAssets} from '../src/shared/presentation/runtime.js';
 import {planCampaign,publishCampaign} from '../src/main/campaignPublisher.js';
 import {GameDocuments} from '../src/main/gameDocuments.js';
@@ -61,26 +62,34 @@ test('home preserves composition order, alpha colors and labels across save, rec
  }finally{await rm(root,{recursive:true,force:true});}
 });
 
-test('home library assets are deduplicated and included in publication including hidden overlays',async()=>{
+test('publication keeps home labels and succeeds without media used only by the legacy composition',async()=>{
  const root=await mkdtemp(path.join(os.tmpdir(),'lunaria-home-publish-'));
  try{
   const library=path.join(root,'library'),game=path.join(root,'game');
   await mkdir(library);await mkdir(path.join(game,'content/design'),{recursive:true});
-  await writeFile(path.join(library,'sprite.png'),PIXEL_PNG);await writeFile(path.join(library,'home.png'),PIXEL_PNG);await writeFile(path.join(library,'overlay.png'),PIXEL_PNG);
+  await writeFile(path.join(library,'sprite.png'),PIXEL_PNG);
+  await writeFile(path.join(game,'content/design/game-project.schema.json'),JSON.stringify(GAME_SCHEMA));
   await writeFile(path.join(game,'project.godot'),'config_version=5\n');
   for(const marker of ['app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd']){await mkdir(path.dirname(path.join(game,marker)),{recursive:true});await writeFile(path.join(game,marker),'extends RefCounted\n');}
-  const p=fixturePresentation(project(),'library://sprite.png');p.homeScreen!.background.mode='image';p.homeScreen!.background.image='library://home.png';
-  p.homeScreen!.elements.push({...newHomeElement('image','overlay'),image:'library://overlay.png',visible:false});
-  p.homeScreen!.elements.push({...newHomeElement('image','duplicate'),image:'library://home.png'});
-  p.homeScreen!.elements.find(e=>e.id==='title')!.text='library://this-is-a-label.png';
+  const p=fixturePresentation(project(),'library://sprite.png'),home=p.homeScreen!;
+  home.background.mode='image';home.background.image='library://home.png';
+  home.elements.push({...newHomeElement('image','overlay'),image:'library://overlay.png',visible:false});
+  home.elements.push({...newHomeElement('image','duplicate'),image:'library://home.png'});
+  home.elements.find(e=>e.id==='title')!.text='library://this-is-a-label.png';
+  home.continueLabels.battle='Retour à ma bataille';
+  const authored=structuredClone(home);
   assert.deepEqual(presentationAssets(p).filter(ref=>ref!=='library://sprite.png').sort(),['library://home.png','library://overlay.png']);
-  const plan=await planCampaign(p,library);assert.equal(plan.check.assets,3);
-  assert.deepEqual(plan.project.homeScreen,p.homeScreen);
+  const plan=await planCampaign(p,library,game);
+  assert.equal(plan.check.assets,1);
+  assert.deepEqual(plan.project.homeScreen,{
+   background:defaultHomeScreen().background,
+   continueLabels:authored.continueLabels,
+   elements:[],
+  });
   const published=await publishCampaign(p,game,library);
-  assert.deepEqual(JSON.parse(await readFile(published.path,'utf8')).homeScreen,p.homeScreen);
-  assert.deepEqual(await readFile(path.join(game,'LunariaArtLibrary','home.png')),PIXEL_PNG);
-  assert.deepEqual(await readFile(path.join(game,'LunariaArtLibrary','overlay.png')),PIXEL_PNG);
-  p.homeScreen!.background.image='library://missing.png';await assert.rejects(planCampaign(p,library),/introuvable/);
+  assert.deepEqual(JSON.parse(await readFile(published.path,'utf8')).homeScreen,plan.project.homeScreen);
+  assert.deepEqual(await readdir(path.join(game,'LunariaArtLibrary')),['sprite.png']);
+  assert.deepEqual(p.homeScreen,authored);
  }finally{await rm(root,{recursive:true,force:true});}
 });
 

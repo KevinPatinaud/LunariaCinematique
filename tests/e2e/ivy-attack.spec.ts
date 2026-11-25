@@ -17,8 +17,7 @@ test('Lierre shows editable binding, accurate preview and persisted values',asyn
   const page=await app.firstWindow();
   await page.waitForURL('app://studio/index.html');
   await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},target);
-  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
-  await page.locator('.gd-sections').getByRole('button',{name:/^Plantes alliées/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Plantes/}).click();
   await expect(page.getByRole('complementary',{name:'Catalogue des plantes'}).getByRole('button',{name:/^Lierre/})).toHaveCount(1);
   await expect(page.getByRole('complementary',{name:'Catalogue des plantes'}).getByRole('button',{name:/^Fougère/})).toHaveCount(0);
   await page.getByRole('complementary',{name:'Catalogue des plantes'}).getByRole('button',{name:/^Lierre/}).click();

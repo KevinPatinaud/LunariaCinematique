@@ -37,11 +37,11 @@ Le 1 octobre 2026, après correction de l’aide **Plantes disponibles** :
 
 Les liens locaux des guides courants et des renvois ajoutés aux archives ont été vérifiés ; les copies de contrats sont synchronisées. Les corps des anciennes preuves, prompts, récits et licences restent conservés. Ces contrôles ciblés ne déclarent pas réussie la campagne Electron entière ni un essai Android.
 
-## Écran d’accueil — 3 octobre 2026
+## Ancien éditeur d’accueil — 3 octobre 2026
 
 Le scénario Electron `tests/e2e/home-screen.spec.ts` a réussi après compilation : **un test, 5,8 secondes**. Il utilise un profil, un projet, une bibliothèque et une destination Godot temporaires. Il exerce le choix du fond dans la bibliothèque, son cadrage et son voile, les libellés de reprise et le token `{continue}`, la modification du titre et de sa couleur, son déplacement à la souris et son redimensionnement par la poignée, puis l’annulation et le rétablissement de cette géométrie. Il vérifie aussi la destination d’un bouton, le masquage, l’ajout et le réordre d’éléments, la suppression puis l’annulation, l’enregistrement et la réouverture. La publication native est vérifiée par comparaison de `homeScreen` dans le JSON publié et par la copie d’une image référencée uniquement par l’accueil.
 
-Commande : `npm run test:e2e:built -- tests/e2e/home-screen.spec.ts`. La capture technique `work/home-screen-studio-e2e.png` emploie des images de fixture d’un pixel ; elle vérifie l’éditeur, sans représenter la direction artistique du jeu. Les liens des nouveaux guides ont également été vérifiés. Ce scénario ne constitue ni un test du runtime Godot ni un essai Android.
+Le scénario a été retiré avec l’éditeur. La capture technique `work/home-screen-studio-e2e.png` emploie des images de fixture d’un pixel ; elle vérifie l’éditeur, sans représenter la direction artistique du jeu. Les liens des nouveaux guides ont également été vérifiés. Ce scénario ne constitue ni un test du runtime Godot ni un essai Android.
 
 Contrôles complémentaires du même lot : build et typecheck du Studio réussis ; **1 046 tests Studio réussis, cinq ignorés, aucun échec**. Dans le jeu, **185 tests Node réussis, deux ignorés, aucun échec**, **11 suites d’interface réussies**, **78 vérifications de contenu sans échec** et **89 vérifications graphiques sans échec, avec huit captures**. L’export PCK et les **six suites sur le paquet** ont également réussi. Ces contrôles Godot sur PC restent distincts d’un essai sur appareil Android.
 

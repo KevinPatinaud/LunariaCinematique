@@ -1,0 +1,135 @@
+.char-workshop {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 540px;
+}
+
+.char-workshop-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(197, 222, 169, 0.16);
+}
+
+.char-workshop-top .field {
+  min-width: 220px;
+  margin: 0;
+}
+
+.char-workshop-top-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.char-workshop-body {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 460px;
+}
+
+.char-workshop-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 10px;
+  border-right: 1px solid rgba(197, 222, 169, 0.14);
+  max-height: 68vh;
+  overflow-y: auto;
+}
+
+.char-workshop-group h4 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #cfe0bd;
+}
+
+.char-slot-list,
+.char-owned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.char-slot-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(197, 222, 169, 0.14);
+  background: rgba(20, 30, 26, 0.6);
+  padding: 2px 4px;
+}
+
+.char-slot-item.selected {
+  border-color: #c7dda3;
+  background: rgba(199, 221, 163, 0.14);
+}
+
+.char-slot-main,
+.char-owned-item {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.char-owned-item {
+  border: 1px solid rgba(197, 222, 169, 0.14);
+  background: rgba(20, 30, 26, 0.6);
+}
+
+.char-owned-item.selected {
+  border-color: #c7dda3;
+  background: rgba(199, 221, 163, 0.14);
+}
+
+.char-slot-main small,
+.char-owned-item small {
+  font-size: 11px;
+  color: rgba(230, 236, 222, 0.7);
+}
+
+.char-workshop-editor {
+  max-height: 68vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.char-editor-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 10px;
+}
+
+.char-shared-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(20, 30, 26, 0.5);
+  border: 1px solid rgba(197, 222, 169, 0.14);
+}
+
+.char-shared-preview h3 {
+  margin: 0;
+}

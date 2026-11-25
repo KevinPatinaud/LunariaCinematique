@@ -39,8 +39,7 @@ test.beforeEach(async () => {
   const restored = await app.evaluate(({ nativeImage }) => {const pixels=Buffer.alloc(1600*900*4,180);for(let i=3;i<pixels.length;i+=4)pixels[i]=255;return Array.from(nativeImage.createFromBitmap(pixels,{width:1600,height:900}).toPNG());});
   await fs.writeFile(path.join(profile,'restored.png'),Buffer.from(restored));
   await app.evaluate(({ dialog }, target) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: target }); dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [target] }); dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false }); }, target);
-  await page.locator('.studio-modebar').getByRole('button', { name: /^Niveaux/ }).click();
-  await page.locator('.gd-sections').getByRole('button', { name: /^Niveaux/ }).click();
+  await page.locator('.studio-sections').getByRole('button', { name: /^Niveaux/ }).click();
   await page.getByRole('button', { name: 'Paramètres', exact: true }).click();
 });
 test.afterEach(async ({}, info) => {
@@ -104,7 +103,7 @@ test('default last decor, model forwarding, preview, apply, undo, save and reope
   expect(await fs.readFile(path.join(library, 'last.png'))).toEqual(sourceBefore);
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button', { name: /^Niveaux/ }).click();
+  await page.locator('.studio-sections').getByRole('button', { name: /^Niveaux/ }).click();
   await page.locator('.gd-level-items button').filter({has:page.getByText(seedProject().levels[0].title,{exact:true})}).click(); await page.getByRole('button', { name: 'Paramètres', exact: true }).click(); await expect(terrain()).toContainText(ref.slice(10));
   await expect(terrain()).toContainText(restoredRef.slice(10));
 });

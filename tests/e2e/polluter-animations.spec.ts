@@ -18,7 +18,7 @@ test('actual Plaque and Canette project loads drawn attacks without missing art 
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
   await page.locator('.gd-message button').click();
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   for(const [name,attack,time,key,count]of [['Plaque','Plaque — crachat','0.28','plaque',6],['Canette pressée','Canette pressée — coup de pince','0.15','canette',6]] as const){
    await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:new RegExp('^'+name)}).click();
    const art=page.getByRole('region',{name:'Image principale de '+name}).getByRole('img',{name:(key==='plaque'?'Plaque':'Canette')+' combat · v1',exact:true});

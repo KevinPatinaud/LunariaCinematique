@@ -18,37 +18,30 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { flushSync } from "react-dom";
 import { ProjectOverview } from "./components/ProjectOverview.js";
 import { CinematicsBrowser } from "./components/CinematicsBrowser.js";
-import { GameEditor, type GameEditorHandle } from "./game/GameEditor.js";
 import {
-  textIntroDuration,
-  textNeedsCompletion,
-} from "../shared/textAnimation.js";
+  StudioNavigation,
+  type GameSection,
+} from "./components/StudioNavigation.js";
+import { GameEditor, type GameEditorHandle } from "./game/GameEditor.js";
+import { DeliveryMenu } from "./game/DeliveryMenu.js";
+import { AndroidDeploymentStatus } from "./game/AndroidDeploymentStatus.js";
+import { useProjectDelivery } from "./game/useProjectDelivery.js";
+import { gameIssues } from "../shared/game/validation.js";
+import { textIntroDuration } from "../shared/textAnimation.js";
 import { api } from "./browserBridge.js";
 import { ImageCache } from "./images.js";
 import { useMotionPreview } from "./hooks/useMotionPreview.js";
 import { useCinematicPlayback } from "./hooks/useCinematicPlayback.js";
 import { useLibraryLayout } from "./hooks/useLibraryLayout.js";
-import { Library, type LibraryTab } from "./components/Library.js";
+import type { LibraryTab } from "./components/Library.js";
 import { LibraryPickerContext } from "./components/LibraryPickerContext.js";
-import { Inspector, cameraLabels } from "./components/Inspector.js";
-import { Scene, type Selection } from "./components/Scene.js";
-import {
-  PhoneFormatSelector,
-  PhonePreview,
-  usePhonePreview,
-} from "./components/PhonePreview.js";
-import {
-  BackgroundCorrectionDialog,
-  BackgroundCorrectionStatus,
-  useBackgroundCorrection,
-} from "./components/BackgroundCorrection.js";
+import type { Selection } from "./components/Scene.js";
+import { usePhonePreview } from "./components/PhonePreview.js";
+import { useBackgroundCorrection } from "./components/BackgroundCorrection.js";
 import { renderShotJpg } from "./exportJpg.js";
-import { Layers } from "./components/Layers.js";
 import { TemplateDialog, DuplicateDialog } from "./components/PlanDialogs.js";
-import { Diagnostics } from "./components/Diagnostics.js";
 import { useCollections } from "./hooks/useCollections.js";
 import { useObjectWorkspace } from "./hooks/useObjectWorkspace.js";
 import { diagnose, type Diagnostic } from "../shared/diagnostics.js";
@@ -77,7 +70,6 @@ import {
   newActor,
   newBubble,
   newCinematic,
-  referencedAssets,
   upgradeCinematicFormat,
   type Actor,
   type Asset,
@@ -87,20 +79,30 @@ import {
   type Shot,
 } from "../shared/model.js";
 import { demoCinematic } from "../shared/demo.js";
-import { validationIssues } from "../shared/schema.js";
 import { clamp } from "../shared/geometry.js";
-import { centeredObject } from "../shared/editing.js";
+import { centeredObject, proportionalSize } from "../shared/editing.js";
 import { isAudio, isImage } from "../shared/assets.js";
 import { playbackStartIndex } from "../shared/playback.js";
-import { repairAudioLinks, musicRange } from "../shared/cinematicAudio.js";
+import { repairAudioLinks } from "../shared/cinematicAudio.js";
 import { AudioEditor } from "./components/AudioEditor.js";
 import { ImageTasksProvider } from "./images/ImageTasksContext.js";
 import { ImageTasks } from "./images/ImageTasks.js";
-import { PoseGenerationDialog, type PoseSelection } from './images/PoseGenerationDialog.js';
-
-type CopiedObject =
-  | { kind: "actor"; actor: Actor; catalog?: Cinematic["presentationCatalog"] }
-  | { kind: "bubble"; bubble: Bubble; speaker?: Actor };
+import {
+  PoseGenerationDialog,
+  type PoseSelection,
+} from "./images/PoseGenerationDialog.js";
+import {
+  AnimationGenerationDialog,
+  type AnimationGenerationTarget,
+} from "./images/AnimationGenerationDialog.js";
+import { CharacterAnimationWorkshopDialog } from "./presentation/CharacterAnimationWorkshopDialog.js";
+import { AnimatedElementEditor } from "./presentation/AnimatedElementEditor.js";
+import { isElementClip, type ElementClip } from "../shared/presentation/animatedElements.js";
+import { ensurePresentation } from "../shared/presentation/defaults.js";
+import {
+  CinematicWorkspace,
+  type CopiedCinematicObject,
+} from "./cinematics/CinematicWorkspace.js";
 
 export default function App() {
   return (
@@ -111,6 +113,7 @@ export default function App() {
     </ProjectSessionProvider>
   );
 }
+
 function StudioApp() {
   const {
     session,
@@ -126,7 +129,12 @@ function StudioApp() {
   const [studioMode, setStudioMode] = useState<"cinematics" | "levels">(
     "cinematics",
   );
+  const [gameSection, setGameSection] = useState<GameSection>("campaign");
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [showGameIssues, setShowGameIssues] = useState(false);
+  const delivery = useProjectDelivery(session);
   const [selectedFilmId, setSelectedFilmId] = useState("");
+  const [elementEditor, setElementEditor] = useState<{ id?: string; epoch: number; root?: string } | null>(null);
   const gameEditor = useRef<GameEditorHandle>(null);
   const libraryLayout = useLibraryLayout();
   const phonePreview = usePhonePreview();
@@ -135,16 +143,6 @@ function StudioApp() {
     presentationProject.cinematics?.find((f) => f.id === selectedFilmId) ??
     presentationProject.cinematics?.[0];
   const doc = selectedFilm ?? emptyFilm.current;
-  const filmReferences = useMemo(
-    () =>
-      Object.fromEntries(
-        (presentationProject.cinematics ?? []).map((film) => [
-          film.id,
-          cinematicReferences(presentationProject, film.id),
-        ]),
-      ),
-    [presentationProject],
-  );
   const [library, setLibrary] = useState<LibrarySnapshot | null>(null),
     [tab, setTab] = useState<LibraryTab>("environment");
   const [shotId, setShotId] = useState(doc.shots[0].id),
@@ -152,7 +150,8 @@ function StudioApp() {
   const [selectionIds, setSelectionIds] = useState<string[]>([]);
   const selectionIdsRef = useRef(selectionIds);
   selectionIdsRef.current = selectionIds;
-  const [copiedObject, setCopiedObject] = useState<CopiedObject | null>(null);
+  const [copiedObject, setCopiedObject] =
+    useState<CopiedCinematicObject | null>(null);
   const workspaceObjects = useObjectWorkspace();
   const [studioModal, setStudioModal] = useState<
     | "templates"
@@ -163,20 +162,39 @@ function StudioApp() {
     | "films"
     | "audio"
     | "pose"
+    | "animationWorkshop"
+    | "animationGeneration"
     | null
   >(null);
+  const filmReferences = useMemo(
+    () =>
+      studioModal === "films"
+        ? Object.fromEntries(
+            (presentationProject.cinematics ?? []).map((film) => [
+              film.id,
+              cinematicReferences(presentationProject, film.id),
+            ]),
+          )
+        : {},
+    [studioModal, presentationProject],
+  );
   const [audioAsset, setAudioAsset] = useState<Asset["ref"]>();
   const [poseSelection, setPoseSelection] = useState<PoseSelection>();
+  const [workshopSpeciesId, setWorkshopSpeciesId] = useState<string | undefined>();
+  const [workshopAnimationId, setWorkshopAnimationId] = useState<string | undefined>();
+  const [animationGenTarget, setAnimationGenTarget] = useState<AnimationGenerationTarget>();
   const filmTitleInput = useRef<HTMLInputElement>(null);
-  const recentProjects = {
-    projects: recent.map((p) => ({
-      id: p.path,
-      path: p.path,
-      title: p.title,
-      lastUsedAt: p.updatedAt,
-      pinned: false,
-    })),
-  };
+  const recentProjects = useMemo(
+    () =>
+      recent.map((p) => ({
+        id: p.path,
+        path: p.path,
+        title: p.title,
+        lastUsedAt: p.updatedAt,
+        pinned: false,
+      })),
+    [recent],
+  );
   const [snap, setSnap] = useState(true);
   const [textPreviewId, setTextPreviewId] = useState<string | null>(null);
   const [guides, setGuides] = useState(false);
@@ -201,10 +219,15 @@ function StudioApp() {
   const assets = library?.assets ?? [];
   const notify = useCallback((message: string) => setToast(message), []);
   const preview = useCinematicPlayback({
-    document: doc, library, contextKey: String(epoch), active: studioMode === "cinematics",
-    cache: assetCache.current, notify,
+    document: doc,
+    project: presentationProject,
+    library,
+    contextKey: String(epoch),
+    active: studioMode === "cinematics",
+    cache: assetCache.current,
+    notify,
   });
-  const { playback, readyShot } = preview;
+  const { playback } = preview;
   const selectedShot = doc.shots.find((s) => s.id === shotId) ?? doc.shots[0];
   const selectedShotIndex = doc.shots.findIndex(
     (s) => s.id === selectedShot.id,
@@ -242,8 +265,8 @@ function StudioApp() {
     ? (doc.shots[playback.shotIndex] ?? selectedShot)
     : selectedShot;
   useEffect(() => {
-    if (projectMessage) notify(projectMessage);
-  }, [projectMessage, notify]);
+    if (projectMessage && studioMode === "cinematics") notify(projectMessage);
+  }, [projectMessage, studioMode, notify]);
   const backgroundCorrection = useBackgroundCorrection(
     notify,
     (updated) => {
@@ -296,8 +319,6 @@ function StudioApp() {
       active.blur();
   }
   function setSelection(next: Selection, additive = false) {
-    // A scene pointerdown changes selection before the browser dispatches blur.
-    // Commit while the inspector still belongs to the original element.
     commitFocusedInput();
     if (next.kind === "shot") {
       selectionIdsRef.current = [];
@@ -429,14 +450,14 @@ function StudioApp() {
     key = "",
   ) {
     if (workspaceObjects.locked.has(id)) return;
-    const shotId = selectedShot.id;
+    const currentShot = selectedShot.id;
     commit(
       (next) => {
-        const current = next.shots.find((s) => s.id === shotId);
+        const current = next.shots.find((s) => s.id === currentShot);
         if (!current) return;
         applyObjectChanges(current, [{ kind, id, patch }]);
       },
-      key ? `${shotId}:${id}:${key}` : "",
+      key ? `${currentShot}:${id}:${key}` : "",
     );
   }
   function selectShot(id: string) {
@@ -460,29 +481,38 @@ function StudioApp() {
     emptyFilm.current = newCinematic();
     const first = session.project.cinematics?.[0];
     replaceDocument(first ?? emptyFilm.current);
+    setGameSection("campaign");
+    setShowGameIssues(false);
   }, [epoch]);
   useEffect(() => {
     const loc = navigation?.location;
     if (!loc) return;
     commitFocusedInput();
     setStudioMode(loc.mode);
+    if (loc.mode === "levels" && loc.section) {
+      setGameSection(loc.section as GameSection);
+    }
     if (loc.mode === "cinematics") {
       const film =
         session.project.cinematics?.find((f) => f.id === loc.filmId) ??
         session.project.cinematics?.[0];
       if (film) {
-        replaceDocument(film);
-        if (loc.shotId && film.shots.some((s) => s.id === loc.shotId))
+        if (film.id !== activeFilmId.current) replaceDocument(film);
+        if (
+          loc.shotId &&
+          loc.shotId !== currentShotRef.current &&
+          film.shots.some((s) => s.id === loc.shotId)
+        )
           selectShot(loc.shotId);
       }
     }
   }, [navigation]);
-  if (studioMode === "cinematics")
-    session.setLocation({ mode: "cinematics", filmId: doc.id, shotId });
+  useEffect(() => {
+    if (studioMode === "cinematics")
+      session.setLocation({ mode: "cinematics", filmId: doc.id, shotId });
+  }, [studioMode, session, doc.id, shotId]);
   async function operation<T>(fn: () => Promise<T>): Promise<T | undefined> {
     if (running.current || !booted) return;
-    // Native close / Ctrl+S do not blur fields themselves. Commit numeric drafts
-    // before reading docRef or deciding whether there are unsaved changes.
     commitFocusedInput();
     running.current = true;
     setBusy(true);
@@ -505,11 +535,11 @@ function StudioApp() {
       const linkedCatalog =
         !cinematic.presentationCatalog ||
         cinematic.presentationCatalog.projectId === presentationProject.id;
-      const session = await api.beginJpgExport(
+      const exportSession = await api.beginJpgExport(
         cinematic.title,
         cinematic.shots.length,
       );
-      if (!session) return;
+      if (!exportSession) return;
       try {
         for (let index = 0; index < cinematic.shots.length; index++) {
           notify(`Export JPG : plan ${index + 1} / ${cinematic.shots.length}…`);
@@ -520,14 +550,14 @@ function StudioApp() {
             linkedCatalog,
             imageCache,
           );
-          await api.writeJpgFrame(session.id, index + 1, jpg);
+          await api.writeJpgFrame(exportSession.id, index + 1, jpg);
         }
-        const folder = await api.finishJpgExport(session.id);
+        const folder = await api.finishJpgExport(exportSession.id);
         notify(
           `${cinematic.shots.length} JPG exporté${cinematic.shots.length > 1 ? "s" : ""} dans ${folder}`,
         );
       } catch (error) {
-        await api.cancelJpgExport(session.id).catch(() => undefined);
+        await api.cancelJpgExport(exportSession.id).catch(() => undefined);
         throw error;
       }
     });
@@ -676,10 +706,6 @@ function StudioApp() {
         "Exemple ajouté au projet. Les images restent dans la bibliothèque exemple.",
       );
     });
-  const open = () =>
-    operation(async () => {
-      await session.open();
-    });
   const openCampaignFilm = (film: CampaignFilm) =>
     operation(async () => {
       const embedded = presentationProject.cinematics?.find(
@@ -814,10 +840,11 @@ function StudioApp() {
     asset: Asset,
     as: LibraryTab,
     position?: { x: number; y: number },
+    elementId?: string,
   ): Promise<boolean> {
     if (preview.isActive() || running.current) return false;
     const targetId = selectedShot.id,
-      epoch = documentEpoch.current,
+      currentEpoch = documentEpoch.current,
       sourceRoot = libraryRef.current?.rootPath;
     if (as === "audio" ? !isAudio(asset.path) : !isImage(asset.path)) {
       notify("Ce type de ressource ne convient pas à cette action.");
@@ -873,7 +900,7 @@ function StudioApp() {
       try {
         const image = await assetCache.current.load(asset.url, asset.name);
         if (
-          epoch !== documentEpoch.current ||
+          currentEpoch !== documentEpoch.current ||
           sourceRoot !== libraryRef.current?.rootPath ||
           preview.isActive() ||
           running.current
@@ -890,23 +917,41 @@ function StudioApp() {
           notify("Maximum 50 objets par plan.");
           return false;
         }
+        const clip = elementId ? session.project.presentation?.animations.find(item => item.id === elementId) : undefined;
+        if (elementId && (!isElementClip(clip) || clip.frames[0]?.asset !== asset.ref)) {
+          notify("L’élément animé a changé pendant l’insertion.");
+          return false;
+        }
         const actor = newActor(
           asset,
           image.naturalWidth / image.naturalHeight,
           0.3 + (current.actors.length % 3) * 0.16,
           0.42,
-          as === "enemy" ? "enemy" : as === "prop" ? "prop" : "character",
+          as === "enemy" ? "enemy" : as === "prop" || as === "animated" ? "prop" : "character",
         );
+        if (isElementClip(clip)) {
+          actor.name = clip.name;
+          if (clip.element.placementHeight !== undefined) {
+            Object.assign(actor, proportionalSize(actor.width, actor.height, clip.element.placementHeight / actor.height));
+          }
+          actor.animation = { mode: "animation", animationId: clip.id, speciesId: "", slot: "element", speed: 1,
+            elementPlayback: { start: 0, loop: clip.loop } };
+        }
         if (position) {
-          actor.x = clamp(position.x - actor.width / 2, -1, 2);
-          actor.y = clamp(position.y - actor.height / 2, -1, 2);
+          const origin = clip?.element?.preset === "exhale" ? clip.element.pivot : { x: 0.5, y: 0.5 };
+          actor.x = clamp(position.x - actor.width * origin.x, -1, 2);
+          actor.y = clamp(position.y - actor.height * origin.y, -1, 2);
         }
         commit(
           (d) => {
+            if (actor.animation?.elementPlayback) {
+              const projectId = session.project.id;
+              d.presentationCatalog = { projectId, file: d.presentationCatalog?.projectId === projectId ? d.presentationCatalog.file : "" };
+            }
             d.shots.find((s) => s.id === targetId)?.actors.push(actor);
           },
           "",
-          as === "enemy"
+          as === "animated" ? "Ajouter un élément animé" : as === "enemy"
             ? "Ajouter un ennemi"
             : as === "prop"
               ? "Ajouter un objet"
@@ -922,6 +967,30 @@ function StudioApp() {
     }
     collections.use(asset.ref);
     return true;
+  }
+  const elementClips = presentationProject.presentation?.animations.filter(isElementClip) ?? [];
+  const editedElement = elementClips.find(clip => clip.id === elementEditor?.id);
+  function saveAnimatedElement(clip: ElementClip, editing: boolean) {
+    if (elementEditor?.epoch !== session.getSnapshot().epoch || elementEditor.root !== libraryRef.current?.rootPath
+      || session.getSnapshot().busy || running.current || preview.isActive()) {
+      throw Error("Le projet ou la bibliothèque a changé. Rouvre l’éditeur pour enregistrer.");
+    }
+    session.change(draft => {
+      ensurePresentation(draft);
+      const animations = draft.presentation!.animations;
+      if (!editing) {
+        if (animations.length >= 512) throw Error("Le catalogue contient déjà 512 animations.");
+        animations.push(clip);
+        return;
+      }
+      const index = animations.findIndex(item => item.id === clip.id && isElementClip(item));
+      if (index < 0) throw Error("Cet élément animé a été supprimé du projet.");
+      animations[index] = clip;
+      for (const film of draft.cinematics ?? []) for (const shot of film.shots) for (const actor of shot.actors) {
+        if (actor.animation?.elementPlayback && actor.animation.animationId === clip.id) actor.asset = clip.frames[0].asset;
+      }
+    }, "", editing ? "Modifier un élément animé" : "Créer un élément animé");
+    setElementEditor(null);
   }
   function duplicate() {
     if (selection.kind === "shot") {
@@ -985,10 +1054,10 @@ function StudioApp() {
       return;
     try {
       let added: { kind: "actor" | "bubble"; id: string } | undefined;
-      const shotId = selectedShot.id;
+      const targetShotId = selectedShot.id;
       commit(
         (d) => {
-          const target = d.shots.find((s) => s.id === shotId);
+          const target = d.shots.find((s) => s.id === targetShotId);
           if (!target) return;
           if (copiedObject.kind === "actor") {
             if (
@@ -1110,12 +1179,13 @@ function StudioApp() {
   const startPlayback = (fromShotId?: string) =>
     operation(async () => {
       motionPreview.stop();
-      if (await preview.start(fromShotId) === "invalid") setModal("issues");
+      if ((await preview.start(fromShotId)) === "invalid") setModal("issues");
     });
-  const restartPlayback = () => operation(async () => {
-    motionPreview.stop();
-    if (await preview.restart() === "invalid") setModal("issues");
-  });
+  const restartPlayback = () =>
+    operation(async () => {
+      motionPreview.stop();
+      if ((await preview.restart()) === "invalid") setModal("issues");
+    });
   const advance = preview.advance;
   useEffect(() => {
     let live = true;
@@ -1149,7 +1219,6 @@ function StudioApp() {
     };
   }, []);
   useEffect(() => {
-    // Undo can remove the selected object or plan. Never keep a dangling selection.
     if (!doc.shots.some((s) => s.id === shotId)) {
       currentShotRef.current = doc.shots[0].id;
       setShotId(doc.shots[0].id);
@@ -1180,1310 +1249,443 @@ function StudioApp() {
     window.addEventListener("beforeunload", listener);
     return () => window.removeEventListener("beforeunload", listener);
   }, [desktop, dirty, gameDirty]);
-  useEffect(() => {
-    const listener = (event: KeyboardEvent) => {
-      if (studioMode !== "cinematics") return;
-      if (
-        event.defaultPrevented ||
-        event.isComposing ||
-        (event.repeat && !event.key.startsWith("Arrow"))
-      )
-        return;
-      const target = event.target as HTMLElement;
-      const input = target?.closest(
-        'input,textarea,select,[contenteditable="true"]',
+
+  const keyHandlerRef = useRef<(event: KeyboardEvent) => void>(() => undefined);
+  keyHandlerRef.current = (event: KeyboardEvent) => {
+    if (studioMode !== "cinematics") return;
+    if (
+      event.defaultPrevented ||
+      event.isComposing ||
+      (event.repeat && !event.key.startsWith("Arrow"))
+    )
+      return;
+    const target = event.target as HTMLElement;
+    const input = target?.closest(
+      'input,textarea,select,[contenteditable="true"]',
+    );
+    if (modal || document.querySelector("dialog[open]")) {
+      if (event.key === "Escape" && !busy) setModal(null);
+      return;
+    }
+    if (event.key === "Escape" && motionPreview.active) {
+      motionPreview.stop();
+      return;
+    }
+    if (event.key === "Escape") {
+      if (preview.isActive()) preview.stop();
+      else setSelection({ kind: "shot" });
+      return;
+    }
+    if (input || busy || gameBusy) return;
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      !playback &&
+      event.key.toLowerCase() === "c" &&
+      selection.kind !== "shot" &&
+      selectionIdsRef.current.length === 1 &&
+      !target?.closest("[data-library-surface]")
+    ) {
+      event.preventDefault();
+      copySelection();
+      return;
+    }
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      !playback &&
+      event.key.toLowerCase() === "v" &&
+      copiedObject &&
+      !target?.closest("[data-library-surface]")
+    ) {
+      event.preventDefault();
+      pasteSelection();
+      return;
+    }
+    if (
+      event.code === "Space" &&
+      event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !playback
+    ) {
+      event.preventDefault();
+      void startPlayback(currentShotRef.current);
+      return;
+    }
+    if (motionPreview.active && !target?.closest("button,a")) {
+      if (event.code === "Space") {
+        event.preventDefault();
+        motionPreview.toggle();
+      }
+      return;
+    }
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key.toLowerCase() === "a" &&
+      !playback &&
+      !target?.closest("[data-library-surface]")
+    ) {
+      event.preventDefault();
+      selectAll();
+      return;
+    }
+    if (
+      !playback &&
+      selectionIdsRef.current.length &&
+      ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) &&
+      !target?.closest("[data-library-surface]") &&
+      (!target?.closest("button") || target?.closest(".layer-row"))
+    ) {
+      event.preventDefault();
+      const step = event.shiftKey ? 10 : 1;
+      batchUpdate(
+        moveObjects(
+          selectedShot,
+          editableIds(),
+          event.key === "ArrowLeft"
+            ? -step / 1600
+            : event.key === "ArrowRight"
+              ? step / 1600
+              : 0,
+          event.key === "ArrowUp"
+            ? -step / 900
+            : event.key === "ArrowDown"
+              ? step / 900
+              : 0,
+        ),
+        "Déplacer au clavier",
+        `${selectedShot.id}:nudge`,
       );
-      if (modal || document.querySelector("dialog[open]")) {
-        if (event.key === "Escape" && !busy) setModal(null);
-        return;
-      }
-      if (event.key === "Escape" && motionPreview.active) {
-        motionPreview.stop();
-        return;
-      }
-      if (event.key === "Escape") {
-        if (preview.isActive()) preview.stop();
-        else setSelection({ kind: "shot" });
-        return;
-      }
-      if (input || busy || gameBusy) return;
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        !event.altKey &&
-        !playback &&
-        event.key.toLowerCase() === "c" &&
-        selection.kind !== "shot" &&
-        selectionIdsRef.current.length === 1 &&
-        !target?.closest("[data-library-surface]")
-      ) {
-        event.preventDefault();
-        copySelection();
-        return;
-      }
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        !event.altKey &&
-        !playback &&
-        event.key.toLowerCase() === "v" &&
-        copiedObject &&
-        !target?.closest("[data-library-surface]")
-      ) {
-        event.preventDefault();
-        pasteSelection();
-        return;
-      }
-      // Works directly after clicking a storyboard card, while plain Space
-      // retains native button activation and its existing full-preview shortcut.
-      if (
-        event.code === "Space" &&
-        event.shiftKey &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey &&
-        !playback
-      ) {
-        event.preventDefault();
-        void startPlayback(currentShotRef.current);
-        return;
-      }
-      if (motionPreview.active && !target?.closest("button,a")) {
-        if (event.code === "Space") {
-          event.preventDefault();
-          motionPreview.toggle();
-        }
-        return;
-      }
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.key.toLowerCase() === "a" &&
-        !playback &&
-        !target?.closest("[data-library-surface]")
-      ) {
-        event.preventDefault();
-        selectAll();
-        return;
-      }
-      if (
-        !playback &&
-        selectionIdsRef.current.length &&
-        ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
-          event.key,
-        ) &&
-        !target?.closest("[data-library-surface]") &&
-        (!target?.closest("button") || target?.closest(".layer-row"))
-      ) {
-        event.preventDefault();
-        const step = event.shiftKey ? 10 : 1;
-        batchUpdate(
-          moveObjects(
-            selectedShot,
-            editableIds(),
-            event.key === "ArrowLeft"
-              ? -step / 1600
-              : event.key === "ArrowRight"
-                ? step / 1600
-                : 0,
-            event.key === "ArrowUp"
-              ? -step / 900
-              : event.key === "ArrowDown"
-                ? step / 900
-                : 0,
-          ),
-          "Déplacer au clavier",
-          `${selectedShot.id}:nudge`,
-        );
-        return;
-      }
-      // Focused buttons and library controls retain their native Space/Enter behavior.
-      if (
-        !event.ctrlKey &&
-        !event.metaKey &&
-        target?.closest("[data-library-surface]")
-      )
-        return;
-      if (
-        !event.ctrlKey &&
-        !event.metaKey &&
-        (event.code === "Space" || event.key === "Enter") &&
-        target?.closest("button,a")
-      )
-        return;
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        event.key.toLowerCase() === "d" &&
-        !playback
-      ) {
-        event.preventDefault();
-        duplicate();
-      } else if (event.key === "Delete" && !playback) {
-        event.preventDefault();
-        remove();
-      } else if (event.code === "Space") {
-        event.preventDefault();
-        if (playback) advance();
-        else void startPlayback();
-      }
-    };
+      return;
+    }
+    if (
+      !event.ctrlKey &&
+      !event.metaKey &&
+      target?.closest("[data-library-surface]")
+    )
+      return;
+    if (
+      !event.ctrlKey &&
+      !event.metaKey &&
+      (event.code === "Space" || event.key === "Enter") &&
+      target?.closest("button,a")
+    )
+      return;
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key.toLowerCase() === "d" &&
+      !playback
+    ) {
+      event.preventDefault();
+      duplicate();
+    } else if (event.key === "Delete" && !playback) {
+      event.preventDefault();
+      remove();
+    } else if (event.code === "Space") {
+      event.preventDefault();
+      if (playback) advance();
+      else void startPlayback();
+    }
+  };
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => keyHandlerRef.current(event);
     window.addEventListener("keydown", listener);
     return () => window.removeEventListener("keydown", listener);
-  });
-  useEffect(() => {
-    if (!modal) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const surface = document.querySelector<HTMLElement>(".modal");
-    const focusables = () => [
-      ...(surface?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]):not([hidden]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex="0"]',
-      ) ?? []),
-    ];
-    const timer = setTimeout(() => focusables()[0]?.focus(), 0);
-    const trap = (event: KeyboardEvent) => {
-      if (event.key !== "Tab") return;
-      const items = focusables();
-      if (!items.length) {
-        event.preventDefault();
-        return;
-      }
-      const first = items[0],
-        last = items[items.length - 1];
-      if (
-        event.shiftKey &&
-        (document.activeElement === first ||
-          !surface?.contains(document.activeElement))
-      ) {
-        event.preventDefault();
-        last.focus();
-      } else if (
-        !event.shiftKey &&
-        (document.activeElement === last ||
-          !surface?.contains(document.activeElement))
-      ) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", trap, true);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("keydown", trap, true);
-      previous?.focus();
-    };
-  }, [modal]);
+  }, []);
+
   const totalSeconds = doc.shots.reduce((n, s) => n + s.duration, 0);
-  const activeDialogue =
-    playback && !playback.finished && playback.elapsed >= shot.dialogueStart
-      ? shot.bubbles[playback.dialogueIndex]
-      : null;
-  const awaitingShotClick =
-    !!playback &&
-    !playback.finished &&
-    shot.endAdvance === "click" &&
-    playback.elapsed >= shot.duration &&
-    playback.dialogueIndex >= shot.bubbles.length &&
-    playback.exitElapsed === undefined;
   const locked = busy || gameBusy;
+  const gameValidationIssues = useMemo(
+    () =>
+      studioMode === "levels" || deliveryOpen || showGameIssues
+        ? gameIssues(presentationProject)
+        : [],
+    [studioMode, deliveryOpen, showGameIssues, presentationProject],
+  );
+  const gameErrorCount = useMemo(
+    () =>
+      gameValidationIssues.filter((issue) => issue.severity === "error").length,
+    [gameValidationIssues],
+  );
+  const openCinematicsMode = () => {
+    commitFocusedInput();
+    session.boundary();
+    setStudioMode("cinematics");
+  };
+  const openGameSection = (nextSection: GameSection) => {
+    preview.stop();
+    motionPreview.stop();
+    commitFocusedInput();
+    session.boundary();
+    setStudioMode("levels");
+    gameEditor.current?.navigate(nextSection);
+  };
+
   return (
     <div className="studio-root">
-      <nav className="studio-modebar" aria-label="Modes du Studio">
-        <b>LUNARIA STUDIO</b>
+      <header className="studio-modebar">
         <button
+          type="button"
           className="studio-overview"
+          title={`Lunaria Studio V1.10 · ${studioProjectPath || presentationProject.title}`}
           disabled={locked || !!modal || !!studioModal || !!playback}
           onClick={() => setStudioModal("project")}
         >
-          Vue du projet
+          <Icon name="leaf" size={14} />
+          <span>Vue du projet</span>
         </button>
-        <button
-          className={studioMode === "cinematics" ? "active" : ""}
-          aria-pressed={studioMode === "cinematics"}
-          disabled={busy || !!modal || !!studioModal || gameBusy}
-          onClick={() => {
-            commitFocusedInput();
-            session.boundary();
-            setStudioMode("cinematics");
-          }}
-        >
-          Cinématiques
-        </button>
-        <button
-          className={studioMode === "levels" ? "active" : ""}
-          aria-pressed={studioMode === "levels"}
-          disabled={busy || !!modal || !!studioModal}
-          onClick={() => {
-            preview.stop();
-            motionPreview.stop();
-            commitFocusedInput();
-            session.boundary();
-            setStudioMode("levels");
-          }}
-        >
-          Niveaux
-        </button>
-        <ProjectControls
-          disabled={locked || !!modal || !!studioModal || !!playback}
-          onBackup={() => void backupCampaign()}
+        <StudioNavigation
+          mode={studioMode}
+          section={gameSection}
+          levelCount={presentationProject.levels.length}
+          cinematicCount={presentationProject.cinematics?.length ?? 0}
+          disabled={locked || !!modal || !!studioModal}
+          onSelectCinematics={openCinematicsMode}
+          onSelectSection={openGameSection}
         />
-        <ImageTasks
-          library={library}
-          updateLibrary={(updated) => {
-            libraryRef.current = updated;
-            setLibrary(updated);
-            assetCache.current.clear();
-          }}
-          notify={notify}
-          disabled={locked || !!modal || !!studioModal || !!playback}
+        <div className="studio-bar-right">
+          <ProjectControls
+            disabled={locked || !!modal || !!studioModal || !!playback}
+            onBackup={() => void backupCampaign()}
+          />
+          <DeliveryMenu
+            busy={locked}
+            disabled={locked || !!modal || !!studioModal || !!playback}
+            errorCount={gameErrorCount}
+            onOpenChange={setDeliveryOpen}
+            onExecute={(action) => void delivery.execute(action)}
+            onShowIssues={() => {
+              preview.stop();
+              motionPreview.stop();
+              setStudioMode("levels");
+              setShowGameIssues(true);
+            }}
+          />
+          <ImageTasks
+            library={library}
+            updateLibrary={(updated) => {
+              libraryRef.current = updated;
+              setLibrary(updated);
+              assetCache.current.clear();
+            }}
+            notify={notify}
+            disabled={locked || !!modal || !!studioModal || !!playback}
+          />
+        </div>
+      </header>
+      {delivery.androidDeployment && (
+        <AndroidDeploymentStatus
+          state={delivery.androidDeployment}
+          onClose={delivery.dismiss}
         />
-      </nav>
+      )}
       <ProjectRecovery />
       <ProjectConflictDialog />
-      <div
-        style={studioMode === "cinematics" ? undefined : { display: "none" }}
-        className="app-shell"
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => e.preventDefault()}
-      >
-        <header className="topbar">
-          <div className="brand">
-            <div className="brand-mark">
-              <Icon name="leaf" size={27} />
-            </div>
-            <div>
-              <strong>LUNARIA</strong>
-              <span>CINEMATIC STUDIO</span>
-            </div>
-            <span className="version-tag">V1.10</span>
-          </div>
-          <div className="project-heading">
-            <div className="project-heading-main">
-              {(presentationProject.cinematics?.length ?? 0) > 1 && (
-                <select
-                  className="film-switcher"
-                  aria-label="Cinématique du projet"
-                  value={
-                    presentationProject.cinematics?.some(
-                      (f) => f.id === activeFilmId.current,
-                    )
-                      ? activeFilmId.current
-                      : ""
-                  }
-                  onChange={(e) => selectFilm(e.target.value)}
-                >
-                  <option value="">Choisir un film</option>
-                  {(presentationProject.cinematics ?? []).map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.title}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <input
-                ref={filmTitleInput}
-                aria-label="Titre de la cinématique"
-                value={doc.title}
-                maxLength={200}
-                disabled={!!playback || locked}
-                onChange={(e) =>
-                  commit((d) => {
-                    d.title = e.target.value;
-                  }, "title")
-                }
-              />
-            </div>
-          </div>
-          <div className="top-actions">
-            <button
-              className="button subtle"
-              disabled={!!playback || locked}
-              onClick={() => {
-                setAudioAsset(undefined);
-                setStudioModal("audio");
-              }}
-            >
-              <Icon name="music" size={16} /> Son
-            </button>
-            <button
-              className="button primary"
-              disabled={!!playback || locked}
-              onClick={createDocument}
-            >
-              <Icon name="plus" size={15} /> Nouvelle cinématique
-            </button>
-            <button
-              className="button subtle"
-              disabled={!!playback || locked}
-              onClick={() => setStudioModal("films")}
-            >
-              Toutes les cinématiques{" "}
-              <span className="film-count">
-                {presentationProject.cinematics?.length ?? 0}
-              </span>
-            </button>
-            <button
-              className="button subtle"
-              disabled={!!playback || locked || !desktop}
-              title={
-                desktop
-                  ? "Un JPG 1600 × 900 par plan, dans un dossier choisi"
-                  : "Disponible dans l’application de bureau"
-              }
-              onClick={() => void exportJpg()}
-            >
-              Exporter en JPG
-            </button>
-            <div className="toolbar-divider" />
-            {playback || preview.loading ? (
-              <button
-                className="button primary"
-                onClick={preview.stop}
-              >
-                <Icon name="stop" size={16} /> Quitter l’aperçu
-              </button>
-            ) : (
-              <div
-                className="playback-actions"
-                role="group"
-                aria-label="Lecture de la cinématique"
-              >
-                <button
-                  className="button subtle"
-                  data-testid="play-all"
-                  disabled={locked}
-                  title="Lire toute la cinématique depuis le premier plan"
-                  onClick={() => startPlayback()}
-                >
-                  <Icon name="play" size={16} /> Tout lire
-                </button>
-                <button
-                  className="button primary play-from-current"
-                  data-testid="play-from-current"
-                  disabled={locked}
-                  aria-label="Lire depuis ce plan"
-                  aria-keyshortcuts="Shift+Space"
-                  title={`Lire à partir du plan ${selectedShotNumber} — ${selectedShot.name}, puis les suivants (Maj+Espace)`}
-                  onClick={() => startPlayback(selectedShot.id)}
-                >
-                  <Icon name="play" size={16} />
-                  <span>Lire depuis ce plan</span>
-                  <span className="play-from-number" aria-hidden="true">
-                    {selectedShotNumber}
-                  </span>
-                </button>
-              </div>
-            )}
-            <button
-              className="icon-button"
-              title="Mode d’emploi"
-              aria-label="Mode d’emploi"
-              onClick={() => setModal("help")}
-            >
-              <Icon name="help" />
-            </button>
-          </div>
-        </header>
-        <main
-          className="workspace"
-          style={
-            {
-              "--library-width": `${libraryLayout.width}px`,
-            } as React.CSSProperties
-          }
-        >
-          <Library
-            collections={collections}
-            layout={libraryLayout}
-            library={library}
-            tab={tab}
-            setTab={setTab}
-            choose={chooseLibrary}
-            refresh={refreshLibrary}
-            useAsset={useAsset}
-            disabled={!!playback || locked}
-            busy={busy}
-          />
-          <section className="workbench">
-            <div className="scene-toolbar">
-              <div className="scene-path">
-                <span>{playback ? "APERÇU" : "SCÈNE"}</span>
-                <Icon name="chevron" size={12} />
-                <strong>{shot.name}</strong>
-              </div>
-              <div className="scene-actions">
-                <button
-                  className="button text"
-                  disabled={!!playback || locked}
-                  onClick={() => {
-                    setTab("character");
-                    notify(
-                      "Glisse un PNG depuis la bibliothèque, ou double-clique sur un personnage.",
-                    );
-                  }}
-                >
-                  <Icon name="actor" size={16} />
-                  <span>Personnage</span>
-                </button>
-                <button
-                  className="button text"
-                  aria-label="Ajouter un ennemi"
-                  title="Ajouter un ennemi"
-                  disabled={!!playback || locked}
-                  onClick={() => {
-                    setTab("enemy");
-                    notify(
-                      "Choisis un ennemi dans 03_enemies, ou glisse son image dans la scène.",
-                    );
-                  }}
-                >
-                  <Icon name="enemy" size={16} />
-                  <span>Ennemi</span>
-                </button>
-                <button
-                  className="button text"
-                  aria-label="Ajouter un objet de décoration"
-                  disabled={!!playback || locked}
-                  onClick={() => {
-                    setTab("prop");
-                    notify(
-                      "Choisis un objet ou glisse son image dans la scène.",
-                    );
-                  }}
-                >
-                  <Icon name="prop" size={16} />
-                  <span>Objet</span>
-                </button>
-                <button
-                  className="button text"
-                  disabled={!!playback || locked}
-                  onClick={() => addBubble()}
-                >
-                  <Icon name="bubble" size={16} /> Bulle
-                </button>
-                <button
-                  className="button text"
-                  disabled={!!playback || locked}
-                  onClick={() => addBubble("narration")}
-                >
-                  <span className="text-symbol">T</span> Narration
-                </button>
-                <div className="toolbar-divider" />
-              </div>
-            </div>
-            {/* Finish the field's render before Scene starts a drag from this pointer. */}
-            <div
-              className="canvas-area"
-              onPointerDownCapture={() => flushSync(commitFocusedInput)}
-            >
-              <div className="canvas-topline">
-                <span>
-                  <span className="tiny-dot" />{" "}
-                  {playback
-                    ? `Lecture · Plan ${String(playback.shotIndex + 1).padStart(2, "0")} / ${doc.shots.length}`
-                    : "Composition du plan"}
-                </span>
-                <button
-                  className="button subtle background-correction-trigger"
-                  disabled={
-                    locked ||
-                    !!playback ||
-                    !selectedShot.background.asset ||
-                    !backgroundCorrection.available
-                  }
-                  title={
-                    backgroundCorrection.available
-                      ? "Adapter ce décor en 20:9 avec le Codex connecté sur cet ordinateur"
-                      : "Relance le Studio pour activer la correction avec Codex"
-                  }
-                  onClick={() => {
-                    const asset = assets.find(
-                      (item) => item.ref === selectedShot.background.asset,
-                    );
-                    if (asset)
-                      void backgroundCorrection.open({
-                        documentId: doc.id,
-                        shotId: selectedShot.id,
-                        asset,
-                      });
-                  }}
-                >
-                  <Icon name="wand" size={14} /> Adapter en 20:9 (IA)
-                </button>
-                <PhoneFormatSelector
-                  format={phonePreview.format}
-                  onChange={phonePreview.setFormat}
-                />
-              </div>
-              <div className="canvas-fit">
-                <PhonePreview format={phonePreview.format}>
-                  <Scene
-                    viewportWidth={phonePreview.width}
-                    presentationRunning={
-                      !!playback &&
-                      !playback.paused &&
-                      !playback.finished &&
-                      readyShot === playback.shotIndex
-                    }
-                    presentationProject={presentationProject}
-                    catalogMatches={
-                      !doc.presentationCatalog ||
-                      doc.presentationCatalog.projectId ===
-                        presentationProject.id
-                    }
-                    key={shot.id}
-                    previewBubbleId={
-                      !playback && motionPreview.active
-                        ? (textPreviewId ?? undefined)
-                        : undefined
-                    }
-                    dialogueElapsed={playback?.dialogueElapsed}
-                    textCompleted={playback?.textCompletedAt !== undefined}
-                    motionTime={
-                      motionPreview.active && !playback
-                        ? motionPreview.time
-                        : undefined
-                    }
-                    disabled={locked || motionPreview.active}
-                    shot={shot}
-                    assets={backgroundCorrection.assetsFor(
-                      doc.id,
-                      shot.id,
-                      assets,
-                    )}
-                    selectionIds={selectionIds}
-                    lockedIds={workspaceObjects.locked}
-                    hiddenIds={workspaceObjects.hidden}
-                    snap={snap}
-                    onGroupSelect={selectGroup}
-                    onBatchUpdate={batchUpdate}
-                    selection={selection}
-                    onSelect={setSelection}
-                    onUpdate={updateObject}
-                    playing={!!playback}
-                    elapsed={playback?.elapsed ?? 0}
-                    exitElapsed={playback?.exitElapsed}
-                    activeBubble={playback?.dialogueIndex ?? 0}
-                    onAdvance={advance}
-                    onDropAsset={(ref, as, position) => {
-                      const asset = assets.find((a) => a.ref === ref);
-                      if (asset)
-                        void useAsset(
-                          asset,
-                          as ??
-                            (asset.kind === "other" ? "character" : asset.kind),
-                          position,
-                        );
-                    }}
-                    guides={guides}
-                  />
-                  {!shot.background.asset &&
-                    !shot.actors.length &&
-                    !shot.bubbles.length &&
-                    !playback && (
-                      <div className="welcome">
-                        <div className="welcome-symbol">
-                          <Icon name="leaf" size={39} />
-                        </div>
-                        <span className="overline">
-                          UN DÉCOR. QUELQUES MOTS. UNE HISTOIRE.
-                        </span>
-                        <h1>Donne vie à Lunaria.</h1>
-                        <p>
-                          Compose tes plans, place tes personnages et
-                          <br />
-                          laisse les bulles raconter la suite.
-                        </p>
-                        <div className="welcome-buttons">
-                          <button
-                            className="button primary"
-                            onClick={chooseLibrary}
-                            disabled={locked}
-                          >
-                            <Icon name="folder" size={16} /> Choisir ma
-                            bibliothèque
-                          </button>
-                          <button
-                            className="button subtle"
-                            onClick={loadExample}
-                            disabled={locked}
-                          >
-                            Essayer l’exemple
-                          </button>
-                        </div>
-                        <small>
-                          Ou glisse simplement un décor dans ce cadre.
-                        </small>
-                        <button
-                          className="link-button welcome-project-guide"
-                          onClick={() => setStudioModal("project")}
-                          disabled={locked}
-                        >
-                          Par où commencer ? Voir le projet →
-                        </button>
-                        {!!recentProjects.projects.length && (
-                          <div className="welcome-recents">
-                            <div>
-                              <strong>REPRENDRE UN PROJET</strong>
-                              <button
-                                className="link-button"
-                                disabled={locked}
-                                onClick={openRecents}
-                              >
-                                Tout afficher <Icon name="chevron" size={12} />
-                              </button>
-                            </div>
-                            {recentProjects.projects.slice(0, 3).map((p) => (
-                              <button
-                                key={p.id}
-                                className="welcome-recent"
-                                disabled={locked}
-                                title={p.path}
-                                onClick={() => void openRecent(p.id)}
-                              >
-                                <Icon
-                                  name={p.pinned ? "pin" : "clock"}
-                                  size={14}
-                                />
-                                <span>
-                                  <strong>{p.title}</strong>
-                                  <small>{p.path.split(/[\\/]/).at(-1)}</small>
-                                </span>
-                                <Icon name="chevron" size={13} />
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  {playback?.finished && (
-                    <div className="end-screen">
-                      <Icon name="leaf" size={36} />
-                      <h2>Fin de la cinématique</h2>
-                      <div>
-                        <button
-                          className="button primary"
-                          title="Rejouer depuis le même plan de départ"
-                          onClick={() => void restartPlayback()}
-                        >
-                          <Icon name="play" size={16} /> Rejouer
-                        </button>
-                        <button
-                          className="button subtle"
-                          onClick={() => preview.stop()}
-                        >
-                          Retour à l’édition
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {(busy ||
-                    (playback &&
-                      !playback.finished &&
-                      readyShot !== playback.shotIndex)) && (
-                    <div className="busy-overlay">
-                      <span className="spinner" /> Chargement…
-                    </div>
-                  )}
-                </PhonePreview>
-              </div>
-              <BackgroundCorrectionStatus correction={backgroundCorrection} />
-              <div className="canvas-bottomline">
-                {playback ? (
-                  <>
-                    <button
-                      className="icon-button"
-                      aria-label={playback.paused ? "Reprendre" : "Pause"}
-                      disabled={
-                        playback.finished || readyShot !== playback.shotIndex
-                      }
-                      onClick={preview.togglePause}
-                    >
-                      <Icon
-                        name={playback.paused ? "play" : "pause"}
-                        size={16}
-                      />
-                    </button>
-                    <span className="timecode">
-                      {playback.exitElapsed !== undefined
-                        ? `${shot.exitTransition?.type === "fade" ? "Fondu" : "Fondu sonore"} ${playback.exitElapsed.toFixed(1)} / ${(playback.exitDuration ?? shot.exitTransition?.duration ?? 0).toFixed(1)} s`
-                        : `${Math.min(playback.elapsed, shot.duration).toFixed(1)} / ${shot.duration.toFixed(1)} s`}
-                    </span>
-                    <div className="playback-progress">
-                      <i
-                        style={{
-                          width: `${playback.exitElapsed !== undefined ? Math.min(100, (playback.exitElapsed / Math.max(0.01, playback.exitDuration ?? shot.exitTransition?.duration ?? 0)) * 100) : Math.min(100, (playback.elapsed / shot.duration) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <button
-                      className="continue-button"
-                      disabled={
-                        (!activeDialogue && !awaitingShotClick) ||
-                        playback.paused ||
-                        readyShot !== playback.shotIndex
-                      }
-                      onClick={advance}
-                    >
-                      {activeDialogue &&
-                      textNeedsCompletion(
-                        activeDialogue,
-                        playback.dialogueElapsed,
-                        playback.textCompletedAt,
-                      )
-                        ? "Afficher tout le texte"
-                        : activeDialogue?.advance.mode === "click"
-                          ? "Cliquer pour continuer"
-                          : activeDialogue
-                            ? "Réplique suivante"
-                            : awaitingShotClick &&
-                                shot.exitTransition?.type === "fade"
-                              ? "Lancer le fondu vers le noir"
-                              : awaitingShotClick
-                                ? playback.shotIndex + 1 < doc.shots.length
-                                  ? "Passer au plan suivant"
-                                  : "Terminer la cinématique"
-                                : playback.finished
-                                  ? "Lecture terminée"
-                                  : playback.exitElapsed !== undefined
-                                    ? "Fondu de sortie"
-                                    : "Plan en cours"}{" "}
-                      <kbd>ESPACE</kbd>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <span>
-                      <Icon name="camera" size={14} />{" "}
-                      {cameraLabels[shot.camera.preset]}
-                    </span>
-                    <span className="canvas-hint">
-                      Maj + clic : sélection multiple · Alt : sans aimant
-                    </span>
-                    <button
-                      className={`icon-button ${snap ? "toggled" : ""}`}
-                      aria-label="Alignement magnétique"
-                      title="Alignement magnétique · Alt pour désactiver pendant le glissement"
-                      aria-pressed={snap}
-                      onClick={() => setSnap(!snap)}
-                    >
-                      <Icon name="magnet" size={16} />
-                    </button>
-                    <button
-                      className={`icon-button ${guides ? "toggled" : ""}`}
-                      title="Afficher les repères"
-                      aria-label="Afficher les repères"
-                      onClick={() => setGuides(!guides)}
-                    >
-                      <Icon name="grid" size={16} />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-            {!playback && (
-              <div
-                className={`motion-preview-bar ${motionPreview.active ? "active" : ""}`}
-              >
-                <button
-                  className="button text"
-                  aria-label={
-                    motionPreview.active
-                      ? motionPreview.running
-                        ? "Pause des mouvements"
-                        : "Reprendre les mouvements"
-                      : "Aperçu des mouvements"
-                  }
-                  disabled={locked}
-                  onClick={() => {
-                    if (!motionPreview.active) setTextPreviewId(null);
-                    motionPreview.toggle();
-                  }}
-                >
-                  <Icon
-                    name={motionPreview.running ? "pause" : "motion"}
-                    size={15}
-                  />
-                  <span>
-                    {motionPreview.active
-                      ? textPreviewBubble
-                        ? "Réplique animée"
-                        : "Animations"
-                      : "Aperçu des animations"}
-                  </span>
-                </button>
-                {motionPreview.active ? (
-                  <>
-                    <input
-                      type="range"
-                      aria-label="Temps de l’aperçu des mouvements"
-                      min={0}
-                      max={previewDuration}
-                      step={0.01}
-                      value={motionPreview.time}
-                      onChange={(e) => motionPreview.seek(+e.target.value)}
-                    />
-                    <output>
-                      {motionPreview.time.toFixed(1)} /{" "}
-                      {previewDuration.toFixed(1)} s
-                    </output>
-                    <button
-                      className="button subtle"
-                      onClick={motionPreview.stop}
-                    >
-                      Retour au placement
-                    </button>
-                  </>
-                ) : (
-                  <small>
-                    Teste les effets sans audio ni déroulement des dialogues.
-                  </small>
-                )}
-              </div>
-            )}
-            <section className="storyboard">
-              <div className="storyboard-heading">
-                <div>
-                  <Icon name="layers" size={15} />
-                  <strong>LES PLANS</strong>
-                  <span>
-                    {doc.shots.length} plan{doc.shots.length > 1 ? "s" : ""} ·{" "}
-                    {totalSeconds.toFixed(0)} s minimum
-                  </span>
-                </div>
-                <div
-                  className="shot-order-controls"
-                  role="group"
-                  aria-label="Ordre des plans"
-                >
-                  <span>Déplacer le plan {selectedShotNumber}</span>
-                  <button
-                    type="button"
-                    aria-label="Déplacer le plan vers la gauche"
-                    title="Reculer d’une position"
-                    disabled={!!playback || locked || selectedShotIndex === 0}
-                    onClick={() =>
-                      moveShotToIndex(selectedShot.id, selectedShotIndex - 1)
-                    }
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Déplacer le plan vers la droite"
-                    title="Avancer d’une position"
-                    disabled={
-                      !!playback ||
-                      locked ||
-                      selectedShotIndex === doc.shots.length - 1
-                    }
-                    onClick={() =>
-                      moveShotToIndex(selectedShot.id, selectedShotIndex + 1)
-                    }
-                  >
-                    →
-                  </button>
-                  <label>
-                    Position{" "}
-                    <select
-                      aria-label="Position du plan sélectionné"
-                      value={selectedShotIndex + 1}
-                      disabled={!!playback || locked || doc.shots.length < 2}
-                      onChange={(e) =>
-                        moveShotToIndex(
-                          selectedShot.id,
-                          Number(e.target.value) - 1,
-                        )
-                      }
-                    >
-                      {doc.shots.map((_, index) => (
-                        <option key={index} value={index + 1}>
-                          {index + 1} / {doc.shots.length}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <button
-                  className="link-button continue-shot"
-                  disabled={!!playback || locked}
-                  onClick={() => fromTemplate("continue")}
-                >
-                  Continuer ce plan <Icon name="chevron" size={13} />
-                </button>
-                <button
-                  className="link-button"
-                  data-testid="storyboard-play-current"
-                  disabled={!!playback || locked}
-                  title={`Lire à partir du plan ${selectedShotNumber}, puis les suivants (Maj+Espace)`}
-                  onClick={() => startPlayback(selectedShot.id)}
-                >
-                  <Icon name="play" size={13} /> Lire depuis ce plan
-                </button>
-              </div>
-              <div className="storyboard-content">
-                <div
-                  className="shot-strip"
-                  onDragOver={(e) => {
-                    if (
-                      e.dataTransfer.types.includes(
-                        "application/x-lunaria-shot",
-                      )
-                    )
-                      e.preventDefault();
-                  }}
-                  onDrop={(e) => {
-                    if (e.target !== e.currentTarget) return;
-                    const id = e.dataTransfer.getData(
-                      "application/x-lunaria-shot",
-                    );
-                    if (id) reorderShot(id, doc.shots.at(-1)!.id);
-                  }}
-                >
-                  {doc.shots.map((s, index) => (
-                    <button
-                      key={s.id}
-                      className={`shot-card ${shot.id === s.id ? "active" : ""}`}
-                      draggable={!playback && !locked}
-                      disabled={!!playback || locked}
-                      data-testid={`shot-card-${index}`}
-                      data-shot-id={s.id}
-                      onClick={() => selectShot(s.id)}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData(
-                          "application/x-lunaria-shot",
-                          s.id,
-                        );
-                        e.dataTransfer.effectAllowed = "move";
-                      }}
-                      onDragOver={(e) => {
-                        if (
-                          e.dataTransfer.types.includes(
-                            "application/x-lunaria-shot",
-                          )
-                        )
-                          e.preventDefault();
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        reorderShot(
-                          e.dataTransfer.getData("application/x-lunaria-shot"),
-                          s.id,
-                        );
-                      }}
-                    >
-                      <div className="shot-thumbnail">
-                        {assets.find((a) => a.ref === s.background.asset) ? (
-                          <img
-                            src={
-                              assets.find((a) => a.ref === s.background.asset)!
-                                .thumbnail
-                            }
-                            alt=""
-                            loading="lazy"
-                          />
-                        ) : (
-                          <Icon name="image" size={27} />
-                        )}
-                        <span className="shot-number">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                        <span className="shot-duration">{s.duration} s</span>
-                        {(s.audio ||
-                          s.sounds?.length ||
-                          doc.musicTracks?.some((t) => {
-                            const [a, b] = musicRange(
-                              doc,
-                              t.startShotId,
-                              t.endShotId,
-                            );
-                            return index >= a && index <= b;
-                          })) && (
-                          <span
-                            className="shot-audio-badge"
-                            title="Ce plan contient du son"
-                          >
-                            ♪
-                          </span>
-                        )}
-                        {!!s.bubbles.length && (
-                          <span className="shot-bubbles">
-                            <Icon name="bubble" size={12} />
-                            {s.bubbles.length}
-                          </span>
-                        )}
-                      </div>
-                      <span className="shot-name" title={s.name}>
-                        {s.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <button
-                  className="add-shot"
-                  disabled={!!playback || locked}
-                  onClick={addShot}
-                >
-                  <span>
-                    <Icon name="plus" size={24} />
-                  </span>
-                  Ajouter un plan
-                </button>
-              </div>
-            </section>
-          </section>
-          <Inspector
-            generatePose={() => {
-              if (selection.kind !== 'actor') return;
-              const actor = selectedShot.actors.find(actor => actor.id === selection.id);
-              if (!actor) return;
-              setPoseSelection({ actor: structuredClone(actor), documentId: doc.id, shotId: selectedShot.id, projectId: presentationProject.id, projectPath: session.getSnapshot().path });
-              setStudioModal('pose');
-            }}
-            editAudio={() => {
-              setAudioAsset(undefined);
-              setStudioModal("audio");
-            }}
-            presentationProject={presentationProject}
-            setCatalog={(value) =>
-              commit(
-                (d) => {
-                  d.presentationCatalog = value;
-                  d.schemaVersion = 4;
-                },
-                "catalog-link",
-                "Relier le catalogue partagé",
-              )
+      <CinematicWorkspace
+        visible={studioMode === "cinematics"}
+        presentationProject={presentationProject}
+        activeFilmId={activeFilmId.current}
+        filmTitleInput={filmTitleInput}
+        doc={doc}
+        shot={shot}
+        selectedShot={selectedShot}
+        selectedShotIndex={selectedShotIndex}
+        selectedShotNumber={selectedShotNumber}
+        totalSeconds={totalSeconds}
+        assets={assets}
+        library={library}
+        tab={tab}
+        setTab={setTab}
+        collections={collections}
+        libraryLayout={libraryLayout}
+        phonePreview={phonePreview}
+        preview={preview}
+        motionPreview={motionPreview}
+        backgroundCorrection={backgroundCorrection}
+        workspaceObjects={workspaceObjects}
+        textPreviewId={textPreviewId}
+        setTextPreviewId={setTextPreviewId}
+        textPreviewBubble={textPreviewBubble}
+        previewDuration={previewDuration}
+        selection={selection}
+        selectionIds={selectionIds}
+        copiedObject={copiedObject}
+        snap={snap}
+        setSnap={setSnap}
+        guides={guides}
+        setGuides={setGuides}
+        busy={busy}
+        locked={locked}
+        desktop={desktop}
+        studioProjectPath={studioProjectPath}
+        diagnostics={diagnostics}
+        issueCount={issueCount}
+        modal={modal}
+        setModal={setModal}
+        recentProjects={recentProjects}
+        commitFocusedInput={commitFocusedInput}
+        notify={notify}
+        selectFilm={selectFilm}
+        onChangeTitle={(title) =>
+          commit((d) => {
+            d.title = title;
+          }, "title")
+        }
+        onOpenAudioModal={() => {
+          setAudioAsset(undefined);
+          setStudioModal("audio");
+        }}
+        onCreateDocument={() => void createDocument()}
+        onOpenFilmsModal={() => setStudioModal("films")}
+        onExportJpg={() => void exportJpg()}
+        onStartPlayback={(fromId) => void startPlayback(fromId)}
+        onRestartPlayback={() => void restartPlayback()}
+        onChooseLibrary={() => void chooseLibrary()}
+        onRefreshLibrary={() => void refreshLibrary()}
+        onLoadExample={() => void loadExample()}
+        onOpenProjectModal={() => setStudioModal("project")}
+        onOpenRecents={openRecents}
+        onOpenRecent={(p) => void openRecent(p)}
+        onUseAsset={useAsset}
+        animatedElements={{
+          clips: elementClips,
+          open: (id) => setElementEditor({ id, epoch, root: library?.rootPath }),
+          insert: async (id, position) => {
+            const clip = session.project.presentation?.animations.find(item => item.id === id);
+            const asset = libraryRef.current?.assets.find(item => item.ref === clip?.frames[0]?.asset);
+            if (!isElementClip(clip) || !asset) {
+              notify("Reconnecte l’image de base de cet élément dans la bibliothèque.");
+              return false;
             }
-            previewMotion={startMotionPreview}
-            previewText={startTextPreview}
-            doc={doc}
-            shot={shot}
-            selection={playback ? { kind: "shot" } : selection}
-            multiCount={playback ? 0 : selectionIds.length}
-            objectLocked={
-              !playback &&
-              selectionIds.length === 1 &&
-              workspaceObjects.locked.has(selectionIds[0])
-            }
-            copiedKind={copiedObject?.kind}
-            copiedName={
-              copiedObject?.kind === "actor"
-                ? copiedObject.actor.name
-                : undefined
-            }
-            copySelection={copySelection}
-            pasteSelection={pasteSelection}
-            autoPlace={autoPlaceSelected}
-            assets={assets}
-            disabled={!!playback || locked}
-            updateShot={updateShot}
-            updateObject={updateObject}
-            select={setSelection}
-            remove={remove}
-            duplicate={duplicate}
-            layer={layer}
-            moveBubble={moveBubble}
-          >
-            {!playback && (
-              <Layers
-                shot={shot}
-                selectedIds={selectionIds}
-                select={setSelection}
-                selectAll={selectAll}
-                locked={workspaceObjects.locked}
-                hidden={workspaceObjects.hidden}
-                toggle={(kind, id) => workspaceObjects.change(kind, id)}
-                reorder={reorderLayer}
-                align={alignSelection}
-                disabled={locked}
-              />
-            )}
-          </Inspector>
-        </main>
-        <footer className="statusbar">
-          <div>
-            <Icon name="leaf" size={12} />
-            <span title={studioProjectPath}>
-              {studioProjectPath
-                ? studioProjectPath.split(/[\\/]/).pop()
-                : "Projet Lunaria non enregistré"}
-            </span>
-          </div>
-          <button
-            className={issueCount ? "has-warnings" : ""}
-            onClick={() => setModal("issues")}
-          >
-            <Icon name={issueCount ? "warning" : "check"} size={13} />
-            {issueCount
-              ? `${issueCount} point(s) à vérifier`
-              : "Aucune alerte détectée"}
-          </button>
-        </footer>
-        {backgroundCorrection.opened && (
-          <BackgroundCorrectionDialog correction={backgroundCorrection} />
-        )}
-        {modal && (
-          <div
-            className="modal-backdrop"
-            onPointerDown={(e) => {
-              if (e.target === e.currentTarget && !busy) setModal(null);
-            }}
-          >
-            <section
-              className="modal"
-              role="dialog"
-              aria-modal="true"
-              aria-label={
-                modal === "help"
-                  ? "Prendre en main le studio"
-                  : "Vérification de la cinématique"
-              }
-            >
-              <button
-                disabled={busy}
-                className="icon-button modal-close"
-                aria-label="Fermer"
-                onClick={() => setModal(null)}
-              >
-                <Icon name="close" />
-              </button>
-              {modal === "help" ? (
-                <>
-                  <span className="overline">LUNARIA CINEMATIC STUDIO</span>
-                  <h2>Ton histoire, plan par plan.</h2>
-                  <div className="help-step">
-                    <b>01</b>
-                    <div>
-                      <h3>Connecte la bibliothèque commune.</h3>
-                      <p>
-                        Sélectionne le dossier qui contient les continents.
-                        Garde personnages, objets (07_props) et bulles dans
-                        cette même racine. L’enregistrement du projet conserve
-                        les références ; « Sauvegarder la campagne… » copie
-                        aussi ses images et sons.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="help-step">
-                    <b>02</b>
-                    <div>
-                      <h3>Compose un plan.</h3>
-                      <p>
-                        Double-clique sur un décor, puis glisse tes PNG dans la
-                        scène. Sélectionne un personnage avant d’ajouter sa
-                        bulle : la queue le suivra.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="help-step">
-                    <b>03</b>
-                    <div>
-                      <h3>Écris, puis regarde.</h3>
-                      <p>
-                        Sélectionne une vignette puis « Lire depuis ce plan » en
-                        haut à droite (Maj+Espace hors saisie). La lecture
-                        démarre au début de ce plan, puis poursuit les suivants.
-                        « Tout lire » repart du premier plan. Échap revient au
-                        plan sélectionné. Les bulles se lisent dans l’ordre
-                        indiqué. Règle « Animation de la bulle » et « Animation
-                        du texte », puis utilise « Tester la réplique ». Un
-                        premier clic termine l’apparition du texte ; le suivant
-                        passe à la réplique suivante. Pour un personnage, ennemi
-                        ou objet, règle son entrée, ses Mouvements, sa
-                        destination B et sa Disparition. Les boutons de test
-                        donnent un aperçu avec curseur de temps.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="help-step">
-                    <b>04</b>
-                    <div>
-                      <h3>Enregistre le JSON.</h3>
-                      <p>
-                        Pour changer l’ordre, sélectionne un plan puis utilise
-                        les flèches ou le menu Position au-dessus des vignettes.
-                        Tu peux aussi faire glisser les plans. Ctrl+S enregistre
-                        ; Ctrl+Z annule dans tout le projet. Le bouton
-                        Historique montre les dernières actions. Le menu du
-                        fichier donne accès aux projets récents et à Enregistrer
-                        sous. Le dossier godot du projet contient le lecteur et
-                        son guide d’intégration.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    className="button primary"
-                    onClick={() => setModal(null)}
-                  >
-                    Commencer à créer
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Diagnostics
-                    issues={diagnostics}
-                    onFocus={focusDiagnostic}
-                    onFix={fixDiagnostic}
-                    disabled={busy || !!playback}
-                  />
-                  <div className="modal-actions">
-                    <button
-                      className="button subtle"
-                      disabled={busy || !!playback}
-                      onClick={() => {
-                        setModal(null);
-                        void chooseLibrary();
-                      }}
-                    >
-                      Reconnecter la bibliothèque
-                    </button>
-                    <button
-                      className="button primary"
-                      onClick={() => setModal(null)}
-                    >
-                      Retour à la scène
-                    </button>
-                  </div>
-                </>
-              )}
-            </section>
-          </div>
-        )}
-        {studioModal === "recents" && (
-          <ProjectFilesDialog onClose={closeRecents} />
-        )}
-        {studioModal === "audio" && (
-          <AudioEditor
-            doc={doc}
-            shot={selectedShot}
-            assets={assets}
-            selection={selection}
-            initialAsset={audioAsset}
-            change={commit}
-            onClose={() => setStudioModal(null)}
-            onLibrary={() => {
-              setStudioModal(null);
-              void chooseLibrary();
-            }}
-            onPreview={() => {
-              setStudioModal(null);
-              void startPlayback(selectedShot.id);
-            }}
-          />
-        )}
-        {studioModal === "templates" && (
-          <TemplateDialog
-            shot={selectedShot}
-            onCreate={fromTemplate}
-            onClose={() => setStudioModal(null)}
-            disabled={busy}
-          />
-        )}
-        {studioModal === "duplicate" && (
-          <DuplicateDialog
-            onDuplicate={duplicatePlan}
-            onClose={() => setStudioModal(null)}
-            disabled={busy}
-          />
-        )}
-      </div>
+            return useAsset(asset, "animated", position, id);
+          },
+        }}
+        onAddBubble={addBubble}
+        onSelectGroup={selectGroup}
+        onBatchUpdate={batchUpdate}
+        onSetSelection={setSelection}
+        onUpdateObject={updateObject}
+        onUpdateShot={updateShot}
+        onSelectShot={selectShot}
+        onMoveShotToIndex={moveShotToIndex}
+        onReorderShot={reorderShot}
+        onFromTemplate={fromTemplate}
+        onAddShot={addShot}
+        onGeneratePose={() => {
+          if (selection.kind !== "actor") return;
+          const actor = selectedShot.actors.find(
+            (item) => item.id === selection.id,
+          );
+          if (!actor) return;
+          setPoseSelection({
+            actor: structuredClone(actor),
+            documentId: doc.id,
+            shotId: selectedShot.id,
+            projectId: presentationProject.id,
+            projectPath: session.getSnapshot().path,
+          });
+          setStudioModal("pose");
+        }}
+        onOpenAnimationWorkshop={(speciesId, animationId) => {
+          setWorkshopSpeciesId(speciesId);
+          setWorkshopAnimationId(animationId);
+          setStudioModal("animationWorkshop");
+        }}
+        onGenerateAnimation={(speciesId, historyOnly) => {
+          const actor = selection.kind === "actor"
+            ? selectedShot.actors.find((item) => item.id === selection.id)
+            : undefined;
+          setAnimationGenTarget({
+            speciesId,
+            actor: actor ? structuredClone(actor) : undefined,
+            documentId: actor ? doc.id : undefined,
+            shotId: actor ? selectedShot.id : undefined,
+            defaultPreset: "walk",
+            scope: "cinematic",
+            historyOnly,
+          });
+          setStudioModal("animationGeneration");
+        }}
+        onSetCatalog={(value) =>
+          commit(
+            (d) => {
+              d.presentationCatalog = value;
+              d.schemaVersion = 4;
+            },
+            "catalog-link",
+            "Relier le catalogue partagé",
+          )
+        }
+        onStartMotionPreview={startMotionPreview}
+        onStartTextPreview={startTextPreview}
+        onCopySelection={copySelection}
+        onPasteSelection={pasteSelection}
+        onAutoPlaceSelected={autoPlaceSelected}
+        onRemoveSelection={remove}
+        onDuplicateSelection={duplicate}
+        onLayerDirection={layer}
+        onMoveBubble={moveBubble}
+        onSelectAll={selectAll}
+        onReorderLayer={reorderLayer}
+        onAlignSelection={alignSelection}
+        onFocusDiagnostic={focusDiagnostic}
+        onFixDiagnostic={fixDiagnostic}
+        onOpenLevelFromContinuity={(levelId, tabName) => {
+          preview.stop();
+          motionPreview.stop();
+          commitFocusedInput();
+          session.boundary();
+          setStudioMode("levels");
+          gameEditor.current?.navigate("levels", levelId, tabName);
+        }}
+        onOpenCampaignStepFromContinuity={(stepId) => {
+          preview.stop();
+          motionPreview.stop();
+          commitFocusedInput();
+          session.boundary();
+          setStudioMode("levels");
+          gameEditor.current?.navigate("campaign", stepId);
+        }}
+      />
+      {studioModal === "recents" && (
+        <ProjectFilesDialog onClose={closeRecents} />
+      )}
+      {studioModal === "audio" && (
+        <AudioEditor
+          doc={doc}
+          shot={selectedShot}
+          assets={assets}
+          selection={selection}
+          initialAsset={audioAsset}
+          change={commit}
+          onClose={() => setStudioModal(null)}
+          onLibrary={() => {
+            setStudioModal(null);
+            void chooseLibrary();
+          }}
+          onPreview={() => {
+            setStudioModal(null);
+            void startPlayback(selectedShot.id);
+          }}
+        />
+      )}
+      {studioModal === "templates" && (
+        <TemplateDialog
+          shot={selectedShot}
+          onCreate={fromTemplate}
+          onClose={() => setStudioModal(null)}
+          disabled={busy}
+        />
+      )}
+      {studioModal === "duplicate" && (
+        <DuplicateDialog
+          onDuplicate={duplicatePlan}
+          onClose={() => setStudioModal(null)}
+          disabled={busy}
+        />
+      )}
       {!!toast && (
         <div className="toast" role="status">
           <Icon name="leaf" size={18} />
@@ -2505,6 +1707,15 @@ function StudioApp() {
           libraryName={library?.rootPath.split(/[\\/]/).pop()}
           disabled={locked}
           onClose={() => setStudioModal(null)}
+          onRenameTitle={(title) =>
+            session.change(
+              (draft) => {
+                draft.title = title;
+              },
+              "title",
+              "Renommer le projet",
+            )
+          }
           onBackup={() => void backupCampaign()}
           onSave={() => {
             setStudioModal(null);
@@ -2537,11 +1748,6 @@ function StudioApp() {
             setStudioModal(null);
             setStudioMode("levels");
             gameEditor.current?.navigate("campaign");
-          }}
-          onHome={() => {
-            setStudioModal(null);
-            setStudioMode("levels");
-            gameEditor.current?.navigate("home");
           }}
           onCharacters={() => {
             setStudioModal(null);
@@ -2596,16 +1802,97 @@ function StudioApp() {
           layout: libraryLayout,
         }}
       >
+        {elementEditor && elementEditor.epoch === epoch && (!elementEditor.id || editedElement) && (
+          <AnimatedElementEditor key={elementEditor.id ?? "new"} value={editedElement} assets={assets}
+            close={() => setElementEditor(null)} save={saveAnimatedElement}/>
+        )}
         <section className="studio-game-host" hidden={studioMode !== "levels"}>
           <GameEditor
             assets={assets}
             ref={gameEditor}
             active={studioMode === "levels"}
+            section={gameSection}
+            onSelectSection={setGameSection}
+            issues={gameValidationIssues}
+            showIssues={showGameIssues}
+            onShowIssuesChange={setShowGameIssues}
+            onPlayLevel={(targetLevelId) =>
+              void delivery.execute({ kind: "playLevel", levelId: targetLevelId })
+            }
             onOpenFilm={openCampaignFilm}
             onBackupCampaign={() => void backupCampaign()}
           />
         </section>
-        {studioModal === 'pose' && poseSelection && <PoseGenerationDialog target={poseSelection} onClose={() => setStudioModal(null)} notify={notify} />}
+        {studioModal === "pose" && poseSelection && (
+          <PoseGenerationDialog
+            target={poseSelection}
+            onClose={() => setStudioModal(null)}
+            notify={notify}
+          />
+        )}
+        {studioModal === "animationWorkshop" && presentationProject.presentation && (
+          <CharacterAnimationWorkshopDialog
+            project={presentationProject}
+            assets={assets}
+            actor={
+              selection.kind === "actor"
+                ? selectedShot.actors.find((item) => item.id === selection.id)
+                : undefined
+            }
+            initialSpeciesId={workshopSpeciesId}
+            initialAnimationId={workshopAnimationId}
+            change={(edit, key = "", label = "Modifier une animation") =>
+              session.change(edit, key, label)
+            }
+            onApplyToActor={
+              selection.kind === "actor"
+                ? (binding) => {
+                    const actorId = selection.id;
+                    commit(
+                      (d) => {
+                        d.presentationCatalog = {
+                          projectId: presentationProject.id,
+                          file:
+                            d.presentationCatalog?.projectId === presentationProject.id
+                              ? d.presentationCatalog.file
+                              : "",
+                        };
+                        d.schemaVersion = 4;
+                        const targetShot = d.shots.find((s) => s.id === selectedShot.id);
+                        const targetActor = targetShot?.actors.find((a) => a.id === actorId);
+                        if (targetActor) targetActor.animation = binding;
+                      },
+                      "",
+                      "Appliquer l’animation au personnage",
+                    );
+                    notify("Animation appliquée au personnage dans le plan.");
+                  }
+                : undefined
+            }
+            onGenerateAnimation={(speciesId, preset) => {
+              const actor = selection.kind === "actor"
+                ? selectedShot.actors.find((item) => item.id === selection.id)
+                : undefined;
+              setAnimationGenTarget({
+                speciesId,
+                actor: actor ? structuredClone(actor) : undefined,
+                documentId: actor ? doc.id : undefined,
+                shotId: actor ? selectedShot.id : undefined,
+                defaultPreset: preset ?? "walk",
+                scope: "cinematic",
+              });
+              setStudioModal("animationGeneration");
+            }}
+            onClose={() => setStudioModal(null)}
+          />
+        )}
+        {studioModal === "animationGeneration" && (
+          <AnimationGenerationDialog
+            target={animationGenTarget}
+            onClose={() => setStudioModal(null)}
+            notify={notify}
+          />
+        )}
       </LibraryPickerContext.Provider>
     </div>
   );

@@ -3,12 +3,14 @@ import { actorAnchor } from './motion.js';
 import { proportionalSize } from './editing.js';
 import type { GameProject } from './game/types.js';
 import type { ImageTaskContext, ImageTaskMetadata, ImageTaskStatus } from './imageTasks.js';
+import type { AiImageProvider } from './aiProviders.js';
 
 export interface PoseGenerationRequest {
   ref: AssetRef;
   currentRef: AssetRef;
   characterName: string;
   instructions: string;
+  aiProvider?: AiImageProvider;
   codexModel?: string;
   context?: ImageTaskContext;
 }
@@ -19,6 +21,7 @@ export interface PoseGenerationJob extends ImageTaskMetadata {
   message: string;
   sourceUrl: string;
   candidateUrl?: string;
+  aiProvider?: AiImageProvider;
   codexModel?: string;
   width?: number;
   height?: number;

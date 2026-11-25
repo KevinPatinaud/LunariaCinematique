@@ -64,7 +64,7 @@ test('Radis et Rose: une planche par action, édition, remplacement, réouvertur
    await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.locator('.gd-message button').click();
   }
   async function select(id:string,name:string){
-   await page.locator('.gd-sections').getByRole('button',{name:/^Plantes/}).click();
+   await page.locator('.studio-sections').getByRole('button',{name:/^Plantes/}).click();
    await page.getByRole('complementary',{name:'Catalogue des plantes'}).getByRole('button',{name:new RegExp('^'+name)}).click();
    await page.getByRole('button',{name:'Animations et sons de '+name,exact:true}).click();
    await page.getByRole('button',{name:/^Ses animations \(/}).click();

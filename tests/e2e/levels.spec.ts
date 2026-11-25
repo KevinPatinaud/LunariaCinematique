@@ -25,11 +25,11 @@ test.beforeEach(async()=>{
   dialog.showOpenDialog=async()=>({canceled:false,filePaths:[target]});
   dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});
  },target);
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
- await expect(page.getByLabel('Titre du projet de niveaux')).toBeVisible();
+ await expect(page.getByLabel('Titre du projet')).toBeVisible();
  await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
- await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
 });
 test.afterEach(async({},info)=>{
  if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('niveaux',{body:await page.screenshot(),contentType:'image/png'});
@@ -76,7 +76,7 @@ test('choisir, enregistrer, rouvrir et retirer le décor restauré',async()=>{
  await page.getByRole('button',{name:'Actions du fichier projet'}).click();
  await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
  await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
- await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
  await page.locator('.gd-level-items button').first().click();
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();
  await expect(terrain).toContainText('second.png');
@@ -108,7 +108,7 @@ test('Removed objectives stay out of the editor',async()=>{
  await expect(objective.locator('option[value="operation"],option[value="rescue"]')).toHaveCount(0);
 });
 test('catalogue global enregistré une seule fois et conservation entre modes',async()=>{
- await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Plantes',exact:true}).click();
  await page.getByRole('button',{name:'Capacités',exact:true}).click();
  await page.getByText('Organisation du combat et valeurs de référence',{exact:true}).click();
  await page.getByLabel('Référence d’attaque (PV)',{exact:true}).fill('47');
@@ -121,7 +121,7 @@ test('catalogue global enregistré une seule fois et conservation entre modes',a
 test('image du personnage et animations par planche ou fichiers séparés',async()=>{
  await fs.writeFile(path.join(library,'sheet.png'),Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAADklEQVR4nGP4z8AAQv8BD/kD/YURmXYAAAAASUVORK5CYII=','base64'));
  await fs.writeFile(path.join(library,'second.png'),PIXEL_PNG);
- await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Plantes',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Image du personnage'})).toBeVisible();
  await page.getByRole('region',{name:'Image principale de Radis',exact:true}).getByRole('button',{name:'Choisir ou importer une image'}).click();
  const characterBrowser=page.getByRole('dialog',{name:'Bibliothèque d’images pour Image principale de Radis'});
@@ -166,7 +166,7 @@ test('image du personnage et animations par planche ou fichiers séparés',async
 test('A transparent sprite sheet is sliced automatically and remains editable',async()=>{
  const spriteSheet=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAYAAAA5ZDbSAAAA60lEQVR42u3doRWAMAxAwZRZmArNEKgKFEOgmaq7wAIg+lCBO9uavF9XkQgAAKBPeTpo83RmHmzcj9Jzv63J56338w7e+LcJLDACIzACIzACI7DACIzACIzACIzAAiMwAiMwAiMwAiOwwAiMwAiMwAiMwAIjMAIjMAIjMAILjMAIjMAIjMAIjMACAwAAAAAAxJvdhUvy3YVb5+7C5PPWze7C8F2IwAiMwAiMwAgsMAIjMAIjMAIjMAILjMAIjMAIjMAILDACIzACIzACIzACC4zACIzACIzACCwwAiMwAiMwAiOwwAgMAADwCxe8WxC/YWj0ugAAAABJRU5ErkJggg==','base64');
  await fs.writeFile(path.join(library,'auto-sheet.png'),spriteSheet);
- await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Plantes',exact:true}).click();
  await page.getByRole('button',{name:'Animations et sons de Radis',exact:true}).click();
    await page.getByRole('button',{name:/^Ses animations \(/}).click();
  await page.getByLabel('Créer une animation pour Radis').selectOption('attack');
@@ -190,7 +190,7 @@ test('A transparent sprite sheet is sliced automatically and remains editable',a
 test('importer une image externe dans la bibliothèque depuis la fiche du personnage',async()=>{
  const external=path.join(temp,'new-character.png');await fs.writeFile(external,PIXEL_PNG);
  await app.evaluate(({dialog},selected)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[selected]});},external);
- await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Plantes',exact:true}).click();
  await page.getByRole('region',{name:'Image principale de Radis'}).getByRole('button',{name:'Choisir ou importer une image'}).click();
  await page.getByRole('button',{name:'Importer des fichiers…'}).click();
  await expect(page.getByRole('region',{name:'Image principale de Radis',exact:true})).toContainText('studio_imports/new-character.png');
@@ -215,7 +215,7 @@ test('dossiers favoris partagés entre cinématiques et choix d’image, puis re
  await expect(cinemaFolders.getByRole('button',{name:'Rose',exact:true})).toBeVisible();
  await page.keyboard.press('Escape');
  await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
- await page.getByRole('button',{name:'Plantes alliées Équilibrage global'}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Plantes',exact:true}).click();
  await page.getByRole('region',{name:'Image principale de Radis',exact:true}).getByRole('button',{name:'Choisir ou importer une image'}).click();
  const picker=page.getByRole('dialog',{name:'Bibliothèque d’images pour Image principale de Radis'});
  const pickerFolders=picker.getByRole('group',{name:'Dossiers favoris'});
@@ -301,7 +301,8 @@ test('publication native choisit le projet Godot et ne modifie que le contenu de
  await fs.writeFile(path.join(game,'content/design/game_content.json'),JSON.stringify(seedProject()));
  await fs.writeFile(path.join(game,'art.png'),'sentinel');
  await app.evaluate(({dialog},game)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[game]});},game);
- await page.getByLabel('Titre du projet de niveaux').fill('Campagne publiée');
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
+ await page.getByLabel('Titre du projet').fill('Campagne publiée');
  await page.locator('.gd-delivery > summary').click();await page.getByRole('button',{name:'Publier la campagne',exact:true}).click();
  await expect(page.locator('.gd-message')).toContainText('Publié');
  const document=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));

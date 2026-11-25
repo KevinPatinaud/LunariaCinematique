@@ -26,8 +26,7 @@ test('allied walk previews alternate, expose step controls and survive save/reop
    dialog.showSaveDialog=async()=>({canceled:false,filePath:file});
   },target);
   async function select(name:string){
-   await page.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
-   await page.locator('.gd-sections').getByRole('button',{name:/^Plantes/}).click();
+   await page.locator('.studio-sections').getByRole('button',{name:/^Plantes/}).click();
    await page.locator('.gd-catalog').getByRole('button',{name:new RegExp('^'+name)}).click();
    await page.getByRole('button',{name:'Animations et sons de '+name,exact:true}).click();
    await page.getByRole('button',{name:/^Ses animations \(/}).click();

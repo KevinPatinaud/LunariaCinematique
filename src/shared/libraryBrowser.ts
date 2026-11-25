@@ -1,6 +1,6 @@
 /** Browsing preferences are editor-only: never add them to cinematic.json. */
 import type { Asset } from './model.js';
-export const LIBRARY_TABS = ['environment', 'character', 'enemy', 'prop', 'ui', 'audio'] as const;
+export const LIBRARY_TABS = ['environment', 'character', 'enemy', 'prop', 'ui', 'audio', 'animated'] as const;
 export type LibraryTab = typeof LIBRARY_TABS[number];
 export const isLibraryTab = (value: string): value is LibraryTab => (LIBRARY_TABS as readonly string[]).includes(value);
 export type LibraryView = 'grid' | 'list';
@@ -20,6 +20,7 @@ const labels: Record<string, string> = {
 export const folderLabel = (name: string): string => labels[name] ?? name.replace(/^\d+_/, '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 export const normalizeSearch = (value: string): string => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[_/\\-]+/g, ' ').toLocaleLowerCase('fr').trim();
 export function assetMatchesTab(asset: Asset, tab: LibraryTab): boolean {
+  if (tab === 'animated') return false;
   return tab === 'environment' ? asset.kind === 'environment' || asset.kind === 'other' : asset.kind === tab;
 }
 export const isInFolder = (path: string, folder: string): boolean => !folder || path === folder || path.startsWith(folder + '/');

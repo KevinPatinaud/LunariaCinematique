@@ -1,0 +1,191 @@
+.anim-generation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.anim-gen-intro {
+  margin: 0;
+  color: rgba(235, 240, 228, 0.86);
+}
+
+.anim-gen-form {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.anim-gen-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anim-gen-presets .button.active {
+  background: #c7dda3;
+  color: #16221b;
+  border-color: #c7dda3;
+  font-weight: 600;
+}
+
+.anim-gen-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.anim-comparison {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 12px;
+}
+
+.anim-comparison figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.anim-comparison figcaption {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cfe0bd;
+}
+
+.anim-ref-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.anim-ref-file {
+  font-size: 11px;
+  color: rgba(215, 226, 204, 0.78);
+  word-break: break-word;
+}
+
+.anim-ref-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.anim-ref-switch .link-button {
+  font-size: 11.5px;
+  padding: 0;
+  text-align: left;
+}
+
+.anim-preview-box {
+  min-height: 240px;
+  padding: 10px;
+}
+
+.pose-preview.anim-preview-box:has(> .anim-cycle-player),
+.image-task-candidate.pose-preview:has(> .anim-cycle-player) {
+  height: auto;
+  padding: 10px;
+}
+
+.anim-cycle-player {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.anim-stage {
+  position: relative;
+  width: 100%;
+  max-height: 240px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: repeating-conic-gradient(#1c2621 0% 25%, #233029 0% 50%) 50% / 20px 20px;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.anim-stage > svg {
+  width: 100%;
+  height: 210px;
+}
+
+.anim-stage .anim-frame-badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(16, 24, 20, 0.85);
+  color: #cfe0bd;
+}
+
+.anim-sheet-full {
+  width: 100%;
+  max-height: 240px;
+  overflow: auto;
+  background: repeating-conic-gradient(#1c2621 0% 25%, #233029 0% 50%) 50% / 16px 16px;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.anim-sheet-full img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.anim-player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.anim-mini-check,
+.anim-mini-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #d7e2cc;
+}
+
+.anim-mini-speed input[type='range'] {
+  width: 72px;
+}
+
+.anim-mini-speed input[inputmode='decimal'] {
+  width: 4.5rem;
+}
+
+.anim-player-controls .anim-mini-speed span {
+  background: none;
+  padding: 0;
+}
+
+.anim-task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(24, 36, 30, 0.65);
+  border: 1px solid rgba(197, 222, 169, 0.18);
+}
+
+.anim-task-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}

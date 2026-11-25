@@ -5,8 +5,10 @@
 .project-overview-backup p { margin: 5px 0 0; color: #b8cbae; font-size: 12px; line-height: 1.5; }
 .project-overview-backup button { flex-shrink: 0; }
 .project-overview-file { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid #3c5139; }
-.project-overview-file > div { min-width: 0; }
+.project-overview-file > div { min-width: 0; flex: 1; }
 .project-overview-file h3 { margin: 0; color: #eef0db; font-size: 18px; overflow-wrap: anywhere; }
+.project-overview-title-input { width: 100%; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; margin: -3px 0 0 -6px; color: #eef0db; font-size: 18px; font-weight: 600; }
+.project-overview-title-input:hover, .project-overview-title-input:focus { border-color: #5b714d; background: #151e18; }
 .project-overview-file p { margin: 4px 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-overview-file > button { flex-shrink: 0; padding: 12px 20px; }
 .project-unsaved { color: #f2cb89; font-size: 12px; }

@@ -125,17 +125,19 @@ function countWords(text: string): number {
 function computeCinematicsSummary(project: GameProject) {
   const campaign = campaignOf(project);
   const endIndex = campaign.steps.findIndex((step) => step.kind === "end");
-  const playableSteps =
-    endIndex >= 0 ? campaign.steps.slice(0, endIndex + 1) : campaign.steps;
-  const usedFilmIds = new Set(
-    playableSteps
-      .filter((step): step is Extract<typeof step, { kind: "cinematic" }> => step.kind === "cinematic")
-      .map((step) => step.cinematicId),
+  const playableSteps = (
+    endIndex >= 0 ? campaign.steps.slice(0, endIndex + 1) : campaign.steps
+  ).filter(
+    (step) =>
+      step.kind !== "unlock_travel_book" && step.kind !== "unlock_herbarium",
+  );
+  const filmIds = playableSteps.flatMap((step) =>
+    step.kind === "cinematic" ? [step.cinematicId] : [],
   );
   const embeddedById = new Map((project.cinematics ?? []).map((doc) => [doc.id, doc]));
   let totalDurationSec = 0;
   let totalWords = 0;
-  for (const filmId of usedFilmIds) {
+  for (const filmId of filmIds) {
     const film = campaign.cinematics.find((entry) => entry.id === filmId);
     const doc = film ? embeddedById.get(film.documentId) : undefined;
     if (!doc) continue;
@@ -148,7 +150,7 @@ function computeCinematicsSummary(project: GameProject) {
   }
   return {
     playableSteps: playableSteps.length,
-    playableCinematicsCount: usedFilmIds.size,
+    playableCinematicsCount: new Set(filmIds).size,
     playableCinematicsDurationSec: Math.round(totalDurationSec),
     playableCinematicsWords: totalWords,
   };

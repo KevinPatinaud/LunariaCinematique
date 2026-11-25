@@ -1,6 +1,8 @@
 import {CinematicCues} from '../presentation/PreviewCues.js';
 import type {GameProject} from '../../shared/game/types.js';
 import {CinematicSprite,cinematicSpriteGeometry} from '../presentation/CinematicSprite.js';
+import { AnimatedElementSprite } from '../presentation/AnimatedElementSprite.js';
+import { isElementClip } from '../../shared/presentation/animatedElements.js';
 import { useImageSize } from '../presentation/AnimationPreview.js';
 import { AnimatedBubbleText } from './AnimatedBubbleText.js';
 import { bubbleEntryPose } from '../../shared/bubbleEntry.js';
@@ -10,7 +12,7 @@ import type { Actor, Asset, Box, Bubble, Shot } from '../../shared/model.js';
 import { ASSET_MIME, ASSET_KIND_MIME } from '../../shared/assets.js';
 import { applyObjectChanges, moveObjects, selectionBounds, snapMove, objectBox, intersectionArea, type ObjectChange } from '../../shared/studio.js';
 import { copy } from '../../shared/model.js';
-import { restPose, actorTransform, actorAnchor, setMovementDestination } from '../../shared/motion.js';
+import { restPose, actorTransform, actorAnchor, movementCurve, setMovementBend, setMovementDestination } from '../../shared/motion.js';
 import { resizeBox, resizeActor } from '../../shared/editing.js';
 import type { LibraryTab } from '../../shared/libraryBrowser.js';
 import { STAGE } from '../../shared/model.js';
@@ -43,6 +45,7 @@ export function Scene(props: Props) {
   useEffect(()=>{const redraw=()=>setImageRevision(n=>n+1);window.addEventListener('lunaria-image-size',redraw);return()=>window.removeEventListener('lunaria-image-size',redraw);},[]);
   const animated = playing || props.motionTime !== undefined;
   const animationTime = playing ? elapsed : props.motionTime ?? 0;
+  const elementClips = props.presentationProject?.presentation?.animations;
   const svg = useRef<SVGSVGElement>(null), drag = useRef<Drag | null>(null);
   const [draft, setDraft] = useState<ObjectChange[] | null>(null);
   const [marquee, setMarquee] = useState<Box|null>(null), [snapLines, setSnapLines] = useState<{xLine:number|null;yLine:number|null}|null>(null);
@@ -97,6 +100,13 @@ export function Scene(props: Props) {
       const a = shot.actors.find(a => a.id === d.id);
       if (a?.movement) d.changes = [{kind:'actor', id:a.id, patch:{movement:setMovementDestination(a, a.x+a.movement.dx+dx, a.y+a.movement.dy+dy)}}];
     }
+    else if (d.mode === 'bend') {
+      const a = shot.actors.find(actor => actor.id === d.id);
+      if (a?.movement) {
+        const movement = setMovementBend(a.movement, p.x - d.start.x, p.y - d.start.y);
+        d.changes = [{ kind: 'actor', id: a.id, patch: { movement } }];
+      }
+    }
     else if(d.mode==='move') {
       if(props.snap&&!event.altKey) {
         const others=[...shot.actors,...shot.bubbles].filter(o=>!d.ids.includes(o.id)&&!hidden.has(o.id)).map(objectBox);
@@ -119,7 +129,7 @@ export function Scene(props: Props) {
           props.onGroupSelect?.(ids,d.additive);
         } else if(!d.additive)onSelect({kind:'shot'});
       } else if(d.moved&&d.changes.length) {
-        if(props.onBatchUpdate)props.onBatchUpdate(d.changes,d.ids.length>1?'Déplacer la sélection':d.mode==='destination'?'Définir la destination':d.mode==='tail'?'Orienter la queue':d.mode==='move'?'Déplacer un élément':'Redimensionner un élément');
+        if(props.onBatchUpdate)props.onBatchUpdate(d.changes,d.ids.length>1?'Déplacer la sélection':d.mode==='destination'?'Définir la destination':d.mode==='bend'?'Incurver la trajectoire':d.mode==='tail'?'Orienter la queue':d.mode==='move'?'Déplacer un élément':'Redimensionner un élément');
         else for(const c of d.changes)onUpdate(c.kind,c.id,c.patch);
       }
     }
@@ -163,11 +173,19 @@ export function Scene(props: Props) {
         {effectiveShot.actors.filter(a=>playing||!hidden.has(a.id)).map(a => {
           const pose = animated ? actorPose(a, animationTime) : restPose(a);
           const image = asset(a.asset), w = a.width * STAGE.width, h = a.height * STAGE.height;
+          const element = a.animation?.elementPlayback ? elementClips?.find(clip => clip.id === a.animation?.animationId) : undefined;
           return <g key={a.id} data-testid={`actor-${a.id}`} transform={actorTransform(pose)} opacity={pose.opacity}
             onPointerDown={e => begin(e, 'actor', a.id)} className={playing ? '' : locked.has(a.id) ? 'object-locked' : 'movable'}>
             <rect width={w} height={h} fill="transparent"/>
             <g transform={a.flipX ? `translate(${w},0) scale(-1,1)` : undefined} pointerEvents="none">
-              {a.animation && props.presentationProject ? props.catalogMatches!==false?<CinematicSprite actor={a} project={props.presentationProject} assets={assets} elapsed={animationTime}/>:missing('Catalogue à relier',w,h):image && !failed.has(image.url) ? <image href={image.url} width={w} height={h} preserveAspectRatio="none" onError={() => setFailed(prev => new Set(prev).add(image.url))}/> : missing(a.name, w, h)}
+              {a.animation && props.presentationProject ? props.catalogMatches!==false
+                ? isElementClip(element) ? <AnimatedElementSprite clip={element} assets={assets} width={w} height={h}
+                    time={animationTime} binding={a.animation} editing={!animated}
+                    showOrigin={element.element.preset === 'exhale' && chosen.includes(a.id) && !animated && !props.exporting}/>
+                  : a.animation.elementPlayback ? missing('Élément animé introuvable',w,h)
+                    : <CinematicSprite actor={a} project={props.presentationProject} assets={assets} elapsed={animationTime} exporting={props.exporting}/>
+                : missing('Catalogue à relier',w,h)
+                : image && !failed.has(image.url) ? <image href={image.url} width={w} height={h} preserveAspectRatio="none" onError={() => setFailed(prev => new Set(prev).add(image.url))}/> : missing(a.name, w, h)}
             </g>
           </g>;
         })}
@@ -229,16 +247,29 @@ export function Scene(props: Props) {
         const actor = selected as Actor, m = actor.movement;
         if (!m?.enabled) return null;
         const start = actorAnchor(actor,0,false,0.5,0.5);
-        const end = {x: start.x + m.dx*1600, y: start.y + m.dy*900};
-        const ghost = restPose(actor); ghost.x += m.dx*1600; ghost.y += m.dy*900;
+        const { dx, dy, chord, bowX, bowY } = movementCurve(m);
+        const end = { x: start.x + dx, y: start.y + dy };
+        const mid = { x: start.x + dx * 0.5, y: start.y + dy * 0.5 };
+        const control = { x: mid.x + 2 * bowX, y: mid.y + 2 * bowY };
+        const handleX = clamp(mid.x + bowX, 18, STAGE.width - 18);
+        const handleY = clamp(mid.y + bowY, 18, STAGE.height - 18);
+        const ghost = restPose(actor); ghost.x += dx; ghost.y += dy;
         const source = asset(actor.asset), w=actor.width*1600, h=actor.height*900;
         return <g data-testid="movement-path">
           <g pointerEvents="none" opacity="0.28" transform={actorTransform(ghost)}>
             <rect width={w} height={h} fill="none" stroke="#e5c989" strokeWidth="3" strokeDasharray="10 6"/>
             {source && <g transform={actor.flipX ? `translate(${w},0) scale(-1,1)` : undefined}><image href={source.url} width={w} height={h} preserveAspectRatio="none"/></g>}
           </g>
-          <path d={`M${start.x} ${start.y} L${end.x} ${end.y}`} stroke="#e5c989" strokeWidth="3" strokeDasharray="10 7" pointerEvents="none"/>
+          <path data-testid="movement-curve-line" d={`M${start.x} ${start.y} Q${control.x} ${control.y} ${end.x} ${end.y}`}
+            fill="none" stroke="#e5c989" strokeWidth="3" strokeDasharray="10 7" pointerEvents="none"/>
           <g pointerEvents="none"><circle cx={start.x} cy={start.y} r="14" fill="#c4dbaa"/><text className="motion-path-label" x={start.x} y={start.y+6} textAnchor="middle">A</text></g>
+          {chord >= 1e-3 && <g className="destination-handle" data-testid="movement-bend"
+            aria-label="Poignée de courbure" transform={`translate(${handleX},${handleY})`}
+            onPointerDown={event => begin(event, 'actor', actor.id, 'bend')}>
+            <title>Glisser pour incurver la trajectoire</title>
+            <circle r="19" fill="transparent"/>
+            <rect x="-10" y="-10" width="20" height="20" rx="3" fill="#c4dbaa" stroke="#283723" strokeWidth="3" transform="rotate(45)"/>
+          </g>}
           <g className="destination-handle" data-testid="movement-destination" onPointerDown={e => begin(e,'actor',actor.id,'destination')}>
             <circle cx={clamp(end.x,18,1582)} cy={clamp(end.y,18,882)} r="19" fill="#e5c989" stroke="#283723" strokeWidth="3"/>
             <text className="motion-path-label" x={clamp(end.x,18,1582)} y={clamp(end.y,18,882)+6} textAnchor="middle">B</text>

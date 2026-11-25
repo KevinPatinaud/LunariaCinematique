@@ -18,11 +18,11 @@ test.beforeEach(async()=>{
  for(const folder of ['content/design','app/controllers','domain/logic','domain/presentation'])await fs.mkdir(path.join(game,folder),{recursive:true});
  for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd'])await fs.writeFile(path.join(game,marker),'marker');
  await fs.writeFile(path.join(game,'content/design/game_content.json'),'{}');
- await fs.writeFile(path.join(game,'export_presets.cfg'),'[preset.0]\nplatform="Android"\n[preset.0.options]\npackage/unique_name="org.gardiensduvivant.game"\n');
+ await fs.writeFile(path.join(game,'export_presets.cfg'),'[preset.0]\nplatform="Android"\n[preset.0.options]\npackage/unique_name="com.savelunaria.game"\n');
  const env={...process.env,LUNARIA_E2E:'1',LUNARIA_TEST_USER_DATA:profile};delete env.LUNARIA_DEV_URL;
  app=await _electron.launch({args:[ROOT],env:env as Record<string,string>});page=await app.firstWindow();await page.waitForURL('app://studio/index.html');await page.setViewportSize({width:1280,height:800});
  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});dialog.showSaveDialog=async()=>({canceled:false,filePath:file});},file);
- await page.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
  await app.evaluate(({dialog},game)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[game]});},game);
 });
@@ -33,7 +33,7 @@ test('new button saves, publishes, builds, installs and launches through the nat
   const observed=window as unknown as {deploymentEvents:AndroidDeploymentEvent[];lunariaGame:{onAndroidDeploymentProgress(callback:(event:AndroidDeploymentEvent)=>void):()=>void}};
   observed.deploymentEvents=[];observed.lunariaGame.onAndroidDeploymentProgress(event=>observed.deploymentEvents.push(event));
  });
- await page.getByLabel('Titre du projet de niveaux').fill('Campagne pour mon téléphone');
+ await page.getByLabel('Titre du projet').fill('Campagne pour mon téléphone');
  await page.locator('.gd-delivery > summary').click();await expect(page.getByRole('button',{name:BUTTON,exact:true})).toBeInViewport();
  await page.screenshot({path:info.outputPath('android-menu.png')});
  await page.getByRole('button',{name:BUTTON,exact:true}).click();
@@ -70,7 +70,7 @@ test('multiple devices can be selected or canceled and project errors disable de
  await app.evaluate(({dialog})=>{dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});});
  await page.locator('.gd-delivery > summary').click();await page.getByRole('button',{name:BUTTON,exact:true}).click();
  await expect(page.locator('.gd-message')).toContainText('Lunaria installé et lancé sur Second (second)');
- await page.getByLabel('Titre du projet de niveaux').fill('');await page.locator('.gd-delivery > summary').click();
+ await page.getByLabel('Titre du projet').fill('');await page.locator('.gd-delivery > summary').click();
  await expect(page.getByRole('button',{name:BUTTON,exact:true})).toBeDisabled();
 });
 

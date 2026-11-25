@@ -3,6 +3,7 @@ import test from "node:test";
 import { buildBalanceAudit } from "../src/shared/balanceAudit.js";
 import { seedProject } from "../src/shared/game/seed.js";
 import { createProjectLevel } from "../src/shared/game/levelManagement.js";
+import { newBubble, newCinematic } from "../src/shared/model.js";
 
 test("buildBalanceAudit computes plant HP/seed, DPS, regeneration and active level usage", () => {
   const project = seedProject();
@@ -137,4 +138,26 @@ test("buildBalanceAudit flags fixed-placement enemy groups stacked on a single c
     buildBalanceAudit(project).alerts.some((a) => a.kind === "stacked_spawn"),
     false,
   );
+});
+
+test("buildBalanceAudit counts the duration and dialogue of every playable occurrence of a film", () => {
+  const project = seedProject();
+  const film = newCinematic();
+  film.shots[0].duration = 21.5;
+  film.shots[0].bubbles = [{ ...newBubble(), text: "Bonjour Lunaria" }];
+  project.cinematics = [film];
+  project.campaign = {
+    cinematics: [{ id: "intro", documentId: film.id, title: film.title, file: "intro.json" }],
+    steps: [
+      { id: "intro_first", kind: "cinematic", cinematicId: "intro", skippable: false },
+      { id: "intro_second", kind: "cinematic", cinematicId: "intro", skippable: true },
+      { id: "end", kind: "end" },
+      { id: "intro_deferred", kind: "cinematic", cinematicId: "intro", skippable: true },
+    ],
+  };
+
+  const summary = buildBalanceAudit(project).summary;
+  assert.equal(summary.playableCinematicsCount, 1);
+  assert.equal(summary.playableCinematicsDurationSec, 43);
+  assert.equal(summary.playableCinematicsWords, 4);
 });

@@ -174,11 +174,7 @@ async function background() {
 }
 async function terrain() {
   await page
-    .locator(".studio-modebar")
-    .getByRole("button", { name: "Niveaux", exact: true })
-    .click();
-  await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Niveaux/ })
     .click();
   await page.getByRole("button", { name: "Paramètres", exact: true }).click();

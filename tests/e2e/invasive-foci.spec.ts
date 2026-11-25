@@ -27,7 +27,7 @@ test.afterEach(async()=>{
 });
 
 test('a level authors and saves positioned invasive foci and timed reinforcements',async()=>{
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Créer un premier niveau'}).click();
  await page.getByRole('button',{name:'Paramètres'}).click();
  await page.getByLabel('Objectif du niveau').selectOption('invasive_foci');

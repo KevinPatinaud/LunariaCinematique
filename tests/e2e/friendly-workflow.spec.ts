@@ -58,7 +58,6 @@ test('project overview opens existing work without creating content and keeps to
  await page.setViewportSize({width:1000,height:680});
  expect(await overview.evaluate(el=>el.scrollHeight-el.clientHeight)).toBeLessThanOrEqual(1);
  await expect(overview.getByRole('button',{name:'Voir les niveaux',exact:true})).toBeInViewport();
- await expect(overview.getByRole('button',{name:'Configurer l’accueil'})).not.toBeVisible();
  await page.screenshot({path:info.outputPath('simple-overview-small.png')});
  await overview.getByRole('button',{name:'Voir les niveaux',exact:true}).click();
  await expect(page.getByLabel('Nom du niveau')).toHaveValue('Mon niveau existant');
@@ -77,12 +76,16 @@ test('project overview opens existing work without creating content and keeps to
  await expect(overview.getByRole('button',{name:'Images et sons',exact:false})).toBeVisible();
  await expect(overview.getByRole('button',{name:'Voir les personnages',exact:true})).toBeVisible();
  await expect(overview.getByRole('button',{name:'Vérifier le projet',exact:true})).toBeVisible();
- await overview.getByRole('button',{name:'Configurer l’accueil',exact:true}).click();
- await expect(page.getByRole('heading',{name:'Écran d’accueil',exact:true})).toBeVisible();
+ await expect(overview.getByRole('button',{name:'Configurer l’accueil',exact:true})).toHaveCount(0);
+ await page.keyboard.press('Escape');
+ await page.locator('.studio-more-trigger').click();
+ const more=page.locator('.studio-more-popover');
+ await expect(more.getByRole('button',{name:/Économie Luna/})).toBeVisible();
+ await expect(more.getByRole('button',{name:/Écran d’accueil/})).toHaveCount(0);
 });
 
 test('compact tools and searchable catalogs keep the editor usable on a small screen',async({},info)=>{
- await page.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Créer un premier niveau',exact:true}).click();
  await expect(page.getByLabel('Nom du niveau')).toBeVisible();
  await page.getByLabel('Rechercher un niveau').fill('absent');
@@ -93,24 +96,24 @@ test('compact tools and searchable catalogs keep the editor usable on a small sc
  await page.getByRole('button',{name:'+ Créer un niveau',exact:true}).click();
  await expect(page.getByLabel('Rechercher un niveau')).toHaveValue('');
  await expect(page.locator('.gd-level-items button')).toHaveCount(2);
- await page.locator('.gd-sections').getByRole('button',{name:/Plantes alliées/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:/^Plantes/}).click();
  await page.getByLabel('Rechercher un personnage').fill('aloes');
  await expect(page.locator('.gd-catalog > button')).toHaveCount(1);
  await page.locator('.gd-catalog > button').click();
  await expect(page.getByRole('heading',{name:'Aloès',exact:true})).toBeVisible();
  await page.getByLabel('Rechercher un personnage').fill('inexistant');
  await page.getByRole('button',{name:'Effacer la recherche'}).click();
- await expect(page.locator('.gd-catalog > button')).toHaveCount(29);
+ await expect(page.locator('.gd-catalog > button')).toHaveCount(28);
  await page.setViewportSize({width:1000,height:720});
- expect(await page.locator('.gd-body').evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(440);
+ expect(await page.locator('.gd-body').evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(520);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(1000);
  await expect(page.locator('.lp-character-image .lp-image-preview')).toHaveCount(1);
  await expect(page.getByRole('button',{name:'Caractéristiques'})).toBeInViewport();
- await expect(page.locator('.lp-navigation')).not.toBeVisible();
+ await expect(page.locator('.studio-more-popover')).not.toBeVisible();
  await page.screenshot({path:info.outputPath('small-editor.png')});
- await page.locator('.gd-tools > summary').click();
- await expect(page.locator('.lp-navigation')).toBeVisible();
- await page.locator('.gd-tools > summary').click();
+ await page.locator('.studio-more-trigger').click();
+ await expect(page.locator('.studio-more-popover')).toBeVisible();
+ await page.locator('.studio-more-trigger').click();
  await page.locator('.gd-delivery > summary').click();
  await expect(page.getByRole('button',{name:'Exporter pour Android'})).toBeVisible();
  await page.screenshot({path:info.outputPath('export-menu.png')});
@@ -119,7 +122,7 @@ test('compact tools and searchable catalogs keep the editor usable on a small sc
 });
 
 test('blocking validation explains the problem and returns to the invalid field',async()=>{
- await page.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Créer un premier niveau',exact:true}).click();
  await page.getByLabel('Nom du niveau').fill('');
  await page.locator('.gd-delivery > summary').click();

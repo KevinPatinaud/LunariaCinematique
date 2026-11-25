@@ -21,6 +21,8 @@ import {
 } from "../shared/terrainGeneration.js";
 import { isWithin, resolveAsset } from "./files.js";
 import { runCodexImage } from "./codexImageCorrection.js";
+import { runProviderImage } from "./aiImageRouter.js";
+import { normalizeAiProvider } from "../shared/aiProviders.js";
 import { ImageJobStore, type ImageTaskQueue } from "./imageJobs.js";
 import { imageTaskContext, type ImageTask } from "../shared/imageTasks.js";
 import { isSafeAssetRef } from "../shared/schema.js";
@@ -40,6 +42,23 @@ export const generateTerrainWithCodex: TerrainGenerator = (task) =>
     codexReasoningEffort: task.request.codexReasoningEffort,
     prompt: terrainGenerationPrompt(task.request, task.state),
   });
+export function createTerrainGenerator(getGeminiApiKey?: () => Promise<string | undefined>): TerrainGenerator {
+  return (task) => {
+    const prompt = terrainGenerationPrompt(task.request, task.state);
+    return runProviderImage({
+      provider: task.request.aiProvider,
+      model: task.request.codexModel,
+      codexReasoningEffort: task.request.codexReasoningEffort,
+      folder: task.folder,
+      inputPath: task.inputPath,
+      codexPrompt: prompt,
+      geminiPrompt: prompt,
+      aspectRatio: "16:9",
+      signal: task.signal,
+      getGeminiApiKey,
+    });
+  };
+}
 interface Dependencies {
   queue?: ImageTaskQueue;
   jobsRoot: string;
@@ -87,6 +106,7 @@ export class TerrainGenerations {
       const request = {
         ...data.request,
         context: imageTaskContext(data.request.context),
+        aiProvider: normalizeAiProvider(data.request.aiProvider),
         codexModel: normalizeCodexModel(data.request.codexModel),
         codexReasoningEffort: normalizeCodexReasoningEffort(data.request.codexReasoningEffort),
       };
@@ -232,6 +252,7 @@ export class TerrainGenerations {
     const request = {
       ...(input as TerrainGenerationRequest),
       context: imageTaskContext((input as TerrainGenerationRequest).context),
+      aiProvider: normalizeAiProvider((input as TerrainGenerationRequest).aiProvider),
       codexModel: normalizeCodexModel(
         (input as TerrainGenerationRequest).codexModel,
       ),
@@ -275,6 +296,7 @@ export class TerrainGenerations {
       job: {
         id,
         sourceRef: request.ref,
+        aiProvider: request.aiProvider,
         codexModel: request.codexModel,
         codexReasoningEffort: request.codexReasoningEffort,
         status: "generating",

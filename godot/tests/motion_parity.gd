@@ -4,6 +4,7 @@ const Motion = preload("res://addons/lunaria_cinematics/CinematicMotion.gd")
 # Preload the complete player too, so parser errors in integration are reported.
 const Player = preload("res://addons/lunaria_cinematics/CinematicPlayer.gd")
 const Validator = preload("res://addons/lunaria_cinematics/CinematicValidator.gd")
+const Presentation = preload("res://addons/lunaria_cinematics/CinematicPresentation.gd")
 var failures: int = 0
 var comparisons: int = 0
 func check_value(actual: float, expected: float, label: String) -> void:
@@ -17,6 +18,7 @@ func _initialize() -> void:
 		printerr("Motion vectors missing or invalid.")
 		quit(1)
 		return
+	var presentation = Presentation.new()
 	for index: int in range(content.size()):
 		var row: Dictionary = content[index]
 		var value: Dictionary = Motion.pose(row["actor"], float(row["elapsed"]))
@@ -27,5 +29,9 @@ func _initialize() -> void:
 		var actual: Dictionary = {"x":position.x,"y":position.y,"pivotX":pivot.x,"pivotY":pivot.y,"opacity":value["opacity"],"rotation":value["rotation"],"scale":value["scale"],"anchorX":anchor.x,"anchorY":anchor.y}
 		for key: String in expected:
 			check_value(float(actual[key]), float(expected[key]), str(index) + "/" + key)
+		if row.has("expectedTiming"):
+			var timing: Dictionary = presentation._movement_timing(row["actor"], float(row["elapsed"]))
+			for key: String in row.expectedTiming:
+				check_value(float(timing[key]), float(row.expectedTiming[key]), str(index) + "/" + key)
 	print("Lunaria motion parity: ", comparisons, " comparisons; ", failures, " failure(s).")
 	quit(0 if failures == 0 else 1)

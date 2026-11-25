@@ -32,6 +32,8 @@ export function levelPosition(project: GameProject, id: string) {
 }
 export function stepTitle(project: GameProject, step: CampaignStep): string {
   if (step.kind === "end") return "Fin actuelle de la partie jouable";
+  if (step.kind === "unlock_travel_book") return "Déblocage du Carnet de voyage";
+  if (step.kind === "unlock_herbarium") return "Déblocage de L’herbier";
   return step.kind === "level"
     ? (project.levels.find((l) => l.id === step.levelId)?.title ??
         "Niveau introuvable")
@@ -176,6 +178,7 @@ export function patchProjectLevel(
     "escort",
     "terrainImage",
     "restoredTerrainImage",
+    "lunaRewards",
   ] as const)
     if (Object.hasOwn(patch, key) && patch[key] === undefined)
       delete level[key];

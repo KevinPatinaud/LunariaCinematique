@@ -96,10 +96,6 @@ test("cross-film and cross-mode undo follows the edited object and keeps a singl
   await page.getByLabel("Titre de la cinématique").fill("Film A modifié");
   await page.getByLabel("Titre de la cinématique").press("Tab");
   await mode("Niveaux").click();
-  await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: /^Niveaux/ })
-    .click();
   await page.getByRole("button", { name: "+ Créer un niveau" }).first().click();
   await page.getByLabel("Continent du niveau").selectOption("2");
   await mode("Cinématiques").click();

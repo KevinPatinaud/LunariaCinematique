@@ -1,20 +1,11 @@
-import { linkCinematic } from '../../shared/game/cinematicManagement.js';
-import {
-  LevelCampaignPosition,
-  DuplicateLevelDialog,
-} from "./LevelPlacement.js";
 import {
   afterLevel,
   createProjectLevel,
   duplicateProjectLevel,
   deleteProjectLevel,
-  placeLevel,
   patchProjectLevel,
-  levelPosition,
-  orderedLevels,
   type LevelPlacement,
 } from "../../shared/game/levelManagement.js";
-import { LevelObjectiveEditor } from "./LevelObjectiveEditor.js";
 import { useProjectSession } from "../project/ProjectSessionContext.js";
 import type { Asset, AssetRef } from "../../shared/model.js";
 import { animationOwnerId } from "../../shared/presentation/ownership.js";
@@ -24,71 +15,73 @@ import {
   PresentationEditor,
 } from "../presentation/PresentationEditor.js";
 import { BehaviorEditor } from "./BehaviorEditor.js";
-import { EventEditor } from "./EventEditor.js";
 import { VariableEditor } from "./VariableEditor.js";
-import { LevelRewardsOverview } from "./LevelRewardsOverview.js";
 import { BalanceAuditView } from "./BalanceAuditView.js";
-import { HomeScreenEditor } from "./HomeScreenEditor.js";
+import { LunaEconomyEditor } from "./LunaEconomyEditor.js";
 import { CombatEditor } from "./CombatEditor.js";
+import {
+  LevelsWorkspace,
+  type LevelDetailTab,
+} from "./LevelsWorkspace.js";
 import React, {
   forwardRef,
   useEffect,
   useImperativeHandle,
-  useMemo,
-  useRef,
   useState,
 } from "react";
 import { type HistoryAction } from "../../shared/history.js";
 import {
   activeEnemies,
-  CONTINENTS,
-  totalEnemies,
-  isConquest,
+  type CampaignFilm,
   type GameProject,
   type LevelDefinition,
 } from "../../shared/game/types.js";
-import { gameIssues } from "../../shared/game/validation.js";
-import { api } from "../browserBridge.js";
-import { BalanceEditor, Num } from "./BalanceEditor.js";
-import { ImagePicker } from "../presentation/ImagePicker.js";
-import { TerrainGenerationDialog } from "./TerrainGenerationDialog.js";
-import { AndroidDeploymentStatus } from "./AndroidDeploymentStatus.js";
-import { useProjectDelivery } from "./useProjectDelivery.js";
-import { WaveEditor } from "./WaveEditor.js";
-import { CampaignEditor } from "./CampaignEditor.js";
-import { ensureCampaign } from "../../shared/game/campaign.js";
-import type { CampaignFilm } from "../../shared/game/types.js";
-import { StudioDialog } from "../components/StudioDialog.js";
 import type { GameIssue } from "../../shared/game/validation.js";
+import { api } from "../browserBridge.js";
+import { BalanceEditor } from "./BalanceEditor.js";
+import { TerrainGenerationDialog } from "./TerrainGenerationDialog.js";
+import { CampaignEditor } from "./CampaignEditor.js";
+import { StudioDialog } from "../components/StudioDialog.js";
+import {
+  ADVANCED_SECTIONS,
+  isAdvancedSection,
+  type GameSection,
+} from "../components/StudioNavigation.js";
 import "./game.css";
 import "./levelsCampaign.css";
-export type GameSection =
-  | "home"
-  | "campaign"
-  | "levels"
-  | "plants"
-  | "enemies"
-  | "audit"
-  | "abilities"
-  | "behaviors"
-  | "variables"
-  | PresentationSection;
+
+export type { GameSection };
+
 export interface GameEditorHandle {
-  navigate(section: GameSection): void;
+  navigate(section: GameSection, targetId?: string, detailTab?: LevelDetailTab): void;
   createLevel(): void;
   showChecks(): void;
 }
+
 interface Props {
   assets: Asset[];
   active: boolean;
+  section: GameSection;
+  onSelectSection: (section: GameSection) => void;
+  issues: GameIssue[];
+  showIssues: boolean;
+  onShowIssuesChange: (open: boolean) => void;
+  onPlayLevel: (levelId: string) => void;
   onOpenFilm: (film: CampaignFilm) => Promise<void>;
   onBackupCampaign: () => void;
 }
+
 export const GameEditor = forwardRef<GameEditorHandle, Props>(
   function GameEditor(
     {
       assets,
       active,
+      section,
+      onSelectSection,
+      issues,
+      showIssues,
+      onShowIssuesChange,
+      onPlayLevel,
       onOpenFilm,
       onBackupCampaign,
     },
@@ -99,18 +92,14 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       project,
       path,
       busy,
-      ready: booted,
-      dirty,
       message,
-      recoveryStatus,
       epoch,
       navigation,
     } = useProjectSession();
     const setMessage = (value: string) => session.message(value);
-    const [section, setSection] = useState<GameSection>("campaign"),
-      [levelId, setLevelId] = useState(project.levels[0]?.id ?? "");
+    const setSection = onSelectSection;
+    const [levelId, setLevelId] = useState(project.levels[0]?.id ?? "");
     const [combatId, setCombatId] = useState("");
-    const [toolsOpen, setToolsOpen] = useState(false);
     const [terrainTarget, setTerrainTarget] = useState<{
       levelId: string;
       projectId: string;
@@ -118,28 +107,9 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       terrainRef?: AssetRef;
       restoredTerrainRef?: AssetRef;
     } | null>(null);
-    const deliveryRef = useRef<HTMLDetailsElement>(null);
-    const delivery = useProjectDelivery(session);
-    const { androidDeployment } = delivery;
-    useEffect(() => {
-      if (["abilities", "behaviors", "variables", "animations", "profiles", "audio", "vfx"].includes(section))
-        setToolsOpen(true);
-    }, [section]);
-    useEffect(() => {
-      const close = (event: PointerEvent) => {
-        if (
-          deliveryRef.current &&
-          !deliveryRef.current.contains(event.target as Node)
-        )
-          deliveryRef.current.open = false;
-      };
-      document.addEventListener("pointerdown", close);
-      return () => document.removeEventListener("pointerdown", close);
-    }, []);
+
     const [species, setSpecies] = useState("radish"),
-      [detail, setDetail] = useState<
-        "settings" | "waves" | "plants" | "events"
-      >("waves");
+      [detail, setDetail] = useState<LevelDetailTab>("waves");
     const [speciesTab, setSpeciesTab] = useState<
         "details" | "capabilities" | "behavior" | "rules" | "animations"
       >("details"),
@@ -147,13 +117,15 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
     const [campaignStepId, setCampaignStepId] = useState("");
     const [levelScope, setLevelScope] = useState("all");
     const [compareRewards, setCompareRewards] = useState(false);
-    useEffect(() => { if (section !== "levels") setCompareRewards(false); }, [section]);
+    useEffect(() => {
+      if (section !== "levels") setCompareRewards(false);
+    }, [section]);
     const [duplicateOpen, setDuplicateOpen] = useState(false);
     const [query, setQuery] = useState(""),
       [continent, setContinent] = useState(-1);
-    const [showIssues, setShowIssues] = useState(false);
-    const issues = useMemo(() => gameIssues(project), [project]),
-      errors = issues.filter((x) => x.severity === "error");
+
+    const errors = issues.filter((x) => x.severity === "error");
+
     const level =
       project.levels.find((l) => l.id === levelId) ?? project.levels[0];
     const location = {
@@ -165,7 +137,19 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       speciesTab,
       campaignStepId,
     };
-    if (active) session.setLocation(location);
+    useEffect(() => {
+      if (active) session.setLocation(location);
+    }, [
+      active,
+      session,
+      section,
+      levelId,
+      species,
+      detail,
+      speciesTab,
+      campaignStepId,
+    ]);
+
     function action(a: HistoryAction<GameProject>) {
       session.action(a, location, true);
     }
@@ -183,7 +167,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
             : ((
                 {
                   campaign: "la campagne",
-                  home: "l’écran d’accueil",
+                  lunas: "l’économie Luna",
                   abilities: "les capacités",
                   behaviors: "les comportements",
                   variables: "les variables",
@@ -210,7 +194,19 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       await session.run(fn);
     }
     useImperativeHandle(ref, () => ({
-      navigate: (next) => selectSection(next),
+      navigate: (next, targetId, detailTab) => {
+        selectSection(next);
+        if (next === "levels" && targetId) {
+          setQuery("");
+          setContinent(-1);
+          setLevelScope("all");
+          setLevelId(targetId);
+          setCompareRewards(false);
+          if (detailTab) setDetail(detailTab);
+        } else if (next === "campaign" && targetId) {
+          setCampaignStepId(targetId);
+        }
+      },
       createLevel: () => {
         if (!busy) {
           addLevel();
@@ -218,9 +214,10 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
         }
       },
       showChecks: () => {
-        if (!busy) setShowIssues(true);
+        if (!busy) onShowIssuesChange(true);
       },
     }));
+
     useEffect(() => {
       setTerrainTarget(null);
       setCompareRewards(false);
@@ -230,6 +227,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       setQuery("");
       setContinent(-1);
     }, [epoch]);
+
     useEffect(() => {
       const loc = navigation?.location;
       if (loc?.mode !== "levels") return;
@@ -237,7 +235,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       if (loc.section) setSection(loc.section as GameSection);
       if (loc.levelId) setLevelId(loc.levelId);
       if (loc.species) setSpecies(loc.species);
-      if (loc.detail) setDetail(loc.detail as typeof detail);
+      if (loc.detail) setDetail(loc.detail as LevelDetailTab);
       if (loc.speciesTab) setSpeciesTab(loc.speciesTab as typeof speciesTab);
       if (loc.campaignStepId !== undefined)
         setCampaignStepId(loc.campaignStepId);
@@ -245,6 +243,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       setQuery("");
       setContinent(-1);
     }, [navigation]);
+
     function levelChange(
       edit: (draft: GameProject) => void,
       label: string,
@@ -295,7 +294,6 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
     const remove = () =>
       run(async () => {
         if (!level || !(await api.confirmDelete(level.title))) return;
-        // The asynchronous confirmation may finish after a render; edit from the current state.
         const next = structuredClone(session.project),
           i = next.levels.findIndex((l) => l.id === level.id);
         if (i < 0) return;
@@ -304,26 +302,14 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
         setLevelId(next.levels[Math.min(i, next.levels.length - 1)]?.id ?? "");
       });
     const playLevel = () => {
-      if (level) void delivery.execute({ kind: "playLevel", levelId: level.id });
+      if (level) onPlayLevel(level.id);
     };
     useEffect(() => {
       if (!project.levels.some((l) => l.id === levelId))
         setLevelId(project.levels[0]?.id ?? "");
     }, [project, levelId]);
-    const norm = (s: string) =>
-      s
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-    const visible = orderedLevels(project).filter(
-      (l) =>
-        (continent < 0 || l.act === continent) &&
-        (levelScope === "all" ||
-          levelPosition(project, l.id).index >= 0 ===
-            (levelScope === "placed")) &&
-        norm(l.title + " " + l.id + " " + l.location).includes(norm(query)),
-    );
-    const selectSection = (next: typeof section) => {
+
+    const selectSection = (next: GameSection) => {
       if (session.getSnapshot().busy) return;
       setSection(next);
       setCompareRewards(false);
@@ -335,6 +321,9 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       if (next === "plants" || next === "enemies") {
         setSpeciesTab("details");
         setFocusAnimationId("");
+      }
+      if (isAdvancedSection(next)) {
+        setCombatId("");
       }
     };
     const openAnimationDefinition = (animationId: string) => {
@@ -381,7 +370,8 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
       const target = issueLevel(issue);
       if (target) return "Niveau · " + target.title;
       const labels: Record<string, string> = {
-        homeScreen: "Écran d’accueil",
+        homeScreen: "Données d’accueil",
+        lunas: "Économie Luna",
         rewards: "Récompenses",
         presentation: "Animations et sons",
         logic: "Comportements et variables",
@@ -396,7 +386,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
     }
     function openIssue(issue: GameIssue) {
       const target = issueLevel(issue),
-        path = issue.path.replace(/^projet\./, "");
+        issuePath = issue.path.replace(/^projet\./, "");
       if (target) {
         setCompareRewards(false);
         setLevelId(target.id);
@@ -404,31 +394,33 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
         setQuery("");
         setContinent(-1);
         setDetail(
-          path.includes(".events")
-            ? "events"
-            : path.includes(".waves")
-              ? "waves"
-              : path.includes(".allowedPlants")
-                ? "plants"
-                : "settings",
+          issuePath.includes(".lunaRewards")
+            ? "lunas"
+            : issuePath.includes(".events")
+              ? "events"
+              : issuePath.includes(".waves")
+                ? "waves"
+                : issuePath.includes(".allowedPlants")
+                  ? "plants"
+                  : "settings",
         );
-      } else if (path.startsWith("presentation.")) {
-        const parts = path.split(".");
+      } else if (issuePath.startsWith("lunas.")) {
+        setSection("lunas");
+      } else if (issuePath.startsWith("presentation.")) {
+        const parts = issuePath.split(".");
         setSection(
           (["animations", "profiles", "audio", "vfx"].includes(parts[1])
             ? parts[1]
             : "animations") as PresentationSection,
         );
         setCombatId(parts[2] ?? "");
-      } else if (path.startsWith("logic.")) {
-        const parts = path.split(".");
+      } else if (issuePath.startsWith("logic.")) {
+        const parts = issuePath.split(".");
         setSection(parts[1] === "variables" ? "variables" : "behaviors");
         setCombatId(parts[2] ?? "");
-      }
-      else if (path.startsWith("homeScreen.")) setSection("home");
-      else if (path.startsWith("combat.")) openCombatIssue(path);
-      else if (path.startsWith("balance.")) {
-        const match = path.match(
+      } else if (issuePath.startsWith("combat.")) openCombatIssue(issuePath);
+      else if (issuePath.startsWith("balance.")) {
+        const match = issuePath.match(
           /^balance\.(plants|enemies)(?:\[(\d+)\]|\.([^.[\]]+))/,
         );
         if (match) {
@@ -442,14 +434,14 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
           setSpeciesTab("details");
         }
       } else setSection("campaign");
-      setShowIssues(false);
+      onShowIssuesChange(false);
       requestAnimationFrame(() => {
         const root = document.querySelector(".studio-game-host");
         const label =
-          target && path.endsWith(".title")
+          target && issuePath.endsWith(".title")
             ? "Nom du niveau"
-            : path === "title"
-              ? "Titre du projet de niveaux"
+            : issuePath === "title"
+              ? "Titre du projet"
               : undefined;
         const field = label
           ? root?.querySelector<HTMLElement>('[aria-label="' + label + '"]')
@@ -459,220 +451,48 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
         field?.focus();
       });
     }
+
     return (
       <div className="gd-shell" aria-label="Éditeur de niveaux">
-        <header className="gd-toolbar">
-          <div className="gd-project-name">
-            <span className="gd-kicker">PROJET DE JEU</span>
-            <input
-              aria-label="Titre du projet de niveaux"
-              maxLength={160}
-              value={project.title}
-              disabled={busy}
-              onChange={(e) =>
-                change(
-                  (p) => {
-                    p.title = e.target.value;
-                  },
-                  "title",
-                  "Renommer le projet",
-                )
-              }
-            />
-            <small title={path}>
-              {path || "Non enregistré · un seul catalogue pour tout le jeu"}
-              {dirty ? " · Modifié" : ""}
-            </small>
-          </div>
-          <div className="gd-inline">
-            <details
-              ref={deliveryRef}
-              className="gd-delivery"
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  e.currentTarget.open = false;
-                  e.currentTarget.querySelector("summary")?.focus();
-                }
-              }}
-            >
-              <summary>Publier et exporter</summary>
-              <div
-                className="gd-delivery-menu"
-                onClick={(event) => {
-                  if (
-                    (event.target as Element).closest("button") &&
-                    deliveryRef.current
-                  )
-                    deliveryRef.current.open = false;
-                }}
-              >
-                <p>
-                  <strong>Le projet reste ton fichier de travail.</strong> Ces
-                  actions préparent sa version jouable.
-                </p>
-                {errors.length > 0 && (
-                  <button
-                    className="gd-delivery-errors"
-                    onClick={() => {
-                      if (deliveryRef.current) deliveryRef.current.open = false;
-                      setShowIssues(true);
-                    }}
-                  >
-                    {errors.length} point{errors.length > 1 ? "s" : ""} à
-                    corriger avant de continuer →
-                  </button>
-                )}
-                <button
-                  className="gd-publish"
-                  disabled={busy || errors.length > 0}
-                  onClick={() => void delivery.execute({ kind: "publish" })}
-                >
-                  Publier la campagne
-                </button>
-                <button
-                  className="gd-build"
-                  disabled={busy || errors.length > 0}
-                  title="Préparer le premier niveau jouable du parcours et choisir où le publier"
-                  onClick={() => void delivery.execute({ kind: "publishWeb" })}
-                >
-                  Publier le premier niveau sur le Web
-                </button>
-                <button
-                  className="gd-build gd-build-pc"
-                  disabled={busy || errors.length > 0}
-                  title="Synchroniser la campagne puis générer build/windows/Lunaria.exe"
-                  onClick={() => void delivery.execute({ kind: "build", target: "windows" })}
-                >
-                  Exporter pour PC
-                </button>
-                <button
-                  className="gd-build gd-build-android"
-                  disabled={busy || errors.length > 0}
-                  title="Synchroniser la campagne puis générer build/android/Lunaria.apk"
-                  onClick={() => void delivery.execute({ kind: "build", target: "android" })}
-                >
-                  Exporter pour Android
-                </button>
-                <button
-                  className="gd-build gd-deploy-android"
-                  disabled={busy || errors.length > 0}
-                  title="Compiler l’APK Android, l’installer sur le téléphone autorisé puis lancer Lunaria"
-                  onClick={() => void delivery.execute({ kind: "deployAndroid" })}
-                >
-                  Builder et Déployer sur le téléphone connecté
-                </button>
-                <small>
-                  La publication met à jour le jeu sélectionné. Un export crée
-                  ensuite son application PC ou Android.
-                </small>
-              </div>
-            </details>
-          </div>
-        </header>
-        {androidDeployment&&<AndroidDeploymentStatus state={androidDeployment} onClose={delivery.dismiss}/>}
-        <nav className="gd-sections" aria-label="Sections du mode Niveaux">
-          <button
-            className={section === "home" ? "active" : ""}
-            onClick={() => selectSection("home")}
-          >
-            Écran d’accueil
-          </button>
-          <button
-            className={section === "campaign" ? "active" : ""}
-            onClick={() => selectSection("campaign")}
-          >
-            Campagne <small>Ordre de lecture</small>
-          </button>
-          <button
-            className={section === "levels" ? "active" : ""}
-            onClick={() => selectSection("levels")}
-          >
-            Niveaux <small>{project.levels.length}</small>
-          </button>
-          <button
-            className={section === "plants" ? "active" : ""}
-            onClick={() => selectSection("plants")}
-          >
-            Plantes alliées <small>Équilibrage global</small>
-          </button>
-          <button
-            className={section === "enemies" ? "active" : ""}
-            onClick={() => selectSection("enemies")}
-          >
-            Ennemis <small>Équilibrage global</small>
-          </button>
-          <button
-            className={section === "audit" ? "active" : ""}
-            onClick={() => selectSection("audit")}
-          >
-            Audit <small>Plantes & niveaux</small>
-          </button>
-          <span>Équilibrage global · sans progression</span>
-        </nav>
-        <details
-          className="gd-tools"
-          open={toolsOpen}
-          onToggle={(e) => setToolsOpen(e.currentTarget.open)}
-        >
-          <summary>
-            Options avancées{" "}
-            <span>Modèles partagés, variables et ressources communes</span>
-          </summary>
-          <nav
-            className="lp-navigation"
+        {isAdvancedSection(section) && (
+          <div
+            className="gd-advanced-context"
+            role="navigation"
             aria-label="Outils partagés avancés"
           >
-            <div className="lp-navigation-heading">
-              <span aria-hidden="true">✦</span>
-              <div>
-                <b>Modèles et ressources partagés</b>
-                <small>
-                  Les capacités, comportements, animations et sons se règlent depuis la fiche de chaque personnage.
-                </small>
-              </div>
-            </div>
-            <div className="lp-navigation-actions">
-              {(
-                [
-                  ["abilities", "✧", "Modèles de capacités", "Capacités réutilisables"],
-                  ["behaviors", "◇", "Modèles de comportements", "Comportements réutilisables"],
-                  ["variables", "⚑", "Variables", "État scénarisé"],
-                  [
-                    "animations",
-                    "▶",
-                    "Animations communes",
-                    "Pour tous les personnages",
-                  ],
-                  ["profiles", "♟", "Profils avancés", "Liaisons et sons"],
-                  ["audio", "♪", "Sons", "Ambiances et attaques"],
-                  ["vfx", "✦", "Effets visuels", "Impacts et particules"],
-                ] as const
-              ).map(([key, icon, label, hint]) => (
+            <span className="gd-advanced-context-label">Options avancées</span>
+            <div className="gd-advanced-context-tabs">
+              {ADVANCED_SECTIONS.map((item) => (
                 <button
-                  key={key}
-                  className={section === key ? "active" : ""}
-                  onClick={() => {
-                    selectSection(key);
-                    setCombatId("");
-                  }}
+                  key={item.id}
+                  type="button"
+                  className={section === item.id ? "active" : ""}
+                  onClick={() => selectSection(item.id)}
                 >
-                  <span aria-hidden="true">{icon}</span>
-                  <span>
-                    <b>{label}</b>
-                    <small>{hint}</small>
-                  </span>
+                  <span aria-hidden="true">{item.icon} </span>
+                  {item.label}
                 </button>
               ))}
             </div>
-          </nav>
-        </details>
+            <span className="gd-advanced-context-hint">
+              Réglages courants sur la fiche de chaque personnage
+            </span>
+          </div>
+        )}
         <fieldset className="gd-body" disabled={busy}>
-          {section === "home" ? (
-            <HomeScreenEditor
+          {section === "lunas" ? (
+            <LunaEconomyEditor
               project={project}
-              assets={assets}
               change={(edit, key, label) => change(edit, key, label, true)}
+              openLevelLunas={(id) => {
+                setQuery("");
+                setContinent(-1);
+                setLevelScope("all");
+                setLevelId(id);
+                setDetail("lunas");
+                setCompareRewards(false);
+                setSection("levels");
+              }}
             />
           ) : section === "animations" ||
             section === "profiles" ||
@@ -724,6 +544,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
               onSelectStep={setCampaignStepId}
               backup={onBackupCampaign}
               busy={busy}
+              path={path}
               project={project}
               change={(edit, key, label) => change(edit, key, label, true)}
               run={run}
@@ -817,438 +638,52 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
               }
             />
           ) : (
-            <>
-              <aside className="gd-level-list">
-                <div className="gd-list-controls">
-                  <button aria-pressed={compareRewards} onClick={() => setCompareRewards(!compareRewards)}>
-                    {compareRewards ? "← Fiches des niveaux" : "Comparer les graines"}
-                  </button>
-                  <p className="level-library-note">
-                    Niveaux dans l’ordre du parcours, puis hors parcours. Les
-                    cinématiques se placent dans Campagne.
-                  </p>
-                  <label className="gd-field">
-                    <span>Afficher</span>
-                    <select
-                      aria-label="Filtrer par place dans la campagne"
-                      value={levelScope}
-                      onChange={(e) => setLevelScope(e.target.value)}
-                    >
-                      <option value="all">Tous les niveaux</option>
-                      <option value="placed">Dans le parcours</option>
-                      <option value="outside">Hors parcours</option>
-                    </select>
-                  </label>
-                  <input
-                    aria-label="Rechercher un niveau"
-                    placeholder="Rechercher un niveau…"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                  <select
-                    aria-label="Filtrer les niveaux par continent"
-                    value={continent}
-                    onChange={(e) => setContinent(Number(e.target.value))}
-                  >
-                    <option value={-1}>Tous les continents</option>
-                    {CONTINENTS.map((c, i) => (
-                      <option key={c} value={i}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    className="gd-primary"
-                    disabled={
-                      project.levels.length >= 200 ||
-                      !activeEnemies(project.balance.enemies).length
-                    }
-                    onClick={() => addLevel()}
-                  >
-                    + Créer un niveau
-                  </button>
-                </div>
-                <div className="gd-level-items">
-                  {visible.map((l) => (
-                    <button
-                      key={l.id}
-                      className={level?.id === l.id ? "selected" : ""}
-                      onClick={() => { setLevelId(l.id); setCompareRewards(false); }}
-                    >
-                      <span className="gd-level-index">
-                        {levelPosition(project, l.id).number
-                          ? String(
-                              levelPosition(project, l.id).number,
-                            ).padStart(2, "0")
-                          : "–"}
-                      </span>
-                      <span>
-                        <b>{l.title}</b>
-                        <small className="level-path-badge">
-                          {levelPosition(project, l.id).index < 0
-                            ? "Hors parcours"
-                            : "Étape " +
-                              (levelPosition(project, l.id).index + 1) +
-                              " du parcours"}
-                        </small>
-                        <small>
-                          {CONTINENTS[l.act]} · {l.waves.length} vague
-                          {l.waves.length > 1 ? "s" : ""} · {totalEnemies(l)}{" "}
-                          ennemis
-                        </small>
-                      </span>
-                    </button>
-                  ))}
-                  {!visible.length && (
-                    <div className="gd-empty-search">
-                      <p>
-                        {project.levels.length
-                          ? "Aucun niveau ne correspond à ces filtres."
-                          : "Tes niveaux apparaîtront ici."}
-                      </p>
-                      {!!project.levels.length && (
-                        <button
-                          onClick={() => {
-                            setQuery("");
-                            setContinent(-1);
-                          }}
-                        >
-                          Effacer les filtres
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </aside>
-              {compareRewards ? (
-                <LevelRewardsOverview project={project} openLevel={(id, tab) => {
-                  setQuery(""); setContinent(-1); setLevelScope("all");
-                  setLevelId(id); setDetail(tab); setCompareRewards(false);
-                }} />
-              ) : level ? (
-                <main className="gd-level-main gd-scroll" key={level.id}>
-                  <div className="gd-section-heading">
-                    <div>
-                      <div className="gd-kicker">
-                        FICHE DU NIVEAU · {CONTINENTS[level.act]}
-                      </div>
-                      <h1>{level.title}</h1>
-                      <p>
-                        {level.location || "Lieu à définir"} ·{" "}
-                        <strong>{totalEnemies(level)} ennemis</strong> ·{" "}
-                        {level.allowedPlants.length} plantes autorisées
-                      </p>
-                    </div>
-                    <div className="gd-inline">
-                      <button
-                        className="gd-play-level"
-                        disabled={errors.length > 0}
-                        title="Ouvrir ce niveau dans une copie temporaire du jeu avec une progression de test séparée"
-                        onClick={playLevel}
-                      >
-                        ▶ Jouer ce niveau
-                      </button>
-                      <button
-                        disabled={project.levels.length >= 200}
-                        onClick={() => setDuplicateOpen(true)}
-                      >
-                        Dupliquer
-                      </button>
-                      <button onClick={() => void remove()}>Supprimer</button>
-                    </div>
-                  </div>
-                  <LevelCampaignPosition
-                    project={project}
-                    level={level}
-                    onPlace={(placement) =>
-                      levelChange(
-                        (p) => placeLevel(p, level.id, placement),
-                        "Placer le niveau dans la campagne",
-                      )
-                    }
-                    onView={(stepId) => {
-                      setCampaignStepId(stepId);
-                      setSection("campaign");
-                    }}
-                  />
-                  {duplicateOpen && (
-                    <DuplicateLevelDialog
-                      project={project}
-                      level={level}
-                      onClose={() => setDuplicateOpen(false)}
-                      onDuplicate={duplicate}
-                    />
-                  )}
-                  <nav
-                    className="gd-detail-tabs"
-                    aria-label="Édition du niveau"
-                  >
-                    {(
-                      [
-                        ["settings", "Paramètres"],
-                        ["waves", "Vagues & ennemis"],
-                        ["plants", "Plantes disponibles"],
-                        ["events", "Événements"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <button
-                        key={key}
-                        className={detail === key ? "active" : ""}
-                        onClick={() => setDetail(key)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </nav>
-                  {detail === "settings" && (
-                    <>
-                      <div className="gd-form-grid">
-                        <label className="gd-field">
-                          <span>Nom du niveau</span>
-                          <input
-                            aria-label="Nom du niveau"
-                            maxLength={160}
-                            value={level.title}
-                            onChange={(e) =>
-                              updateLevel({ title: e.target.value }, "title")
-                            }
-                          />
-                        </label>
-                        <label className="gd-field">
-                          <span>Continent</span>
-                          <select
-                            aria-label="Continent du niveau"
-                            value={level.act}
-                            onChange={(e) =>
-                              updateLevel({ act: Number(e.target.value) })
-                            }
-                          >
-                            {CONTINENTS.map((c, i) => (
-                              <option key={c} value={i}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="gd-field">
-                          <span>Lieu</span>
-                          <input
-                            aria-label="Lieu du niveau"
-                            maxLength={200}
-                            value={level.location}
-                            onChange={(e) =>
-                              updateLevel(
-                                { location: e.target.value },
-                                "location",
-                              )
-                            }
-                          />
-                        </label>
-                        <Num
-                          label="Graines initiales"
-                          value={level.startingEnergy}
-                          max={100000}
-                          integer
-                          change={(v) => updateLevel({ startingEnergy: v })}
-                        />
-                      </div>
-                      <section
-                        className="gd-terrain-image"
-                        aria-label="Terrain du niveau"
-                      >
-                        <h2>Image du terrain</h2>
-                        <p>
-                          Cette image remplit le fond du combat pour ce niveau.
-                          Choisis de préférence une image au format 16:9 ; la
-                          grille et les personnages restent affichés par-dessus.
-                        </p>
-                        <ImagePicker
-                          label="Image du terrain"
-                          value={level.terrainImage ? [level.terrainImage] : []}
-                          assets={assets}
-                          category="environment"
-                          change={(refs) =>
-                            updateLevel({
-                              terrainImage: refs[0] as
-                                | `library://${string}`
-                                | undefined,
-                            })
-                          }
-                          buttonLabel="Choisir ou importer une image"
-                        />
-                        <button
-                          type="button"
-                          className="gd-primary terrain-generate-trigger"
-                          disabled={
-                            !window.lunaria ||
-                            typeof api.startTerrainGeneration !== "function"
-                          }
-                          title="Créer les états pollué et nettoyé du terrain à partir du décor de la cinématique précédente ou d’une image de ton choix"
-                          onClick={() =>
-                            setTerrainTarget({
-                              levelId: level.id,
-                              projectId: project.id,
-                              token: session.getSnapshot().token,
-                              terrainRef: level.terrainImage,
-                              restoredTerrainRef: level.restoredTerrainImage,
-                            })
-                          }
-                        >
-                          Générer les terrains pollué et nettoyé (IA)
-                        </button>
-                        {level.terrainImage && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateLevel({ terrainImage: undefined })
-                            }
-                          >
-                            Retirer l’image du terrain
-                          </button>
-                        )}
-                        <ImagePicker
-                          label="Décor restauré"
-                          value={level.restoredTerrainImage ? [level.restoredTerrainImage] : []}
-                          assets={assets}
-                          category="environment"
-                          change={(refs) => updateLevel({ restoredTerrainImage: refs[0] as `library://${string}` | undefined })}
-                          buttonLabel="Choisir ou importer le décor restauré"
-                        />
-                        <p>
-                          Le décor initial est remplacé progressivement par cette image au fil du combat.
-                          Utilise le même cadrage pour conserver les bâtiments et le terrain en place.
-                        </p>
-                        {level.restoredTerrainImage && (
-                          <button type="button" onClick={() => updateLevel({ restoredTerrainImage: undefined })}>
-                            Retirer le décor restauré
-                          </button>
-                        )}
-                      </section>
-                      <LevelObjectiveEditor
-                        project={project}
-                        level={level}
-                        assets={assets}
-                        updateLevel={updateLevel}
-                      />
-                      <label className="gd-field">
-                        <span>Conseil</span>
-                        <textarea
-                          rows={2}
-                          maxLength={1000}
-                          value={level.tip}
-                          onChange={(e) =>
-                            updateLevel({ tip: e.target.value }, "tip")
-                          }
-                        />
-                      </label>
-                      {!isConquest(level.objective.type) && (
-                        <p className="gd-callout">
-                          Le plateau comporte 5 allées × 8 cases. Les dégâts
-                          contre la cible utilisent son armure et ses
-                          résistances configurées ici.
-                        </p>
-                      )}
-                    </>
-                  )}
-                  {detail === "waves" && active && (
-                    <WaveEditor
-                      key={level.id}
-                      level={level}
-                      enemies={project.balance.enemies}
-                      assets={assets}
-                      update={updateLevel}
-                    />
-                  )}
-                  {detail === "plants" && (
-                    <>
-                      <div className="gd-section-heading">
-                        <div>
-                          <h2>Choisis les espèces utilisables</h2>
-                          <p>
-                            Toutes les espèces autorisées ici sont disponibles
-                            dès le début du niveau. Le joueur ne compose pas
-                            d’équipe ; l’histoire détermine les compagnons
-                            présents. Plusieurs exemplaires d’une même espèce
-                            peuvent être plantés.
-                          </p>
-                        </div>
-                        <div className="gd-inline">
-                          <button
-                            onClick={() =>
-                              updateLevel({
-                                allowedPlants: project.balance.plants.map(
-                                  (p) => p.id,
-                                ),
-                              })
-                            }
-                          >
-                            Toutes
-                          </button>
-                        </div>
-                      </div>
-                      <div className="gd-plant-picker">
-                        {project.balance.plants.map((p) => (
-                          <label
-                            key={p.id}
-                            className={
-                              level.allowedPlants.includes(p.id)
-                                ? "selected"
-                                : ""
-                            }
-                          >
-                            <input
-                              type="checkbox"
-                              aria-label={`Autoriser ${p.name}`}
-                              checked={level.allowedPlants.includes(p.id)}
-                              onChange={(e) =>
-                                updateLevel({
-                                  allowedPlants: e.target.checked
-                                    ? [...level.allowedPlants, p.id]
-                                    : level.allowedPlants.filter(
-                                        (x) => x !== p.id,
-                                      ),
-                                })
-                              }
-                            />
-                            <span>
-                              <b>{p.name}</b>
-                              <small>{p.role}</small>
-                              <small>
-                                {p.cost} graines · {p.max_hp} PV · {p.damage}{" "}
-                                dégâts
-                              </small>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                      <p className="gd-note">
-                        Les valeurs sont en lecture seule ici. Pour les modifier
-                        partout, ouvre « Plantes alliées — Équilibrage global ».
-                      </p>
-                    </>
-                  )}
-                  {detail === "events" && (
-                    <>
-                      <EventEditor
-                        project={project}
-                        level={level}
-                        update={(events) => updateLevel({ events })}
-                        linkFilm={(documentId) => change(p => { linkCinematic(p, documentId); }, "", "Lier une cinématique du projet", true)}
-                      />
-
-                    </>
-                  )}
-                </main>
-              ) : (
-                <main className="gd-level-main gd-scroll">
-                  <h1>Aucun niveau</h1>
-                  <p>Crée une première mission quand tu seras prêt.</p>
-                  <button className="gd-primary" onClick={() => addLevel()}>
-                    + Créer un niveau
-                  </button>
-                </main>
-              )}
-            </>
+            <LevelsWorkspace
+              project={project}
+              level={level}
+              assets={assets}
+              active={active}
+              hasErrors={errors.length > 0}
+              levelScope={levelScope}
+              setLevelScope={setLevelScope}
+              query={query}
+              setQuery={setQuery}
+              continent={continent}
+              setContinent={setContinent}
+              compareRewards={compareRewards}
+              setCompareRewards={setCompareRewards}
+              detail={detail}
+              setDetail={setDetail}
+              duplicateOpen={duplicateOpen}
+              setDuplicateOpen={setDuplicateOpen}
+              selectLevelId={setLevelId}
+              addLevel={addLevel}
+              duplicateLevel={duplicate}
+              removeLevel={remove}
+              playLevel={playLevel}
+              updateLevel={updateLevel}
+              levelChange={levelChange}
+              change={change}
+              onViewCampaignStep={(stepId) => {
+                setCampaignStepId(stepId);
+                setSection("campaign");
+              }}
+              onOpenFilm={(film) => void run(() => onOpenFilm(film))}
+              onOpenLunaEconomy={() => setSection("lunas")}
+              onOpenTerrainGenerator={({
+                levelId: targetLevelId,
+                terrainRef,
+                restoredTerrainRef,
+              }) =>
+                setTerrainTarget({
+                  levelId: targetLevelId,
+                  projectId: project.id,
+                  token: session.getSnapshot().token,
+                  terrainRef,
+                  restoredTerrainRef,
+                })
+              }
+            />
           )}
         </fieldset>
         {message && (
@@ -1263,21 +698,16 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
           </div>
         )}
         <footer className="gd-footer">
-          <span>
+          <span title={path || project.title}>
             {busy
               ? "Opération en cours…"
-              : dirty
-                ? "Modifications non enregistrées" +
-                  (recoveryStatus === "Brouillon local à jour"
-                    ? " · récupération locale à jour"
-                    : "")
-                : path
-                  ? "Projet enregistré"
-                  : "Projet non enregistré"}
+              : path
+                ? path.split(/[\\/]/).pop()
+                : "Projet sans fichier"}
           </span>
           <button
             className={errors.length ? "gd-error" : ""}
-            onClick={() => setShowIssues(!showIssues)}
+            onClick={() => onShowIssuesChange(!showIssues)}
           >
             {issues.length
               ? `${errors.length} erreur(s) · ${issues.length - errors.length} avertissement(s)`
@@ -1313,7 +743,9 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
                   p.levels.find(
                     (item) => item.id === terrainTarget.levelId,
                   )!.terrainImage = ref;
-                  p.levels.find((item) => item.id === terrainTarget.levelId)!.restoredTerrainImage = restoredRef;
+                  p.levels.find(
+                    (item) => item.id === terrainTarget.levelId,
+                  )!.restoredTerrainImage = restoredRef;
                 },
                 "",
                 "Utiliser les deux terrains générés",
@@ -1327,7 +759,7 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
         {showIssues && (
           <StudioDialog
             title="Vérifier le projet"
-            onClose={() => setShowIssues(false)}
+            onClose={() => onShowIssuesChange(false)}
           >
             <div className="gd-issues-list">
               <p>
@@ -1335,16 +767,25 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
                 avertissements ne bloquent pas la publication.
               </p>
               {issues.length ? (
-                issues.map((i, n) => (
-                  <button key={n} onClick={() => openIssue(i)}>
-                    <b>
-                      {i.severity === "error" ? "À corriger" : "À vérifier"}
-                    </b>{" "}
-                    {i.message}
-                    <small>{issueLocation(i)}</small>
-                    <span aria-hidden="true"> Ouvrir →</span>
-                  </button>
-                ))
+                issues.map((issue, index) => {
+                  const path = issue.path.replace(/^projet\./, "");
+                  const details = (
+                    <>
+                      <b>{issue.severity === "error" ? "À corriger" : "À vérifier"}</b>{" "}
+                      {issue.message}
+                      <small>{issueLocation(issue)}</small>
+                    </>
+                  );
+                  if (path === "homeScreen" || path.startsWith("homeScreen.")) {
+                    return <div className="gd-issue-details" key={index}>{details}</div>;
+                  }
+                  return (
+                    <button key={index} onClick={() => openIssue(issue)}>
+                      {details}
+                      <span aria-hidden="true"> Ouvrir →</span>
+                    </button>
+                  );
+                })
               ) : (
                 <p>
                   Aucune erreur détectée. Ce contrôle n’évalue pas la difficulté

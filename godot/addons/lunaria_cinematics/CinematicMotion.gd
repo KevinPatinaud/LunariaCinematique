@@ -24,6 +24,41 @@ static func entry_end(actor: Dictionary) -> float:
 	var entry: Dictionary = actor["entry"]
 	return 0.0 if entry["preset"] == "none" else float(entry["delay"]) + float(entry["duration"])
 
+static func _half_arc_integral(u: float, ratio: float) -> float:
+	var slope: float = ratio * u
+	var hyp: float = sqrt(1.0 + slope * slope)
+	return (u * hyp + asinh(slope) / ratio) * 0.5
+
+## Same arc-length parametrization and stage units as sampleMovementPath in the Studio.
+static func sample_movement_path(movement: Dictionary, progress: float) -> Dictionary:
+	var dx: float = float(movement.get("dx", 0.0)) * LOGICAL.x
+	var dy: float = float(movement.get("dy", 0.0)) * LOGICAL.y
+	var chord: float = sqrt(dx * dx + dy * dy)
+	var fraction: float = clampf(progress, 0.0, 1.0)
+	var bend: float = float(movement.get("bend", 0.0)) * LOGICAL.y
+	var width: float = 4.0 * absf(bend)
+	if chord < 0.001 or width < 0.000001:
+		return {"offset": Vector2(dx * fraction, dy * fraction), "length": chord, "tangent_x": dx}
+	var bow_x: float = -dy / chord * bend
+	var bow_y: float = dx / chord * bend
+	var ratio: float = width / chord
+	var half: float = _half_arc_integral(1.0, ratio)
+	var t: float = fraction
+	if fraction > 0.0 and fraction < 1.0 and fraction != 0.5:
+		var distance: float = absf(2.0 * fraction - 1.0) * half
+		var low: float = 0.0
+		var high: float = 1.0
+		for step: int in range(24):
+			var mid: float = (low + high) * 0.5
+			if _half_arc_integral(mid, ratio) < distance:
+				low = mid
+			else:
+				high = mid
+		t = 0.5 + signf(fraction - 0.5) * (low + high) * 0.25
+	var weight: float = 4.0 * t * (1.0 - t)
+	return {"offset": Vector2(dx * t + bow_x * weight, dy * t + bow_y * weight),
+		"length": chord * half, "tangent_x": dx + 4.0 * bow_x * (1.0 - 2.0 * t)}
+
 static func travel_offset(actor: Dictionary, elapsed: float) -> Vector2:
 	var movement: Dictionary = actor.get("movement", {})
 	if not bool(movement.get("enabled", false)):
@@ -34,7 +69,7 @@ static func travel_offset(actor: Dictionary, elapsed: float) -> Vector2:
 	var cycles: float = time / maxf(0.1, float(movement["duration"]))
 	var linear: float = 1.0 - absf(fmod(cycles, 2.0) - 1.0) if movement["repeat"] == "pingpong" else clampf(cycles, 0.0, 1.0)
 	var t: float = linear if movement["easing"] == "linear" else _smooth(linear)
-	return Vector2(float(movement["dx"]), float(movement["dy"])) * LOGICAL * t
+	return sample_movement_path(movement, t).offset
 
 static func pose(actor: Dictionary, elapsed: float, animated: bool = true) -> Dictionary:
 	var time: float = maxf(0.0, elapsed) if is_finite(elapsed) else 0.0

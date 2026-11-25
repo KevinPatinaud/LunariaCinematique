@@ -101998,5 +101998,782 @@
       "anchorX": 936.2383331990861,
       "anchorY": 404.0204404014483
     }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 0.5,
+    "expected": {
+      "x": 288,
+      "y": 324
+    },
+    "expectedTiming": {
+      "traveled_px": 0,
+      "direction_x": 0
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 0.8,
+    "expected": {
+      "x": 339.0325610637665,
+      "y": 275.91650423069524
+    },
+    "expectedTiming": {
+      "traveled_px": 70.17903820267435,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 1.5,
+    "expected": {
+      "x": 488,
+      "y": 216
+    },
+    "expectedTiming": {
+      "traveled_px": 233.93012734224777,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 2.31,
+    "expected": {
+      "x": 656.5016334056854,
+      "y": 292.6605612430368
+    },
+    "expectedTiming": {
+      "traveled_px": 423.4135304894685,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 2.5,
+    "expected": {
+      "x": 688,
+      "y": 324
+    },
+    "expectedTiming": {
+      "traveled_px": 467.86025468449554,
+      "direction_x": -1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 2.69,
+    "expected": {
+      "x": 656.5016334056854,
+      "y": 292.6605612430368
+    },
+    "expectedTiming": {
+      "traveled_px": 512.3069788795226,
+      "direction_x": -1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0.25,
+        "dy": 0,
+        "bend": -0.12,
+        "easing": "linear",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 4.5,
+    "expected": {
+      "x": 288,
+      "y": 324
+    },
+    "expectedTiming": {
+      "traveled_px": 935.7205093689911,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 0.5,
+    "expected": {
+      "x": 288,
+      "y": 324
+    },
+    "expectedTiming": {
+      "traveled_px": 0,
+      "direction_x": 0
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 0.8,
+    "expected": {
+      "x": 257.26478359823295,
+      "y": 333.9731384217739
+    },
+    "expectedTiming": {
+      "traveled_px": 32.31348508773725,
+      "direction_x": -1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 1.5,
+    "expected": {
+      "x": 72,
+      "y": 459
+    },
+    "expectedTiming": {
+      "traveled_px": 265.95460977561515,
+      "direction_x": 0
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 2.31,
+    "expected": {
+      "x": 275.1423956408357,
+      "y": 589.9203560650349
+    },
+    "expectedTiming": {
+      "traveled_px": 518.4198687661062,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 2.5,
+    "expected": {
+      "x": 288,
+      "y": 594
+    },
+    "expectedTiming": {
+      "traveled_px": 531.9092195512303,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 2.69,
+    "expected": {
+      "x": 288,
+      "y": 594
+    },
+    "expectedTiming": {
+      "traveled_px": 531.9092195512303,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": 0,
+        "dy": 0.3,
+        "bend": 0.24,
+        "easing": "smooth",
+        "repeat": "once"
+      }
+    },
+    "elapsed": 4.5,
+    "expected": {
+      "x": 288,
+      "y": 594
+    },
+    "expectedTiming": {
+      "traveled_px": 531.9092195512303,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 0.5,
+    "expected": {
+      "x": 288,
+      "y": 324
+    },
+    "expectedTiming": {
+      "traveled_px": 0,
+      "direction_x": 0
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 0.8,
+    "expected": {
+      "x": 301.8777261761083,
+      "y": 287.4554919882279
+    },
+    "expectedTiming": {
+      "traveled_px": 39.09147526416473,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 1.5,
+    "expected": {
+      "x": 330,
+      "y": 18
+    },
+    "expectedTiming": {
+      "traveled_px": 321.7405371536191,
+      "direction_x": -1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 2.31,
+    "expected": {
+      "x": 60.96651316710546,
+      "y": 134.0917789601189
+    },
+    "expectedTiming": {
+      "traveled_px": 627.1622333925379,
+      "direction_x": -1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 2.5,
+    "expected": {
+      "x": 48,
+      "y": 144
+    },
+    "expectedTiming": {
+      "traveled_px": 643.4810743072381,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 2.69,
+    "expected": {
+      "x": 60.96651316710546,
+      "y": 134.0917789601189
+    },
+    "expectedTiming": {
+      "traveled_px": 659.7999152219384,
+      "direction_x": 1
+    }
+  },
+  {
+    "actor": {
+      "id": "curved-actor",
+      "name": "Test",
+      "asset": "library://07_props/panneau.png",
+      "x": 0.18,
+      "y": 0.36,
+      "width": 0.1935,
+      "height": 0.43,
+      "flipX": false,
+      "opacity": 1,
+      "entry": {
+        "preset": "none",
+        "duration": 0.8,
+        "delay": 0
+      },
+      "movement": {
+        "enabled": true,
+        "duration": 2,
+        "delay": 0.5,
+        "dx": -0.15,
+        "dy": -0.2,
+        "bend": 0.3,
+        "easing": "smooth",
+        "repeat": "pingpong"
+      }
+    },
+    "elapsed": 4.5,
+    "expected": {
+      "x": 288,
+      "y": 324
+    },
+    "expectedTiming": {
+      "traveled_px": 1286.9621486144763,
+      "direction_x": 1
+    }
   }
 ]

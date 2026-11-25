@@ -22,7 +22,7 @@ test.beforeEach(async()=>{
   dialog.showSaveDialog=async()=>({canceled:false,filePath:file});
   dialog.showOpenDialog=async(...args:any[])=>{const options=args.at(-1);return{canceled:false,filePaths:[options.properties?.includes('openDirectory')?(options.title?.includes('project.godot')?game:movies):options.title?.includes('Importer une cinématique')?movieFile:file]};};
  },{file,game,movies,movieFile:path.join(movies,'intro.json')});
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();await expect(page.locator('.gd-step-card')).toHaveCount(3);
  await page.locator('.gd-step-card').filter({hasText:'Introduction de test'}).click();
  if(await page.getByRole('button',{name:'Fermer le message des niveaux'}).isVisible())await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
@@ -44,12 +44,37 @@ test('explicit insertion rail places a cinematic between two levels',async()=>{
 });
 test('project film opens in cinematic mode without replacing the level document',async()=>{
  await page.getByRole('button',{name:'Ouvrir dans l’éditeur de cinématiques'}).click();await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Introduction de test');
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();await expect(page.locator('.gd-step-card')).toHaveCount(3);
+ const continuity=page.getByLabel('Continuité dans la campagne');
+ await expect(continuity).toContainText('Étape 1 du parcours');
+ await continuity.getByRole('button',{name:/^Niveau :/}).click();
+ const placement=page.getByRole('region',{name:'Place du niveau dans la campagne'});
+ await expect(placement).toContainText('Niveau 1 · étape 2');
+ await placement.getByRole('button',{name:'← Cinématique « Introduction de test »'}).click();
+ await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Introduction de test');
+ await continuity.getByRole('button',{name:'Étape 1 du parcours'}).click();
+ await expect(page.locator('.gd-step-card')).toHaveCount(3);
 });
 test('native grouped publisher installs film before committing the sequence',async()=>{
  await page.locator('.gd-delivery > summary').click();await page.getByRole('button',{name:'Publier la campagne',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Publié');
  const published=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));expect(published.campaign.steps).toHaveLength(3);
  expect(published.campaign.cinematics[0].file).toMatch(/^content\/cinematics\/studio\//);const d=JSON.parse(await fs.readFile(path.join(game,published.campaign.cinematics[0].file),'utf8'));expect(d.id).toBe('CIN_TEST_CAMPAIGN');
+});
+
+test('publication rejects an incompatible target schema before opening confirmation',async()=>{
+ const design=path.join(game,'content/design');
+ const content=path.join(design,'game_content.json');
+ const before=await fs.readFile(content,'utf8');
+ const oldSchema={type:'object',properties:{schemaVersion:{type:'number',maximum:3}}};
+ await fs.writeFile(path.join(design,'game-project.schema.json'),JSON.stringify(oldSchema));
+ await app.evaluate(({dialog})=>{
+  dialog.showMessageBox=async()=>{throw Error('Unexpected publication confirmation');};
+ });
+
+ await page.locator('.gd-delivery > summary').click();
+ await page.getByRole('button',{name:'Publier la campagne',exact:true}).click();
+ await expect(page.locator('.gd-message')).toContainText('Le jeu cible utilise un contrat obsolète');
+ expect(await fs.readFile(content,'utf8')).toBe(before);
+ await expect(fs.stat(path.join(game,'LunariaArtLibrary'))).rejects.toMatchObject({code:'ENOENT'});
 });
 
 test('The campaign endpoint can be moved, undone and saved, and it limits publication',async()=>{
@@ -125,7 +150,57 @@ test('un niveau après la fin actuelle reste testable dans une copie isolée',as
  expect(snapshots).toHaveLength(1);
  const preview=JSON.parse(await fs.readFile(path.join(profile,'level-previews',snapshots[0],'content/design/game_content.json'),'utf8'));
  expect(preview.levels).toHaveLength(2);expect(preview.campaign.steps.at(-1).kind).toBe('end');
- await page.locator('.gd-sections').getByRole('button',{name:/^Campagne/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await expect(page.locator('.gd-step-item.end')).toHaveCount(1);
  await expect(page.locator('.gd-step-item.preparing')).toHaveCount(1);
+});
+
+test('The herbarium and travel book unlock milestones can be inserted, moved, dragged, undone, saved, published and removed',async()=>{
+ test.setTimeout(60000);
+ await page.getByRole('button',{name:'Insérer entre les étapes 2 et 3',exact:true}).click();
+ await page.getByRole('button',{name:'Insérer le déblocage de L’herbier ici',exact:true}).click();
+ const herbarium=page.locator('.gd-step-item.unlock_herbarium');
+ await expect(herbarium).toHaveCount(1);
+ await expect(page.locator('.gd-campaign-unlock.herbarium')).toContainText('Déblocage de L’herbier à l’étape 3');
+ await page.getByRole('button',{name:'Insérer après la dernière étape',exact:true}).click();
+ await page.getByRole('button',{name:'Insérer le déblocage du Carnet ici',exact:true}).click();
+ const unlock=page.locator('.gd-step-item.unlock_travel_book');
+ await expect(unlock).toHaveCount(1);
+ await expect(page.locator('.gd-step-card')).toHaveCount(5);
+ await expect(page.locator('.gd-campaign-unlock:not(.herbarium)')).toContainText('Déblocage du Carnet de voyage à l’étape 5');
+ await page.keyboard.press('Control+z');await expect(unlock).toHaveCount(0);
+ await page.keyboard.press('Control+y');await expect(unlock).toHaveCount(1);
+ await herbarium.locator('button').click();
+ await expect(page.locator('.gd-campaign-inspector')).toContainText('Le bouton « L’herbier » reste masqué');
+ await page.getByRole('button',{name:'Monter l’étape',exact:true}).click();
+ await expect(page.locator('.gd-campaign-unlock.herbarium')).toContainText('Déblocage de L’herbier à l’étape 2');
+ // Inserting again relocates the single herbarium milestone instead of creating a duplicate.
+ await page.getByRole('button',{name:'Insérer entre les étapes 3 et 4',exact:true}).click();
+ await page.getByRole('button',{name:'Déplacer le déblocage de L’herbier ici',exact:true}).click();
+ await expect(herbarium).toHaveCount(1);
+ await expect(page.locator('.gd-campaign-unlock.herbarium')).toContainText('Déblocage de L’herbier à l’étape 3');
+ // Drag and drop works on both milestone cards.
+ await unlock.locator('.gd-step-grip').dragTo(page.getByRole('button',{name:'Insérer entre les étapes 3 et 4',exact:true}));
+ await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
+ await expect(page.locator('.gd-message')).toContainText('enregistrés');
+ const saved=JSON.parse(await fs.readFile(file,'utf8'));
+ expect(saved.campaign.steps.map((s:any)=>s.kind)).toEqual(['cinematic','level','unlock_herbarium','unlock_travel_book','level']);
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();
+ await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
+ await expect(page.locator('.gd-delivery > summary')).not.toHaveAttribute('aria-disabled','true');
+ await expect(herbarium).toHaveCount(1);
+ await expect(unlock).toHaveCount(1);
+ await page.locator('.gd-delivery > summary').click();
+ await page.getByRole('button',{name:'Publier la campagne',exact:true}).click();
+ await expect(page.locator('.gd-message')).toContainText('Publié');
+ const published=JSON.parse(await fs.readFile(path.join(game,'content/design/game_content.json'),'utf8'));
+ expect(published.levels).toHaveLength(2);
+ expect(published.campaign.steps.map((s:any)=>s.kind)).toEqual(['cinematic','level','unlock_herbarium','unlock_travel_book','level']);
+ await herbarium.locator('button').click();
+ await page.getByRole('button',{name:'Retirer du parcours',exact:true}).click();
+ await expect(herbarium).toHaveCount(0);
+ await unlock.locator('button').click();
+ await page.getByRole('button',{name:'Retirer du parcours',exact:true}).click();
+ await expect(unlock).toHaveCount(0);
+ await expect(page.locator('.gd-campaign-unlock')).toHaveCount(0);
 });

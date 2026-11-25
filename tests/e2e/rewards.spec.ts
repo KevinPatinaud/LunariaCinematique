@@ -29,10 +29,10 @@ test.afterEach(async()=>{
 });
 
 test('Seed rewards are configured in levels without a separate rewards page or combo bonuses',async()=>{
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Créer un premier niveau'}).click();
- await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
- await expect(page.locator('.gd-sections').getByRole('button',{name:'Récompenses',exact:true})).toHaveCount(0);
+ await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
+ await expect(page.locator('.studio-sections').getByRole('button',{name:'Récompenses',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Comparer les graines',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Graines des niveaux'})).toBeVisible();
  await expect(page.getByLabel('Activer le bonus de combo')).toHaveCount(0);
@@ -55,10 +55,9 @@ test('Seed rewards are configured in levels without a separate rewards page or c
 });
 
 test('Character sheets group character tools and keep templates under advanced controls',async()=>{
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
- const main=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
+ const main=page.getByRole('navigation',{name:'Navigation du Studio'});
  await expect(main.getByRole('button',{name:/Modèles|Bibliothèque|Comportements|Récompenses/})).toHaveCount(0);
- await main.getByRole('button',{name:/^Plantes alliées/}).click();
+ await main.getByRole('button',{name:/^Plantes/}).click();
  const sheet=page.getByRole('navigation',{name:'Fiche de Radis'});
  for(const tab of ['Capacités','Comportement','Animations et sons de Radis','Caractéristiques']){
   await sheet.getByRole('button',{name:tab,exact:true}).click();
@@ -73,11 +72,11 @@ test('Character sheets group character tools and keep templates under advanced c
  await page.setViewportSize({width:1280,height:900});
  await fs.mkdir(path.join(ROOT,'work/simplification-v2'),{recursive:true});
  await page.screenshot({path:path.join(ROOT,'work/simplification-v2/personnage.png')});
- await expect(page.locator('.gd-tools')).not.toHaveAttribute('open','');
- await page.locator('.gd-tools > summary').click();
+ await expect(page.locator('.studio-more-trigger')).toHaveAttribute('aria-expanded','false');
+ await page.locator('.studio-more-trigger').click();
  for(const name of ['Modèles de capacités','Modèles de comportements','Profils avancés'])await expect(page.getByRole('button',{name:new RegExp('^'+name)})).toBeVisible();
  await page.getByRole('button',{name:/^Modèles de capacités/}).click();
- await expect(page.locator('.gd-tools')).toHaveAttribute('open','');
+ await expect(page.locator('.gd-advanced-context')).toBeVisible();
  await page.setViewportSize({width:980,height:820});
  await page.screenshot({path:path.join(ROOT,'work/simplification-v2/options-avancees.png')});
 });

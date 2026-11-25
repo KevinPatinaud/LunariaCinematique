@@ -2129,6 +2129,51 @@
             "minimum": 0,
             "maximum": 10000,
             "multipleOf": 1
+          },
+          "lunaRewards": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "firstClear",
+              "mastery"
+            ],
+            "properties": {
+              "firstClear": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100000,
+                "multipleOf": 1
+              },
+              "mastery": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "noPlantLost",
+                  "noRain",
+                  "biodiversity"
+                ],
+                "properties": {
+                  "noPlantLost": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000,
+                    "multipleOf": 1
+                  },
+                  "noRain": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000,
+                    "multipleOf": 1
+                  },
+                  "biodiversity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000,
+                    "multipleOf": 1
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2163,6 +2208,8 @@
                 "enum": [
                   "level",
                   "cinematic",
+                  "unlock_herbarium",
+                  "unlock_travel_book",
                   "end"
                 ]
               },
@@ -3485,6 +3532,84 @@
                 "maxLength": 100,
                 "pattern": "^[a-zA-Z0-9_-]*$"
               },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "game",
+                  "cinematic"
+                ]
+              },
+              "sourceAssetRef": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 1024,
+                "pattern": "^(library://[^\\\\\\u0000-\\u001f:?#]+)?$"
+              },
+              "stridePx": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 4000
+              },
+              "element": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "preset",
+                  "pivot",
+                  "travel"
+                ],
+                "properties": {
+                  "preset": {
+                    "type": "string",
+                    "enum": [
+                      "rotate",
+                      "float",
+                      "fall",
+                      "exhale"
+                    ]
+                  },
+                  "pivot": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    }
+                  },
+                  "travel": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 8
+                  },
+                  "drift": {
+                    "type": "number",
+                    "minimum": -8,
+                    "maximum": 8
+                  },
+                  "sway": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 60
+                  },
+                  "placementHeight": {
+                    "type": "number",
+                    "minimum": 0.03,
+                    "maximum": 1
+                  }
+                }
+              },
               "kind": {
                 "type": "string",
                 "enum": [
@@ -4301,6 +4426,30 @@
                             "type": "number",
                             "minimum": 0.05,
                             "maximum": 10
+                          },
+                          "syncWithMovement": {
+                            "type": "boolean"
+                          },
+                          "autoFlip": {
+                            "type": "boolean"
+                          },
+                          "elementPlayback": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "start",
+                              "loop"
+                            ],
+                            "properties": {
+                              "start": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 300
+                              },
+                              "loop": {
+                                "type": "boolean"
+                              }
+                            }
                           }
                         }
                       },
@@ -4517,6 +4666,11 @@
                               "once",
                               "pingpong"
                             ]
+                          },
+                          "bend": {
+                            "type": "number",
+                            "minimum": -1,
+                            "maximum": 1
                           }
                         },
                         "required": [
@@ -5499,6 +5653,53 @@
                 }
               }
             ]
+          }
+        }
+      }
+    },
+    "lunas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enemyDrop"
+      ],
+      "properties": {
+        "enemyDrop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "chance",
+            "smallAmount",
+            "largeAmount",
+            "largeChance"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "chance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "smallAmount": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 10000,
+              "multipleOf": 1
+            },
+            "largeAmount": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 10000,
+              "multipleOf": 1
+            },
+            "largeChance": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
           }
         }
       }

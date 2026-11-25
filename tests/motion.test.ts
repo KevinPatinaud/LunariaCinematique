@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newActor, newCinematic, newBubble, copy, removeActor, upgradeCinematicFormat, type Actor, type Asset, type MotionPreset } from '../src/shared/model.js';
-import { newMotion, newMovement, restPose, actorPose, actorAnchor, actorTransform, travelOffset, actorVisualBox, entryEnd, setMovementDestination } from '../src/shared/motion.js';
+import { newMotion, newMovement, restPose, actorPose, actorAnchor, actorTransform, travelOffset, actorVisualBox, entryEnd, setMovementDestination, setMovementBend } from '../src/shared/motion.js';
 import { bubbleTarget, cameraTransform, prepareCinematic } from '../src/shared/geometry.js';
 import { parseCinematic, validationIssues } from '../src/shared/schema.js';
 import { classifyAsset } from '../src/shared/assets.js';
@@ -11,6 +11,7 @@ import { duplicateObjects, smartDuplicate, createTemplate, moveObjects, applyObj
 import { createHistory, historyReducer } from '../src/shared/history.js';
 import { editCommand } from '../src/shared/commands.js';
 import { diagnose } from '../src/shared/diagnostics.js';
+import { movementTimingAt } from '../src/shared/presentation/cinematicMotion.js';
 const asset: Asset = {ref:'library://07_props/lanterne.png', path:'07_props/lanterne.png', folder:'07_props', kind:'prop',name:'Lanterne',bytes:1,modified:1,url:'x',thumbnail:'x'};
 const actor = (): Actor => newActor(asset,0.8,0.2,0.45);
 const near = (a:number,b:number,e=1e-6) => assert.ok(Math.abs(a-b)<e, `${a} != ${b}`);
@@ -49,6 +50,43 @@ test('disabled travel is a no-op',()=>{const a=actor();a.movement={...newMovemen
 test('one-way travel holds exact end even during long player dialogue',()=>{const a=actor();a.movement={...newMovement(a),dx:.3,dy:-.1,duration:2};near(actorPose(a,2).x,(a.x+.3)*1600);near(actorPose(a,2000).y,(a.y-.1)*900);});
 test('linear and smooth travel interpolation differ before midpoint',()=>{const a=actor();a.movement={...newMovement(a),dx:.4,duration:4,easing:'linear'};near(travelOffset(a,1).x,.1*1600);a.movement.easing='smooth';near(travelOffset(a,1).x,.4*1600*.15625);});
 test('pingpong covers forward, reverse and several whole cycles',()=>{const a=actor();a.movement={...newMovement(a),dx:.2,dy:0,duration:2,repeat:'pingpong'};near(travelOffset(a,2).x,320);near(travelOffset(a,3).x,160);near(travelOffset(a,4).x,0);near(travelOffset(a,10).x,320);});
+test('bending the path keeps both endpoints and makes the walk follow the arc length', () => {
+  const a = actor();
+  const straight = { ...newMovement(a), dx: 0.25, dy: 0, duration: 2, easing: 'linear', repeat: 'pingpong' } as const;
+  a.movement = setMovementBend(straight, 25, -90);
+  near(a.movement.bend!, -0.1);
+  assert.deepEqual(travelOffset(a, 0), { x: 0, y: 0 });
+  assert.deepEqual(travelOffset(a, 1), { x: 200, y: -90 });
+  assert.deepEqual(travelOffset(a, 2), { x: 400, y: 0 });
+  assert.deepEqual(travelOffset(a, 3), travelOffset(a, 1));
+  assert.deepEqual(travelOffset(a, 4), travelOffset(a, 0));
+  const timing = movementTimingAt(a, 1);
+  assert.ok(timing.traveledPx > 200);
+  near(movementTimingAt(a, 0.5).traveledPx, timing.traveledPx / 2);
+  near(movementTimingAt(a, 3).traveledPx, timing.traveledPx * 3);
+  assert.equal(movementTimingAt(a, 3).directionX, -1);
+});
+
+test('facing follows the horizontal tangent and an overlapping destination stays put', () => {
+  const a = actor();
+  a.movement = { ...newMovement(a), dx: 0, dy: 0.3, bend: 0.15, duration: 2, easing: 'linear' };
+  assert.equal(movementTimingAt(a, 0.5).directionX, -1);
+  assert.equal(movementTimingAt(a, 1).directionX, 0);
+  assert.equal(movementTimingAt(a, 1.5).directionX, 1);
+  a.movement.dy = 0;
+  assert.deepEqual(travelOffset(a, 1), { x: 0, y: 0 });
+  assert.equal(movementTimingAt(a, 1).traveling, false);
+});
+
+test('curvature is optional, preserved when parsed, and bounded', () => {
+  const d = newCinematic(), a = actor();
+  a.movement = { ...newMovement(a), bend: -0.15 };
+  d.shots[0].actors = [a];
+  upgradeCinematicFormat(d);
+  assert.equal(parseCinematic(JSON.parse(JSON.stringify(d))).shots[0].actors[0].movement?.bend, -0.15);
+  a.movement.bend = 1.01;
+  assert.ok(validationIssues(d).some(issue => JSON.stringify(issue).includes('movement.bend')));
+});
 test('travel begins after entrance then its own delay',()=>{const a=actor();a.entry={preset:'left',delay:1,duration:2};a.movement={...newMovement(a),delay:1,duration:2};assert.equal(entryEnd(a),3);near(travelOffset(a,4).x,0);near(travelOffset(a,5).x,a.movement.dx*800);});
 test('no-entrance ignores unused delay/duration',()=>{const a=actor();a.entry={preset:'none',delay:99,duration:8};a.movement=newMovement(a);assert.equal(entryEnd(a),0);assert.ok(travelOffset(a,1).x>0);});
 test('travel + effect compose additively without modifying image dimensions',()=>{const a=actor();a.movement={...newMovement(a),dx:.1,dy:.1,duration:1};a.motion={...newMotion('float'),period:4,intensity:1};const pose=actorPose(a,1);near(pose.x,(a.x+.1)*1600);near(pose.y,(a.y+.1)*900-45);near(a.height,.43);});

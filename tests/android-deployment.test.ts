@@ -6,7 +6,7 @@ import path from 'node:path';
 import { androidPackageId, availableAndroidDevices, discoverAdb, parseAndroidDevices, runAndroidDeployment, type AdbCommand } from '../src/main/androidDeployment.js';
 import type { GameBuildResult } from '../src/shared/game/types.js';
 
-const preset='[preset.3]\nname="Android"\nplatform="Android"\n[preset.3.options]\npackage/unique_name="org.gardiensduvivant.game"\n';
+const preset='[preset.3]\nname="Android"\nplatform="Android"\n[preset.3.options]\npackage/unique_name="com.savelunaria.game"\n';
 async function fixture(run:(game:string,build:()=>Promise<GameBuildResult>,calls:string[][])=>Promise<void>){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'lunaria-deploy-')),game=path.join(root,'game'),calls:string[][]=[];
  await fs.mkdir(game);await fs.writeFile(path.join(game,'export_presets.cfg'),preset);
@@ -14,7 +14,7 @@ async function fixture(run:(game:string,build:()=>Promise<GameBuildResult>,calls
  try{await run(game,build,calls);}finally{await fs.rm(root,{recursive:true,force:true});}
 }
 function command(calls:string[][],devices='phone device model:OPPO_CPH2089'):AdbCommand{
- return async(_adb,args)=>{calls.push(args);if(args[0]==='devices')return devices;if(args.includes('getprop'))return 'arm64-v8a,armeabi-v7a';if(args.includes('install'))return 'Success';if(args.includes('resolve-activity'))return 'org.gardiensduvivant.game/org.godotengine.godot.GodotApp';if(args.includes('start'))return 'Status: ok';return '';};
+ return async(_adb,args)=>{calls.push(args);if(args[0]==='devices')return devices;if(args.includes('getprop'))return 'arm64-v8a,armeabi-v7a';if(args.includes('install'))return 'Success';if(args.includes('resolve-activity'))return 'com.savelunaria.game/org.godotengine.godot.GodotApp';if(args.includes('start'))return 'Status: ok';return '';};
 }
 
 test('device parser ignores daemon output and keeps model, authorization and emulator serials',()=>{
@@ -33,14 +33,14 @@ test('ADB discovery honors configured SDK then PATH and reports missing tools',(
 }));
 
 test('Android package comes from its preset and rejects substitutions or unresolved names',()=>{
- assert.equal(androidPackageId(preset),'org.gardiensduvivant.game');
- assert.throws(()=>androidPackageId(preset.replace('org.gardiensduvivant.game','org.$genname')),/Identifiant Android invalide/);
+ assert.equal(androidPackageId(preset),'com.savelunaria.game');
+ assert.throws(()=>androidPackageId(preset.replace('com.savelunaria.game','org.$genname')),/Identifiant Android invalide/);
  assert.throws(()=>androidPackageId(preset.replace('platform="Android"','platform="Windows Desktop"')),/Identifiant Android invalide/);
 });
 
 test('deployment checks ARM64 before build, installs the fresh APK on the same serial and confirms launch',()=>fixture(async(game,build,calls)=>{
  const phases:string[]=[],result=await runAndroidDeployment(game,build,{adb:'fake',command:command(calls),progress:progress=>phases.push(progress.phase)});
- assert.equal(result?.device.name,'OPPO CPH2089');assert.equal(result?.packageId,'org.gardiensduvivant.game');
+ assert.equal(result?.device.name,'OPPO CPH2089');assert.equal(result?.packageId,'com.savelunaria.game');
  const install=calls.find(args=>args.includes('install'))!;
  assert.deepEqual(install,['-s','phone','install','-r',result!.artifact]);
  assert.ok(calls.findIndex(args=>args.includes('getprop'))<calls.findIndex(args=>args[0]==='BUILD'));

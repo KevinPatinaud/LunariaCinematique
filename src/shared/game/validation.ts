@@ -7,6 +7,7 @@ import { combatIssues } from "./combatValidation.js";
 import { ensureCombat } from "./combatDefaults.js";
 import { safeMoviePath } from "./campaign.js";
 import { homeScreenIssues } from "./homeScreenValidation.js";
+import { lunaIssues } from "./lunasValidation.js";
 import { validationIssues as cinematicIssues } from "../schema.js";
 import { GAME_SCHEMA, type Rule } from "./schema.js";
 import { ENEMY_FIRST_COLUMN } from "./boardPlacement.js";
@@ -354,6 +355,8 @@ export function gameIssues(input: unknown): GameIssue[] {
       paths.add(normalized);
     }
     let endSeen = false;
+    let unlockTravelBookSeen = false;
+    let unlockHerbariumSeen = false;
     for (const [i, step] of steps.entries()) {
       const path = `campaign.steps[${i}]`;
       unique(step.id, path);
@@ -375,6 +378,24 @@ export function gameIssues(input: unknown): GameIssue[] {
         endSeen = true;
         if (Object.keys(step).some((k) => !["id", "kind"].includes(k)))
           add(path, "La fin actuelle ne possède pas de niveau ni de cinématique.");
+      } else if (step.kind === "unlock_travel_book") {
+        if (unlockTravelBookSeen)
+          add(path, "Un seul jalon de déblocage du carnet de voyage est autorisé.");
+        unlockTravelBookSeen = true;
+        if (Object.keys(step).some((k) => !["id", "kind"].includes(k)))
+          add(
+            path,
+            "Le déblocage du carnet de voyage ne possède ni niveau ni cinématique.",
+          );
+      } else if (step.kind === "unlock_herbarium") {
+        if (unlockHerbariumSeen)
+          add(path, "Un seul jalon de déblocage de L’herbier est autorisé.");
+        unlockHerbariumSeen = true;
+        if (Object.keys(step).some((k) => !["id", "kind"].includes(k)))
+          add(
+            path,
+            "Le déblocage de L’herbier ne possède ni niveau ni cinématique.",
+          );
       } else {
         if (!films.has(step.cinematicId))
           add(path, "Cinématique absente du catalogue de campagne.");
@@ -390,9 +411,25 @@ export function gameIssues(input: unknown): GameIssue[] {
       }
     }
     const endIndex = steps.findIndex((s) => s.kind === "end");
+    const unlockIndex = steps.findIndex((s) => s.kind === "unlock_travel_book");
+    const herbariumUnlockIndex = steps.findIndex(
+      (s) => s.kind === "unlock_herbarium",
+    );
     const pending = endIndex < 0 ? 0 : steps.length - endIndex - 1;
     if (pending > 0)
       add("campaign.steps", `${pending} étape(s) après la fin actuelle : suite en préparation, conservée dans le Studio et non publiée.`, "warning");
+    if (endIndex >= 0 && unlockIndex > endIndex)
+      add(
+        "campaign.steps",
+        "Le déblocage du carnet de voyage est placé après la fin actuelle : il restera verrouillé dans la version publiée.",
+        "warning",
+      );
+    if (endIndex >= 0 && herbariumUnlockIndex > endIndex)
+      add(
+        "campaign.steps",
+        "Le déblocage de L’herbier est placé après la fin actuelle : il restera verrouillé dans la version publiée.",
+        "warning",
+      );
     if (!used.size && p.levels.length > 0)
       add("campaign.steps", "Ajoute au moins un niveau à la campagne.");
     const unused = p.levels.length - used.size;
@@ -416,6 +453,7 @@ export function gameIssues(input: unknown): GameIssue[] {
     ...logicIssues(p),
     ...presentationIssues(p),
     ...homeScreenIssues(p),
+    ...lunaIssues(p),
   );
   return issues;
 }

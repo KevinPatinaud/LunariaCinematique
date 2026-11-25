@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { seedProject } from './fixtures/seed40.js';
 import { seedProject as emptySeedProject } from '../src/shared/game/seed.js';
 import { GameDocuments } from '../src/main/gameDocuments.js';
-import { ensureCampaign, campaignOf, compileCampaign, moveCampaignStep, safeMoviePath, advanceCampaign, playableCampaignSteps } from '../src/shared/game/campaign.js';
+import { ensureCampaign, campaignOf, compileCampaign, moveCampaignStep, safeMoviePath, advanceCampaign, playableCampaignSteps, travelBookUnlockCursor, isTravelBookUnlocked, herbariumUnlockCursor, isHerbariumUnlocked } from '../src/shared/game/campaign.js';
 import { gameIssues, parseGameProject } from '../src/shared/game/validation.js';
 import { planCampaign, publishCampaign } from '../src/main/campaignPublisher.js';
 import { newCinematic } from '../src/shared/model.js';
@@ -65,6 +65,53 @@ test('end marker cannot be passed by callbacks or a cursor already beyond it',()
   assert.equal(advanceCampaign(s,2,'intro',event),2);
  }
 });
+
+test('travel book and herbarium unlock milestones coexist independently, survive save/publish, and stay locked after end',()=>fixture(async root=>{
+ const p=project(),c=p.campaign!,herbarium:CampaignStep={id:'unlock_herb',kind:'unlock_herbarium'},book:CampaignStep={id:'unlock_book',kind:'unlock_travel_book'};
+ assert.equal(herbariumUnlockCursor(c.steps),0);
+ assert.equal(travelBookUnlockCursor(c.steps),0);
+ assert.equal(isHerbariumUnlocked(c.steps,0),true);
+ assert.equal(isTravelBookUnlocked(c.steps,0),true);
+ // Place herbarium after level 2 and travel book after level 4: passive milestones never shift each other's playable cursor.
+ c.steps.splice(2,0,herbarium);
+ c.steps.splice(5,0,book);
+ assert.equal(herbariumUnlockCursor(c.steps),2);
+ assert.equal(travelBookUnlockCursor(c.steps),4);
+ assert.equal(isHerbariumUnlocked(c.steps,1),false);
+ assert.equal(isHerbariumUnlocked(c.steps,2),true);
+ assert.equal(isTravelBookUnlocked(c.steps,3),false);
+ assert.equal(isTravelBookUnlocked(c.steps,4),true);
+ assert.equal(playableCampaignSteps(p).length,40);
+ assert.equal(advanceCampaign(c.steps,1,c.steps[1].id,'victory'),2);
+ assert.equal(advanceCampaign(c.steps,2,herbarium.id,'finished'),2);
+ assert.equal(advanceCampaign(c.steps,4,book.id,'finished'),4);
+ const documents=new GameDocuments(path.join(root,'profile')),file=path.join(root,'campaign.game.json');
+ await documents.save(p,'',file);
+ assert.deepEqual((await documents.open(file)).project,p);
+ const compiled=parseGameProject(compileCampaign(p));
+ assert.equal(compiled.campaign!.steps[2].kind,'unlock_herbarium');
+ assert.equal(compiled.campaign!.steps[5].kind,'unlock_travel_book');
+ assert.equal(compiled.levels.length,40);
+ // Place at the very beginning -> unlocked from start.
+ c.steps=moveCampaignStep(c.steps,herbarium.id,c.steps[0].id);
+ assert.equal(herbariumUnlockCursor(c.steps),0);
+ assert.equal(isHerbariumUnlocked(c.steps,0),true);
+ // Place both after end -> locked for the published slice without leaking future levels.
+ c.steps.splice(2,0,{id:'playable_end',kind:'end'});
+ c.steps=moveCampaignStep(c.steps,herbarium.id,null);
+ c.steps=moveCampaignStep(c.steps,book.id,null);
+ assert.equal(herbariumUnlockCursor(c.steps),-1);
+ assert.equal(travelBookUnlockCursor(c.steps),-1);
+ assert.equal(isHerbariumUnlocked(c.steps,1),false);
+ assert.equal(isTravelBookUnlocked(c.steps,1),false);
+ assert.ok(gameIssues(p).some(i=>i.severity==='warning'&&i.message.includes('carnet de voyage')));
+ assert.ok(gameIssues(p).some(i=>i.severity==='warning'&&i.message.includes('L’herbier')));
+ const cut=parseGameProject(compileCampaign(p));
+ assert.equal(cut.levels.length,1);
+ assert.deepEqual(cut.campaign!.steps.map(s=>s.kind),['level','end','unlock_herbarium','unlock_travel_book']);
+ assert.equal(herbariumUnlockCursor(cut.campaign!.steps),-1);
+ assert.equal(travelBookUnlockCursor(cut.campaign!.steps),-1);
+}));
 for(const [label,mutate] of [
  ['unknown level',(p:any)=>p.campaign.steps[0].levelId='missing'],
  ['duplicate step',(p:any)=>p.campaign.steps.push(p.campaign.steps[0])],
@@ -77,6 +124,12 @@ for(const [label,mutate] of [
  ['duplicate playable end',(p:any)=>p.campaign.steps.push({id:'end_a',kind:'end'},{id:'end_b',kind:'end'})],
  ['end marker with level data',(p:any)=>p.campaign.steps.push({id:'end_a',kind:'end',levelId:p.levels[0].id})],
  ['end marker with movie data',(p:any)=>p.campaign.steps.push({id:'end_a',kind:'end',skippable:true,cinematicId:'future'})],
+ ['duplicate travel book unlock',(p:any)=>p.campaign.steps.push({id:'unlock_a',kind:'unlock_travel_book'},{id:'unlock_b',kind:'unlock_travel_book'})],
+ ['travel book unlock with level data',(p:any)=>p.campaign.steps.push({id:'unlock_a',kind:'unlock_travel_book',levelId:p.levels[0].id})],
+ ['travel book unlock with movie data',(p:any)=>p.campaign.steps.push({id:'unlock_a',kind:'unlock_travel_book',skippable:true,cinematicId:'future'})],
+ ['duplicate herbarium unlock',(p:any)=>p.campaign.steps.push({id:'herb_a',kind:'unlock_herbarium'},{id:'herb_b',kind:'unlock_herbarium'})],
+ ['herbarium unlock with level data',(p:any)=>p.campaign.steps.push({id:'herb_a',kind:'unlock_herbarium',levelId:p.levels[0].id})],
+ ['herbarium unlock with movie data',(p:any)=>p.campaign.steps.push({id:'herb_a',kind:'unlock_herbarium',skippable:true,cinematicId:'future'})],
  ['missing level reference',(p:any)=>delete p.campaign.steps[0].levelId],
  ['absolute path',(p:any)=>p.campaign.cinematics=[{id:'f',title:'Film',file:'C:/a.json',documentId:'d'}]],
  ['case alias file',(p:any)=>p.campaign.cinematics=[{id:'f',title:'A',file:'intro.json',documentId:'a'},{id:'f2',title:'B',file:'INTRO.json',documentId:'b'}]],

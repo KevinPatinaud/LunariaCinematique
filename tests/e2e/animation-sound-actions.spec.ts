@@ -176,7 +176,7 @@ test.afterEach(async () => {
 });
 async function select(name = "Radis") {
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: /^Plantes/ })
     .click();
   await page

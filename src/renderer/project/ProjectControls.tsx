@@ -4,7 +4,6 @@ import { StudioDialog } from "../components/StudioDialog.js";
 import { Icon } from "../components/Icon.js";
 import "./projectSession.css";
 const sections: Record<string, string> = {
-  home: "Écran d’accueil",
   campaign: "Campagne",
   levels: "Niveaux",
   plants: "Plantes alliées",
@@ -117,6 +116,8 @@ export function ProjectControls({
           ↷
         </button>
         <button
+          aria-label="Historique"
+          title="Historique des actions du projet"
           disabled={locked}
           onClick={() => {
             flush();
@@ -124,7 +125,8 @@ export function ProjectControls({
             setHistoryOpen(true);
           }}
         >
-          Historique
+          <Icon name="clock" size={14} />
+          <span className="project-history-label">Historique</span>
         </button>
       </div>
       <span
@@ -133,6 +135,7 @@ export function ProjectControls({
         title={path || project.title}
       >
         <span className={dirty ? "pending" : ""}>
+          <i className={`studio-state-dot${dirty ? " pending" : busy ? " busy" : ""}`} aria-hidden="true" />
           {busy
             ? "Opération en cours…"
             : dirty
@@ -151,13 +154,14 @@ export function ProjectControls({
       <button
         className="studio-save"
         disabled={locked}
+        aria-label="Enregistrer le projet"
         title="Enregistrer tout le projet (Ctrl+S)"
         onClick={() => {
           flush();
           void session.save();
         }}
       >
-        <Icon name="save" size={15} /> Enregistrer le projet
+        <Icon name="save" size={14} /> <span>Enregistrer</span>
       </button>
       <div className="project-file-actions">
         <button

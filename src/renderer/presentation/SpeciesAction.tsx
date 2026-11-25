@@ -4,6 +4,7 @@ import type { GameProject } from "../../shared/game/types.js";
 import { actionPresentation } from "../../shared/presentation/actions.js";
 import {
   animationOwnerId,
+  isGameAnimation,
   setSpeciesAnimation,
   setSpeciesCue,
 } from "../../shared/presentation/ownership.js";
@@ -69,7 +70,7 @@ export function SpeciesAction({
       ? profile.slots.find((s) => s.slot === slot)
       : undefined;
   const available = catalog.animations.filter(
-    (a) => !animationOwnerId(project, a) || animationOwnerId(project, a) === id,
+    (a) => isGameAnimation(a) && (!animationOwnerId(project, a) || animationOwnerId(project, a) === id),
   );
   const inherited = catalog.profiles
     .find((p) => p.id === catalog.defaultProfileId)

@@ -32,7 +32,7 @@ test.afterEach(async()=>{
 });
 
 test('a level can author and save the five-lane advance objective',async()=>{
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Créer un premier niveau'}).click();
  await page.getByRole('button',{name:'Paramètres'}).click();
  await page.getByLabel('Objectif du niveau').selectOption('advance');
@@ -59,10 +59,10 @@ test('a level can author and save the five-lane advance objective',async()=>{
  const rewardBounds=await page.getByLabel('Graines par allée capturée').boundingBox();
  const footerBounds=await page.locator('.gd-footer').boundingBox();
  expect(rewardBounds!.y+rewardBounds!.height).toBeLessThanOrEqual(footerBounds!.y);
- await expect(page.locator('.gd-sections')).toBeVisible();
+ await expect(page.locator('.studio-sections')).toBeVisible();
  await fs.mkdir(path.join(ROOT,'work'),{recursive:true});
  await page.screenshot({path:path.join(ROOT,'work','advance-level-studio.png')});
- await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
  await page.getByRole('button',{name:'Vagues & ennemis',exact:true}).click();
  await expect(page.getByLabel('Allée du groupe 1').getByRole('option',{name:'Aléatoire équilibré',exact:true})).toHaveCount(1);
  await expect(page.getByText(/Avec quatre allées conquises, il reste environ 20 %/)).toBeVisible();

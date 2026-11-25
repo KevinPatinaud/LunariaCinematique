@@ -85,9 +85,9 @@ test.afterEach(async () => {
   await fs.rm(dir, { recursive: true, force: true });
   expect(errors).toEqual([]);
 });
-async function species(name = "Lierre", team = "Plantes alliées") {
+async function species(name = "Lierre", team = "Plantes") {
   await page
-    .locator(".gd-sections")
+    .locator(".studio-sections")
     .getByRole("button", { name: new RegExp("^" + team) })
     .click();
   await page
@@ -287,9 +287,10 @@ test("template application defaults to a personal copy and remains undoable", as
   );
 });
 test("the advanced model library protects live users and requires an explicit test carrier", async () => {
+  await page.locator(".studio-more-trigger").click();
   await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: /^Comportements/ })
+    .locator(".studio-more-popover")
+    .getByRole("button", { name: /^Modèles de comportements/ })
     .click();
   await expect(
     page.getByLabel("Nom du comportement", { exact: true }),

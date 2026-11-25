@@ -5,6 +5,7 @@ const Text = preload("res://addons/lunaria_cinematics/CinematicText.gd")
 const Motion = preload("res://addons/lunaria_cinematics/CinematicMotion.gd")
 const BubbleEntry = preload("res://addons/lunaria_cinematics/CinematicBubbleEntry.gd")
 const Player = preload("res://addons/lunaria_cinematics/CinematicPlayer.gd")
+const Presentation = preload("res://addons/lunaria_cinematics/CinematicPresentation.gd")
 var failures: int = 0
 var comparisons: int = 0
 func compare(actual: float, expected: float, label: String) -> void:
@@ -57,5 +58,12 @@ func _initialize() -> void:
 	for index: int in range(content.get("bubble", []).size()):
 		var row: Dictionary = content["bubble"][index]
 		compare_dictionary(BubbleEntry.pose(row["bubble"], float(row["elapsed"]), bool(row["completed"])), row["expected"], "bubble/" + str(index))
+	var crop := {"width": 80, "height": 100}
+	var walk := {"scope": "cinematic", "kind": "frames", "loop": true, "frames": [{"region": crop}, {"region": crop}]}
+	var visual := {"width": 100.0, "height": 100.0}
+	var timing := {"traveled_px": 24.0, "travel_elapsed": 1.5}
+	compare(Presentation._movement_clip_time(walk, visual, "move", 1.2, timing, 1.0, 8.0 / 12.0), (24.0 / 76.8) * (8.0 / 12.0), "cinematic walk distance")
+	compare(Presentation._movement_clip_time(walk, visual, "move", 1.2, timing, 2.0, 8.0 / 12.0), (24.0 / 76.8) * (8.0 / 12.0) * 2.0, "cinematic walk speed")
+	compare(Presentation._movement_clip_time(walk, visual, "talk", 1.2, timing, 1.0, 8.0 / 12.0), 1.5, "cinematic dialogue time")
 	print("Lunaria animations parity: ", comparisons, " comparisons; ", failures, " failure(s).")
 	quit(0 if failures == 0 else 1)

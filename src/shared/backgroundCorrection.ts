@@ -1,5 +1,6 @@
 import type { AssetRef } from './model.js';
 import type { ImageTaskContext, ImageTaskMetadata, ImageTaskStatus } from './imageTasks.js';
+import type { AiImageProvider } from './aiProviders.js';
 
 export const BACKGROUND_FORMATS = {
   '20:9': 20 / 9, '19.5:9': 19.5 / 9, '18:9': 2, '16:9': 16 / 9,
@@ -53,6 +54,7 @@ export interface BackgroundCorrectionRequest {
   useOriginal: boolean;
   cropPosition: number;
   outputWidth: PanoramaResolution;
+  aiProvider?: AiImageProvider;
   codexModel?: string;
 }
 export interface BackgroundCorrectionJob extends ImageTaskMetadata {
@@ -65,6 +67,7 @@ export interface BackgroundCorrectionJob extends ImageTaskMetadata {
   core: CoreRect;
   usedOriginal: boolean;
   outputWidth: PanoramaResolution;
+  aiProvider?: AiImageProvider;
   codexModel?: string;
   candidateUrl?: string;
   width?: number;

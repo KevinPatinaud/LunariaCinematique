@@ -58,14 +58,6 @@ La même fenêtre permet de **renommer**, **réordonner par glisser-déposer**, 
 
 La fenêtre **Vérifier le projet** se ferme avec **Échap**. Cliquer une erreur de nom de niveau ouvre ce niveau et place le curseur dans son champ de nom. Les recherches et filtres de niveaux sont effacés lors d’une création ou d’une duplication, pour que le nouveau niveau reste visible.
 
-## Configurer l’écran d’accueil
-
-Ouvrir **Niveaux → Écran d’accueil**, ou **Vue du projet → Configurer l’accueil**. L’aperçu représente la composition de l’accueil : sélectionner un élément pour régler sa position, sa taille, son opacité et ses propriétés. Le décor, les panneaux, les textes, les personnages, les boutons et la barre de progression se configurent dans cette vue. Les éléments peuvent être ajoutés, dupliqués, masqués, supprimés et déplacés dans l’ordre d’affichage.
-
-Les boutons associent un libellé à une destination du jeu. Le bouton de continuation peut adapter son libellé à l’état du joueur ; le sélecteur **État du joueur dans l’aperçu** sert à vérifier ces variantes. Les textes peuvent inclure `{completed}`, `{total}` et `{version}` pour afficher la progression et la version réelles.
-
-**Enregistrer le projet** conserve les réglages dans le même `lunaria.game.json`. **Publier la campagne** les transmet au jeu avec les images de bibliothèque référencées ; relancer le jeu pour les charger. L’aperçu n’écrit pas dans une sauvegarde joueur. Le [guide de l’accueil](ACCUEIL.md) décrit les champs et le contrat.
-
 ## Sources maintenues
 
 Deux projets sources complets : Studio React/TypeScript/Node/Electron et jeu Godot/GDScript. La présentation de combat est désormais définie dans le document de jeu et interprétée par un lecteur générique. Les deux modes principaux restent **Cinématiques** et **Niveaux**.
@@ -143,6 +135,8 @@ Les sons proposent fichier, catégorie, volume, boucle, variation de hauteur et 
 Les VFX sont visuels : ils ne modifient ni les PV ni les vitesses. Les préréglages sont volontairement simples, rendus par des primitives ou une image ; ce n’est pas un éditeur de particules/shaders. Une traînée de projectile utilise les paramètres de la définition comme une trace directionnelle, pas comme une seconde émission de dégâts. Le réglage « mouvements réduits » du jeu diminue les effets et supprime les traînées projetées.
 
 ## Animer un élément dans une cinématique
+
+Dans **Déplacement A → B**, glissez le losange au milieu du trajet pour incurver le tracé. La poignée **B** règle l’arrivée. Ouvrez **Ajuster la trajectoire** pour saisir la courbure au clavier ou choisir **Rétablir la ligne droite**. Le bouton **Aperçu des animations** permet de vérifier le déplacement dans le plan.
 
 Dans **Cinématiques**, sélectionner un personnage, un ennemi ou un objet. Dans l’inspecteur à droite, **Mouvements → Effet d’animation** propose notamment les nouveaux effets **Orbite**, **Vol en huit**, **Zigzag**, **Roulade**, **Sursaut** et **Oscillation élastique**. Ils transforment l’image entière : trajectoire autour de sa position, déplacement en huit ou en zigzag, rotation, réaction de surprise ou oscillation de taille. Ils peuvent se combiner avec **Déplacement A → B**.
 

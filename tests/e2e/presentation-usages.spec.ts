@@ -67,10 +67,9 @@ test("live presentation uses protect closed and unplaced films, follow undo, and
     }, file);
 
     async function animations() {
-      await page.locator(".studio-modebar").getByRole("button", { name: "Niveaux", exact: true }).click();
-      const tools = page.locator(".gd-tools");
-      if (await tools.getAttribute("open") === null) await tools.locator("summary").click();
-      await page.getByRole("button", { name: /^Animations communes/ }).click();
+      const trigger = page.locator(".studio-more-trigger");
+      if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click();
+      await page.locator(".studio-more-popover").getByRole("button", { name: /^Animations communes/ }).click();
     }
     async function inspectProtected() {
       await animations();

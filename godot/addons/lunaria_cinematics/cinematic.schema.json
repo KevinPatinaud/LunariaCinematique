@@ -250,6 +250,30 @@
                       "type": "number",
                       "minimum": 0.05,
                       "maximum": 10
+                    },
+                    "syncWithMovement": {
+                      "type": "boolean"
+                    },
+                    "autoFlip": {
+                      "type": "boolean"
+                    },
+                    "elementPlayback": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "start",
+                        "loop"
+                      ],
+                      "properties": {
+                        "start": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 300
+                        },
+                        "loop": {
+                          "type": "boolean"
+                        }
+                      }
                     }
                   }
                 },
@@ -466,6 +490,11 @@
                         "once",
                         "pingpong"
                       ]
+                    },
+                    "bend": {
+                      "type": "number",
+                      "minimum": -1,
+                      "maximum": 1
                     }
                   },
                   "required": [

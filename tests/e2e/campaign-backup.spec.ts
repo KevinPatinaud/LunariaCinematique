@@ -52,8 +52,8 @@ test('complete snapshots preserve unsaved edits and restore with their own libra
     await expect(page.locator('.studio-project-state')).toContainText('working.game.json');
     await expect(page.locator('.studio-project-state')).toContainText('Modifications non enregistrées');
 
-    await page.locator('.studio-modebar').getByRole('button',{name:'Niveaux',exact:true}).click();
-    await page.getByLabel('Titre du projet de niveaux').fill('Deuxième sauvegarde');
+    await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
+    await page.getByLabel('Titre du projet').fill('Deuxième sauvegarde');
     await expect(page.locator('.gd-campaign').getByRole('button',{name:BUTTON})).toBeInViewport();
     for(const width of [1462,1000]){
       await page.setViewportSize({width,height:900});
@@ -77,7 +77,7 @@ test('complete snapshots preserve unsaved edits and restore with their own libra
     await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
     await expect(page.locator('.gd-message')).toContainText('Sauvegarde ouverte avec ses images et sons');
     expect(JSON.parse(await fs.readFile(path.join(profile,'settings.json'),'utf8')).libraryRoot).toBe(path.join(destination,folders[0],'LunariaArtLibrary'));
-    await expect(page.getByLabel('Titre du projet de niveaux')).toHaveValue(snapshot.title);
+    await expect(page.getByLabel('Titre du projet')).toHaveValue(snapshot.title);
     await page.getByRole('button',{name:'Enregistrer le projet',exact:true}).click();
     await expect(page.locator('.studio-project-state')).toContainText('resumed.game.json');
     expect(JSON.parse(await fs.readFile(resumed,'utf8'))).toEqual(snapshot);

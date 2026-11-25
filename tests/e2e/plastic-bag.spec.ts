@@ -17,7 +17,7 @@ test('Sac Plastique: actual art and drawn animations, editable attachment, wave 
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},target);
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.locator('.gd-message button').click();
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();
   await expect(page.getByLabel('Points de vie',{exact:true})).toHaveValue('600');
   await page.getByRole('button',{name:'Capacités',exact:true}).click();await page.getByText('Ciblage et déclenchement avancés',{exact:true}).click();
@@ -26,12 +26,12 @@ test('Sac Plastique: actual art and drawn animations, editable attachment, wave 
   await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
   await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).combat.abilities.find((a:any)=>a.id==='ab_plastic_bag_suffocate').blocksTargetAttack).toBe(false);
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();await page.getByRole('button',{name:'Capacités',exact:true}).click();await page.getByText('Ciblage et déclenchement avancés',{exact:true}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();await page.getByRole('button',{name:'Capacités',exact:true}).click();await page.getByText('Ciblage et déclenchement avancés',{exact:true}).click();
   await expect(page.getByLabel('Empêcher la cible d’attaquer')).not.toBeChecked();await expect(page.getByLabel('Mode de frappe')).toHaveValue('attach');
   expect(JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves[0].groups[0].enemyId).toBe('plastic_bag');
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},FILE);
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');await page.locator('.gd-message button').click();
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Sac Plastique/}).click();
   await expect(page.getByRole('region',{name:'Image principale de Sac Plastique'}).getByRole('img',{name:'Plastic bag combat · v1',exact:true})).toBeVisible();
   await page.screenshot({path:info.outputPath('sac-plastique-studio-enemy.png')});
   await page.getByRole('button',{name:'Animations et sons de Sac Plastique',exact:true}).click();

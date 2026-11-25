@@ -29,7 +29,7 @@ test('Plaque: choisir une case puis une zone, enregistrer et rouvrir le niveau',
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Vagues & ennemis'}).click();
   await page.getByLabel('Ennemi du groupe 1').selectOption('plaque');
   await expect(page.locator('.gd-plaque-placement > p')).toContainText('Canette pressée');
@@ -52,7 +52,7 @@ test('Plaque: choisir une case puis une zone, enregistrer et rouvrir le niveau',
   await page.screenshot({path:info.outputPath('plaque-studio.png')});
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Vagues & ennemis'}).click();
   await expect(page.getByLabel('Mode d’apparition de Plaque du groupe 1')).toHaveValue('zone');
   await expect(page.getByLabel('Ennemi du groupe 1')).toBeEnabled();

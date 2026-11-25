@@ -7,6 +7,7 @@ import {seedProject} from './fixtures/seed40.js';
 import {seedProject as mainSeedProject} from '../src/shared/game/seed.js';
 import {ensureCampaign} from '../src/shared/game/campaign.js';
 import {parseGameProject,parseGameDraft,gameIssues} from '../src/shared/game/validation.js';
+import {GAME_SCHEMA} from '../src/shared/game/schema.js';
 import {newCinematic,newActor,upgradeCinematicFormat} from '../src/shared/model.js';
 import {parseCinematic} from '../src/shared/schema.js';
 import {createHistory,historyReducer} from '../src/shared/history.js';
@@ -144,3 +145,26 @@ test('reference indexing safely handles author IDs that match object prototype n
 });
 test('film serialization preserves the shared animation binding',()=>{const x=p(),d=film(x);assert.deepEqual(parseCinematic(JSON.parse(JSON.stringify(d))).shots[0].actors[0].animation,d.shots[0].actors[0].animation);});
 test('publication resolves shared catalog and film closure once with no duplicate image',()=>temp(async root=>{const x=fixturePresentation(p(),'library://pixel.png');ensureCampaign(x);const d=film(x);d.presentationCatalog!.file='authoring/custom.game.json';await fs.writeFile(path.join(root,'pixel.png'),PIXEL_PNG);await fs.writeFile(path.join(root,'film.json'),JSON.stringify(d));x.cinematics=[d];x.campaign!.cinematics=[{id:'film',title:'Atelier',file:'film.json',documentId:d.id}];x.campaign!.steps.unshift({id:'intro_presentation',kind:'cinematic',cinematicId:'film',skippable:true});const plan=await planCampaign(x,root);assert.equal(plan.check.assets,1);const file=plan.files.find(f=>f.relative.endsWith('.cinematic.json'))!;assert.equal(JSON.parse(file.text!).presentationCatalog.file,'content/design/game_content.json');const target=path.join(root,'game');for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd']){await fs.mkdir(path.dirname(path.join(target,marker)),{recursive:true});await fs.writeFile(path.join(target,marker),'fixture');}await fs.mkdir(path.join(target,'content/design'),{recursive:true});await publishCampaign(x,target,root);await publishCampaign(x,target,root);assert.deepEqual(await fs.readdir(path.join(target,'LunariaArtLibrary')),['pixel.png']);assert.equal((await fs.readdir(path.join(target,'content/cinematics/studio'))).length,1);assert.equal(d.presentationCatalog!.file,'authoring/custom.game.json');}));
+test('publication remaps versioned sourceAssetRef and rejects stale target game schema',()=>temp(async root=>{
+ const x=fixturePresentation(p(),'library://pixel.png');ensureCampaign(x);
+ const cineAnim={...newAnimation('walk'),id:'cine_walk_ref',scope:'cinematic' as const,kind:'frames' as const,frames:[{asset:'library://pixel.png' as const,duration:.2}],duration:.2,sourceAssetRef:'library://pose.png' as const};
+ x.presentation!.animations.push(cineAnim);
+ await fs.writeFile(path.join(root,'pixel.png'),PIXEL_PNG);
+ await fs.writeFile(path.join(root,'pose.png'),PIXEL_PNG);
+ const target=path.join(root,'game');
+ for(const marker of ['project.godot','app/controllers/campaign_flow.gd','domain/logic/event_runtime.gd','domain/presentation/animation_registry.gd']){await fs.mkdir(path.dirname(path.join(target,marker)),{recursive:true});await fs.writeFile(path.join(target,marker),'fixture');}
+ await fs.mkdir(path.join(target,'content/design'),{recursive:true});
+ await fs.mkdir(path.join(target,'LunariaArtLibrary'),{recursive:true});
+ await fs.writeFile(path.join(target,'LunariaArtLibrary/pose.png'),Buffer.from('older-pose-bytes'));
+ await fs.writeFile(path.join(target,'content/design/game_content.json'),'{"previous":true}');
+ const staleSchema=structuredClone(GAME_SCHEMA);
+ delete staleSchema.properties!.presentation.properties!.animations.items!.properties!.sourceAssetRef;
+ await fs.writeFile(path.join(target,'content/design/game-project.schema.json'),JSON.stringify(staleSchema));
+ await assert.rejects(publishCampaign(x,target,root),/contrat obsolète.*sourceAssetRef/);
+ assert.equal(await fs.readFile(path.join(target,'content/design/game_content.json'),'utf8'),'{"previous":true}');
+ await fs.writeFile(path.join(target,'content/design/game-project.schema.json'),JSON.stringify(GAME_SCHEMA));
+ const published=await publishCampaign(x,target,root);
+ const written=JSON.parse(await fs.readFile(published.path,'utf8')) as GameProject;
+ const writtenAnim=written.presentation!.animations.find(a=>a.id==='cine_walk_ref')!;
+ assert.match(writtenAnim.sourceAssetRef??'',/^library:\/\/studio_versions\/[0-9a-f]{64}\.png$/);
+}));

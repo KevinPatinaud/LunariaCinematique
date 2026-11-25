@@ -25,7 +25,7 @@ test.afterEach(async()=>{
  await fs.rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200});
 });
 test('author, save and reopen multiple escorted sprouts on chosen lanes',async()=>{
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();
  await page.getByRole('button',{name:'Créer un premier niveau'}).click();
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();
  await page.getByLabel('Objectif du niveau').selectOption('escort');
@@ -43,10 +43,11 @@ test('author, save and reopen multiple escorted sprouts on chosen lanes',async()
  const saved=JSON.parse(await fs.readFile(target,'utf8'));expect(saved.levels[0].escort).toMatchObject({speed:0.09,maxHp:175,departureInterval:12});expect(saved.levels[0].laneCaptureSeedReward).toBe(37);
  await expect(page.locator('.gd-footer')).not.toContainText('Opération en cours');
  await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
- await page.getByRole('button',{name:'Ouvrir',exact:true}).click();
+ await page.getByRole('button',{name:'Actions du fichier projet'}).click();
+ await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
  await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
  await page.getByRole('button',{name:'Fermer le message des niveaux'}).click();
- await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+ await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
  await page.getByRole('button',{name:'Paramètres',exact:true}).click();
  await expect(page.getByLabel('Objectif du niveau')).toHaveValue('escort');
  await expect(page.getByLabel('Allée 5 — pousses')).toHaveValue('2');

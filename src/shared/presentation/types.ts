@@ -1,6 +1,7 @@
 import type { AssetRef } from '../model.js';
+import type { AnimatedElement, ElementPlayback } from './animatedElements.js';
 export const BASE_SLOTS=['idle','move','attack','hit','death','spawn','victory'] as const;
-export const SLOT_LABELS:Record<string,string>={idle:'Attente',move:'Déplacement',attack:'Attaque',hit:'Touché',death:'Mort',spawn:'Apparition',victory:'Victoire',counter:'Esquive et riposte',stunned:'Étourdissement',phase_transition:'Transition de phase',attached:'Plante enveloppée',suffocate:'Resserrement'};
+export const SLOT_LABELS:Record<string,string>={idle:'Attente',move:'Déplacement',talk:'Parole',run:'Course',jump:'Saut',happy:'Joie',surprised:'Surprise',scared:'Peur',attack:'Attaque',hit:'Touché',death:'Mort',spawn:'Apparition',victory:'Victoire',counter:'Esquive et riposte',stunned:'Étourdissement',phase_transition:'Transition de phase',attached:'Plante enveloppée',suffocate:'Resserrement'};
 export const MOTIONS=['none','breath','sway','bounce','shake','recoil','spin','pulse','fade_in','fade_out','roll','press','walk'] as const;
 export type Attachment='center'|'feet'|'head'|'launch';
 export type PresentationEvent='spawn'|'start'|'release'|'impact'|'death'|'phase_transition';
@@ -10,10 +11,18 @@ export interface SpriteSource {asset:AssetRef;region?:Region;anchor?:Point}
 export interface AnimationFrame extends SpriteSource {duration:number}
 export interface LocalTransform {x:number;y:number;rotation:number;scaleX:number;scaleY:number;opacity:number}
 export interface AnimationMarker {id:string;at:number;type:'release'|'sound'|'vfx';ref:string;attach:Attachment}
+export type AnimationScope='game'|'cinematic';
 export interface AnimationDefinition {
  id:string;name:string;kind:'frames'|'procedural'|'combined';frames:AnimationFrame[];duration:number;loop:boolean;
  /** Empty means explicitly shared; absent keeps older projects classified by their profile links. */
  ownerSpeciesId?:string;
+ /** 'cinematic' isolates cinematic clips from gameplay/level animations ('game' or omitted). */
+ scope?:AnimationScope;
+ /** Optional static reference image this animation (typically a cinematic walk) was generated from. */
+ sourceAssetRef?:AssetRef;
+ /** Optional horizontal distance covered by one full walk cycle at nominal scale, used to avoid foot sliding. */
+ stridePx?:number;
+ element?: AnimatedElement;
  anchor:Point;transform:LocalTransform;motion:{preset:typeof MOTIONS[number];amplitude:number;period:number};
  attachments:{id:Attachment;x:number;y:number}[];markers:AnimationMarker[];
 }
@@ -34,7 +43,7 @@ export interface PresentationCatalog {version:1;defaultProfileId:string;animatio
 export type PresentationSection='animations'|'profiles'|'audio'|'vfx';
 /** Explicit link to ONE game project. Films never embed a mutable copy of its catalogs. */
 export interface CatalogLink {projectId:string;file:string}
-export interface ActorAnimation {mode:'animation'|'species';animationId:string;speciesId:string;slot:string;speed:number}
+export interface ActorAnimation {mode:'animation'|'species';animationId:string;speciesId:string;slot:string;speed:number;syncWithMovement?:boolean;autoFlip?:boolean;elementPlayback?:ElementPlayback}
 export const EMPTY_CUE: Cue={soundId:'',vfxId:'',attach:'launch'};
 export const DEFAULT_ABILITY_PRESENTATION:AbilityPresentation={slot:'attack',release:'marker',delay:0,fitCadence:true,start:{...EMPTY_CUE},releaseCue:{...EMPTY_CUE},impact:{...EMPTY_CUE,attach:'center'}};
 export const IDENTITY:LocalTransform={x:0,y:0,rotation:0,scaleX:1,scaleY:1,opacity:1};

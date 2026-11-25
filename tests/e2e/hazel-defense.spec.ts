@@ -30,8 +30,7 @@ test('Noisetier: shield defense previews on the character sheet and survives sav
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: file });
     }, target);
     async function selectHazel() {
-      await page.locator('.studio-modebar').getByRole('button', { name: 'Niveaux', exact: true }).click();
-      await page.locator('.gd-sections').getByRole('button', { name: /^Plantes/ }).click();
+      await page.locator('.studio-sections').getByRole('button', { name: /^Plantes/ }).click();
       await page.locator('.gd-catalog').getByRole('button', { name: /^Noisetier/ }).click();
       await page.getByRole('button', { name: 'Animations et sons de Noisetier', exact: true }).click();
       await expect(page.getByLabel('Animation pour Touché', { exact: true })).toHaveValue('hazel_defense');

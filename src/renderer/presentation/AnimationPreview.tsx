@@ -22,18 +22,15 @@ import { drumRadius } from '../../shared/presentation/rollingDrum.js';
 import { WalkRigGlyph } from './WalkRigGlyph.js';
 export const imageSizes = new Map<string, { width: number; height: number }>();
 export function useImageSize(url: string) {
-  const [size, setSize] = useState(imageSizes.get(url));
+  const [, setSize] = useState(imageSizes.get(url));
   useEffect(() => {
-    if (!url) {
-      setSize(undefined);
-      return;
-    }
-    if (imageSizes.has(url)) {
-      setSize(imageSizes.get(url));
+    if (!url) return;
+    const cached = imageSizes.get(url);
+    if (cached) {
+      setSize(cached);
       return;
     }
     let live = true;
-    setSize(undefined);
     const image = new Image();
     image.onload = () => {
       const value = { width: image.naturalWidth, height: image.naturalHeight };
@@ -46,13 +43,15 @@ export function useImageSize(url: string) {
       live = false;
     };
   }, [url]);
-  return size;
+  return imageSizes.get(url);
 }
 export function sourceGeometry(
   source: SpriteSource | undefined,
   assets: Asset[],
   bounds: { width: number; height: number },
+  stretch = false,
 ) {
+  if (stretch) return { width: bounds.width, height: bounds.height };
   const asset = assets.find((x) => x.ref === source?.asset),
     size = source?.region ??
       imageSizes.get(asset?.url ?? "") ?? {
@@ -73,6 +72,7 @@ export function SpriteGlyph({
   assets,
   guides = false,
   quiet = false,
+  stretch = false,
 }: {
   animation: AnimationDefinition;
   visual?: SpeciesVisual;
@@ -80,13 +80,14 @@ export function SpriteGlyph({
   assets: Asset[];
   guides?: boolean;
   quiet?: boolean;
+  stretch?: boolean;
 }) {
   const tintId = useId().replace(/:/g, "");
   const source = frameAt(animation, time).frame ?? visual?.sprite,
     asset = assets.find((x) => x.ref === source?.asset),
     natural = useImageSize(asset?.url ?? "");
   const bounds = { width: visual?.width ?? 100, height: visual?.height ?? 100 },
-    size = sourceGeometry(source, assets, bounds),
+    size = sourceGeometry(source, assets, bounds, stretch),
     pivot = source?.anchor ?? animation.anchor,
     tr = sample(animation, time, quiet),
     region = source?.region;
@@ -206,7 +207,9 @@ export function AnimationPreview({
     [playing, setPlaying] = useState(autoplay),
     [guides, setGuides] = useState(!compact),
     [quiet, setQuiet] = useState(false),
-    [mirror, setMirror] = useState(false);
+    [mirror, setMirror] = useState(false),
+    [treadmill, setTreadmill] = useState(false),
+    [onionSkin, setOnionSkin] = useState(false);
   const [seekEpoch, setSeekEpoch] = useState(0);
   const timeRef = useRef(0);
   timeRef.current = time;
@@ -259,6 +262,24 @@ export function AnimationPreview({
     const i = frameAt(animation, time).index;
     seek(starts[Math.max(0, Math.min(starts.length - 1, i + by))]);
   };
+  const previewVisual = visual
+    ? { ...visual, mirror: mirror ? !visual.mirror : visual.mirror }
+    : undefined;
+  const previousFrameTime = (() => {
+    if (!onionSkin || !animation || animation.frames.length < 2) return null;
+    const currentIndex = frameAt(animation, time).index;
+    const prevIndex = (currentIndex - 1 + animation.frames.length) % animation.frames.length;
+    let cursor = 0;
+    for (let i = 0; i < prevIndex; i++) cursor += animation.frames[i].duration;
+    return cursor + animation.frames[prevIndex].duration * 0.5;
+  })();
+  const treadmillOffset = (() => {
+    if (!treadmill || !animation) return 0;
+    const stride = animation.stridePx && animation.stridePx > 0 ? animation.stridePx : 110;
+    const clipDuration = Math.max(0.05, duration(animation));
+    const direction = previewVisual?.mirror ? 1 : -1;
+    return ((time / clipDuration) * stride * direction) % 24;
+  })();
   return (
     <div className={"lp-preview " + (compact ? "lp-compact" : "")}>
       <svg
@@ -266,14 +287,37 @@ export function AnimationPreview({
         aria-label="Aperçu de l’animation"
       >
         <path d="M-80 0H80" stroke="currentColor" opacity=".2" />
+        {treadmill && (
+          <g pointerEvents="none" opacity=".45" transform={`translate(${treadmillOffset},0)`}>
+            {Array.from({ length: 13 }, (_, idx) => {
+              const x = (idx - 6) * 24;
+              return (
+                <path
+                  key={idx}
+                  d={`M${x} 0 L${x - 6} 10`}
+                  stroke="#c5dea9"
+                  strokeWidth="1.5"
+                />
+              );
+            })}
+          </g>
+        )}
+        {animation && previousFrameTime !== null && (
+          <g opacity=".28" pointerEvents="none">
+            <SpriteGlyph
+              animation={animation}
+              visual={previewVisual}
+              time={previousFrameTime}
+              assets={assets}
+              guides={false}
+              quiet={quiet}
+            />
+          </g>
+        )}
         {animation && (
           <SpriteGlyph
             animation={animation}
-            visual={
-              visual
-                ? { ...visual, mirror: mirror ? !visual.mirror : visual.mirror }
-                : undefined
-            }
+            visual={previewVisual}
             time={time}
             assets={assets}
             guides={guides}
@@ -282,11 +326,7 @@ export function AnimationPreview({
         )}
         <LocalPreviewCues
           animation={animation}
-          visual={
-            visual
-              ? { ...visual, mirror: mirror ? !visual.mirror : visual.mirror }
-              : undefined
-          }
+          visual={previewVisual}
           assets={assets}
           catalog={catalog}
           events={events}
@@ -363,6 +403,24 @@ export function AnimationPreview({
               />{" "}
               Mouvement réduit
             </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={treadmill}
+                onChange={(e) => setTreadmill(e.target.checked)}
+              />{" "}
+              Tapis de marche
+            </label>
+            {!!animation?.frames.length && animation.frames.length > 1 && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={onionSkin}
+                  onChange={(e) => setOnionSkin(e.target.checked)}
+                />{" "}
+                Pelure d’oignon
+              </label>
+            )}
           </div>
         </>
       )}

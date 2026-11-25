@@ -1,5 +1,5 @@
 import {prepareCapabilityWorkshop,launchCapabilityWorkshop} from './capabilityWorkshop.js';
-import { app, BrowserWindow, dialog, ipcMain, protocol, net, session, nativeImage, shell, type IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol, net, session, nativeImage, safeStorage, shell, type IpcMainInvokeEvent } from 'electron';
 import { promises as fs, constants as fsConstants, watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -21,12 +21,21 @@ import { JpgExports } from './jpgExport.js';
 import { BackgroundCorrections } from './backgroundCorrections.js';
 import { ImageTaskQueue } from './imageJobs.js';
 import { imageTaskFinished } from '../shared/imageTasks.js';
-import { TerrainGenerations, generateTerrainWithCodex } from './terrainGenerations.js';
-import { PoseGenerations, generatePoseWithCodex } from './poseGenerations.js';
+import { TerrainGenerations, createTerrainGenerator } from './terrainGenerations.js';
+import { PoseGenerations, createPoseGenerator } from './poseGenerations.js';
+import { AnimationGenerations, createAnimationGenerator } from './animationGenerations.js';
+import { ensureTransparentBackground, stabilizeSpritesheet } from './animationSheets.js';
 import { validatePosePixels } from './poseImages.js';
-import { codexImagesRoot, generateWithCodex } from './codexImageCorrection.js';
+import { codexImagesRoot, createBackgroundGenerator } from './codexImageCorrection.js';
 import { listCodexModels } from './codexModels.js';
+import { findCodexExecutable } from './codexExecutable.js';
+import { findAgyExecutable } from './agyExecutable.js';
+import { listAgyModels } from './agyImageGeneration.js';
+import { AiSettingsStore } from './aiSettings.js';
+import { listGeminiImageModels } from './geminiImageGeneration.js';
+import { normalizeAiProvider } from '../shared/aiProviders.js';
 import { cropPanoramaCore, panoramaCanvas, finalizePanorama } from './panoramaImages.js';
+import { parseDevOrigin } from './devOrigin.js';
 
 // The opt-in E2E runner uses an isolated profile, never the author's real workspace.
 // Ignored entirely in a packaged application; it does not relax renderer/IPC security.
@@ -42,8 +51,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'lunaria-asset', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } },
   { scheme: 'lunaria-correction', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
 ]);
-const devUrl = !app.isPackaged ? process.env.LUNARIA_DEV_URL : undefined;
-if (devUrl && devUrl !== 'http://127.0.0.1:5173') throw new Error('Origine de développement non autorisée.');
+const devUrl = parseDevOrigin(process.env.LUNARIA_DEV_URL, app.isPackaged);
 let window: BrowserWindow | null = null;
 let root = '', snapshot: LibrarySnapshot | null = null, dirty = false;
 let watcher: FSWatcher | null = null, changeTimer: NodeJS.Timeout | undefined;
@@ -60,13 +68,36 @@ const appRoot = () => app.getAppPath();
 const rendererRoot = () => path.join(appRoot(), 'dist', 'renderer');
 const dataFile = (name: string) => path.join(app.getPath('userData'), name);
 const imageTaskQueue = new ImageTaskQueue();
+const aiSettings = new AiSettingsStore(
+  dataFile('ai-settings.json'),
+  {
+    available: () => safeStorage.isEncryptionAvailable(),
+    encrypt: plain => safeStorage.encryptString(plain).toString('base64'),
+    decrypt: encoded => safeStorage.decryptString(Buffer.from(encoded, 'base64')),
+  },
+  process.env,
+  async () => {
+    try { await findCodexExecutable(); return true; } catch { return false; }
+  },
+  async () => {
+    try { await findAgyExecutable(); return true; } catch { return false; }
+  },
+);
+const getGeminiApiKey = () => aiSettings.getGeminiApiKey();
+const generateBackground = createBackgroundGenerator(getGeminiApiKey);
+const generateTerrain = createTerrainGenerator(getGeminiApiKey);
+const generatePose = createPoseGenerator(getGeminiApiKey);
+const generateAnimation = createAnimationGenerator(
+  ({ pixels, width, height }) => nativeImage.createFromBitmap(pixels, { width, height }).toPNG(),
+  getGeminiApiKey,
+);
 const backgroundCorrections = new BackgroundCorrections({
   queue: imageTaskQueue,
   jobsRoot: dataFile('background-corrections'), generatedRoot: codexImagesRoot(),
   generate: async task => {
     // An opt-in fixture can only read inside the isolated E2E profile.
     const fixture = e2e ? process.env.LUNARIA_E2E_IMAGE_RESULT : undefined;
-    if (!fixture) return generateWithCodex(task);
+    if (!fixture) return generateBackground(task);
     const real = await fs.realpath(fixture), profile = await fs.realpath(app.getPath('userData'));
     if (!isWithin(profile, real)) throw new Error('Fixture de correction hors du profil isolé.');
     if (process.env.LUNARIA_E2E_IMAGE_MANUAL === '1') {
@@ -95,7 +126,7 @@ const terrainGenerations = new TerrainGenerations({
   generate: async task => {
     const fixture = e2e ? (task.state === 'restored' ? process.env.LUNARIA_E2E_TERRAIN_RESTORED_RESULT : process.env.LUNARIA_E2E_TERRAIN_RESULT) : undefined;
     if (e2e && process.env.LUNARIA_E2E_TERRAIN_RESULT && !fixture) throw Error('Fixture du terrain nettoyé manquante.');
-    if (!fixture) return generateTerrainWithCodex(task);
+    if (!fixture) return generateTerrain(task);
     const real = await fs.realpath(fixture), profile = await fs.realpath(app.getPath('userData'));
     if (!isWithin(profile, real)) throw new Error('Fixture de terrain hors du profil isolé.');
     await fs.writeFile(path.join(path.dirname(task.folder), 'fixture-request.json'), JSON.stringify(task.request));
@@ -120,7 +151,7 @@ const poseGenerations = new PoseGenerations({
   jobsRoot: dataFile('pose-generations'), generatedRoot: codexImagesRoot(),
   generate: async task => {
     const fixture = e2e ? process.env.LUNARIA_E2E_POSE_RESULT : undefined;
-    if (!fixture) return generatePoseWithCodex(task);
+    if (!fixture) return generatePose(task);
     const real = await fs.realpath(fixture), profile = await fs.realpath(app.getPath('userData'));
     if (!isWithin(profile, real)) throw Error('Fixture de pose hors du profil isolé.');
     await fs.writeFile(path.join(task.folder, 'fixture-request.json'), JSON.stringify(task.request));
@@ -137,11 +168,48 @@ const poseGenerations = new PoseGenerations({
   },
   inspect: bytes => nativeImage.createFromBuffer(bytes).getSize(),
   png: bytes => nativeImage.createFromBuffer(bytes).toPNG(),
-  finalize: bytes => {
-    const image = nativeImage.createFromBuffer(bytes);
+  finalize: (bytes, provider) => {
+    let image = nativeImage.createFromBuffer(bytes);
     if (image.isEmpty()) throw Error('Pose générée illisible.');
+    if (provider === 'gemini') {
+      const size = image.getSize();
+      const cleaned = ensureTransparentBackground(image.toBitmap(), size.width, size.height);
+      image = nativeImage.createFromBitmap(cleaned, size);
+    }
     validatePosePixels(image.toBitmap(), image.getSize());
     return image.toPNG();
+  },
+});
+const animationGenerations = new AnimationGenerations({
+  queue: imageTaskQueue,
+  jobsRoot: dataFile('animation-generations'), generatedRoot: codexImagesRoot(),
+  generate: async task => {
+    const fixture = e2e ? process.env.LUNARIA_E2E_ANIMATION_RESULT : undefined;
+    if (!fixture) return generateAnimation(task);
+    const real = await fs.realpath(fixture), profile = await fs.realpath(app.getPath('userData'));
+    if (!isWithin(profile, real)) throw Error('Fixture d’animation hors du profil isolé.');
+    await fs.writeFile(path.join(task.folder, 'fixture-request.json'), JSON.stringify(task.request));
+    if (task.signal.aborted) throw Error('Génération annulée.');
+    const output = path.join(task.folder, 'fixture-result.png');
+    await fs.copyFile(real, output); return output;
+  },
+  inspect: bytes => nativeImage.createFromBuffer(bytes).getSize(),
+  png: bytes => nativeImage.createFromBuffer(bytes).toPNG(),
+  stabilize: (bytes, columns, rows, requireNativeAlpha) => {
+    const image = nativeImage.createFromBuffer(bytes);
+    if (image.isEmpty()) throw Error('Planche d’animation générée illisible.');
+    const size = image.getSize();
+    const result = stabilizeSpritesheet(image.toBitmap(), size.width, size.height, columns, rows, requireNativeAlpha);
+    const png = nativeImage.createFromBitmap(result.pixels, { width: result.width, height: result.height }).toPNG();
+    return {
+      png,
+      width: result.width,
+      height: result.height,
+      cellWidth: result.cellWidth,
+      cellHeight: result.cellHeight,
+      frameCount: result.frameCount,
+      recommendedStridePx: result.recommendedStridePx,
+    };
   },
 });
 const validateSender = (event: IpcMainInvokeEvent | Electron.IpcMainEvent) => {
@@ -254,12 +322,17 @@ function setupIpc() {
   handle('game:clear-recovery',()=>gameDocuments.clearRecovery());
   handle('campaign:check',async value=>(await planCampaign(value,root)).check);
   handle('game:publish',async value=>{
-    const project=parseGameProject(value);
+    const project=parseGameProject(value),libraryRoot=root;
     const result=await dialog.showOpenDialog(window!,{title:'Choisir le dossier du jeu V1.10 contenant project.godot',properties:['openDirectory']});
     if(result.canceled||!result.filePaths[0])return null;
-    const check=(await planCampaign(project,root)).check;
+    const gameRoot=await validGameRoot(result.filePaths[0]);
+    if(!gameRoot)throw Error('Choisis le projet Godot fourni avec Lunaria Studio V1.10.');
+    const check=(await planCampaign(project,libraryRoot,gameRoot)).check;
     const answer=await dialog.showMessageBox(window!,{type:'warning',title:'Publier la campagne',message:`Publier ${check.steps} étapes : ${check.levels} niveaux et ${check.films} films ?`,detail:`${check.assets} ressources uniques seront réutilisées ou copiées dans la bibliothèque commune du jeu. Les images existantes différentes ne seront jamais écrasées. Le contenu actif est remplacé en dernier, avec une copie .bak. Ferme le jeu puis relance-le. ${check.warnings.join(' ')} La progression est conservée lors des mises à jour. Un combat suspendu devenu incompatible devra être recommencé.`,buttons:['Annuler','Publier'],defaultId:0,cancelId:0});
-    if(answer.response!==1)return null;const published=await publishCampaign(project,result.filePaths[0],root);await rememberPreview({gameRoot:await validGameRoot(result.filePaths[0])??undefined});return published;
+    if(answer.response!==1)return null;
+    const published=await publishCampaign(project,gameRoot,libraryRoot);
+    await rememberPreview({gameRoot});
+    return published;
   });
   handle('game:publish-web', value => withNativeBuild(async () => {
     firstWebLevel(value);
@@ -375,12 +448,18 @@ function setupIpc() {
   handle('library:example', () => selectRoot(devUrl ? path.join(appRoot(), 'example-library') : rendererRoot()));
   handle('library:refresh', () => refresh());
   handle('background-correction:prepare', ref => { if (!root) throw new Error('Connecte une bibliothèque avant d’adapter un décor.'); return backgroundCorrections.prepare(root, ref); });
-  const imageProcessor = (kind: unknown) => { if (kind === 'pose') return poseGenerations; if (kind === 'terrain') return terrainGenerations; if (kind === 'background') return backgroundCorrections; throw Error('Type de tâche inconnu.'); };
-  handle('image-tasks:list', async () => (await Promise.all([backgroundCorrections.list(), terrainGenerations.list(), poseGenerations.list()])).flat().sort((a,b) => (b.job.createdAt ?? '').localeCompare(a.job.createdAt ?? '')));
+  const imageProcessor = (kind: unknown) => {
+    if (kind === 'animation') return animationGenerations;
+    if (kind === 'pose') return poseGenerations;
+    if (kind === 'terrain') return terrainGenerations;
+    if (kind === 'background') return backgroundCorrections;
+    throw Error('Type de tâche inconnu.');
+  };
+  handle('image-tasks:list', async () => (await Promise.all([backgroundCorrections.list(), terrainGenerations.list(), poseGenerations.list(), animationGenerations.list()])).flat().sort((a,b) => (b.job.createdAt ?? '').localeCompare(a.job.createdAt ?? '')));
   handle('image-tasks:remove', async (kind, id) => { if (typeof id !== 'string') throw Error('Tâche invalide.'); return imageProcessor(kind).remove(id); });
   handle('image-tasks:clear', async () => {
     let count = 0;
-    for (const task of (await Promise.all([backgroundCorrections.list(), terrainGenerations.list(), poseGenerations.list()])).flat()) if (imageTaskFinished(task.job.status)) { await imageProcessor(task.kind).remove(task.job.id); count++; }
+    for (const task of (await Promise.all([backgroundCorrections.list(), terrainGenerations.list(), poseGenerations.list(), animationGenerations.list()])).flat()) if (imageTaskFinished(task.job.status)) { await imageProcessor(task.kind).remove(task.job.id); count++; }
     return count;
   });
   handle('image-tasks:retry', async (kind, id) => { if (!root) throw Error('Connecte la bibliothèque de cette tâche.'); if (typeof id !== 'string') throw Error('Tâche invalide.'); return imageProcessor(kind).retry(root, id); });
@@ -400,13 +479,24 @@ function setupIpc() {
     const job = await poseGenerations.apply(root, id);
     return { job, library: await refresh(true) };
   });
+  handle('animation-generation:start', request => {
+    if (!root || isWithin(appRoot(), root)) throw Error('Choisis une bibliothèque de production avant de générer une animation.');
+    return animationGenerations.start(root, request);
+  });
+  handle('animation-generation:get', id => animationGenerations.get(id));
+  handle('animation-generation:cancel', async id => { const job = animationGenerations.cancel(id); await animationGenerations.flush(); return job; });
+  handle('animation-generation:apply', async id => {
+    if (!root) throw Error('La bibliothèque est déconnectée.');
+    const job = await animationGenerations.apply(root, id);
+    return { job, library: await refresh(true) };
+  });
   handle('terrain-generation:cancel', async id => { const job = terrainGenerations.cancel(id); await terrainGenerations.flush(); return job; });
   handle('terrain-generation:apply', async id => {
     if (!root) throw new Error('La bibliothèque est déconnectée.');
     const job = await terrainGenerations.apply(root, id);
     return { job, library: await refresh(true) };
   });
-  handle('background-correction:models', async () => {
+  const listOpenAiModels = async () => {
     if (e2e && process.env.LUNARIA_E2E_CODEX_MODELS_LIVE !== '1') {
       const fixture = path.join(app.getPath('userData'), 'codex-models.json');
       try {
@@ -418,6 +508,27 @@ function setupIpc() {
       } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []; throw error; }
     }
     return listCodexModels();
+  };
+  handle('background-correction:models', () => listOpenAiModels());
+  handle('ai:status', () => aiSettings.status());
+  handle('ai:set-gemini-key', key => aiSettings.setGeminiApiKey(key));
+  handle('ai:models', async rawProvider => {
+    const provider = normalizeAiProvider(rawProvider);
+    if (provider === 'gemini') {
+      if (e2e) {
+        const fixture = path.join(app.getPath('userData'), 'gemini-models.json');
+        try {
+          const real = await fs.realpath(fixture), profile = await fs.realpath(app.getPath('userData'));
+          if (!isWithin(profile, real)) throw new Error('Fixture de modèles Gemini hors du profil isolé.');
+          const data = JSON.parse(await fs.readFile(real, 'utf8'));
+          if (Array.isArray(data)) return data;
+        } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+      }
+      const agy = await findAgyExecutable().catch(() => undefined);
+      if (agy) return listAgyModels();
+      return listGeminiImageModels(await aiSettings.getGeminiApiKey());
+    }
+    return (await listOpenAiModels()).map(item => ({ ...item, provider: 'openai' as const }));
   });
   handle('background-correction:start', request => { if (!root) throw new Error('Connecte une bibliothèque avant de corriger un décor.'); return backgroundCorrections.start(root, request); });
   handle('background-correction:get', id => backgroundCorrections.get(id));
@@ -507,8 +618,8 @@ function setupProtocols() {
   protocol.handle('lunaria-correction', async request => {
     try {
       const url = new URL(request.url), parts = url.pathname.split('/').filter(Boolean);
-      if (!['image', 'terrain', 'pose'].includes(url.hostname) || parts.length !== 2) return new Response('Introuvable', { status: 404 });
-      const result = await (url.hostname === 'pose' ? poseGenerations : url.hostname === 'terrain' ? terrainGenerations : backgroundCorrections).image(parts[0], parts[1]);
+      if (!['image', 'terrain', 'pose', 'animation'].includes(url.hostname) || parts.length !== 2) return new Response('Introuvable', { status: 404 });
+      const result = await (url.hostname === 'animation' ? animationGenerations : url.hostname === 'pose' ? poseGenerations : url.hostname === 'terrain' ? terrainGenerations : backgroundCorrections).image(parts[0], parts[1]);
       return new Response(new Uint8Array(result.bytes), { headers: { 'Content-Type': result.mime, 'Cache-Control': 'no-store' } });
     } catch { return new Response('Introuvable', { status: 404 }); }
   });
@@ -571,8 +682,8 @@ else {
     setupProtocols(); setupIpc();
     try { const settings = await readJson(dataFile('settings.json')) as { libraryRoot?: string }; if (typeof settings.libraryRoot === 'string') await selectRoot(settings.libraryRoot); }
     catch { /* Reconnect explicitly if the saved location is unavailable. */ }
-    await Promise.all([backgroundCorrections.ready, terrainGenerations.ready, poseGenerations.ready]);
+    await Promise.all([backgroundCorrections.ready, terrainGenerations.ready, poseGenerations.ready, animationGenerations.ready]);
     createWindow();
   }).catch(error => { console.error(error); app.quit(); });
 }
-app.on('window-all-closed', () => { watcher?.close(); clearTimeout(changeTimer); void Promise.all([backgroundCorrections.close(), terrainGenerations.close(), poseGenerations.close()]).finally(() => app.quit()); });
+app.on('window-all-closed', () => { watcher?.close(); clearTimeout(changeTimer); void Promise.all([backgroundCorrections.close(), terrainGenerations.close(), poseGenerations.close(), animationGenerations.close()]).finally(() => app.quit()); });

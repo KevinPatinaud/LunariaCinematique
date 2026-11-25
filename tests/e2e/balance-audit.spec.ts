@@ -39,10 +39,10 @@ test.afterEach(async () => {
 });
 
 test("Audit section displays live plant and level tables and navigates to editors", async () => {
-  await page.locator(".studio-modebar").getByRole("button", { name: /^Niveaux/ }).click();
+  const nav = page.locator(".studio-sections");
+  await nav.getByRole("button", { name: "Campagne", exact: true }).click();
   await page.getByRole("button", { name: "Créer un premier niveau" }).click();
 
-  const nav = page.locator(".gd-sections");
   await nav.getByRole("button", { name: /^Audit/ }).click();
 
   await expect(page.getByRole("heading", { name: "Plantes, niveaux, économie & rythme" })).toBeVisible();

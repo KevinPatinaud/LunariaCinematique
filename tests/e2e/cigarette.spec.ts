@@ -21,7 +21,7 @@ test('Cigarette: inspect art, edit souffle cells, assign a wave, save and reopen
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Cigarette/}).click();
   await expect(page.getByRole('heading',{name:'Cigarette',exact:true})).toBeVisible();
   await expect(page.getByLabel('Points de vie',{exact:true})).toHaveValue('220');
@@ -48,14 +48,14 @@ test('Cigarette: inspect art, edit souffle cells, assign a wave, save and reopen
 
   await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
   await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).combat.abilities.find((a:any)=>a.id==='ab_cigarette_smoke').cooldown).toBe(2.8);
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Vagues & ennemis'}).click();
   await expect(page.getByLabel('Ennemi du groupe 1')).toHaveValue('cigarette');
   await page.getByLabel('Ennemi du groupe 1').selectOption('runner');await page.getByLabel('Ennemi du groupe 1').selectOption('cigarette');
   await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
   await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves[0].groups[0].enemyId).toBe('cigarette');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Cigarette/}).click();
   await page.getByRole('button',{name:'Capacités',exact:true}).click();await page.getByText('Ciblage et déclenchement avancés',{exact:true}).click();
   await expect(page.getByLabel('Intervalle entre utilisations (s)')).toHaveValue('2.8');
@@ -70,7 +70,7 @@ test('Cigarette: inspect art, edit souffle cells, assign a wave, save and reopen
   await app.evaluate(({dialog})=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:['C:/dev/Lunaria/HISTOIRE DE LUNARIA/Cinematiques studio/lunaria.game.json']});});
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await page.getByRole('complementary',{name:'Catalogue des ennemis'}).getByRole('button',{name:/^Cigarette/}).click();
   await page.getByRole('button',{name:'Animations et sons de Cigarette',exact:true}).click();
    await page.getByRole('button',{name:/^Ses animations \(/}).click();
@@ -90,7 +90,7 @@ test('Cigarette: inspect art, edit souffle cells, assign a wave, save and reopen
   await page.getByLabel('Curseur temporel de l’animation').fill('0.1');
   await expect(page.locator('.lp-owned-editor .lp-preview svg image').first()).toHaveAttribute('width','1254');
   await page.locator('.lp-owned-editor .lp-preview').screenshot({path:info.outputPath('cigarette-studio-hit-preview.png')});
-  await page.locator('.gd-sections').getByRole('button',{name:/^Ennemis/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Ennemis/}).click();
   await page.locator('.gd-catalog').getByRole('button',{name:/^Cigarette/}).click();
   await page.getByRole('button',{name:'Comportement',exact:true}).click();
   await expect(page.getByLabel('S’arrêter quand une cible adverse est à portée')).not.toBeChecked();

@@ -1,15 +1,36 @@
+import type { AssetRef } from "../model.js";
 import type { GameProject } from "../game/types.js";
 import {
   BASE_SLOTS,
   SLOT_LABELS,
   type AnimationDefinition,
   type AnimationProfile,
+  type AnimationScope,
   type Cue,
   type PresentationEvent,
 } from "./types.js";
 import { newId } from "../game/types.js";
 import { newAnimation } from "./factories.js";
 import { resolveAnimation, species } from "./runtime.js";
+
+/** Animations default to gameplay ('game') unless explicitly marked for 'cinematic'. */
+export function animationScope(
+  animation: Pick<AnimationDefinition, "scope">,
+): AnimationScope {
+  return animation.scope === "cinematic" ? "cinematic" : "game";
+}
+
+export function isCinematicAnimation(
+  animation: Pick<AnimationDefinition, "scope">,
+): boolean {
+  return animationScope(animation) === "cinematic";
+}
+
+export function isGameAnimation(
+  animation: Pick<AnimationDefinition, "scope">,
+): boolean {
+  return animationScope(animation) === "game";
+}
 
 /** Existing projects have no owner field. A clip used by exactly one species profile belongs to it. */
 export function animationOwnerId(
@@ -68,6 +89,8 @@ export function setSpeciesAnimation(
       (value) => value.id === animationId,
     );
     if (!animation) throw Error("Animation introuvable.");
+    if (isCinematicAnimation(animation))
+      throw Error("Une animation de cinématique ne peut pas être assignée à une action de niveau.");
     const owner = animationOwnerId(project, animation);
     if (owner && owner !== speciesId)
       throw Error("Cette animation appartient à un autre personnage.");
@@ -195,4 +218,97 @@ function uniqueProfileId(existing: string[], speciesId: string): string {
   let index = 2;
   while (existing.includes(base + "_" + index)) index++;
   return base + "_" + index;
+}
+
+export interface RegisterSpeciesAnimationOptions {
+  speciesId?: string;
+  slot: string;
+  name: string;
+  frames: AnimationDefinition["frames"];
+  loop: boolean;
+  stridePx?: number;
+  scope?: AnimationScope;
+  sourceAssetRef?: AssetRef;
+  assignSlot?: boolean;
+  replaceAnimationId?: string;
+}
+
+/**
+ * Create (or update) a reusable frame-based animation owned by a character or tied to a static cinematic image.
+ * Cinematic animations (`scope: 'cinematic'`) stay strictly isolated from gameplay level profile slots
+ * and may omit `speciesId` when animating a standalone cinematic character image.
+ */
+export function registerSpeciesAnimation(
+  project: GameProject,
+  options: RegisterSpeciesAnimationOptions,
+): string {
+  const targetScope: AnimationScope = options.scope === "cinematic" ? "cinematic" : "game";
+  const catalog = project.presentation;
+  if (!catalog)
+    throw Error("Catalogue de présentation introuvable.");
+  let owner: ReturnType<typeof species> | undefined;
+  if (targetScope === "cinematic") {
+    if (options.speciesId) {
+      owner = species(project, options.speciesId);
+      if (!owner) throw Error("Personnage propriétaire introuvable.");
+    }
+  } else {
+    owner = profileContext(project, options.speciesId ?? "").owner;
+  }
+  if (!options.frames.length)
+    throw Error("L’animation doit contenir au moins une frame.");
+  const totalDuration = Math.max(
+    0.01,
+    Math.min(120, options.frames.reduce((sum, frame) => sum + frame.duration, 0)),
+  );
+  const existing = options.replaceAnimationId
+    ? catalog.animations.find(
+        (item) =>
+          item.id === options.replaceAnimationId &&
+          animationOwnerId(project, item) === owner?.id &&
+          animationScope(item) === targetScope,
+      )
+    : undefined;
+  let target: AnimationDefinition;
+  if (existing) {
+    target = existing;
+    target.name = options.name.trim().slice(0, 160) || target.name;
+    target.kind = "frames";
+    target.frames = structuredClone(options.frames);
+    target.duration = totalDuration;
+    target.loop = options.loop;
+    target.anchor = { x: 0.5, y: 1 };
+    target.motion = { preset: "none", amplitude: 0, period: totalDuration };
+    if (targetScope === "cinematic") target.scope = "cinematic";
+    else delete target.scope;
+    if (options.sourceAssetRef) target.sourceAssetRef = options.sourceAssetRef;
+    else delete target.sourceAssetRef;
+    if (options.stridePx && options.stridePx >= 1) target.stridePx = Math.min(4000, options.stridePx);
+    else delete target.stridePx;
+  } else {
+    if (catalog.animations.length >= 512)
+      throw Error("Le catalogue contient déjà 512 animations.");
+    const created = newAnimation(options.slot);
+    created.id = newId("anim");
+    created.name = (
+      options.name.trim() ||
+      `${owner?.name ?? "Personnage"} — ${SLOT_LABELS[options.slot] ?? options.slot}`
+    ).slice(0, 160);
+    if (owner) created.ownerSpeciesId = owner.id;
+    if (targetScope === "cinematic") created.scope = "cinematic";
+    if (options.sourceAssetRef) created.sourceAssetRef = options.sourceAssetRef;
+    created.kind = "frames";
+    created.frames = structuredClone(options.frames);
+    created.duration = totalDuration;
+    created.loop = options.loop;
+    created.anchor = { x: 0.5, y: 1 };
+    created.motion = { preset: "none", amplitude: 0, period: totalDuration };
+    if (options.stridePx && options.stridePx >= 1) created.stridePx = Math.min(4000, options.stridePx);
+    catalog.animations.push(created);
+    target = created;
+  }
+  if (targetScope !== "cinematic" && owner && options.assignSlot !== false && options.slot) {
+    setSpeciesAnimation(project, owner.id, options.slot, target.id);
+  }
+  return target.id;
 }

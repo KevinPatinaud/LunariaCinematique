@@ -39,6 +39,54 @@ export function restPose(actor: Actor): ActorPose {
     rotation: actor.rotation ?? 0, scale: 1, pivotX: actor.width * STAGE.width / 2,
     pivotY: actor.height * STAGE.height * (actor.pivot === 'top' ? 0 : actor.pivot === 'bottom' ? 1 : 0.5) };
 }
+
+/** Geometry in stage pixels, relative to A. The handle lies on the curve. */
+export function movementCurve(m: ObjectMovement) {
+  const dx = m.dx * STAGE.width;
+  const dy = m.dy * STAGE.height;
+  const chord = Math.hypot(dx, dy);
+  const normalX = chord < 1e-3 ? 0 : -dy / chord;
+  const normalY = chord < 1e-3 ? 0 : dx / chord;
+  const bend = (m.bend ?? 0) * STAGE.height;
+  return { dx, dy, chord, normalX, normalY, bowX: normalX * bend, bowY: normalY * bend };
+}
+
+/** Progress is a fraction of the path length, so linear speed stays constant through a bend. */
+export function sampleMovementPath(m: ObjectMovement, progress: number) {
+  const { dx, dy, chord, bowX, bowY } = movementCurve(m);
+  const fraction = clamp01(progress);
+  const width = Math.hypot(bowX, bowY) * 4;
+  if (chord < 1e-3 || width < 1e-6) {
+    return { x: dx * fraction, y: dy * fraction, length: chord, tangentX: dx };
+  }
+
+  // Integral of the speed across half of the symmetric quadratic, in chord units.
+  const ratio = width / chord;
+  const integral = (u: number) => (u * Math.hypot(1, ratio * u) + Math.asinh(ratio * u) / ratio) / 2;
+  const half = integral(1);
+  let t = fraction;
+  if (fraction > 0 && fraction < 1 && fraction !== 0.5) {
+    const distance = Math.abs(2 * fraction - 1) * half;
+    let low = 0;
+    let high = 1;
+    for (let i = 0; i < 24; i++) {
+      const mid = (low + high) * 0.5;
+      if (integral(mid) < distance) low = mid;
+      else high = mid;
+    }
+    t = 0.5 + Math.sign(fraction - 0.5) * (low + high) * 0.25;
+  }
+  const weight = 4 * t * (1 - t);
+  return { x: dx * t + bowX * weight, y: dy * t + bowY * weight,
+    length: chord * half, tangentX: dx + 4 * bowX * (1 - 2 * t) };
+}
+
+export function setMovementBend(m: ObjectMovement, dx: number, dy: number): ObjectMovement {
+  const { normalX, normalY } = movementCurve(m);
+  const bend = Math.max(-1, Math.min(1, (m.bend ?? 0) + (dx * normalX + dy * normalY) / STAGE.height));
+  return { ...m, bend };
+}
+
 /** Travel starts after the entrance finishes. A one-way trip holds its destination. */
 export function travelOffset(actor: Actor, elapsed: number): { x: number; y: number } {
   const m = actor.movement;
@@ -48,7 +96,8 @@ export function travelOffset(actor: Actor, elapsed: number): { x: number; y: num
   const cycles = time / Math.max(0.1, m.duration);
   const linear = m.repeat === 'pingpong' ? 1 - Math.abs((cycles % 2) - 1) : clamp01(cycles);
   const t = m.easing === 'linear' ? linear : smooth(linear);
-  return { x: m.dx * STAGE.width * t, y: m.dy * STAGE.height * t };
+  const { x, y } = sampleMovementPath(m, t);
+  return { x, y };
 }
 /** Scene-time envelope. An exit freezes travel/effects at its start, then leaves cleanly. */
 export function actorPose(actor: Actor, elapsed: number): ActorPose {

@@ -37,8 +37,6 @@ Dans **Niveaux → Paramètres → Terrain du niveau**, **Générer les terrains
 
 Le type **[Plateau occupé](docs/PLATEAU_OCCUPE.md)** permet de peindre les ennemis case par case, avec plusieurs unités ou espèces par case. Chaque vague commence avec tous ses ennemis en place dans les quatre colonnes de droite ; les Plaques conservent leurs renforts.
 
-Dans **Niveaux → Écran d’accueil**, régler le décor, les personnages, les textes, les panneaux, les boutons et la progression de l’accueil, avec un aperçu de la composition. Ces réglages sont enregistrés dans le même projet et publiés avec la campagne. Voir le [guide de l’accueil](docs/ACCUEIL.md).
-
 ## Fichiers et cinématiques
 
 Le menu commun **Fichier**, dans la barre supérieure, regroupe Nouveau projet,

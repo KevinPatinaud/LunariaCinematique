@@ -20,6 +20,7 @@ interface Props {
   showUnplaced: () => void;
   backup: () => void;
   busy: boolean;
+  path: string;
   project: GameProject;
   change: (
     edit: (p: GameProject) => void,
@@ -41,6 +42,7 @@ export function CampaignEditor({
   createLevel,
   backup,
   busy,
+  path,
   selectedStepId,
   onSelectStep: setSelected,
   showUnplaced,
@@ -55,6 +57,19 @@ export function CampaignEditor({
   const endIndex = campaign.steps.findIndex((s) => s.kind === "end"),
     endStep = endIndex < 0 ? undefined : campaign.steps[endIndex],
     pendingCount = endIndex < 0 ? 0 : campaign.steps.length - endIndex - 1;
+  const unlockIndex = campaign.steps.findIndex(
+      (s) => s.kind === "unlock_travel_book",
+    ),
+    unlockStep = unlockIndex < 0 ? undefined : campaign.steps[unlockIndex],
+    unlockAfterEnd = endIndex >= 0 && unlockIndex > endIndex;
+  const herbariumUnlockIndex = campaign.steps.findIndex(
+      (s) => s.kind === "unlock_herbarium",
+    ),
+    herbariumUnlockStep =
+      herbariumUnlockIndex < 0
+        ? undefined
+        : campaign.steps[herbariumUnlockIndex],
+    herbariumUnlockAfterEnd = endIndex >= 0 && herbariumUnlockIndex > endIndex;
   const inspector = useRef<HTMLElement>(null);
   useEffect(() => {
     if (inspector.current) inspector.current.scrollTop = 0;
@@ -174,6 +189,20 @@ export function CampaignEditor({
       setInsertBefore(undefined);
     } else insertAt({ id: newId("step"), kind: "end" }, beforeId);
   }
+  function placeTravelBookUnlock(beforeId: string | null) {
+    if (unlockStep) {
+      move(unlockStep.id, beforeId);
+      setSelected(unlockStep.id);
+      setInsertBefore(undefined);
+    } else insertAt({ id: newId("step"), kind: "unlock_travel_book" }, beforeId);
+  }
+  function placeHerbariumUnlock(beforeId: string | null) {
+    if (herbariumUnlockStep) {
+      move(herbariumUnlockStep.id, beforeId);
+      setSelected(herbariumUnlockStep.id);
+      setInsertBefore(undefined);
+    } else insertAt({ id: newId("step"), kind: "unlock_herbarium" }, beforeId);
+  }
   const remove = () =>
     void run(async () => {
       if (
@@ -205,12 +234,37 @@ export function CampaignEditor({
       <header className="gd-campaign-header">
         <div>
           <span className="gd-kicker">LE PARCOURS DU JOUEUR</span>
-          <h1>Campagne</h1>
+          <div className="gd-campaign-title-row">
+            <h1>Campagne</h1>
+            <input
+              className="gd-campaign-project-title"
+              aria-label="Titre du projet"
+              title="Renommer le projet"
+              maxLength={160}
+              disabled={busy}
+              value={project.title}
+              onChange={(e) =>
+                change(
+                  (p) => {
+                    p.title = e.target.value;
+                  },
+                  "title",
+                  "Renommer le projet",
+                )
+              }
+            />
+          </div>
+          {path && (
+            <small className="gd-campaign-project-path" title={path}>
+              {path}
+            </small>
+          )}
           <p>
             <strong>Le jeu lit cette liste de haut en bas.</strong> Une
             cinématique placée entre deux niveaux se lance après la victoire du
             premier, avant le chargement du suivant.
             {" "}La borne de fin actuelle arrête la partie jouable à l’endroit choisi.
+            {" "}Les jalons L’herbier et Carnet de voyage définissent le moment où chaque écran apparaît pour le joueur.
           </p>
         </div>
         <div className="gd-campaign-count">
@@ -228,6 +282,48 @@ export function CampaignEditor({
           <strong>Fin actuelle à l’étape {endIndex + 1}</strong>
           <span>{pendingCount ? `${pendingCount} étape(s) après la borne : suite en préparation, conservée dans le Studio et non publiée.` : "Toutes les étapes précédentes seront publiées. Déplace la borne pour prolonger l’aventure."}</span>
           <button onClick={() => setSelected(endStep.id)}>Sélectionner la fin actuelle</button>
+        </div>
+      )}
+      {herbariumUnlockStep && (
+        <div className="gd-campaign-unlock herbarium" role="status">
+          <strong>
+            {herbariumUnlockAfterEnd
+              ? `Déblocage de L’herbier à l’étape ${herbariumUnlockIndex + 1} (après la fin actuelle)`
+              : herbariumUnlockIndex === 0
+                ? "L’herbier débloqué dès le début (étape 1)"
+                : `Déblocage de L’herbier à l’étape ${herbariumUnlockIndex + 1}`}
+          </strong>
+          <span>
+            {herbariumUnlockAfterEnd
+              ? "Placé dans la suite en préparation : L’herbier restera masqué dans la version publiée."
+              : herbariumUnlockIndex === 0
+                ? "Aucune étape précédente : L’herbier est accessible dès l’ouverture du jeu."
+                : `Masqué avant ce jalon, puis débloqué automatiquement après « ${label(campaign.steps[herbariumUnlockIndex - 1])} ».`}
+          </span>
+          <button onClick={() => setSelected(herbariumUnlockStep.id)}>
+            Sélectionner le déblocage de L’herbier
+          </button>
+        </div>
+      )}
+      {unlockStep && (
+        <div className="gd-campaign-unlock" role="status">
+          <strong>
+            {unlockAfterEnd
+              ? `Déblocage du Carnet de voyage à l’étape ${unlockIndex + 1} (après la fin actuelle)`
+              : unlockIndex === 0
+                ? "Carnet de voyage débloqué dès le début (étape 1)"
+                : `Déblocage du Carnet de voyage à l’étape ${unlockIndex + 1}`}
+          </strong>
+          <span>
+            {unlockAfterEnd
+              ? "Placé dans la suite en préparation : le Carnet de voyage restera masqué dans la version publiée."
+              : unlockIndex === 0
+                ? "Aucune étape précédente : le Carnet de voyage est accessible dès l’ouverture du jeu."
+                : `Masqué avant ce jalon, puis débloqué automatiquement après « ${label(campaign.steps[unlockIndex - 1])} ».`}
+          </span>
+          <button onClick={() => setSelected(unlockStep.id)}>
+            Sélectionner le déblocage du Carnet
+          </button>
         </div>
       )}
       <div className="gd-campaign-backup">
@@ -427,6 +523,44 @@ export function CampaignEditor({
                           Créer un niveau ici
                         </button>
                       </div>
+                      <div className="gd-insert-choice unlock_herbarium">
+                        <span className="gd-step-symbol unlock_herbarium">🌿</span>
+                        <div>
+                          <strong>Déblocage de L’herbier</strong>
+                          <small>
+                            L’herbier reste masqué jusqu’ici, puis se débloque
+                            automatiquement pour le joueur.
+                          </small>
+                        </div>
+                        <button
+                          disabled={
+                            !herbariumUnlockStep && campaign.steps.length >= 1000
+                          }
+                          onClick={() => placeHerbariumUnlock(before)}
+                        >
+                          {herbariumUnlockStep
+                            ? "Déplacer le déblocage de L’herbier ici"
+                            : "Insérer le déblocage de L’herbier ici"}
+                        </button>
+                      </div>
+                      <div className="gd-insert-choice unlock_travel_book">
+                        <span className="gd-step-symbol unlock_travel_book">📖</span>
+                        <div>
+                          <strong>Déblocage du Carnet de voyage</strong>
+                          <small>
+                            Le Carnet de voyage reste masqué jusqu’ici, puis se
+                            débloque automatiquement pour le joueur.
+                          </small>
+                        </div>
+                        <button
+                          disabled={!unlockStep && campaign.steps.length >= 1000}
+                          onClick={() => placeTravelBookUnlock(before)}
+                        >
+                          {unlockStep
+                            ? "Déplacer le déblocage du Carnet ici"
+                            : "Insérer le déblocage du Carnet ici"}
+                        </button>
+                      </div>
                       <div className="gd-insert-choice end">
                         <span className="gd-step-symbol end">🏁</span>
                         <div>
@@ -476,22 +610,53 @@ export function CampaignEditor({
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <span className={`gd-step-symbol ${s.kind}`}>
-                        {s.kind === "end" ? "🏁" : s.kind === "level" ? "⚑" : "▶"}
+                        {s.kind === "end"
+                          ? "🏁"
+                          : s.kind === "unlock_travel_book"
+                            ? "📖"
+                            : s.kind === "unlock_herbarium"
+                              ? "🌿"
+                              : s.kind === "level"
+                                ? "⚑"
+                                : "▶"}
                       </span>
                       <span className="gd-step-name">
                         <small>
                           {endIndex >= 0 && i > endIndex && "SUITE EN PRÉPARATION · "}
-                          {s.kind === "end" ? "LIMITE DE LA VERSION JOUABLE" : s.kind === "level"
-                            ? endIndex >= 0 && i > endIndex ? "NIVEAU" : "NIVEAU JOUABLE"
-                            : "CINÉMATIQUE"}
+                          {s.kind === "end"
+                            ? "LIMITE DE LA VERSION JOUABLE"
+                            : s.kind === "unlock_travel_book" ||
+                                s.kind === "unlock_herbarium"
+                              ? "JALON DE PROGRESSION"
+                              : s.kind === "level"
+                                ? endIndex >= 0 && i > endIndex
+                                  ? "NIVEAU"
+                                  : "NIVEAU JOUABLE"
+                                : "CINÉMATIQUE"}
                         </small>
                         <strong>{label(s)}</strong>
                         <small>
-                          {s.kind === "end" ? "Écran de fin · la suite reste dans le Studio" : endIndex >= 0 && i > endIndex ? "Conservé dans le projet · non publié" : s.kind === "level"
-                            ? "Victoire → passage à l’étape suivante"
-                            : s.skippable
-                              ? "Film pouvant être passé par le joueur"
-                              : "Film obligatoire avant la suite"}
+                          {s.kind === "end"
+                            ? "Écran de fin · la suite reste dans le Studio"
+                            : s.kind === "unlock_travel_book"
+                              ? endIndex >= 0 && i > endIndex
+                                ? "Après la fin actuelle · Carnet masqué dans la version publiée"
+                                : i === 0
+                                  ? "Au démarrage · Carnet accessible dès le début"
+                                  : "Masqué avant · débloqué automatiquement à ce moment"
+                              : s.kind === "unlock_herbarium"
+                                ? endIndex >= 0 && i > endIndex
+                                  ? "Après la fin actuelle · Herbier masqué dans la version publiée"
+                                  : i === 0
+                                    ? "Au démarrage · Herbier accessible dès le début"
+                                    : "Masqué avant · débloqué automatiquement à ce moment"
+                                : endIndex >= 0 && i > endIndex
+                                  ? "Conservé dans le projet · non publié"
+                                  : s.kind === "level"
+                                    ? "Victoire → passage à l’étape suivante"
+                                    : s.skippable
+                                      ? "Film pouvant être passé par le joueur"
+                                      : "Film obligatoire avant la suite"}
                         </small>
                       </span>
                       <span className="gd-step-grip" aria-hidden="true">
@@ -513,7 +678,14 @@ export function CampaignEditor({
             <>
               <div className="gd-kicker">
                 ÉTAPE {campaign.steps.indexOf(step) + 1} ·{" "}
-                {step.kind === "end" ? "FIN ACTUELLE" : step.kind === "level" ? "NIVEAU JOUABLE" : "CINÉMATIQUE"}
+                {step.kind === "end"
+                  ? "FIN ACTUELLE"
+                  : step.kind === "unlock_travel_book" ||
+                      step.kind === "unlock_herbarium"
+                    ? "JALON DE PROGRESSION"
+                    : step.kind === "level"
+                      ? "NIVEAU JOUABLE"
+                      : "CINÉMATIQUE"}
               </div>
               <h2>{label(step)}</h2>
               <div className="gd-step-context">
@@ -522,7 +694,15 @@ export function CampaignEditor({
                     ? `Après « ${label(campaign.steps[campaign.steps.indexOf(step) - 1])} »`
                     : "Au début du jeu"}
                 </span>
-                <b>{step.kind === "end" ? "→ ARRÊT DU JOUEUR" : "→ CETTE ÉTAPE →"}</b>
+                <b>
+                  {step.kind === "end"
+                    ? "→ ARRÊT DU JOUEUR"
+                    : step.kind === "unlock_travel_book"
+                      ? "→ DÉBLOCAGE DU CARNET →"
+                      : step.kind === "unlock_herbarium"
+                        ? "→ DÉBLOCAGE DE L’HERBIER →"
+                        : "→ CETTE ÉTAPE →"}
+                </b>
                 <span>
                   {campaign.steps[campaign.steps.indexOf(step) + 1]
                     ? `${step.kind === "end" ? "Suite en préparation :" : "Puis"} « ${label(campaign.steps[campaign.steps.indexOf(step) + 1])} »`
@@ -553,6 +733,18 @@ export function CampaignEditor({
                   <p>Le jeu affiche le message de fin de la version actuelle, avec le retour à l’accueil. Aucun niveau ni aucune cinématique placé après cette borne n’est publié dans le parcours.</p>
                   <p className="gd-note">Déplace cette carte lorsque tu prolonges l’aventure. Les étapes suivantes restent enregistrées et modifiables dans le Studio. Une seule borne de fin actuelle est nécessaire.</p>
                   <p className="gd-note">Retirer cette borne rend à nouveau publiable tout le parcours.</p>
+                </>
+              ) : step.kind === "unlock_travel_book" ? (
+                <>
+                  <p>Le bouton « Carnet de voyage » reste masqué sur l’accueil et dans l’herbier tant que le joueur n’a pas atteint ce point du parcours. Dès que l’étape précédente est accomplie, le Carnet de voyage se débloque automatiquement, sans interrompre l’enchaînement des cinématiques et des niveaux.</p>
+                  <p className="gd-note">Glisse cette carte ou utilise Monter / Descendre pour déplacer librement le moment du déblocage (par exemple entre deux parties d’une cinématique). Un seul jalon est nécessaire.</p>
+                  <p className="gd-note">Retirer ce jalon rend le Carnet de voyage accessible dès le début de la partie.</p>
+                </>
+              ) : step.kind === "unlock_herbarium" ? (
+                <>
+                  <p>Le bouton « L’herbier » reste masqué sur l’accueil et dans le Carnet de voyage tant que le joueur n’a pas atteint ce point du parcours. Dès que l’étape précédente est accomplie, L’herbier se débloque automatiquement, sans interrompre l’enchaînement des cinématiques et des niveaux.</p>
+                  <p className="gd-note">Glisse cette carte ou utilise Monter / Descendre pour déplacer librement le moment du déblocage (par exemple entre deux parties d’une cinématique). Un seul jalon est nécessaire.</p>
+                  <p className="gd-note">Retirer ce jalon rend L’herbier accessible dès le début de la partie.</p>
                 </>
               ) : film ? (
                 <>
@@ -645,15 +837,15 @@ export function CampaignEditor({
           <hr />
           <h3>Avant publication</h3>
           <p className="gd-note">
-            Enregistre le projet unique. La publication vérifie ses films et ses
-            images, puis installe le parcours dans le jeu.
+            Vérifie les films et les médias du parcours. Le dossier Godot
+            sélectionné est vérifié avant la confirmation de publication.
           </p>
           <button
             onClick={() =>
               void run(async () => {
                 const r = await gameAPI.checkCampaign(project);
                 report(
-                  `Vérification réussie : ${r.steps} étapes, ${r.levels} niveaux, ${r.films} cinématiques, ${r.assets} ressources uniques. ${r.warnings.join(" ")}`,
+                  `Parcours vérifié. ${r.steps} étapes, ${r.levels} niveaux, ${r.films} cinématiques, ${r.assets} ressources uniques. ${r.warnings.join(" ")}`,
                 );
               })
             }

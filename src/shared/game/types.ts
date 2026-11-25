@@ -4,6 +4,7 @@ import type { CombatCatalog } from './combat.js';
 import type { Cinematic } from '../model.js';
 import type { HomeScreen } from './homeScreen.js';
 import type { EnemyRules } from './enemyRules.js';
+import type { LevelLunaRewards, LunaEconomyConfig } from './lunas.js';
 /** Game authoring contract. Level records contain references, never combat-stat overrides. */
 export const DAMAGE_TYPES = ['physical','piercing','toxic','pure'] as const;
 export type DamageType = typeof DAMAGE_TYPES[number];
@@ -37,13 +38,14 @@ export const DEFAULT_WAVE_SEED_REWARD=50;
 export interface WaveDefinition {id:string;groups:SpawnGroup[];seedReward?:number}
 export interface LevelDefinition {
  events?:LevelEvent[];id:string;title:string;subtitle:string;act:number;location:string;terrainImage?:`library://${string}`;restoredTerrainImage?:`library://${string}`;startingEnergy:number;allowedPlants:string[];
- objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;escort?:EscortSettings;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;objectiveTextMode?:'automatic'|'custom';tip:string;waves:WaveDefinition[];
+ objective:{type:typeof OBJECTIVES[number];target:number};laneCaptureSeedReward?:number;lunaRewards?:LevelLunaRewards;escort?:EscortSettings;protectedCell?:ProtectedCell;invasiveFoci?:InvasiveFoci;objectiveText:string;objectiveTextMode?:'automatic'|'custom';tip:string;waves:WaveDefinition[];
 }
 export interface CampaignFilm {id:string;title:string;file:string;documentId:string}
-export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean} | {id:string;kind:'end'};
+export type ProgressionMilestoneKind = 'unlock_travel_book' | 'unlock_herbarium';
+export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean} | {id:string;kind:'unlock_herbarium'} | {id:string;kind:'unlock_travel_book'} | {id:string;kind:'end'};
 export interface CampaignSequence {steps:CampaignStep[];cinematics:CampaignFilm[]}
 export interface CampaignCheck {films:number;assets:number;steps:number;levels:number;warnings:string[]}
-export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
+export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;lunas?:LunaEconomyConfig;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
 export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean;backup?:boolean;preserved?:string}
 export interface ProjectDiskConflict {path:string;revision:string;base:GameProject;remote:GameProject|null;error?:string}
 export interface GameRecent {path:string;title:string;updatedAt:string}

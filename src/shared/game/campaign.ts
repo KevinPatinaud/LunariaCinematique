@@ -1,6 +1,7 @@
 import { logicFilmIds } from './logic.js';
 import {objectiveText} from './levelObjectives.js';
-import type { CampaignSequence, CampaignStep, GameProject } from './types.js';
+import type { CampaignSequence, CampaignStep, GameProject, ProgressionMilestoneKind } from './types.js';
+export const isProgressionMilestone=(step:CampaignStep):step is Extract<CampaignStep,{kind:ProgressionMilestoneKind}>=>step.kind==='unlock_travel_book'||step.kind==='unlock_herbarium';
 /** Authoring projects may contain unused levels; publishing never changes that document. */
 export function campaignOf(project:GameProject):CampaignSequence {
  return project.campaign ?? {steps:project.levels.map(l=>({id:'step_'+l.id,kind:'level' as const,levelId:l.id})),cinematics:[]};
@@ -8,10 +9,37 @@ export function campaignOf(project:GameProject):CampaignSequence {
 export function ensureCampaign(project:GameProject):CampaignSequence {
  return project.campaign ??= structuredClone(campaignOf(project));
 }
-/** The end card and everything after it are outside the playable journey. */
+/** The end card, passive progression milestones, and everything after end are outside playable steps. */
 export function playableCampaignSteps(project:GameProject):CampaignStep[] {
  const steps=campaignOf(project).steps,end=steps.findIndex(s=>s.kind==='end');
- return end<0?steps:steps.slice(0,end);
+ return (end<0?steps:steps.slice(0,end)).filter(s=>!isProgressionMilestone(s));
+}
+/** Playable cursor index from which a passive progression milestone unlocks (-1 = locked past end, 0 = unlocked from start). */
+export function milestoneUnlockCursor(steps:CampaignStep[],target:ProgressionMilestoneKind):number {
+ let playable=0,sawEnd=false;
+ for(const step of steps){
+  if(step.kind===target)return sawEnd?-1:playable;
+  if(step.kind==='end'){sawEnd=true;continue;}
+  if(isProgressionMilestone(step))continue;
+  if(!sawEnd)playable++;
+ }
+ return 0;
+}
+export function isMilestoneUnlocked(steps:CampaignStep[],target:ProgressionMilestoneKind,cursor:number):boolean {
+ const threshold=milestoneUnlockCursor(steps,target);
+ return threshold>=0&&cursor>=threshold;
+}
+export function travelBookUnlockCursor(steps:CampaignStep[]):number {
+ return milestoneUnlockCursor(steps,'unlock_travel_book');
+}
+export function isTravelBookUnlocked(steps:CampaignStep[],cursor:number):boolean {
+ return isMilestoneUnlocked(steps,'unlock_travel_book',cursor);
+}
+export function herbariumUnlockCursor(steps:CampaignStep[]):number {
+ return milestoneUnlockCursor(steps,'unlock_herbarium');
+}
+export function isHerbariumUnlocked(steps:CampaignStep[],cursor:number):boolean {
+ return isMilestoneUnlocked(steps,'unlock_herbarium',cursor);
 }
 export function moveCampaignStep(steps:CampaignStep[],id:string,beforeId:string|null):CampaignStep[] {
  if(id===beforeId)return steps;
@@ -29,7 +57,11 @@ export function safeMoviePath(file:unknown):file is string {
 export function compileCampaign(project:GameProject):GameProject {
  const result=structuredClone(project),campaign=ensureCampaign(result);
  const end=campaign.steps.findIndex(s=>s.kind==='end');
- if(end>=0)campaign.steps=campaign.steps.slice(0,end+1);
+ if(end>=0){
+  const deferredMilestones=campaign.steps.slice(end+1).filter(isProgressionMilestone);
+  campaign.steps=campaign.steps.slice(0,end+1);
+  campaign.steps.push(...deferredMilestones);
+ }
  const levelIds=campaign.steps.filter((s):s is Extract<CampaignStep,{kind:'level'}>=>s.kind==='level').map(s=>s.levelId);
  result.levels=levelIds.map(id=>{const level=result.levels.find(l=>l.id===id);if(!level)throw Error('Niveau absent : '+id);return level;});
  for(const level of result.levels)level.objectiveText=objectiveText(level);
@@ -42,8 +74,9 @@ export function compileCampaign(project:GameProject):GameProject {
 }
 /** Pure progress model mirrored by campaign_sequence.gd. Replay never advances a frontier. */
 export function advanceCampaign(steps:CampaignStep[],cursor:number,stepId:string,event:'victory'|'finished'|'skip'|'defeat'|'abort'|'error',preview=false):number {
- const step=steps[cursor];if(preview||!step||step.id!==stepId)return cursor;
- const end=steps.findIndex(s=>s.kind==='end');
+ const runtimeSteps=steps.filter(s=>!isProgressionMilestone(s));
+ const step=runtimeSteps[cursor];if(preview||!step||step.id!==stepId)return cursor;
+ const end=runtimeSteps.findIndex(s=>s.kind==='end');
  if(end>=0&&cursor>=end)return cursor;
  if(step.kind==='level')return event==='victory'?cursor+1:cursor;
  return step.kind==='cinematic'&&(event==='finished'||event==='skip'&&step.skippable)?cursor+1:cursor;

@@ -3,6 +3,8 @@ import { useBackgroundCorrection } from './useBackgroundCorrection.js';
 export { useBackgroundCorrection } from './useBackgroundCorrection.js';
 import type { PanoramaMode, PanoramaWidth } from '../../shared/backgroundCorrection.js';
 import { PANORAMA_WIDTHS, coreRect, isSixteenNine } from '../../shared/backgroundCorrection.js';
+import { providerLabel } from '../../shared/aiProviders.js';
+import { AiModelSelector } from '../images/AiModelSelector.js';
 import { Icon } from './Icon.js';
 import './backgroundCorrection.css';
 
@@ -23,19 +25,24 @@ export function BackgroundCorrectionDialog({ correction }: { correction: Control
     <p>Choisis le cadre 16:9 de référence. Codex crée un panorama cohérent et peut améliorer le centre en respectant le lieu et sa composition. Compare ensuite la proposition et teste-la dans le plan.</p>
     <p className="background-correction-asset">Décor : {correction.target?.asset.name}</p>
     {correction.busy && <p className="background-running-note" role="status">Tu peux réduire cette fenêtre et lancer le traitement d’un autre décor. Chaque génération continue en arrière-plan.</p>}
-    <div className="background-model-options">
-      <label className="field"><span>Modèle Codex</span><select aria-label="Modèle Codex" aria-describedby="background-model-help" value={correction.codexModel} disabled={correction.busy || applied || correction.models.loading} onChange={event => correction.setCodexModel(event.target.value)}>
-        <option value="">Automatique · choix de Codex</option>
-        {correction.modelUnavailable && <option value={correction.codexModel} disabled>{correction.codexModel} · {correction.models.loading ? 'détection en cours…' : 'non détecté'}</option>}
-        {correction.models.items.map(model => <option key={model.id} value={model.id}>{model.label}{model.isDefault ? ' · par défaut' : ''}</option>)}
-      </select></label>
-      <button className="button subtle" aria-label="Actualiser les modèles Codex" disabled={correction.models.loading} onClick={() => void correction.refreshModels()}>{correction.models.loading ? <><span className="spinner"/> Détection…</> : 'Actualiser'}</button>
-    </div>
-    <p id="background-model-help" className="panorama-help">Liste détectée auprès du Codex de cet ordinateur. Ton choix est mémorisé pour les prochains décors. Le modèle pilote la retouche ; le moteur d’image natif reste géré par Codex.</p>
+    <AiModelSelector
+      provider={correction.aiProvider}
+      onProviderChange={correction.setAiProvider}
+      model={correction.codexModel}
+      onModelChange={correction.setCodexModel}
+      models={correction.models.items}
+      loading={correction.models.loading}
+      error=""
+      onRefresh={() => void correction.refreshModels()}
+      disabled={correction.busy || applied}
+      selectAriaLabel={correction.aiProvider === 'gemini' ? 'Modèle Gemini' : 'Modèle Codex'}
+      refreshAriaLabel={correction.aiProvider === 'gemini' ? 'Actualiser les modèles Gemini' : 'Actualiser les modèles Codex'}
+    />
+    <p id="background-model-help" className="panorama-help">{correction.aiProvider === 'gemini' ? 'Ton choix Gemini est mémorisé pour les prochains décors.' : 'Liste détectée auprès du Codex de cet ordinateur. Ton choix est mémorisé pour les prochains décors. Le modèle pilote la retouche ; le moteur d’image natif reste géré par Codex.'}</p>
     <p className="background-model-status" role="status">{correction.models.loading ? 'Recherche des modèles…' : correction.models.loaded ? correction.models.items.length ? `${correction.models.items.length} modèle${correction.models.items.length > 1 ? 's' : ''} détecté${correction.models.items.length > 1 ? 's' : ''}.` : 'Aucun modèle acceptant les images n’a été détecté. Tu peux actualiser la liste ou conserver Automatique.' : ''}</p>
     {correction.models.error && <p className="background-correction-error" role="alert">{correction.models.error}{correction.models.items.length > 0 && ' La dernière liste détectée reste affichée.'}</p>}
     {correction.modelUnavailable && !correction.models.loading && <p className="background-correction-error" role="alert">Le modèle mémorisé n’est pas dans la liste détectée. Choisis un modèle de la liste ou Automatique avant de générer.</p>}
-    {job && <p className="background-model-used">Modèle demandé pour cette proposition : <strong>{job.codexModel ?? 'Automatique'}</strong>.{ready && ' Un autre choix s’appliquera à la prochaine génération.'}</p>}
+    {job && <p className="background-model-used">Fournisseur : <strong>{providerLabel(job.aiProvider)}</strong> · Modèle demandé pour cette proposition : <strong>{job.codexModel ?? 'Automatique'}</strong>.{ready && ' Un autre choix s’appliquera à la prochaine génération.'}</p>}
     {prepared && <>
       <div className="background-correction-options">
         <label className="field"><span>Traitement</span><select aria-label="Traitement du décor" value={correction.mode} disabled={correction.busy || !!job} onChange={event => { correction.setMode(event.target.value as PanoramaMode); correction.setCropPosition(.5); }}>

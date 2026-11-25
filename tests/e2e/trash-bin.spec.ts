@@ -29,7 +29,7 @@ test('Trash bin: fixed placement and lane blocking persist after reopening',asyn
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Vagues & ennemis'}).click();
   await page.getByLabel('Ennemi du groupe 1').selectOption('poubelle');
   await expect(page.locator('.gd-plaque-placement > p')).toContainText('projectiles la traversent');
@@ -39,7 +39,7 @@ test('Trash bin: fixed placement and lane blocking persist after reopening',asyn
   await expect.poll(async()=>JSON.parse(await fs.readFile(target,'utf8')).levels[0].waves[0].groups[0]).toMatchObject({enemyId:'poubelle',placement:{rowMin:2,rowMax:2,colMin:5,colMax:5}});
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
-  await page.locator('.gd-sections').getByRole('button',{name:/^Niveaux/}).click();
+  await page.locator('.studio-sections').getByRole('button',{name:/^Niveaux/}).click();
   await page.getByRole('button',{name:'Vagues & ennemis'}).click();
   await expect(page.getByLabel('Ennemi du groupe 1')).toHaveValue('poubelle');
   await expect(page.getByRole('group',{name:'Position de Poubelle'}).getByRole('button',{name:'Allée 3, colonne 6',exact:true})).toHaveAttribute('aria-pressed','true');

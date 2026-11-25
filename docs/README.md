@@ -13,7 +13,7 @@ Guides maintenus, actualisés le **3 octobre 2026**. Les versions du Studio, des
 | [Animations et sons](ANIMATIONS_SONS.md) | Actions du personnage, héritage, timing, sources sonores et aperçu |
 | [Niveaux et campagne](NIVEAUX_CAMPAGNE.md) | Placement des niveaux, duplication, conversion des objectifs, consignes et primes |
 | [Tâches de génération d’images](TACHES_IMAGES.md) | File commune, résultats persistants, reprise, annulation et nettoyage |
-| [Écran d’accueil](ACCUEIL.md) | Composition, textes, images, boutons, états de reprise et publication |
+| [Données d’accueil](ACCUEIL.md) | Contrat des compositions enregistrées et libellés de reprise |
 | [Présentation de combat](ARCHITECTURE_V1_10.md) | Profils, animations, activations, audio et VFX |
 | [Format cinématique](FORMAT.md) | Schémas 1 à 4 et extensions actuelles |
 | [Sons cinématiques](SON_CINEMATIQUES.md) | Musiques multi-plans, événements et écoute |

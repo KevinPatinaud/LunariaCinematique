@@ -25,7 +25,7 @@ const actor = obj({ ...box, animation:ACTOR_ANIMATION_SCHEMA as Rule,id, name: s
   motion: obj({ preset: en('none', 'float', 'sway', 'pulse', 'spin', 'shake', 'bounce', 'nod', 'recoil', 'heartbeat', 'flutter', 'orbit', 'figure8', 'zigzag', 'tumble', 'surprise', 'jelly'), intensity: num(0, 1),
     period: num(0.2, 60), delay: num(0, 300), loop: bool, reverse: bool }),
   movement: obj({ enabled: bool, dx: num(-3, 3), dy: num(-3, 3), duration: num(0.1, 300), delay: num(0, 300),
-    easing: en('smooth', 'linear'), repeat: en('once', 'pingpong') })
+    easing: en('smooth', 'linear'), repeat: en('once', 'pingpong'), bend: num(-1, 1) }, ['bend'])
 }, ['role', 'rotation', 'pivot', 'motion', 'movement', 'exit','animation']);
 const bubble = obj({ ...box, id, kind: en('speech', 'narration'), style: en('parchment', 'plain', 'simple', 'ornate'), frameAsset: nullableRef,
   speakerId: nullableId, text: str(1500), fontSize: num(18, 72), autoHeight: bool,

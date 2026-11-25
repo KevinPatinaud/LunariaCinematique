@@ -48,12 +48,8 @@ test.beforeEach(async () => {
     });
   }, target);
   await page
-    .locator(".studio-modebar")
-    .getByRole("button", { name: /^Niveaux/ })
-    .click();
-  await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: /^Plantes alliées/ })
+    .locator(".studio-sections")
+    .getByRole("button", { name: /^Plantes/ })
     .click();
 });
 test.afterEach(async ({}, info) => {
@@ -132,8 +128,8 @@ test("Lierre edits named mechanics on its own sheet, persists and opens an isola
   await page.getByRole("button", { name: "Ouvrir un projet…", exact: true }).click();
   await expect(page.locator(".gd-message")).toContainText("Projet ouvert.");
   await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: /^Plantes alliées/ })
+    .locator(".studio-sections")
+    .getByRole("button", { name: /^Plantes/ })
     .click();
   await owner("Lierre");
   await expect(radius).toHaveValue("1.7");
@@ -196,16 +192,17 @@ test("personalizing Noisetier copies its dependency graph and preserves Baobab a
   await page.getByRole("button", { name: "Ouvrir un projet…", exact: true }).click();
   await expect(page.locator(".gd-message")).toContainText("Projet ouvert.");
   await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: /^Plantes alliées/ })
+    .locator(".studio-sections")
+    .getByRole("button", { name: /^Plantes/ })
     .click();
   await owner("Noisetier");
   await expect(value).toHaveValue("11");
 });
 test("a full duplicate keeps vine behavior while its effect edits stay independent", async () => {
+  await page.locator(".studio-more-trigger").click();
   await page
-    .locator(".gd-sections")
-    .getByRole("button", { name: /^Bibliothèque/ })
+    .locator(".studio-more-popover")
+    .getByRole("button", { name: /^Modèles de capacités/ })
     .click();
   await page.getByLabel("Rechercher une capacité").fill("Crosse");
   await page

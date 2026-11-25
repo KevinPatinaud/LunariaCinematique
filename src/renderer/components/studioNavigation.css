@@ -1,0 +1,441 @@
+/* Unified single-level top navigation bar for Lunaria Studio. */
+.studio-root > .studio-modebar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 46px;
+  height: auto;
+  padding: 5px 14px;
+  border-bottom: 1px solid #3f5036;
+  background: #161f18;
+  position: relative;
+  z-index: 40;
+  flex-shrink: 0;
+}
+
+.studio-modebar .studio-overview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #4c5f40;
+  border-radius: 6px;
+  background: #202d22;
+  color: #ebe4c5;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.studio-modebar .studio-overview:hover:not(:disabled) {
+  background: #2c3e2b;
+  border-color: #778e60;
+}
+
+.studio-modebar .studio-overview svg {
+  color: #c8d69a;
+}
+
+.studio-sections {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding-left: 6px;
+  margin-left: 2px;
+  border-left: 1px solid #33422e;
+  flex-wrap: wrap;
+}
+
+.studio-modebar .studio-sections > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #b4c5a5;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.studio-modebar .studio-sections > button:hover:not(:disabled) {
+  background: #243326;
+  color: #e4edd4;
+}
+
+.studio-modebar .studio-sections > button.active {
+  border-color: #6d8455;
+  background: #334729;
+  color: #f4ebd0;
+  font-weight: 600;
+}
+
+.studio-nav-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #263526;
+  color: #a9bd97;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio-sections > button.active .studio-nav-count {
+  background: #4b643b;
+  color: #f4ebd0;
+}
+
+/* Compact "Plus" popover hosting Home Screen and Advanced shared tools. */
+.studio-more-menu {
+  position: relative;
+}
+
+.studio-modebar .studio-more-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #b4c5a5;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.studio-modebar .studio-more-trigger::after {
+  content: "▾";
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.studio-modebar .studio-more-trigger:hover:not(:disabled) {
+  background: #243326;
+  color: #e4edd4;
+}
+
+.studio-modebar .studio-more-trigger.active {
+  border-color: #6d8455;
+  background: #334729;
+  color: #f4ebd0;
+  font-weight: 600;
+}
+
+.studio-more-popover {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 7px);
+  width: min(440px, calc(100vw - 28px));
+  padding: 12px;
+  border: 1px solid #677d53;
+  border-radius: 10px;
+  background: #1d2b20;
+  box-shadow: 0 18px 46px #000a;
+  z-index: 70;
+  display: grid;
+  gap: 12px;
+}
+
+.studio-more-group {
+  display: grid;
+  gap: 6px;
+}
+
+.studio-more-heading {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: #9bb18c;
+  padding: 0 4px;
+}
+
+.studio-more-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.studio-modebar .studio-more-popover button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #394d34;
+  border-radius: 7px;
+  background: #223325;
+  color: #dce7ce;
+  text-align: left;
+  white-space: normal;
+}
+
+.studio-modebar .studio-more-popover button:hover:not(:disabled) {
+  background: #2e432d;
+  border-color: #70885a;
+}
+
+.studio-modebar .studio-more-popover button.active {
+  background: #3a502e;
+  border-color: #a6b479;
+  color: #f4ecd2;
+}
+
+.studio-more-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 6px;
+  background: #2f432f;
+  color: #dfcf91;
+  font-size: 13px;
+}
+
+.studio-more-popover b {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.studio-more-popover small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: #9bb08c;
+  line-height: 1.3;
+}
+
+.studio-more-note {
+  margin: 2px 4px 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: #8fa480;
+}
+
+/* Right cluster: history, status, save, publish, AI tasks, file menu. */
+.studio-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* Global delivery trigger styled compactly inside the unified top bar. */
+.studio-modebar .gd-delivery > summary {
+  padding: 6px 10px;
+  font-size: 11px;
+  border: 1px solid #8a9866;
+  background: #324328;
+  color: #eef0d5;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.studio-modebar .gd-delivery > summary::after {
+  margin-left: 2px;
+}
+
+.studio-modebar .gd-delivery-badge {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f0a978;
+}
+
+.studio-modebar .project-file-actions > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid #485b3e;
+  border-radius: 6px;
+  background: #223025;
+  color: #d4e1c4;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.studio-modebar .project-file-actions > button::after {
+  content: "▾";
+  font-size: 9px;
+  opacity: 0.75;
+}
+
+.studio-modebar .project-file-actions > button:hover:not(:disabled) {
+  background: #2f412e;
+  border-color: #778e60;
+}
+
+.studio-modebar .project-history-actions button {
+  color: #c2d3b2;
+}
+
+.studio-modebar .project-history-actions button:hover:not(:disabled) {
+  background: #243326;
+  color: #edf5de;
+}
+
+.studio-modebar .image-tasks-launcher {
+  padding: 6px 10px;
+  border: 1px solid #485b3e;
+  border-radius: 6px;
+  background: #223025;
+  color: #d4e1c4;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.studio-modebar .image-tasks-launcher:hover:not(:disabled) {
+  background: #2f412e;
+  border-color: #778e60;
+}
+
+.studio-modebar .image-tasks-launcher.has-activity {
+  border-color: #8c9f62;
+  background: #2e4028;
+  color: #f1e9c9;
+}
+
+/* Slim contextual strip rendered ONLY when an Advanced shared tool is active. */
+.gd-advanced-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 18px;
+  border-bottom: 1px solid #3c4f36;
+  background: #1c2a1f;
+  flex: none;
+}
+
+.gd-advanced-context-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #c8be88;
+  margin-right: 4px;
+}
+
+.gd-advanced-context-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.gd-shell .gd-advanced-context-tabs button {
+  padding: 4px 9px;
+  font-size: 11px;
+  background: transparent;
+  border-color: transparent;
+  color: #b4c5a5;
+}
+
+.gd-shell .gd-advanced-context-tabs button:hover:not(:disabled) {
+  background: #283a29;
+}
+
+.gd-shell .gd-advanced-context-tabs button.active {
+  background: #384d2d;
+  border-color: #7f9460;
+  color: #f3ebd0;
+}
+
+.gd-advanced-context-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: #8fa582;
+}
+
+/* Inline editable project title on Campaign header and Project Overview. */
+.gd-campaign-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gd-shell .gd-campaign-title-row .gd-campaign-project-title {
+  width: auto;
+  min-width: 220px;
+  max-width: 440px;
+  flex: 0 1 340px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #dce7ce;
+  background: #1a261d;
+  border: 1px solid #3e5238;
+  border-radius: 7px;
+  padding: 6px 11px;
+  margin: 0;
+}
+
+.gd-shell .gd-campaign-title-row .gd-campaign-project-title:hover,
+.gd-shell .gd-campaign-title-row .gd-campaign-project-title:focus {
+  border-color: #849a64;
+  background: #141e17;
+  outline: none;
+}
+
+.gd-campaign-project-path {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #8ea380;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 620px;
+}
+
+@media (max-width: 1260px) {
+  .studio-modebar .studio-sections > button,
+  .studio-modebar .studio-more-trigger {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  .studio-nav-count {
+    display: none;
+  }
+  .gd-advanced-context-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .studio-root > .studio-modebar {
+    padding: 5px 10px;
+    row-gap: 4px;
+  }
+  .studio-sections {
+    padding-left: 4px;
+    margin-left: 0;
+  }
+  .studio-more-popover {
+    left: auto;
+    right: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .studio-more-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,14 @@
 import React, { useState } from "react";
-import type { GameProject, LevelDefinition } from "../../shared/game/types.js";
+import type {
+  CampaignFilm,
+  GameProject,
+  LevelDefinition,
+} from "../../shared/game/types.js";
 import { campaignOf } from "../../shared/game/campaign.js";
+import {
+  levelTravelBookSource,
+  resolveStepTarget,
+} from "../../shared/campaignContinuity.js";
 import {
   afterLevel,
   levelPosition,
@@ -57,13 +65,21 @@ export function LevelCampaignPosition({
   level,
   onPlace,
   onView,
+  onOpenFilm,
+  onSelectLevel,
 }: {
   project: GameProject;
   level: LevelDefinition;
   onPlace: (placement: LevelPlacement) => void;
   onView: (stepId: string) => void;
+  onOpenFilm?: (film: CampaignFilm) => void;
+  onSelectLevel?: (levelId: string) => void;
 }) {
   const position = levelPosition(project, level.id),
+    previousTarget = resolveStepTarget(project, position.previous),
+    nextTarget = resolveStepTarget(project, position.next),
+    travelSource =
+      position.index >= 0 ? levelTravelBookSource(project, level.id) : null,
     [editing, setEditing] = useState(false),
     [placement, setPlacement] = useState<LevelPlacement>(
       afterLevel(project, level.id),
@@ -88,8 +104,67 @@ export function LevelCampaignPosition({
             ? "Conservé dans le Studio. Il sera publié lorsque tu l’ajouteras au parcours."
             : `${position.previous ? "Après « " + stepTitle(project, position.previous) + " »" : "Au début du jeu"} · ${position.next ? "puis « " + stepTitle(project, position.next) + " »" : "puis fin de campagne"}`}
         </p>
+        {travelSource && (
+          <small className="level-travel-book-note">
+            {travelSource.source === "cinematic"
+              ? `Carnet de voyage : dernier décor de « ${travelSource.filmTitle} » (${travelSource.asset?.split("/").pop()})`
+              : travelSource.source === "terrain"
+                ? `Carnet de voyage : terrain du niveau (${travelSource.asset?.split("/").pop()})`
+                : "Carnet de voyage : décor du continent"}
+          </small>
+        )}
       </div>
       <div className="gd-inline">
+        {previousTarget?.kind === "cinematic" &&
+          previousTarget.exists &&
+          previousTarget.film &&
+          onOpenFilm && (
+            <button
+              type="button"
+              className="gd-bridge-button"
+              title={`Ouvrir la cinématique précédente « ${previousTarget.title} »`}
+              onClick={() => onOpenFilm(previousTarget.film!)}
+            >
+              ← Cinématique « {previousTarget.title} »
+            </button>
+          )}
+        {previousTarget?.kind === "level" &&
+          previousTarget.exists &&
+          onSelectLevel && (
+            <button
+              type="button"
+              className="gd-bridge-button"
+              title={`Ouvrir le niveau précédent « ${previousTarget.title} »`}
+              onClick={() => onSelectLevel(previousTarget.levelId)}
+            >
+              ← Niveau « {previousTarget.title} »
+            </button>
+          )}
+        {nextTarget?.kind === "cinematic" &&
+          nextTarget.exists &&
+          nextTarget.film &&
+          onOpenFilm && (
+            <button
+              type="button"
+              className="gd-bridge-button"
+              title={`Ouvrir la cinématique suivante « ${nextTarget.title} »`}
+              onClick={() => onOpenFilm(nextTarget.film!)}
+            >
+              Cinématique « {nextTarget.title} » →
+            </button>
+          )}
+        {nextTarget?.kind === "level" &&
+          nextTarget.exists &&
+          onSelectLevel && (
+            <button
+              type="button"
+              className="gd-bridge-button"
+              title={`Ouvrir le niveau suivant « ${nextTarget.title} »`}
+              onClick={() => onSelectLevel(nextTarget.levelId)}
+            >
+              Niveau « {nextTarget.title} » →
+            </button>
+          )}
         {position.stepId && (
           <button onClick={() => onView(position.stepId)}>
             Voir dans la campagne

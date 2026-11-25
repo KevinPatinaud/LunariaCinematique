@@ -19,6 +19,8 @@ export interface MotionEffect {
 export interface ObjectMovement {
   enabled: boolean; dx: number; dy: number; duration: number; delay: number;
   easing: 'smooth' | 'linear'; repeat: 'once' | 'pingpong';
+  /** Signed perpendicular offset of the path midpoint, in stage heights. */
+  bend?: number;
 }
 export interface Actor extends Box {
   animation?:ActorAnimation;
@@ -97,12 +99,19 @@ export interface StudioAPI {
   listImageTasks(): Promise<import('./imageTasks.js').ImageTask[]>;
   removeImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<void>;
   clearImageTaskHistory(): Promise<number>;
-  retryImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<BackgroundCorrectionJob | TerrainGenerationJob | PoseGenerationJob>;
+  retryImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<BackgroundCorrectionJob | TerrainGenerationJob | PoseGenerationJob | AnimationGenerationJob>;
   startPoseGeneration(request: PoseGenerationRequest): Promise<PoseGenerationJob>;
   getPoseGeneration(id: string): Promise<PoseGenerationJob>;
   cancelPoseGeneration(id: string): Promise<PoseGenerationJob>;
   applyPoseGeneration(id: string): Promise<{ job: PoseGenerationJob; library: LibrarySnapshot | null }>;
+  startAnimationGeneration(request: AnimationGenerationRequest): Promise<AnimationGenerationJob>;
+  getAnimationGeneration(id: string): Promise<AnimationGenerationJob>;
+  cancelAnimationGeneration(id: string): Promise<AnimationGenerationJob>;
+  applyAnimationGeneration(id: string): Promise<{ job: AnimationGenerationJob; library: LibrarySnapshot | null }>;
   listBackgroundModels(): Promise<CodexModelOption[]>;
+  listAiModels(provider: AiImageProvider): Promise<AiModelOption[]>;
+  getAiProviderStatus(): Promise<AiProviderStatus>;
+  setGeminiApiKey(key: string): Promise<AiProviderStatus>;
   startBackgroundCorrection(request: BackgroundCorrectionRequest): Promise<BackgroundCorrectionJob>;
   getBackgroundCorrection(id: string): Promise<BackgroundCorrectionJob>;
   cancelBackgroundCorrection(id: string): Promise<BackgroundCorrectionJob>;
@@ -233,3 +242,5 @@ export function referencedAssets(cinematic: Cinematic): AssetRef[] {
 import type { BackgroundCorrectionJob, BackgroundCorrectionRequest, BackgroundPreparation, CodexModelOption } from './backgroundCorrection.js';
 import type { TerrainGenerationJob, TerrainGenerationRequest } from './terrainGeneration.js';
 import type { PoseGenerationJob, PoseGenerationRequest } from './poseGeneration.js';
+import type { AnimationGenerationJob, AnimationGenerationRequest } from './animationGeneration.js';
+import type { AiImageProvider, AiModelOption, AiProviderStatus } from './aiProviders.js';
