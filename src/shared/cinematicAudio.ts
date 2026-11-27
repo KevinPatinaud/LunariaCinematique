@@ -1,10 +1,57 @@
-import type { AudioSettings, Cinematic, Shot, SoundCue, SoundEvent } from './model.js';
+import type { Actor, AudioSettings, Cinematic, MusicStartTrigger, MusicTrack, Shot, SoundCue, SoundEvent } from './model.js';
 import { entryEnd } from './motion.js';
 
+export const DEFAULT_HANDOFF_FADE_SECONDS = 0.35;
 export const soundEventLabels: Record<SoundEvent, string> = {
   shot_start: 'Début du plan', bubble_open: 'Ouverture d’une bulle', actor_entry: 'Entrée d’un personnage / objet',
   actor_movement: 'Début du déplacement', actor_motion: 'Début de l’effet animé', actor_exit: 'Disparition', actor_animation: 'Début de l’animation du catalogue'
 };
+export const musicStartTriggerLabels: Record<MusicStartTrigger, string> = {
+  shot_start: 'Début du plan',
+  first_enemy: 'Apparition du premier ennemi',
+  actor_entry: 'Apparition d’un acteur précis',
+};
+export function actorAppearanceTime(actor: Actor): number {
+  return actor.entry.preset === 'none' ? 0 : actor.entry.delay;
+}
+export function musicStartTime(shot: Shot, track: MusicTrack): number | undefined {
+  const trigger = track.startTrigger ?? 'shot_start';
+  const delay = track.startDelay ?? 0;
+  if (trigger === 'shot_start') return delay;
+  if (trigger === 'actor_entry') {
+    const actor = shot.actors.find(a => a.id === track.startTargetId);
+    return actor ? actorAppearanceTime(actor) + delay : undefined;
+  }
+  let earliest: number | undefined;
+  for (const actor of shot.actors) {
+    if (actor.role !== 'enemy') continue;
+    const at = actorAppearanceTime(actor);
+    if (earliest === undefined || at < earliest) earliest = at;
+  }
+  return earliest === undefined ? undefined : earliest + delay;
+}
+export function musicHandoffTime(doc: Cinematic, index: number, track: MusicTrack): number | undefined {
+  const shot = doc.shots[index];
+  if (!shot) return undefined;
+  const tracks = doc.musicTracks ?? [];
+  const trackIndex = tracks.findIndex(t => t.id === track.id);
+  const [trackStart] = musicRange(doc, track.startShotId, track.endShotId);
+  const trackAt = trackStart === index ? musicStartTime(shot, track) : 0;
+  let earliest: number | undefined;
+  tracks.forEach((other, otherIndex) => {
+    if (other.id === track.id || !other.replacePrevious || other.startShotId !== shot.id) return;
+    const otherAt = musicStartTime(shot, other);
+    if (otherAt === undefined) return;
+    const earlier = trackStart < index
+      || (trackStart === index && trackAt !== undefined && (trackAt < otherAt || (trackAt === otherAt && trackIndex < otherIndex)));
+    if (!earlier) return;
+    if (earliest === undefined || otherAt < earliest) earliest = otherAt;
+  });
+  return earliest;
+}
+export function musicHandoffFade(track: Pick<AudioSettings, 'fadeOut'>): number {
+  return track.fadeOut > 0 ? track.fadeOut : DEFAULT_HANDOFF_FADE_SECONDS;
+}
 export function soundTargetTime(shot: Shot, cue: SoundCue, opened: Record<string, number>): number | undefined {
   if (cue.event === 'shot_start') return cue.delay;
   if (cue.event === 'bubble_open') return opened[cue.targetId] === undefined ? undefined : opened[cue.targetId] + cue.delay;
@@ -30,8 +77,24 @@ export function audioExitDuration(doc: Cinematic, index: number, state?: {elapse
     const at = soundTargetTime(shot,cue,state.bubbleOpenedAt ?? {});
     return at !== undefined && at < state.elapsed && (cue.duration === 0 || at + cue.duration > state.elapsed);
   });
-  return Math.max(0, ...active.map(s => s.fadeOut),
-    ...(doc.musicTracks ?? []).filter(t => t.endShotId === shot.id).map(t => t.fadeOut));
+  let result = Math.max(0, ...active.map(s => s.fadeOut));
+  for (const track of doc.musicTracks ?? []) {
+    if (track.endShotId !== shot.id) continue;
+    const [start] = musicRange(doc, track.startShotId, track.endShotId);
+    if (state && start === index) {
+      const startAt = musicStartTime(shot, track);
+      if (startAt === undefined || startAt >= state.elapsed) continue;
+    }
+    const handoffAt = musicHandoffTime(doc, index, track);
+    if (handoffAt !== undefined && (!state || handoffAt <= state.elapsed)) {
+      const fade = musicHandoffFade(track);
+      const remaining = state ? Math.max(0, fade - (state.elapsed - handoffAt)) : fade;
+      result = Math.max(result, remaining);
+      continue;
+    }
+    result = Math.max(result, track.fadeOut);
+  }
+  return result;
 }
 export function shotExitDuration(doc: Cinematic, index: number, state?: {elapsed:number; bubbleOpenedAt?:Record<string,number>}): number {
   const exit = doc.shots[index]?.exitTransition;
@@ -55,6 +118,15 @@ export function repairAudioLinks(doc: Cinematic, previous: Cinematic): void {
       [start, end] = musicRange(doc, track.startShotId, track.endShotId);
     }
     if (start > end) [track.startShotId, track.endShotId] = [track.endShotId, track.startShotId];
+    const startShot = doc.shots.find(s => s.id === track.startShotId);
+    if (track.startTrigger === 'actor_entry') {
+      if (!startShot || !track.startTargetId || !startShot.actors.some(a => a.id === track.startTargetId)) {
+        delete track.startTrigger;
+        delete track.startTargetId;
+      }
+    } else if (track.startTargetId) {
+      delete track.startTargetId;
+    }
     return true;
   });
   for (const shot of doc.shots) if (shot.sounds) shot.sounds = shot.sounds.filter(cue => cue.event === 'shot_start' ||

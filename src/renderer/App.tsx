@@ -11,6 +11,7 @@ import { ProjectConflictDialog } from "./project/ProjectConflictDialog.js";
 import { newId } from "../shared/game/types.js";
 import type { CampaignFilm } from "../shared/game/types.js";
 import { cinematicReferences } from "../shared/game/cinematicManagement.js";
+import { setContentArchived } from "../shared/game/contentArchives.js";
 import React, {
   useCallback,
   useEffect,
@@ -179,6 +180,7 @@ function StudioApp() {
     [studioModal, presentationProject],
   );
   const [audioAsset, setAudioAsset] = useState<Asset["ref"]>();
+  const [audioModalOptions, setAudioModalOptions] = useState<{ tab?: "music" | "sounds"; linkActorId?: string }>();
   const [poseSelection, setPoseSelection] = useState<PoseSelection>();
   const [workshopSpeciesId, setWorkshopSpeciesId] = useState<string | undefined>();
   const [workshopAnimationId, setWorkshopAnimationId] = useState<string | undefined>();
@@ -822,7 +824,7 @@ function StudioApp() {
         a.path.endsWith("/dialogue_panel_simple_v01.png") ||
         a.path === "dialogue_panel_simple_v01.png",
     );
-    if (frame) {
+    if (frame && kind !== "thought") {
       bubble.style = "simple";
       bubble.frameAsset = frame.ref;
     }
@@ -832,7 +834,7 @@ function StudioApp() {
         d.shots.find((s) => s.id === selectedShot.id)?.bubbles.push(bubble);
       },
       "",
-      "Ajouter une bulle",
+      kind === "thought" ? "Ajouter une bulle de pensée" : "Ajouter une bulle",
     );
     setSelection({ kind: "bubble", id: bubble.id });
   }
@@ -1533,8 +1535,9 @@ function StudioApp() {
             d.title = title;
           }, "title")
         }
-        onOpenAudioModal={() => {
+        onOpenAudioModal={(options) => {
           setAudioAsset(undefined);
+          setAudioModalOptions(options);
           setStudioModal("audio");
         }}
         onCreateDocument={() => void createDocument()}
@@ -1659,13 +1662,20 @@ function StudioApp() {
           assets={assets}
           selection={selection}
           initialAsset={audioAsset}
+          initialTab={audioModalOptions?.tab}
+          linkActorId={audioModalOptions?.linkActorId}
           change={commit}
-          onClose={() => setStudioModal(null)}
+          onClose={() => {
+            setAudioModalOptions(undefined);
+            setStudioModal(null);
+          }}
           onLibrary={() => {
+            setAudioModalOptions(undefined);
             setStudioModal(null);
             void chooseLibrary();
           }}
           onPreview={() => {
+            setAudioModalOptions(undefined);
             setStudioModal(null);
             void startPlayback(selectedShot.id);
           }}
@@ -1765,6 +1775,7 @@ function StudioApp() {
         <CinematicsBrowser
           onBackupCampaign={() => void backupCampaign()}
           films={presentationProject.cinematics ?? []}
+          archivedIds={presentationProject.contentArchives?.cinematics}
           activeId={activeFilmId.current}
           disabled={locked}
           references={filmReferences}
@@ -1784,6 +1795,13 @@ function StudioApp() {
           onCategory={(id, category) => updateFilm(id, { category })}
           onMove={(id, targetId, placement) =>
             session.moveFilm(id, targetId, placement)
+          }
+          onArchive={(id, archived) =>
+            session.change(
+              (draft) => setContentArchived(draft, "cinematics", id, archived),
+              "",
+              archived ? "Archiver la cinématique" : "Désarchiver la cinématique",
+            )
           }
           onDelete={(id) => {
             void deleteFilm(id);

@@ -848,3 +848,15 @@ GAME_SCHEMA.properties!.levels.items!.properties!.invasiveFoci.required!.push('f
 import { LEVEL_LUNA_REWARDS_SCHEMA, LUNA_ECONOMY_SCHEMA } from './lunasSchema.js';
 GAME_SCHEMA.properties!.lunas = LUNA_ECONOMY_SCHEMA;
 GAME_SCHEMA.properties!.levels.items!.properties!.lunaRewards = LEVEL_LUNA_REWARDS_SCHEMA;
+
+export const AUTHORING_GAME_SCHEMA: Rule = {
+  ...GAME_SCHEMA,
+  $id: 'https://lunaria.local/game-authoring.schema.json',
+  properties: {
+    ...GAME_SCHEMA.properties,
+    contentArchives: obj({
+      cinematics: {...array((cinematicSchema as Rule).properties!.id, 500), minItems: 0},
+      levels: {...array(GAME_SCHEMA.properties!.levels.items!.properties!.id, 200), minItems: 0},
+    }),
+  },
+};

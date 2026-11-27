@@ -106,6 +106,18 @@ static func validate(value: Variant, schema: Dictionary) -> Array[String]:
 			if value.shots[index].id == track.endShotId: end = index
 		if start < 0 or end < start: errors.append("Invalid music shot range.")
 		if not str(track.asset).get_extension().to_lower() in ["wav", "ogg", "mp3"]: errors.append("Invalid music format.")
+		var trigger: String = str(track.get("startTrigger", "shot_start"))
+		var target_id: String = str(track.get("startTargetId", ""))
+		if trigger == "actor_entry":
+			var found_actor: bool = false
+			if start >= 0 and not target_id.is_empty():
+				for actor: Dictionary in value.shots[start].actors:
+					if str(actor.id) == target_id:
+						found_actor = true
+						break
+			if not found_actor: errors.append("Music trigger actor not found in start shot.")
+		elif not target_id.is_empty():
+			errors.append("Music trigger target is only allowed for actor_entry.")
 	for shot: Dictionary in value["shots"]:
 		var images: Array = []
 		if shot["background"]["asset"] != null:

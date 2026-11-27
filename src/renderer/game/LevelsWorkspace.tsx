@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import type { Asset, AssetRef } from "../../shared/model.js";
 import {
   activeEnemies,
@@ -16,6 +16,8 @@ import {
   type LevelPlacement,
 } from "../../shared/game/levelManagement.js";
 import { linkCinematic } from "../../shared/game/cinematicManagement.js";
+import { isContentArchived, setContentArchived } from "../../shared/game/contentArchives.js";
+import { ArchiveStamp, ContentArchiveFilter, matchesArchiveFilter, type ArchiveFilter } from "../components/ContentArchive.js";
 import {
   DuplicateLevelDialog,
   LevelCampaignPosition,
@@ -109,6 +111,8 @@ export function LevelsWorkspace({
   onOpenLunaEconomy,
   onOpenTerrainGenerator,
 }: LevelsWorkspaceProps) {
+  const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>("all");
+  const archived = !!level && isContentArchived(project, "levels", level.id);
   const positions = useMemo(
     () =>
       new Map(
@@ -122,6 +126,7 @@ export function LevelsWorkspace({
       const pos = positions.get(item.id) ?? levelPosition(project, item.id);
       return (
         (continent < 0 || item.act === continent) &&
+        matchesArchiveFilter(archiveFilter, isContentArchived(project, "levels", item.id)) &&
         (levelScope === "all" ||
           pos.index >= 0 === (levelScope === "placed")) &&
         norm(item.title + " " + item.id + " " + item.location).includes(
@@ -129,7 +134,7 @@ export function LevelsWorkspace({
         )
       );
     });
-  }, [project, positions, continent, levelScope, query]);
+  }, [project, positions, continent, levelScope, query, archiveFilter]);
 
   return (
     <>
@@ -157,6 +162,7 @@ export function LevelsWorkspace({
               <option value="outside">Hors parcours</option>
             </select>
           </label>
+          <ContentArchiveFilter value={archiveFilter} onChange={setArchiveFilter} />
           <input
             aria-label="Rechercher un niveau"
             placeholder="Rechercher un niveau…"
@@ -181,7 +187,10 @@ export function LevelsWorkspace({
               project.levels.length >= 200 ||
               !activeEnemies(project.balance.enemies).length
             }
-            onClick={() => addLevel()}
+            onClick={() => {
+              addLevel();
+              if (archiveFilter === "archived") setArchiveFilter("all");
+            }}
           >
             + Créer un niveau
           </button>
@@ -189,10 +198,12 @@ export function LevelsWorkspace({
         <div className="gd-level-items">
           {visible.map((l) => {
             const pos = positions.get(l.id) ?? levelPosition(project, l.id);
+            const rowArchived = isContentArchived(project, "levels", l.id);
             return (
               <button
                 key={l.id}
                 className={level?.id === l.id ? "selected" : ""}
+                data-archived={rowArchived ? "" : undefined}
                 onClick={() => {
                   selectLevelId(l.id);
                   setCompareRewards(false);
@@ -202,7 +213,10 @@ export function LevelsWorkspace({
                   {pos.number ? String(pos.number).padStart(2, "0") : "–"}
                 </span>
                 <span>
-                  <b>{l.title}</b>
+                  <span className="gd-level-title">
+                    <b>{l.title}</b>
+                    {rowArchived && <ArchiveStamp />}
+                  </span>
                   <small className="level-path-badge">
                     {pos.index < 0
                       ? "Hors parcours"
@@ -228,6 +242,8 @@ export function LevelsWorkspace({
                   onClick={() => {
                     setQuery("");
                     setContinent(-1);
+                    setLevelScope("all");
+                    setArchiveFilter("all");
                   }}
                 >
                   Effacer les filtres
@@ -244,6 +260,7 @@ export function LevelsWorkspace({
             setQuery("");
             setContinent(-1);
             setLevelScope("all");
+            setArchiveFilter("all");
             selectLevelId(id);
             setDetail(tab);
             setCompareRewards(false);
@@ -254,7 +271,7 @@ export function LevelsWorkspace({
           <div className="gd-section-heading">
             <div>
               <div className="gd-kicker">
-                FICHE DU NIVEAU · {CONTINENTS[level.act]}
+                FICHE DU NIVEAU · {CONTINENTS[level.act]} {archived && <ArchiveStamp />}
               </div>
               <h1>{level.title}</h1>
               <p>
@@ -278,6 +295,16 @@ export function LevelsWorkspace({
               >
                 Dupliquer
               </button>
+              <button
+                onClick={() =>
+                  levelChange(
+                    (p) => setContentArchived(p, "levels", level.id, !archived),
+                    archived ? "Désarchiver le niveau" : "Archiver le niveau",
+                  )
+                }
+              >
+                {archived ? "Désarchiver" : "Archiver"}
+              </button>
               <button onClick={() => void removeLevel()}>Supprimer</button>
             </div>
           </div>
@@ -296,6 +323,7 @@ export function LevelsWorkspace({
               setQuery("");
               setContinent(-1);
               setLevelScope("all");
+              setArchiveFilter("all");
               selectLevelId(targetId);
               setCompareRewards(false);
             }}
@@ -305,7 +333,10 @@ export function LevelsWorkspace({
               project={project}
               level={level}
               onClose={() => setDuplicateOpen(false)}
-              onDuplicate={duplicateLevel}
+              onDuplicate={(placement, title) => {
+                duplicateLevel(placement, title);
+                if (archiveFilter === "archived") setArchiveFilter("all");
+              }}
             />
           )}
           <nav className="gd-detail-tabs" aria-label="Édition du niveau">

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newCinematic, newShot, newBubble, newActor, copy, duplicateShot, duplicateCinematic, referencedAssets, upgradeCinematicFormat, type Asset, type MusicTrack, type SoundCue } from '../src/shared/model.js';
-import { soundTargetTime, audioGain, repairAudioLinks, shotExitDuration } from '../src/shared/cinematicAudio.js';
+import { soundTargetTime, audioGain, repairAudioLinks, shotExitDuration, musicStartTime, musicHandoffTime } from '../src/shared/cinematicAudio.js';
 import { beginPlayback, tickPlayback, advanceDialogue } from '../src/shared/playback.js';
 import { parseCinematic } from '../src/shared/schema.js';
 import { smartDuplicate } from '../src/shared/studio.js';
@@ -94,4 +94,59 @@ test('inactive, delayed and already finished cues never add an empty fade to the
   const d=fixture();d.musicTracks=[];d.shots[0].sounds=[cue({delay:20,fadeOut:10})];assert.equal(tickPlayback(d,beginPlayback(),2).shotIndex,1);
   d.shots[0].sounds=[cue({duration:1,fadeOut:10})];assert.equal(tickPlayback(d,beginPlayback(),2).shotIndex,1);
   d.shots[0].sounds=[cue({duration:3,fadeOut:1})];const s=tickPlayback(d,beginPlayback(),2.5);assert.equal(s.shotIndex,0);assert.equal(s.exitElapsed,.5);
+});
+test('music track synced to first_enemy waits for earliest enemy appearance and hands off previous music cleanly',()=>{
+  const d=fixture();
+  d.shots[1].duration=7;
+  const e1=newActor({...asset,path:'enemy1.png',ref:'library://enemy1.png',kind:'enemy'},1);
+  e1.entry={preset:'pop',duration:.8,delay:4.2};
+  const e2=newActor({...asset,path:'enemy2.png',ref:'library://enemy2.png',kind:'enemy'},1);
+  e2.entry={preset:'pop',duration:.8,delay:3.9};
+  const ally=newActor({...asset,path:'ally.png',ref:'library://ally.png',kind:'character'},1);
+  ally.entry={preset:'fade',duration:.8,delay:.5};
+  d.shots[1].actors=[ally,e1,e2];
+  const calm:MusicTrack={...settings,id:'calm',startShotId:d.shots[0].id,endShotId:d.shots[1].id,fadeIn:0,fadeOut:1};
+  const danger:MusicTrack={...settings,id:'danger',startShotId:d.shots[1].id,endShotId:d.shots[2].id,fadeIn:.5,fadeOut:.8,startTrigger:'first_enemy',replacePrevious:true};
+  d.musicTracks=[calm,danger];
+  upgradeCinematicFormat(d);
+  assert.doesNotThrow(()=>parseCinematic(d));
+  assert.equal(musicStartTime(d.shots[1],danger),3.9);
+  assert.equal(musicHandoffTime(d,1,calm),3.9);
+  const {engine,voices}=player();
+  let s=beginPlayback();engine.sync(d,s,[asset]);
+  s=tickPlayback(d,s,2);engine.sync(d,s,[asset]); // enters shot 1 at elapsed=0
+  assert.equal(s.shotIndex,1);assert.equal(voices.length,1);assert.equal(voices[0].volume,.8);
+  s=tickPlayback(d,s,3.5);engine.sync(d,s,[asset]); // still before 3.9s
+  assert.equal(voices.length,1);assert.equal(voices[0].volume,.8);
+  s=tickPlayback(d,s,.65);engine.sync(d,s,[asset]); // elapsed=4.15 -> 0.25s after 3.9s
+  assert.equal(voices.length,2);
+  assert.ok(Math.abs(voices[0].volume-.8*.75)<1e-6,'previous music fades down smoothly on handoff');
+  assert.ok(Math.abs(voices[1].volume-.8*.5)<1e-6,'enemy music fades in from exact appearance time');
+  s=tickPlayback(d,s,.85);engine.sync(d,s,[asset]); // elapsed=5.0 -> calm finished fading at 4.9s
+  assert.equal(voices[0].removed,true);assert.equal(voices[1].volume,.8);
+  // Shot 1 ends at 7s: calm already ended at 4.9s and danger continues into shot 2, so exitDuration is 0.
+  assert.equal(shotExitDuration(d,1,{elapsed:7}),0);
+  engine.stop();
+});
+test('actor_entry music trigger supports immediate and delayed actors, duplication, repair, and validation',()=>{
+  const d=fixture();
+  const boss=newActor({...asset,path:'boss.png',ref:'library://boss.png',kind:'enemy'},1);
+  boss.entry={preset:'none',duration:.8,delay:0};
+  d.shots[0].actors=[boss];
+  d.musicTracks=[{...settings,id:'boss_theme',startShotId:d.shots[0].id,endShotId:d.shots[1].id,startTrigger:'actor_entry',startTargetId:boss.id,startDelay:.25,replacePrevious:true}];
+  upgradeCinematicFormat(d);
+  assert.doesNotThrow(()=>parseCinematic(d));
+  assert.equal(musicStartTime(d.shots[0],d.musicTracks[0]),.25);
+  boss.entry={preset:'zoom',duration:.8,delay:1.5};
+  upgradeCinematicFormat(d);
+  assert.equal(musicStartTime(d.shots[0],d.musicTracks[0]),1.75);
+  const dup=duplicateCinematic(d);
+  assert.equal(dup.musicTracks![0].startTargetId,dup.shots[0].actors[0].id);
+  assert.notEqual(dup.musicTracks![0].startTargetId,boss.id);
+  assert.doesNotThrow(()=>parseCinematic(dup));
+  const broken=copy(d);broken.musicTracks![0].startTargetId='missing';assert.throws(()=>parseCinematic(broken));
+  const extraTarget=copy(d);extraTarget.musicTracks![0].startTrigger='first_enemy';assert.throws(()=>parseCinematic(extraTarget));
+  const repaired=copy(d);repaired.shots[0].actors=[];repairAudioLinks(repaired,d);
+  assert.equal(repaired.musicTracks![0].startTrigger,undefined);assert.equal(repaired.musicTracks![0].startTargetId,undefined);
+  assert.doesNotThrow(()=>parseCinematic(repaired));
 });

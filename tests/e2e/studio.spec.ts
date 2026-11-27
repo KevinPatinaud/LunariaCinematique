@@ -54,7 +54,7 @@ test.beforeEach(async()=>{
   delete env.LUNARIA_DEV_URL;
   app=await _electron.launch({args:[ROOT],env:{...env,LUNARIA_E2E:'1',LUNARIA_TEST_USER_DATA:profile}});
   page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
-  await page.waitForURL('app://studio/index.html');await expect(page.getByText('V1.10',{exact:true})).toBeVisible();
+  await page.waitForURL('app://studio/index.html');await expect(page.getByRole('navigation',{name:'Navigation du Studio'})).toBeVisible();
   await app.evaluate(({dialog},target)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:target});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},target);
 });
 test.afterEach(async({},testInfo)=>{
@@ -120,7 +120,69 @@ test('déplacement, duplication et suppression de plusieurs objets via le vrai p
 });
 test('favoris réellement persistés entre deux chargements du renderer',async()=>{
   await page.locator('.asset-favorite').first().click();await page.getByRole('button',{name:'Favoris',exact:true}).click();await expect(page.locator('.asset-card')).toHaveCount(1);
-  await page.reload();await expect(page.getByText('V1.10',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Favoris',exact:true}).click();await expect(page.locator('.asset-card')).toHaveCount(1);
+  await page.reload();await expect(page.getByRole('navigation',{name:'Navigation du Studio'})).toBeVisible();await page.getByRole('button',{name:'Favoris',exact:true}).click();await expect(page.locator('.asset-card')).toHaveCount(1);
+});
+test('vignettes : les boutons favori et ajout restent séparés au survol', async () => {
+  await openFixture();
+  const libraryPanel = page.getByLabel('Bibliothèque de ressources');
+  await libraryPanel.locator('[data-tab="enemy"]').click();
+  const tile = libraryPanel.locator('.asset-tile').first();
+  const favorite = tile.locator('.asset-favorite');
+  const quickAdd = tile.getByRole('button', { name: /^Ajouter l’ennemi :/ });
+
+  for (const view of ['Vue en grille', 'Vue en liste']) {
+    await libraryPanel.getByRole('button', { name: view, exact: true }).click();
+    await tile.locator('.asset-image').hover();
+    await expect(favorite).toHaveCSS('opacity', '1');
+    await expect(quickAdd).toHaveCSS('opacity', '1');
+    const favoriteBox = (await favorite.boundingBox())!;
+    const quickAddBox = (await quickAdd.boundingBox())!;
+    expect(favoriteBox.x + favoriteBox.width).toBeLessThan(quickAddBox.x);
+    await quickAdd.click({ trial: true });
+  }
+
+  await favorite.click();
+  await expect(favorite).toHaveAttribute('aria-pressed', 'true');
+  await quickAdd.click();
+  await expect(page.getByLabel('Type d’élément')).toHaveValue('enemy');
+});
+test('une vignette révèle son fichier d’origine dans l’Explorateur sans modifier le plan', async () => {
+  const relative = '05_characters/Épreuve avec espaces.png';
+  const file = path.join(library, relative);
+  await fs.copyFile(path.join(library, '05_characters/test.png'), file);
+  await openFixture();
+  await app.evaluate(({ shell }) => {
+    const calls: string[] = [];
+    Object.assign(globalThis, { revealedAssets: calls });
+    shell.showItemInFolder = file => { calls.push(file); };
+  });
+  const revealedAssets = () => app.evaluate(() =>
+    (globalThis as typeof globalThis & { revealedAssets: string[] }).revealedAssets);
+
+  const panel = page.getByLabel('Bibliothèque de ressources');
+  await panel.getByRole('button', { name: 'Actualiser la bibliothèque' }).click();
+  await panel.getByRole('tab', { name: 'Personnages' }).click();
+  const assetCard = `[data-asset-ref="library://${relative}"]`;
+  const tile = panel.locator('.asset-tile').filter({ has: page.locator(assetCard) });
+  const reveal = tile.getByRole('button', { name: /^Afficher dans l’Explorateur/ });
+  const expected = await fs.realpath(file);
+
+  for (const [index, view] of ['Vue en grille', 'Vue en liste'].entries()) {
+    await panel.getByRole('button', { name: view, exact: true }).click();
+    await expect(reveal).toHaveCSS('opacity', '1');
+    await reveal.click();
+    await expect.poll(revealedAssets).toEqual(Array(index + 1).fill(expected));
+    await expect(tile.locator(assetCard)).toHaveAttribute('aria-pressed', 'false');
+  }
+
+  await panel.getByRole('button', { name: 'Agrandir la bibliothèque' }).click();
+  const gallery = page.getByRole('dialog', { name: 'Bibliothèque agrandie' });
+  await gallery.locator('.asset-tile').filter({ has: page.locator(assetCard) })
+    .getByRole('button', { name: /^Afficher dans l’Explorateur/ }).click();
+  await expect.poll(revealedAssets).toEqual([expected, expected, expected]);
+  await expect(gallery).toBeVisible();
+  await gallery.getByRole('button', { name: 'Retour à la scène' }).click();
+  await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
 });
 test('continuer un plan et générer le modèle dialogue à deux',async()=>{
   const doc=await openFixture();await page.getByRole('button',{name:'Continuer ce plan',exact:true}).click();const continued=await saveCurrent();expect(continued.shots).toHaveLength(2);expect(continued.shots[1].bubbles).toHaveLength(0);expect(continued.shots[1].actors.map(a=>[a.x,a.y])).toEqual(doc.shots[0].actors.map(a=>[a.x,a.y]));
@@ -362,7 +424,7 @@ test('récents : ouverture, enregistrement sous, métadonnées seules et épingl
   expect(saved.cinematic).toBeUndefined(); expect(saved.shots).toBe(1);
   expect(JSON.stringify(index)).not.toContain('data:image');
   await page.keyboard.press('Escape');
-  await page.reload(); await expect(page.getByText('V1.10', {exact:true})).toBeVisible();
+  await page.reload(); await expect(page.getByRole('navigation',{name:'Navigation du Studio'})).toBeVisible();
   await expect.poll(() => page.getByRole('button', {name:'Projets récents',exact:true}).isEnabled()).toBe(true);
   const again = await openRecentDialog();
   await expect(again.getByRole('button', {name:'Détacher Test Electron', exact:true})).toBeVisible();
@@ -567,10 +629,7 @@ test('préréglage Cri et réglages texte sauvegardés sans images dupliquées',
 });
 test('The preview animates the whole bubble and saves its setting',async()=>{
   const doc=fixture(),source=path.join(temp,'bubble-source.json');
-  await fs.writeFile(source,JSON.stringify(prepareCinematic(doc)));
-  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},source);
-  await page.getByRole('button',{name:'Importer un film',exact:true}).click();
-  await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');
+  await openProjectFilm(doc,source);
   await page.locator('.layer-row').first().click();
   await expect(page.getByLabel('Apparition de la bulle')).toHaveValue('pop');
   await page.getByLabel('Apparition de la bulle').selectOption('left');
@@ -578,7 +637,7 @@ test('The preview animates the whole bubble and saves its setting',async()=>{
   await page.getByLabel('Durée de l’animation de la bulle').press('Enter');
   await page.getByRole('button',{name:'Enregistrer le projet',exact:true}).click();
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
-  const project=JSON.parse(await fs.readFile(target,'utf8'));
+  const project=JSON.parse(await fs.readFile(source,'utf8'));
   const saved=project.cinematics.find((film:Cinematic)=>film.id===doc.id) as Cinematic;
   expect(saved.schemaVersion).toBe(3);
   expect(saved.shots[0].bubbles[0].bubbleEntry).toEqual({preset:'left',duration:3});
@@ -593,10 +652,7 @@ test('The preview animates the whole bubble and saves its setting',async()=>{
 });
 test('Shouting triggers and saves a visible burst around the bubble',async()=>{
   const doc=fixture(),source=path.join(temp,'shout-source.json');
-  await fs.writeFile(source,JSON.stringify(prepareCinematic(doc)));
-  await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},source);
-  await page.getByRole('button',{name:'Importer un film',exact:true}).click();
-  await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');
+  await openProjectFilm(doc,source);
   await page.locator('.layer-row').first().click();
   await page.getByRole('button',{name:'Cri !',exact:true}).click();
   await expect(page.getByLabel('Apparition de la bulle')).toHaveValue('burst');
@@ -605,7 +661,7 @@ test('Shouting triggers and saves a visible burst around the bubble',async()=>{
   await page.getByLabel('Durée de l’animation de la bulle').press('Enter');
   await page.getByRole('button',{name:'Enregistrer le projet',exact:true}).click();
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
-  const project=JSON.parse(await fs.readFile(target,'utf8'));
+  const project=JSON.parse(await fs.readFile(source,'utf8'));
   const saved=project.cinematics.find((film:Cinematic)=>film.id===doc.id) as Cinematic;
   expect(saved.shots[0].bubbles[0].bubbleEntry).toEqual({preset:'burst',duration:3});
   await page.getByRole('button',{name:'Tester la réplique',exact:true}).click();

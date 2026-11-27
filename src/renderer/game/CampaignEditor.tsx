@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   campaignOf,
   ensureCampaign,
@@ -10,10 +10,39 @@ import {
   type CampaignStep,
   type GameProject,
 } from "../../shared/game/types.js";
+import type { Asset } from "../../shared/model.js";
+import { CampaignFilmPreview, CampaignLevelPreview } from "./CampaignStepPreview.js";
+import { CampaignReserve, type ReserveItem } from "./CampaignReserve.js";
 import { gameAPI } from "./bridge.js";
 import { api } from "../browserBridge.js";
 import { placeLevel, stepTitle } from "../../shared/game/levelManagement.js";
+import { isContentArchived } from "../../shared/game/contentArchives.js";
+import { ArchiveStamp } from "../components/ContentArchive.js";
+import { Icon } from "../components/Icon.js";
+import "./campaignEditor.css";
+
+const STEP_DRAG_TYPE = "application/x-lunaria-step";
+const RESERVE_DRAG_TYPE = "application/x-lunaria-reserve";
+
+const stepAppearance: Record<CampaignStep["kind"], { label: string; icon: string }> = {
+  level: { label: "Niveau", icon: "layers" },
+  cinematic: { label: "Cinématique", icon: "play" },
+  end: { label: "Borne de publication", icon: "stop" },
+  unlock_herbarium: { label: "Déblocage", icon: "leaf" },
+  unlock_travel_book: { label: "Déblocage", icon: "file" },
+};
+
+function hasStepPreview(step: CampaignStep) {
+  return step.kind === "level" || step.kind === "cinematic";
+}
+
+function formatCount(count: number, singular: string, plural = singular + "s") {
+  return `${count} ${count > 1 ? plural : singular}`;
+}
+
 interface Props {
+  active: boolean;
+  assets: Asset[];
   createLevel: (beforeId: string | null) => void;
   selectedStepId: string;
   onSelectStep: (id: string) => void;
@@ -33,6 +62,8 @@ interface Props {
   report: (message: string) => void;
 }
 export function CampaignEditor({
+  active,
+  assets,
   project,
   change,
   run,
@@ -47,6 +78,8 @@ export function CampaignEditor({
   onSelectStep: setSelected,
   showUnplaced,
 }: Props) {
+  const [expandedPreviews, setExpandedPreviews] = useState<ReadonlySet<string>>(() => new Set());
+  const assetByRef = useMemo(() => new Map(assets.map((asset) => [asset.ref, asset])), [assets]);
   const campaign = campaignOf(project),
     selected = selectedStepId,
     [insertBefore, setInsertBefore] = useState<string | null | undefined>(
@@ -70,25 +103,39 @@ export function CampaignEditor({
         ? undefined
         : campaign.steps[herbariumUnlockIndex],
     herbariumUnlockAfterEnd = endIndex >= 0 && herbariumUnlockIndex > endIndex;
-  const inspector = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (inspector.current) inspector.current.scrollTop = 0;
-  }, [selected]);
-  const [dragged, setDragged] = useState(""),
-    [dropTarget, setDropTarget] = useState("");
-  const step = campaign.steps.find((s) => s.id === selected),
-    film =
-      step?.kind === "cinematic"
-        ? campaign.cinematics.find((f) => f.id === step.cinematicId)
-        : undefined;
-  const level =
-    step?.kind === "level"
-      ? project.levels.find((l) => l.id === step.levelId)
-      : undefined;
-  const available = project.levels.filter(
-    (l) =>
-      !campaign.steps.some((s) => s.kind === "level" && s.levelId === l.id),
-  );
+  const selectedCard = useRef<HTMLButtonElement>(null);
+  const sequence = useRef<HTMLOListElement>(null);
+  const reserveDrag = useRef<ReserveItem | null>(null);
+  const focusSelected = useRef(false);
+  const previewToReveal = useRef<HTMLElement | null>(null);
+  const insertionId = useId();
+  const [reserveChoice, setReserveChoice] = useState<ReserveItem | null>(null);
+  const [reserveDragging, setReserveDragging] = useState(false);
+  const [dropTarget, setDropTarget] = useState("");
+  const selectedIndex = campaign.steps.findIndex((s) => s.id === selected);
+  const placedLevelIds = new Set(campaign.steps.flatMap((step) => step.kind === "level" ? [step.levelId] : []));
+  const placedFilmIds = new Set(campaign.steps.flatMap((step) => step.kind === "cinematic" ? [step.cinematicId] : []));
+  const placedDocumentIds = new Set(campaign.cinematics
+    .filter((film) => placedFilmIds.has(film.id))
+    .map((film) => film.documentId));
+  const available = project.levels.filter((level) => !placedLevelIds.has(level.id));
+  const availableFilms = (project.cinematics ?? []).filter((film) => !placedDocumentIds.has(film.id));
+  const archivedFilmIds = new Set(campaign.cinematics
+    .filter((film) => isContentArchived(project, "cinematics", film.documentId))
+    .map((film) => film.id));
+  const archivedStepIds = new Set(campaign.steps.filter((step) =>
+    (step.kind === "level" && isContentArchived(project, "levels", step.levelId)) ||
+    (step.kind === "cinematic" && archivedFilmIds.has(step.cinematicId)),
+  ).map((step) => step.id));
+  const full = campaign.steps.length >= 1000;
+
+  function isAvailable(item: ReserveItem) {
+    return item.kind === "level"
+      ? available.some((level) => level.id === item.id)
+      : availableFilms.some((film) => film.id === item.id);
+  }
+
+  const chosen = reserveChoice && isAvailable(reserveChoice) ? reserveChoice : null;
   useEffect(() => {
     if (!campaign.steps.some((s) => s.id === selected))
       setSelected(campaign.steps[0]?.id ?? "");
@@ -101,6 +148,31 @@ export function CampaignEditor({
     )
       setInsertBefore(undefined);
   }, [campaign.steps, insertBefore]);
+  useLayoutEffect(() => {
+    const card = selectedCard.current;
+    if (!active || !card) return;
+
+    const shouldFocus = focusSelected.current;
+    focusSelected.current = false;
+    if (shouldFocus) card.focus({ preventScroll: true });
+    card.parentElement?.scrollIntoView({ block: shouldFocus ? "center" : "nearest", inline: "nearest" });
+  }, [active, selected, selectedIndex]);
+
+  useLayoutEffect(() => {
+    previewToReveal.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    previewToReveal.current = null;
+  }, [expandedPreviews]);
+
+  function jumpToStep(id: string) {
+    if (id === selected) {
+      selectedCard.current?.focus({ preventScroll: true });
+      selectedCard.current?.parentElement?.scrollIntoView({ block: "center", inline: "nearest" });
+    } else {
+      focusSelected.current = true;
+      setSelected(id);
+    }
+  }
+
   function insertAt(
     next: CampaignStep,
     beforeId: string | null,
@@ -125,21 +197,25 @@ export function CampaignEditor({
       "",
       "Ajouter une étape",
     );
+    focusSelected.current = true;
     setSelected(nextId);
     setInsertBefore(undefined);
   }
   function openInsertion(beforeId: string | null) {
+    if (chosen) {
+      placeReserveItem(chosen, beforeId);
+      return;
+    }
     setInsertBefore((current) => (current === beforeId ? undefined : beforeId));
     setLevelChoice(available[0]?.id ?? "");
   }
-  function after(id: string): string | null {
-    const i = campaign.steps.findIndex((s) => s.id === id);
-    return campaign.steps[i + 1]?.id ?? null;
+
+  function placeLevelAt(levelId: string, beforeId: string | null) {
+    insertAt({ id: newId("step"), kind: "level", levelId }, beforeId);
   }
-  const placeExistingFilm = (beforeId: string | null) => {
-    const doc = project.cinematics?.find(
-      (item) => item.id === (filmChoice || project.cinematics?.[0]?.id),
-    );
+
+  function placeExistingFilm(beforeId: string | null, documentId = filmChoice || project.cinematics?.[0]?.id) {
+    const doc = project.cinematics?.find((item) => item.id === documentId);
     if (!doc) return;
     const existing = campaign.cinematics.find(
       (item) => item.documentId === doc.id,
@@ -161,7 +237,49 @@ export function CampaignEditor({
       beforeId,
       ref,
     );
-  };
+  }
+
+  function placeReserveItem(item: ReserveItem, beforeId: string | null) {
+    if (busy || full || !isAvailable(item)) return;
+    if (beforeId !== null && !campaign.steps.some((step) => step.id === beforeId)) return;
+    if (item.kind === "level") placeLevelAt(item.id, beforeId);
+    else placeExistingFilm(beforeId, item.id);
+    setReserveChoice(null);
+  }
+
+  function chooseReserveItem(item: ReserveItem | null, keyboard?: boolean) {
+    if (!item || (chosen?.id === item.id && chosen.kind === item.kind)) {
+      setReserveChoice(null);
+      return;
+    }
+    setInsertBefore(undefined);
+    setReserveChoice(item);
+    if (keyboard) {
+      const neighbor = selectedCard.current?.closest(".gd-step-item")?.previousElementSibling;
+      const slot = neighbor?.querySelector<HTMLButtonElement>(".gd-insert-toggle")
+        ?? sequence.current?.querySelector<HTMLButtonElement>(".gd-insert-toggle");
+      slot?.focus();
+    }
+  }
+
+  function startReserveDrag(event: React.DragEvent, item: ReserveItem) {
+    if (busy || full || !isAvailable(item)) {
+      event.preventDefault();
+      return;
+    }
+    reserveDrag.current = item;
+    setReserveDragging(true);
+    setReserveChoice(null);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData(RESERVE_DRAG_TYPE, item.id);
+  }
+
+  function finishDrag() {
+    reserveDrag.current = null;
+    setReserveDragging(false);
+    setDropTarget("");
+  }
+
   function move(id: string, beforeId: string | null) {
     change(
       (p) => {
@@ -172,74 +290,160 @@ export function CampaignEditor({
       "Déplacer une étape",
     );
   }
-  function nudge(by: number) {
-    if (!step) return;
-    const i = campaign.steps.findIndex((s) => s.id === step.id),
-      j = i + by;
-    if (j < 0 || j >= campaign.steps.length) return;
-    move(
-      step.id,
-      by < 0 ? campaign.steps[j].id : (campaign.steps[j + 1]?.id ?? null),
-    );
+  function nudge(step: CampaignStep, index: number, offset: -1 | 1) {
+    const target = index + offset;
+    if (target < 0 || target >= campaign.steps.length) return;
+    move(step.id, campaign.steps[target + Math.max(0, offset)]?.id ?? null);
+    setSelected(step.id);
   }
   function placeEnd(beforeId: string | null) {
     if (endStep) {
       move(endStep.id, beforeId);
-      setSelected(endStep.id);
+      jumpToStep(endStep.id);
       setInsertBefore(undefined);
     } else insertAt({ id: newId("step"), kind: "end" }, beforeId);
   }
   function placeTravelBookUnlock(beforeId: string | null) {
     if (unlockStep) {
       move(unlockStep.id, beforeId);
-      setSelected(unlockStep.id);
+      jumpToStep(unlockStep.id);
       setInsertBefore(undefined);
     } else insertAt({ id: newId("step"), kind: "unlock_travel_book" }, beforeId);
   }
   function placeHerbariumUnlock(beforeId: string | null) {
     if (herbariumUnlockStep) {
       move(herbariumUnlockStep.id, beforeId);
-      setSelected(herbariumUnlockStep.id);
+      jumpToStep(herbariumUnlockStep.id);
       setInsertBefore(undefined);
     } else insertAt({ id: newId("step"), kind: "unlock_herbarium" }, beforeId);
   }
-  const remove = () =>
+  function remove(step: CampaignStep, index: number) {
     void run(async () => {
-      if (
-        !step ||
-        !(await api.confirmDelete(
-          "cette étape du parcours (le contenu reste dans le Studio)",
-        ))
-      )
+      if (!(await api.confirmDelete("cette étape du parcours (le contenu reste dans le Studio)")))
         return;
-      // run owns the document lock; use a prepared edit only after the native prompt.
-      const id = step.id;
       change(
         (p) => {
           const c = ensureCampaign(p);
-          c.steps = c.steps.filter((s) => s.id !== id);
+          c.steps = c.steps.filter((s) => s.id !== step.id);
         },
         "",
         "Retirer une étape",
       );
+      const next = campaign.steps[index + 1] ?? campaign.steps[index - 1];
+      if (next) {
+        focusSelected.current = true;
+        setSelected(next.id);
+      }
     });
-  // Parent run blocks ordinary edits; asynchronous commands are committed through its explicitly unlocked callback.
+  }
+
   const label = (s: CampaignStep) => stepTitle(project, s);
-  const edit = () => {
-    if (level) selectLevel(level.id);
-    else if (film) void openFilm(film);
-  };
+
+  function editStep(step: CampaignStep) {
+    if (step.kind === "level") {
+      selectLevel(step.levelId);
+    } else if (step.kind === "cinematic") {
+      const film = campaign.cinematics.find((item) => item.id === step.cinematicId);
+      if (film) void openFilm(film);
+    }
+  }
+  function renderStepPreview(step: CampaignStep) {
+    if (step.kind === "level") {
+      const level = project.levels.find((item) => item.id === step.levelId);
+      if (!level) return null;
+      const asset = level.terrainImage ? assetByRef.get(level.terrainImage) : undefined;
+      return <CampaignLevelPreview level={level} asset={asset} />;
+    }
+    if (step.kind === "cinematic") {
+      const reference = campaign.cinematics.find((item) => item.id === step.cinematicId);
+      const film = project.cinematics?.find((item) => item.id === reference?.documentId);
+      return film ? <CampaignFilmPreview film={film} project={project} assets={assets} /> : null;
+    }
+    return null;
+  }
+
+  function renderStepDisclosure(step: CampaignStep, index: number) {
+    if (!hasStepPreview(step)) return null;
+
+    const expanded = expandedPreviews.has(step.id);
+    const previewId = `${insertionId}-preview-${step.id}`;
+    const action = expanded ? "Replier" : "Déplier";
+
+    return (
+      <>
+        <button
+          type="button"
+          className="gd-step-preview-toggle"
+          aria-expanded={expanded}
+          aria-controls={previewId}
+          aria-label={`${action} l’aperçu de l’étape ${index + 1}`}
+          onClick={(event) => {
+            if (!expanded) previewToReveal.current = event.currentTarget.parentElement;
+            setExpandedPreviews((current) => {
+              const next = new Set(current);
+              if (next.has(step.id)) next.delete(step.id);
+              else next.add(step.id);
+              return next;
+            });
+          }}
+        >
+          <Icon name={expanded ? "up" : "down"} size={14} />
+          {action}
+        </button>
+        <div className="gd-step-preview-content" id={previewId} hidden={!expanded}>
+          {active && expanded && renderStepPreview(step)}
+        </div>
+      </>
+    );
+  }
+
+  const previewIds = campaign.steps.filter(hasStepPreview).map((step) => step.id);
+  const allPreviewsExpanded = previewIds.length > 0 && previewIds.every((id) => expandedPreviews.has(id));
+  const levelCount = campaign.steps.filter((s) => s.kind === "level").length;
+  const filmCount = campaign.steps.filter((s) => s.kind === "cinematic").length;
+  const milestones = [
+    {
+      step: endStep,
+      title: "Fin actuelle",
+      index: endIndex,
+      description: pendingCount
+        ? `${formatCount(pendingCount, "étape")} en préparation`
+        : "Fin de la version jouable",
+    },
+    {
+      step: herbariumUnlockStep,
+      title: "L’herbier",
+      index: herbariumUnlockIndex,
+      description: herbariumUnlockAfterEnd ? "Hors version jouable" : "Déblocage",
+    },
+    {
+      step: unlockStep,
+      title: "Carnet de voyage",
+      index: unlockIndex,
+      description: unlockAfterEnd ? "Hors version jouable" : "Déblocage",
+    },
+  ];
+
   return (
-    <section className={`gd-campaign${endStep ? " has-boundary" : ""}`}>
+    <section
+      className={`gd-campaign${chosen || reserveDragging ? " placing-reserve" : ""}`}
+      aria-labelledby="campaign-heading"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && chosen) {
+          event.preventDefault();
+          setReserveChoice(null);
+        }
+      }}
+    >
       <header className="gd-campaign-header">
-        <div>
-          <span className="gd-kicker">LE PARCOURS DU JOUEUR</span>
-          <div className="gd-campaign-title-row">
-            <h1>Campagne</h1>
+        <div className="gd-campaign-identity">
+          <h1 id="campaign-heading">Campagne</h1>
+          <label className="gd-campaign-title-field">
+            <Icon name="pencil" size={14} />
             <input
               className="gd-campaign-project-title"
               aria-label="Titre du projet"
-              title="Renommer le projet"
+              title={path || "Renommer le projet"}
               maxLength={160}
               disabled={busy}
               value={project.title}
@@ -253,132 +457,94 @@ export function CampaignEditor({
                 )
               }
             />
-          </div>
-          {path && (
-            <small className="gd-campaign-project-path" title={path}>
-              {path}
-            </small>
-          )}
-          <p>
-            <strong>Le jeu lit cette liste de haut en bas.</strong> Une
-            cinématique placée entre deux niveaux se lance après la victoire du
-            premier, avant le chargement du suivant.
-            {" "}La borne de fin actuelle arrête la partie jouable à l’endroit choisi.
-            {" "}Les jalons L’herbier et Carnet de voyage définissent le moment où chaque écran apparaît pour le joueur.
-          </p>
+          </label>
         </div>
-        <div className="gd-campaign-count">
-          <b>{campaign.steps.length}</b>
-          <span>étapes</span>
-          <small>
-            {campaign.steps.filter((s) => s.kind === "level").length} niveaux ·{" "}
-            {campaign.steps.filter((s) => s.kind === "cinematic").length}{" "}
-            cinématiques
-          </small>
+        <div className="gd-campaign-actions">
+          <button
+            disabled={busy}
+            onClick={() =>
+              void run(async () => {
+                const r = await gameAPI.checkCampaign(project);
+                report(
+                  `Parcours vérifié. ${r.steps} étapes, ${r.levels} niveaux, ${r.films} cinématiques, ${r.assets} ressources uniques. ${r.warnings.join(" ")}`,
+                );
+              })
+            }
+          >
+            <Icon name="check" size={16} /> Vérifier le parcours
+          </button>
+          <button disabled={busy} onClick={backup} title="Copier le projet, ses images et ses sons dans un dossier daté">
+            <Icon name="folder" size={16} /> Sauvegarder la campagne…
+          </button>
         </div>
       </header>
-      {endStep && (
-        <div className="gd-campaign-boundary" role="status">
-          <strong>Fin actuelle à l’étape {endIndex + 1}</strong>
-          <span>{pendingCount ? `${pendingCount} étape(s) après la borne : suite en préparation, conservée dans le Studio et non publiée.` : "Toutes les étapes précédentes seront publiées. Déplace la borne pour prolonger l’aventure."}</span>
-          <button onClick={() => setSelected(endStep.id)}>Sélectionner la fin actuelle</button>
-        </div>
+      {milestones.some(({ step: milestone }) => milestone) && (
+        <nav className="gd-campaign-milestones" aria-label="Raccourcis du parcours">
+          {milestones.map(({ step: milestone, title, index, description }) => milestone && (
+            <button
+              key={milestone.id}
+              className={`gd-milestone ${milestone.kind}`}
+              aria-label={`${title}, étape ${index + 1} · ${description}`}
+              aria-current={selected === milestone.id ? "step" : undefined}
+              onClick={() => jumpToStep(milestone.id)}
+            >
+              <span className={`gd-step-symbol ${milestone.kind}`}>
+                <Icon name={stepAppearance[milestone.kind].icon} size={16} />
+              </span>
+              <span className="gd-milestone-copy">
+                <strong>{title}</strong>
+                <small>Étape {index + 1} · {description}</small>
+              </span>
+              <span className="gd-milestone-arrow"><Icon name="chevron" size={15} /></span>
+            </button>
+          ))}
+        </nav>
       )}
-      {herbariumUnlockStep && (
-        <div className="gd-campaign-unlock herbarium" role="status">
-          <strong>
-            {herbariumUnlockAfterEnd
-              ? `Déblocage de L’herbier à l’étape ${herbariumUnlockIndex + 1} (après la fin actuelle)`
-              : herbariumUnlockIndex === 0
-                ? "L’herbier débloqué dès le début (étape 1)"
-                : `Déblocage de L’herbier à l’étape ${herbariumUnlockIndex + 1}`}
-          </strong>
-          <span>
-            {herbariumUnlockAfterEnd
-              ? "Placé dans la suite en préparation : L’herbier restera masqué dans la version publiée."
-              : herbariumUnlockIndex === 0
-                ? "Aucune étape précédente : L’herbier est accessible dès l’ouverture du jeu."
-                : `Masqué avant ce jalon, puis débloqué automatiquement après « ${label(campaign.steps[herbariumUnlockIndex - 1])} ».`}
-          </span>
-          <button onClick={() => setSelected(herbariumUnlockStep.id)}>
-            Sélectionner le déblocage de L’herbier
-          </button>
-        </div>
-      )}
-      {unlockStep && (
-        <div className="gd-campaign-unlock" role="status">
-          <strong>
-            {unlockAfterEnd
-              ? `Déblocage du Carnet de voyage à l’étape ${unlockIndex + 1} (après la fin actuelle)`
-              : unlockIndex === 0
-                ? "Carnet de voyage débloqué dès le début (étape 1)"
-                : `Déblocage du Carnet de voyage à l’étape ${unlockIndex + 1}`}
-          </strong>
-          <span>
-            {unlockAfterEnd
-              ? "Placé dans la suite en préparation : le Carnet de voyage restera masqué dans la version publiée."
-              : unlockIndex === 0
-                ? "Aucune étape précédente : le Carnet de voyage est accessible dès l’ouverture du jeu."
-                : `Masqué avant ce jalon, puis débloqué automatiquement après « ${label(campaign.steps[unlockIndex - 1])} ».`}
-          </span>
-          <button onClick={() => setSelected(unlockStep.id)}>
-            Sélectionner le déblocage du Carnet
-          </button>
-        </div>
-      )}
-      <div className="gd-campaign-backup">
-        <p>
-          <strong>Garder une copie de la campagne</strong>
-          <span>
-            Tout le projet, ses images et ses sons, dans un dossier daté.
-          </span>
-        </p>
-        <button disabled={busy} onClick={backup}>
-          Sauvegarder la campagne…
-        </button>
-      </div>
-      <div
-        className="gd-campaign-explainer"
-        aria-label="Exemple d’enchaînement de campagne"
-      >
-        <div>
-          <span className="gd-flow-node start">DÉBUT</span>
-          <b>→</b>
-          <span className="gd-flow-node cinematic">▶ CINÉMATIQUE</span>
-          <b>→</b>
-          <span className="gd-flow-node level">⚑ NIVEAU</span>
-          <b>→</b>
-          <span className="gd-flow-node cinematic">▶ CINÉMATIQUE</span>
-          <b>→</b>
-          <span className="gd-flow-node level">⚑ NIVEAU</span>
-        </div>
-        <p>
-          Clique sur <strong>« Insérer ici »</strong> exactement à l’endroit où
-          le film ou le niveau doit être joué. Tu peux ensuite glisser les
-          cartes pour les réordonner.
-        </p>
-      </div>
-      {!campaign.steps.length && (
-        <div className="gd-campaign-start">
-          <div>
-            <strong>Construis la première étape du voyage.</strong>
-            <p>
-              Commence par un niveau, ou utilise « Insérer ici » pour placer une
-              cinématique déjà créée.
-            </p>
+      <div className="gd-campaign-workspace">
+        <section className="gd-sequence-panel" aria-labelledby="campaign-sequence-heading">
+          <div className="gd-campaign-panel-heading">
+            <div>
+              <h2 id="campaign-sequence-heading">Parcours</h2>
+              <p>
+                {formatCount(campaign.steps.length, "étape")} ·{" "}
+                {formatCount(levelCount, "niveau", "niveaux")} ·{" "}
+                {formatCount(filmCount, "cinématique")}
+              </p>
+            </div>
+            <div className="gd-campaign-list-actions">
+              {available.length > 0 && (
+                <button aria-label="Voir les niveaux hors parcours" onClick={showUnplaced}>
+                  {available.length} hors parcours <Icon name="chevron" size={14} />
+                </button>
+              )}
+              {previewIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setExpandedPreviews(allPreviewsExpanded ? new Set() : new Set(previewIds))}
+                >
+                  <Icon name={allPreviewsExpanded ? "up" : "down"} size={15} />
+                  {allPreviewsExpanded ? "Tout replier" : "Tout déplier"}
+                </button>
+              )}
+            </div>
           </div>
-          <button
-            className="gd-primary"
-            onClick={() => createLevel(null)}
-            disabled={project.levels.length >= 200}
-          >
-            Créer un premier niveau
-          </button>
-        </div>
-      )}
-      <div className="gd-campaign-layout">
-        <div className="gd-sequence-panel">
-          <ol className="gd-campaign-cards" aria-label="Ordre de la campagne">
+          <div className="gd-sequence-hint">
+            <span>Le jeu lit cette liste de haut en bas.</span>
+            <span>Utilise les <b>+</b> pour insérer une étape.</span>
+          </div>
+          {!campaign.steps.length && (
+            <div className="gd-campaign-start">
+              <p>Ajoute un niveau ou une cinématique pour commencer.</p>
+              <button
+                className="gd-primary"
+                onClick={() => createLevel(null)}
+                disabled={busy || project.levels.length >= 200}
+              >
+                Créer un premier niveau
+              </button>
+            </div>
+          )}
+          <ol className="gd-campaign-cards" ref={sequence} aria-label="Ordre de la campagne">
             {[
               ...campaign.steps.map((s, i) => ({
                 step: s,
@@ -392,29 +558,52 @@ export function CampaignEditor({
               },
             ].map(({ step: s, index: i, before }) => (
               <React.Fragment key={s?.id ?? "campaign-end"}>
+                {pendingCount > 0 && i === endIndex + 1 && (
+                  <li className="gd-campaign-draft-divider">
+                    <span>Suite en préparation</span>
+                    <small>{formatCount(pendingCount, "étape")} hors version jouable</small>
+                  </li>
+                )}
                 <li
                   role="presentation"
-                  className={`gd-insert-slot ${insertBefore === before ? "open " : ""}${dropTarget === `slot:${before ?? "end"}` ? "drop-target" : ""}`}
-                  onDragOver={(e) => {
-                    if (dragged) {
-                      e.preventDefault();
-                      setDropTarget(`slot:${before ?? "end"}`);
+                  className={`gd-insert-slot${i === 0 || !s ? " edge" : ""}${insertBefore === before ? " open" : ""}${dropTarget === `slot:${before ?? "end"}` ? " drop-target" : ""}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape" && insertBefore === before) {
+                      e.stopPropagation();
+                      setInsertBefore(undefined);
+                      e.currentTarget.querySelector("button")?.focus();
                     }
                   }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const id = e.dataTransfer.getData(
-                      "application/x-lunaria-step",
-                    );
-                    if (id) move(id, before);
-                    setDragged("");
-                    setDropTarget("");
+                  onDragOver={(event) => {
+                    const types = event.dataTransfer.types;
+                    if (busy || (!types.includes(STEP_DRAG_TYPE) &&
+                      (!reserveDrag.current || full || !types.includes(RESERVE_DRAG_TYPE)))) return;
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "move";
+                    setDropTarget(`slot:${before ?? "end"}`);
+                  }}
+                  onDragLeave={(event) => {
+                    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+                    setDropTarget((current) => current === `slot:${before ?? "end"}` ? "" : current);
+                  }}
+                  onDrop={(event) => {
+                    const item = reserveDrag.current;
+                    const id = event.dataTransfer.getData(STEP_DRAG_TYPE);
+                    if (item && event.dataTransfer.getData(RESERVE_DRAG_TYPE) === item.id) {
+                      event.preventDefault();
+                      placeReserveItem(item, before);
+                    } else if (id && !busy && campaign.steps.some((step) => step.id === id)) {
+                      event.preventDefault();
+                      move(id, before);
+                      jumpToStep(id);
+                    }
+                    finishDrag();
                   }}
                 >
-                  <span className="gd-insert-line" />
                   <button
                     className="gd-insert-toggle"
                     aria-expanded={insertBefore === before}
+                    aria-controls={insertBefore === before ? insertionId : undefined}
                     aria-label={
                       i === 0
                         ? "Insérer au début de la campagne"
@@ -424,24 +613,24 @@ export function CampaignEditor({
                     }
                     onClick={() => openInsertion(before)}
                   >
-                    <b>＋</b> Insérer ici{" "}
-                    <small>
-                      {i === 0
-                        ? "au démarrage"
-                        : i === campaign.steps.length
-                          ? "après la dernière étape"
-                          : `entre ${i} et ${i + 1}`}
-                    </small>
+                    <Icon name={insertBefore === before ? "close" : "plus"} size={15} />
+                    <span>{i === 0 ? "Insérer au début" : !s ? "Ajouter à la fin" : "Insérer ici"}</span>
                   </button>
-                  <span className="gd-insert-line" />
                   {insertBefore === before && (
-                    <div className="gd-insert-menu">
+                    <div className="gd-insert-menu" id={insertionId}>
+                      <h3>
+                        {i === 0
+                          ? "Insérer au début"
+                          : !s
+                            ? "Insérer à la fin"
+                            : `Insérer entre les étapes ${i} et ${i + 1}`}
+                      </h3>
                       <div className="gd-insert-choice cinematic">
-                        <span className="gd-step-symbol cinematic">▶</span>
+                        <span className="gd-step-symbol cinematic"><Icon name="play" size={16} /></span>
                         <div>
                           <strong>Cinématique</strong>
                           <small>
-                            Les films sont enregistrés avec les niveaux.
+                            {project.cinematics?.length ? "Choisir une cinématique du projet." : "Aucune cinématique dans le projet."}
                           </small>
                         </div>
                         {!!project.cinematics?.length && (
@@ -453,7 +642,7 @@ export function CampaignEditor({
                             >
                               {project.cinematics.map((doc) => (
                                 <option key={doc.id} value={doc.id}>
-                                  {doc.title}
+                                  {doc.title}{isContentArchived(project, "cinematics", doc.id) ? " · Archivé" : ""}
                                 </option>
                               ))}
                             </select>
@@ -467,9 +656,8 @@ export function CampaignEditor({
                         )}
 
                       </div>
-                      <span className="gd-insert-or">OU</span>
                       <div className="gd-insert-choice level">
-                        <span className="gd-step-symbol level">⚑</span>
+                        <span className="gd-step-symbol level"><Icon name="layers" size={16} /></span>
                         <div>
                           <strong>Niveau</strong>
                           <small>
@@ -487,7 +675,7 @@ export function CampaignEditor({
                             >
                               {available.map((l) => (
                                 <option key={l.id} value={l.id}>
-                                  {l.title}
+                                  {l.title}{isContentArchived(project, "levels", l.id) ? " · Archivé" : ""}
                                 </option>
                               ))}
                             </select>
@@ -496,16 +684,7 @@ export function CampaignEditor({
                                 !available.some((l) => l.id === levelChoice) ||
                                 campaign.steps.length >= 1000
                               }
-                              onClick={() =>
-                                insertAt(
-                                  {
-                                    id: newId("step"),
-                                    kind: "level",
-                                    levelId: levelChoice,
-                                  },
-                                  before,
-                                )
-                              }
+                              onClick={() => placeLevelAt(levelChoice, before)}
                             >
                               Insérer le niveau ici
                             </button>
@@ -523,8 +702,9 @@ export function CampaignEditor({
                           Créer un niveau ici
                         </button>
                       </div>
+                      <h4 className="gd-insert-milestone-heading">Jalons</h4>
                       <div className="gd-insert-choice unlock_herbarium">
-                        <span className="gd-step-symbol unlock_herbarium">🌿</span>
+                        <span className="gd-step-symbol unlock_herbarium"><Icon name="leaf" size={16} /></span>
                         <div>
                           <strong>Déblocage de L’herbier</strong>
                           <small>
@@ -544,7 +724,7 @@ export function CampaignEditor({
                         </button>
                       </div>
                       <div className="gd-insert-choice unlock_travel_book">
-                        <span className="gd-step-symbol unlock_travel_book">📖</span>
+                        <span className="gd-step-symbol unlock_travel_book"><Icon name="file" size={16} /></span>
                         <div>
                           <strong>Déblocage du Carnet de voyage</strong>
                           <small>
@@ -562,7 +742,7 @@ export function CampaignEditor({
                         </button>
                       </div>
                       <div className="gd-insert-choice end">
-                        <span className="gd-step-symbol end">🏁</span>
+                        <span className="gd-step-symbol end"><Icon name="stop" size={16} /></span>
                         <div>
                           <strong>Fin actuelle de la partie jouable</strong>
                           <small>Le joueur s’arrêtera ici. La suite restera dans le Studio pour les prochaines mises à jour.</small>
@@ -576,283 +756,85 @@ export function CampaignEditor({
                 </li>
                 {s && (
                   <li
-                    className={`gd-step-item ${s.kind} ${endIndex >= 0 && i > endIndex ? "preparing " : ""}${s.id === selected ? "selected " : ""}`}
+                    className={`gd-step-item ${s.kind}${endIndex >= 0 && i > endIndex ? " preparing" : ""}`}
+                    data-archived={archivedStepIds.has(s.id) ? "" : undefined}
                     draggable
                     onDragStart={(e) => {
-                      setDragged(s.id);
                       e.dataTransfer.effectAllowed = "move";
-                      e.dataTransfer.setData(
-                        "application/x-lunaria-step",
-                        s.id,
-                      );
+                      e.dataTransfer.setData(STEP_DRAG_TYPE, s.id);
                     }}
-                    onDragEnd={() => {
-                      setDragged("");
-                      setDropTarget("");
-                    }}
+                    onDragEnd={finishDrag}
                   >
-                    <button
-                      className="gd-step-card"
-                      aria-pressed={s.id === selected}
-                      aria-label={`Étape ${i + 1} · ${label(s)}`}
-                      onClick={() => setSelected(s.id)}
-                      onDoubleClick={() => {
-                        if (s.kind === "level") selectLevel(s.levelId);
-                        else if (s.kind === "cinematic") {
-                          const ref = campaign.cinematics.find(
-                            (f) => f.id === s.cinematicId,
-                          );
-                          if (ref) void openFilm(ref);
-                        }
-                      }}
-                    >
-                      <span className="gd-step-number">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span className={`gd-step-symbol ${s.kind}`}>
-                        {s.kind === "end"
-                          ? "🏁"
-                          : s.kind === "unlock_travel_book"
-                            ? "📖"
-                            : s.kind === "unlock_herbarium"
-                              ? "🌿"
-                              : s.kind === "level"
-                                ? "⚑"
-                                : "▶"}
-                      </span>
-                      <span className="gd-step-name">
-                        <small>
-                          {endIndex >= 0 && i > endIndex && "SUITE EN PRÉPARATION · "}
-                          {s.kind === "end"
-                            ? "LIMITE DE LA VERSION JOUABLE"
-                            : s.kind === "unlock_travel_book" ||
-                                s.kind === "unlock_herbarium"
-                              ? "JALON DE PROGRESSION"
-                              : s.kind === "level"
-                                ? endIndex >= 0 && i > endIndex
-                                  ? "NIVEAU"
-                                  : "NIVEAU JOUABLE"
-                                : "CINÉMATIQUE"}
-                        </small>
-                        <strong>{label(s)}</strong>
-                        <small>
-                          {s.kind === "end"
-                            ? "Écran de fin · la suite reste dans le Studio"
-                            : s.kind === "unlock_travel_book"
-                              ? endIndex >= 0 && i > endIndex
-                                ? "Après la fin actuelle · Carnet masqué dans la version publiée"
-                                : i === 0
-                                  ? "Au démarrage · Carnet accessible dès le début"
-                                  : "Masqué avant · débloqué automatiquement à ce moment"
-                              : s.kind === "unlock_herbarium"
-                                ? endIndex >= 0 && i > endIndex
-                                  ? "Après la fin actuelle · Herbier masqué dans la version publiée"
-                                  : i === 0
-                                    ? "Au démarrage · Herbier accessible dès le début"
-                                    : "Masqué avant · débloqué automatiquement à ce moment"
-                                : endIndex >= 0 && i > endIndex
-                                  ? "Conservé dans le projet · non publié"
-                                  : s.kind === "level"
-                                    ? "Victoire → passage à l’étape suivante"
-                                    : s.skippable
-                                      ? "Film pouvant être passé par le joueur"
-                                      : "Film obligatoire avant la suite"}
-                        </small>
-                      </span>
-                      <span className="gd-step-grip" aria-hidden="true">
-                        ⠿
-                      </span>
-                    </button>
+                    <div className="gd-step-entry">
+                      <button
+                        className="gd-step-card"
+                        ref={s.id === selected ? selectedCard : undefined}
+                        aria-pressed={s.id === selected}
+                        aria-label={`Étape ${i + 1} · ${label(s)}${archivedStepIds.has(s.id) ? " · Archivé" : ""}`}
+                        onClick={() => setSelected(s.id)}
+                        onDoubleClick={() => editStep(s)}
+                        aria-keyshortcuts="Delete Alt+ArrowUp Alt+ArrowDown"
+                        onKeyDown={(event) => {
+                          if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+                          if (event.key === "Delete" && !event.altKey) {
+                            event.preventDefault();
+                            remove(s, i);
+                          } else if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+                            event.preventDefault();
+                            nudge(s, i, event.key === "ArrowUp" ? -1 : 1);
+                          }
+                        }}
+                      >
+                        <span className="gd-step-number" aria-hidden="true">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className={`gd-step-symbol ${s.kind}`}>
+                          <Icon name={stepAppearance[s.kind].icon} size={16} />
+                        </span>
+                        <span className="gd-step-name">
+                          <strong>{label(s)}</strong>
+                          <small>{stepAppearance[s.kind].label}</small>
+                        </span>
+                        {archivedStepIds.has(s.id) && <ArchiveStamp />}
+                        {s.kind === "cinematic" && !s.skippable && (
+                          <small className="gd-step-required">Obligatoire</small>
+                        )}
+                        <span className="gd-step-grip" title="Glisser pour déplacer" aria-hidden="true">⠿</span>
+                      </button>
+                      {hasStepPreview(s) && (
+                        <button
+                          type="button"
+                          className="gd-step-edit"
+                          aria-label={`Modifier « ${label(s)} »`}
+                          onClick={() => editStep(s)}
+                        >
+                          <Icon name="pencil" size={14} /> Modifier
+                        </button>
+                      )}
+                      {renderStepDisclosure(s, i)}
+                    </div>
                   </li>
                 )}
               </React.Fragment>
             ))}
             <li className="gd-campaign-end">
-              <strong>{endStep ? "FIN DU PARCOURS PRÉPARÉ" : "FIN DE CAMPAGNE"}</strong>
-              <small>{endStep ? "La partie jouable s’arrête à la borne de fin actuelle." : "Le parcours s’arrête après la dernière étape."}</small>
+              {endStep && pendingCount > 0 ? "Fin du parcours préparé" : "Fin du parcours"}
             </li>
           </ol>
-        </div>
-        <aside className="gd-campaign-inspector" ref={inspector}>
-          {step ? (
-            <>
-              <div className="gd-kicker">
-                ÉTAPE {campaign.steps.indexOf(step) + 1} ·{" "}
-                {step.kind === "end"
-                  ? "FIN ACTUELLE"
-                  : step.kind === "unlock_travel_book" ||
-                      step.kind === "unlock_herbarium"
-                    ? "JALON DE PROGRESSION"
-                    : step.kind === "level"
-                      ? "NIVEAU JOUABLE"
-                      : "CINÉMATIQUE"}
-              </div>
-              <h2>{label(step)}</h2>
-              <div className="gd-step-context">
-                <span>
-                  {campaign.steps[campaign.steps.indexOf(step) - 1]
-                    ? `Après « ${label(campaign.steps[campaign.steps.indexOf(step) - 1])} »`
-                    : "Au début du jeu"}
-                </span>
-                <b>
-                  {step.kind === "end"
-                    ? "→ ARRÊT DU JOUEUR"
-                    : step.kind === "unlock_travel_book"
-                      ? "→ DÉBLOCAGE DU CARNET →"
-                      : step.kind === "unlock_herbarium"
-                        ? "→ DÉBLOCAGE DE L’HERBIER →"
-                        : "→ CETTE ÉTAPE →"}
-                </b>
-                <span>
-                  {campaign.steps[campaign.steps.indexOf(step) + 1]
-                    ? `${step.kind === "end" ? "Suite en préparation :" : "Puis"} « ${label(campaign.steps[campaign.steps.indexOf(step) + 1])} »`
-                    : "Puis fin de campagne"}
-                </span>
-              </div>
-              {endIndex >= 0 && campaign.steps.indexOf(step) > endIndex && (
-                <p className="gd-preparing-note">Suite en préparation : cette étape reste modifiable et testable dans le Studio. Déplace la fin actuelle après cette étape pour la rendre jouable dans la campagne publiée.</p>
-              )}
-              <div className="gd-inline">
-                <button
-                  aria-label="Monter l’étape"
-                  disabled={campaign.steps[0] === step}
-                  onClick={() => nudge(-1)}
-                >
-                  ↑ Monter
-                </button>
-                <button
-                  aria-label="Descendre l’étape"
-                  disabled={campaign.steps.at(-1) === step}
-                  onClick={() => nudge(1)}
-                >
-                  ↓ Descendre
-                </button>
-              </div>
-              {step.kind === "end" ? (
-                <>
-                  <p>Le jeu affiche le message de fin de la version actuelle, avec le retour à l’accueil. Aucun niveau ni aucune cinématique placé après cette borne n’est publié dans le parcours.</p>
-                  <p className="gd-note">Déplace cette carte lorsque tu prolonges l’aventure. Les étapes suivantes restent enregistrées et modifiables dans le Studio. Une seule borne de fin actuelle est nécessaire.</p>
-                  <p className="gd-note">Retirer cette borne rend à nouveau publiable tout le parcours.</p>
-                </>
-              ) : step.kind === "unlock_travel_book" ? (
-                <>
-                  <p>Le bouton « Carnet de voyage » reste masqué sur l’accueil et dans l’herbier tant que le joueur n’a pas atteint ce point du parcours. Dès que l’étape précédente est accomplie, le Carnet de voyage se débloque automatiquement, sans interrompre l’enchaînement des cinématiques et des niveaux.</p>
-                  <p className="gd-note">Glisse cette carte ou utilise Monter / Descendre pour déplacer librement le moment du déblocage (par exemple entre deux parties d’une cinématique). Un seul jalon est nécessaire.</p>
-                  <p className="gd-note">Retirer ce jalon rend le Carnet de voyage accessible dès le début de la partie.</p>
-                </>
-              ) : step.kind === "unlock_herbarium" ? (
-                <>
-                  <p>Le bouton « L’herbier » reste masqué sur l’accueil et dans le Carnet de voyage tant que le joueur n’a pas atteint ce point du parcours. Dès que l’étape précédente est accomplie, L’herbier se débloque automatiquement, sans interrompre l’enchaînement des cinématiques et des niveaux.</p>
-                  <p className="gd-note">Glisse cette carte ou utilise Monter / Descendre pour déplacer librement le moment du déblocage (par exemple entre deux parties d’une cinématique). Un seul jalon est nécessaire.</p>
-                  <p className="gd-note">Retirer ce jalon rend L’herbier accessible dès le début de la partie.</p>
-                </>
-              ) : film ? (
-                <>
-                  <p className="gd-note">
-                    Ce film est enregistré avec les niveaux dans le projet
-                    Lunaria.
-                  </p>
-                  <label className="gd-check">
-                    <input
-                      type="checkbox"
-                      checked={step.kind === "cinematic" && step.skippable}
-                      onChange={(e) =>
-                        change(
-                          (p) => {
-                            const s = ensureCampaign(p).steps.find(
-                              (s) => s.id === step.id,
-                            );
-                            if (s?.kind === "cinematic")
-                              s.skippable = e.target.checked;
-                          },
-                          "",
-                          "Autoriser le passage du film",
-                        )
-                      }
-                    />
-                    Autoriser le joueur à passer cette cinématique
-                  </label>
-                  <button onClick={edit}>
-                    Ouvrir dans l’éditeur de cinématiques
-                  </button>
-                  <button
-                    disabled={campaign.steps.length >= 1000}
-                    onClick={() =>
-                      insertAt(
-                        {
-                          id: newId("step"),
-                          kind: "cinematic",
-                          cinematicId: film.id,
-                          skippable:
-                            step.kind === "cinematic" && step.skippable,
-                        },
-                        after(step.id),
-                      )
-                    }
-                  >
-                    Répéter ce film juste après
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p>
-                    {level?.waves.length ?? 0} vagues ·{" "}
-                    {level?.allowedPlants.length ?? 0} plantes disponibles
-                  </p>
-                  <button onClick={edit}>Ouvrir le niveau</button>
-                  <p className="gd-note">
-                    Après la victoire, le jeu passe automatiquement à la carte
-                    placée juste en dessous : film ou niveau. Une défaite ne
-                    débloque pas la suite.
-                  </p>
-                </>
-              )}
-              <button className="gd-remove-step" onClick={remove}>
-                Retirer du parcours
-              </button>
-            </>
-          ) : (
-            <p>
-              Ajoute une première cinématique ou un premier niveau quand tu
-              seras prêt.
-            </p>
-          )}
-          <hr />
-          <section
-            className="campaign-unplaced"
-            aria-label="Niveaux hors parcours"
-          >
-            <h3>
-              {available.length} niveau{available.length > 1 ? "x" : ""} hors
-              parcours
-            </h3>
-            <p className="gd-note">
-              Ces fiches restent dans le projet. Elles seront jouables dans la
-              campagne après leur insertion.
-            </p>
-            <button disabled={!available.length} onClick={showUnplaced}>
-              Voir les niveaux hors parcours
-            </button>
-          </section>
-          <hr />
-          <h3>Avant publication</h3>
-          <p className="gd-note">
-            Vérifie les films et les médias du parcours. Le dossier Godot
-            sélectionné est vérifié avant la confirmation de publication.
-          </p>
-          <button
-            onClick={() =>
-              void run(async () => {
-                const r = await gameAPI.checkCampaign(project);
-                report(
-                  `Parcours vérifié. ${r.steps} étapes, ${r.levels} niveaux, ${r.films} cinématiques, ${r.assets} ressources uniques. ${r.warnings.join(" ")}`,
-                );
-              })
-            }
-          >
-            Vérifier le parcours
-          </button>
-        </aside>
+        </section>
+        <CampaignReserve
+          active={active}
+          films={availableFilms}
+          levels={available}
+          assets={assets}
+          assetByRef={assetByRef}
+          project={project}
+          choice={chosen}
+          full={full}
+          onChoose={chooseReserveItem}
+          onDragStart={startReserveDrag}
+          onDragEnd={finishDrag}
+        />
       </div>
     </section>
   );

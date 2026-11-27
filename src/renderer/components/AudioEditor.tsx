@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { copy, uid, type Asset, type AssetRef, type AudioSettings, type Cinematic, type MusicTrack, type Shot, type SoundCue, type SoundEvent } from '../../shared/model.js';
-import { musicRange, soundEventLabels, soundTargetTime } from '../../shared/cinematicAudio.js';
+import { copy, uid, type Asset, type AssetRef, type AudioSettings, type Cinematic, type MusicStartTrigger, type MusicTrack, type Shot, type SoundCue, type SoundEvent } from '../../shared/model.js';
+import { musicRange, musicStartTime, musicStartTriggerLabels, soundEventLabels, soundTargetTime } from '../../shared/cinematicAudio.js';
 import { isAudio } from '../../shared/assets.js';
 import { StudioDialog } from './StudioDialog.js';
 import { NumberInput } from './NumberInput.js';
@@ -26,22 +26,63 @@ function FileChoice({value,volume,assets,change}:{value:AssetRef;volume:number;a
     {asset?<audio ref={player} key={value} controls preload="metadata" src={asset.url} onPlay={e=>{for(const other of document.querySelectorAll<HTMLAudioElement>('audio'))if(other!==e.currentTarget)other.pause();}} aria-label={`Écouter le fichier ${asset.name}`}/>:<span className="inline-warning">Reconnecte la bibliothèque contenant ce fichier.</span>}
   </div>;
 }
-type Props={doc:Cinematic;shot:Shot;assets:Asset[];selection:Selection;initialAsset?:AssetRef;change:(edit:(doc:Cinematic)=>void,key?:string,label?:string)=>void;onClose:()=>void;onLibrary:()=>void;onPreview:()=>void};
-export function AudioEditor({doc,shot,assets,selection,initialAsset,change,onClose,onLibrary,onPreview}:Props) {
+type Props={doc:Cinematic;shot:Shot;assets:Asset[];selection:Selection;initialAsset?:AssetRef;initialTab?:'music'|'sounds';linkActorId?:string;change:(edit:(doc:Cinematic)=>void,key?:string,label?:string)=>void;onClose:()=>void;onLibrary:()=>void;onPreview:()=>void};
+export function AudioEditor({doc,shot,assets,selection,initialAsset,initialTab,linkActorId,change,onClose,onLibrary,onPreview}:Props) {
   const sounds=useMemo(()=>assets.filter(a=>isAudio(a.path)),[assets]);
-  const [tab,setTab]=useState<'music'|'sounds'>(selection.kind==='shot'?'music':'sounds');
-  const [query,setQuery]=useState(''),[source,setSource]=useState<AssetRef|''>(initialAsset??sounds[0]?.ref??'');
+  const [tab,setTab]=useState<'music'|'sounds'>(initialTab??(selection.kind==='shot'?'music':'sounds'));
+  const linkedActor=useMemo(()=>linkActorId?shot.actors.find(a=>a.id===linkActorId):undefined,[shot.actors,linkActorId]);
+  const defaultAsset=useMemo(()=>{
+    if(initialAsset)return initialAsset;
+    if(linkedActor?.role==='enemy'){
+      const enemyTheme=sounds.find(a=>/en_garde_pollueurs/i.test(a.path));
+      if(enemyTheme)return enemyTheme.ref;
+    }
+    return sounds[0]?.ref??'';
+  },[initialAsset,linkedActor,sounds]);
+  const [query,setQuery]=useState(''),[source,setSource]=useState<AssetRef|''>(defaultAsset);
   const normalize=(v:string)=>v.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
   const filtered=sounds.filter(a=>normalize(a.path).includes(normalize(query)));
-  useEffect(()=>{if(!source&&!query&&sounds[0])setSource(sounds[0].ref);},[sounds,source,query]);
+  useEffect(()=>{if(!source&&!query&&defaultAsset)setSource(defaultAsset);},[defaultAsset,source,query]);
   const tracks=doc.musicTracks??[], cues=shot.sounds??[];
   const current=doc.shots.findIndex(s=>s.id===shot.id);
-  const updateTrack=(id:string,patch:Partial<MusicTrack>)=>change(d=>{Object.assign(d.musicTracks!.find(t=>t.id===id)!,patch);},`audio:${id}:${Object.keys(patch).join(',')}`,'Régler la musique');
+  const updateTrack=(id:string,patch:Partial<MusicTrack>)=>change(d=>{
+    const item=d.musicTracks!.find(t=>t.id===id)!;
+    Object.assign(item,patch);
+    if(!item.startTrigger||item.startTrigger==='shot_start'){delete item.startTrigger;delete item.startTargetId;}
+    if(item.startTrigger==='first_enemy')delete item.startTargetId;
+    if(!item.startDelay)delete item.startDelay;
+    if(!item.replacePrevious)delete item.replacePrevious;
+  },`audio:${id}:${Object.keys(patch).join(',')}`,'Régler la musique');
   const updateCue=(id:string,patch:Partial<SoundCue>)=>change(d=>{Object.assign(d.shots.find(s=>s.id===shot.id)!.sounds!.find(c=>c.id===id)!,patch);},`audio:${id}:${Object.keys(patch).join(',')}`,'Régler un son');
   const defaults=(asset:AssetRef):AudioSettings=>({asset,volume:.65,loop:true,fadeIn:1,fadeOut:1});
   function add() {
     if(!source)return;
-    if(tab==='music')change(d=>{(d.musicTracks??=[]).push({...defaults(source),id:uid(),startShotId:shot.id,endShotId:shot.id});},'','Ajouter une plage musicale');
+    if(tab==='music')change(d=>{
+      const list=(d.musicTracks??=[]);
+      if(linkedActor){
+        // Extend any music ending right before this shot so it plays until the actor appears.
+        const currentIndex=d.shots.findIndex(s=>s.id===shot.id);
+        for(const existing of list){
+          const [,endIndex]=musicRange(d,existing.startShotId,existing.endShotId);
+          if(currentIndex>0&&endIndex===currentIndex-1)existing.endShotId=shot.id;
+        }
+        const track:MusicTrack={
+          ...defaults(source),
+          volume:0.74,
+          fadeIn:0.25,
+          fadeOut:0.8,
+          id:uid(),
+          startShotId:shot.id,
+          endShotId:d.shots.at(-1)!.id,
+          startTrigger:'actor_entry',
+          startTargetId:linkedActor.id,
+          replacePrevious:true,
+        };
+        list.push(track);
+      } else {
+        list.push({...defaults(source),id:uid(),startShotId:shot.id,endShotId:shot.id});
+      }
+    },'','Ajouter une plage musicale');
     else change(d=>{
       let event:SoundEvent='shot_start',targetId='';
       if(selection.kind==='bubble'){event='bubble_open';targetId=selection.id;}
@@ -64,15 +105,48 @@ export function AudioEditor({doc,shot,assets,selection,initialAsset,change,onClo
       </div>
       {!sounds.length&&<p className="audio-empty">Connecte une bibliothèque contenant des fichiers OGG, WAV ou MP3. <button className="link-button" onClick={onLibrary}>Choisir la bibliothèque</button></p>}
       {tab==='music'?<>
-        <p className="audio-hint">La fin inclut le dernier plan choisi et ses dialogues. Le fondu de sortie se joue ensuite, avant de passer au plan suivant. Plusieurs musiques peuvent se superposer.</p>
+        {linkedActor&&<p className="audio-hint"><strong>Liaison active :</strong> la musique ajoutée démarrera à l’apparition de « {linkedActor.name} » dans le plan {current+1} et remplacera la musique précédente en fondu.</p>}
+        <p className="audio-hint">La fin inclut le dernier plan choisi et ses dialogues. Une musique peut aussi se synchroniser sur l’apparition d’un ennemi ou d’un acteur du plan de début.</p>
         {!tracks.length&&<div className="audio-empty"><Icon name="music" size={28}/><strong>Aucune plage musicale</strong><span>Ajoute un fichier, puis choisis les plans de début et de fin.</span></div>}
-        {tracks.map((track,i)=>{const [start,end]=musicRange(doc,track.startShotId,track.endShotId);return <section className="audio-card" key={track.id} aria-label={`Musique ${i+1}`}>
+        {tracks.map((track,i)=>{
+          const [start,end]=musicRange(doc,track.startShotId,track.endShotId);
+          const startShot=doc.shots[start];
+          const trigger:MusicStartTrigger=track.startTrigger??'shot_start';
+          const resolvedStart=startShot?musicStartTime(startShot,track):undefined;
+          return <section className="audio-card" key={track.id} aria-label={`Musique ${i+1}`}>
           <header><strong><Icon name="music" size={16}/> Musique {i+1} · {track.asset.split('/').pop()}</strong><button className="link-button" aria-label={`Retirer la musique ${i+1}`} onClick={()=>change(d=>{d.musicTracks=d.musicTracks!.filter(t=>t.id!==track.id);},'','Retirer une musique')}>Retirer</button></header>
           <div className="audio-range-bar" aria-label={`Du plan ${start+1} au plan ${end+1}`}><span style={{left:`${100*start/doc.shots.length}%`,width:`${100*(end-start+1)/doc.shots.length}%`}}/>{doc.shots.map((s,j)=><i key={s.id} title={`Plan ${j+1} · ${s.name}`} className={j===current?'current':''}>{j+1}</i>)}</div>
-          <div className="audio-range-fields"><label className="field"><span>Commence au plan</span><select aria-label="Commence au plan" value={track.startShotId} onChange={e=>{const id=e.target.value;updateTrack(track.id,{startShotId:id,...(doc.shots.findIndex(s=>s.id===id)>end?{endShotId:id}:{})});}}>{planOptions}</select></label>
+          <div className="audio-range-fields"><label className="field"><span>Commence au plan</span><select aria-label="Commence au plan" value={track.startShotId} onChange={e=>{
+            const id=e.target.value;
+            const nextIndex=doc.shots.findIndex(s=>s.id===id);
+            const nextShot=doc.shots[nextIndex];
+            const patch:Partial<MusicTrack>={startShotId:id,...(nextIndex>end?{endShotId:id}:{})};
+            if(trigger==='actor_entry'){
+              const firstActor=nextShot?.actors[0]?.id;
+              if(firstActor)patch.startTargetId=firstActor;
+              else{patch.startTrigger='shot_start';patch.startTargetId=undefined;}
+            }
+            updateTrack(track.id,patch);
+          }}>{planOptions}</select></label>
             <label className="field"><span>S’arrête après le plan</span><select aria-label="S’arrête après le plan" value={track.endShotId} onChange={e=>{const id=e.target.value;updateTrack(track.id,{endShotId:id,...(doc.shots.findIndex(s=>s.id===id)<start?{startShotId:id}:{})});}}>{planOptions}</select></label>
             <button className="button subtle" onClick={()=>updateTrack(track.id,{startShotId:doc.shots[0].id,endShotId:doc.shots.at(-1)!.id})}>Tout le film</button>
           </div>
+          <div className="audio-trigger-fields">
+            <label className="field"><span>Déclencheur de départ</span><select aria-label="Déclencheur de départ" value={trigger} onChange={e=>{
+              const nextTrigger=e.target.value as MusicStartTrigger;
+              if(nextTrigger==='actor_entry'){
+                const preferred=startShot?.actors.find(a=>a.role==='enemy')?.id??startShot?.actors[0]?.id;
+                updateTrack(track.id,preferred?{startTrigger:'actor_entry',startTargetId:preferred}:{startTrigger:'shot_start',startTargetId:undefined});
+              } else {
+                updateTrack(track.id,{startTrigger:nextTrigger,startTargetId:undefined});
+              }
+            }}>{Object.entries(musicStartTriggerLabels).map(([key,label])=><option key={key} value={key} disabled={key==='actor_entry'&&!(startShot?.actors.length)}>{label}</option>)}</select></label>
+            {trigger==='actor_entry'&&startShot&&<label className="field"><span>Acteur déclencheur</span><select aria-label="Acteur déclencheur" value={track.startTargetId??''} onChange={e=>updateTrack(track.id,{startTargetId:e.target.value})}>{startShot.actors.map(a=><option key={a.id} value={a.id}>{a.name}{a.role==='enemy'?' (ennemi)':''}</option>)}</select></label>}
+            {trigger!=='shot_start'&&<label className="field"><span>Décalage après l’apparition (s)</span><NumberInput label="Décalage après l’apparition (s)" value={track.startDelay??0} min={0} max={300} onCommit={startDelay=>updateTrack(track.id,{startDelay})}/></label>}
+          </div>
+          <label className="check-field"><input type="checkbox" checked={!!track.replacePrevious} onChange={e=>updateTrack(track.id,{replacePrevious:e.target.checked})}/> Remplacer les musiques précédentes en fondu au déclenchement</label>
+          {trigger==='first_enemy'&&resolvedStart===undefined&&<p className="inline-warning">Aucun ennemi dans le plan {start+1} : ajoute un ennemi ou choisis un autre déclencheur.</p>}
+          {trigger!=='shot_start'&&resolvedStart!==undefined&&<p className="audio-hint">Synchronisé à {resolvedStart.toFixed(1).replace('.',',')} s dans le plan {start+1}.</p>}
           <FileChoice value={track.asset} volume={track.volume} assets={sounds} change={asset=>updateTrack(track.id,{asset})}/>
           <Settings value={track} change={patch=>updateTrack(track.id,patch)}/>
         </section>;})}

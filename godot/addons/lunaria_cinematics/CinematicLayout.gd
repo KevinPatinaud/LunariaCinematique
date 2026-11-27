@@ -49,11 +49,17 @@ static func wrap_text(text: String, max_width: float, font_size: float, font: Fo
 		lines.append(line)
 	return lines
 
+static func bubble_padding(bubble: Dictionary, width: float) -> Vector2:
+	if bubble.get("kind") == "thought" and bubble["style"] == "parchment":
+		return Vector2(minf(62.0, width * 0.34), 22.0)
+	return Vector2(58.0, 48.0) if bubble["style"] in ["simple", "ornate"] else Vector2(28.0, 22.0)
+
 static func bubble_layout(bubble: Dictionary) -> Dictionary:
 	var textured: bool = bubble["style"] in ["simple", "ornate"]
-	var padding_x: float = 58.0 if textured else 28.0
-	var padding_y: float = 48.0 if textured else 22.0
 	var width: float = float(bubble["width"]) * 1600.0
+	var padding := bubble_padding(bubble, width)
+	var padding_x := padding.x
+	var padding_y := padding.y
 	var font_size: float = float(bubble["fontSize"])
 	var lines: Array[String] = wrap_text(str(bubble["text"]), maxf(20.0, width - padding_x * 2.0), font_size)
 	var required: float = lines.size() * font_size * 1.32 + padding_y * 2.0

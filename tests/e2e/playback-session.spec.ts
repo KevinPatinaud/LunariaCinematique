@@ -101,3 +101,28 @@ test('a pending preview can be stopped immediately and never starts when the ima
   await expect(page.getByRole('button', { name: 'Quitter l’aperçu', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Premier film');
 });
+
+test('adding an unrelated image to the watched library keeps playback running', async () => {
+  await startDelayedPreview();
+  await page.evaluate(() => (window as DeferredImages).releaseImages());
+  await expect(page.locator('.canvas-topline')).toContainText('Lecture · Plan 02 / 2');
+
+  const refreshed = page.waitForEvent('console', {
+    predicate: message => message.text() === 'Unrelated image scanned',
+  });
+  await page.evaluate(() => {
+    const stopListening = window.lunaria!.onLibraryChanged(snapshot => {
+      if (!snapshot.assets.some(asset => asset.ref === 'library://unrelated.png')) return;
+      stopListening();
+      console.info('Unrelated image scanned');
+    });
+  });
+  await fs.writeFile(path.join(dir, 'library', 'unrelated.png'), PIXEL_PNG);
+  await refreshed;
+
+  const timecode = page.locator('.timecode');
+  await expect(timecode).toBeVisible();
+  const elapsed = await timecode.innerText();
+  await expect(timecode).not.toHaveText(elapsed);
+  await expect(page.locator('.canvas-topline')).toContainText('Lecture · Plan 02 / 2');
+});

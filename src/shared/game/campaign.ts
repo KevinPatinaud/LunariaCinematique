@@ -56,6 +56,7 @@ export function safeMoviePath(file:unknown):file is string {
 /** Copy only the levels and films reachable from the linear campaign, in playback order. */
 export function compileCampaign(project:GameProject):GameProject {
  const result=structuredClone(project),campaign=ensureCampaign(result);
+ delete result.contentArchives;
  const end=campaign.steps.findIndex(s=>s.kind==='end');
  if(end>=0){
   const deferredMilestones=campaign.steps.slice(end+1).filter(isProgressionMilestone);

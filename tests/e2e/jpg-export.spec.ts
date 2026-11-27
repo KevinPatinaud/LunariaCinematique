@@ -4,6 +4,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { newBubble, newCinematic, newShot } from '../../src/shared/model.js';
+import { seedProject } from '../../src/shared/game/seed.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -12,7 +13,7 @@ test('exporte chaque plan en JPG dans son ordre, avec le titre et sans repères'
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lunaria-jpg-export-'));
   const library = path.join(ROOT, 'example-library');
   const profile = path.join(dir, 'profile');
-  const source = path.join(dir, 'film.cinematic.json');
+  const source = path.join(dir, 'film.game.json');
   const destination = path.join(dir, 'exports');
   await fs.mkdir(profile);
   await fs.mkdir(destination);
@@ -22,13 +23,15 @@ test('exporte chaque plan en JPG dans son ordre, avec le titre et sans repères'
   film.title = 'L’aube : Forêt';
   film.shots[0].name = 'Début';
   film.shots[0].background.asset = 'library://01_europe/lunaria/interieur_serre/greenhouse_aisle_wide_variant_v01.png';
-  const bubble = newBubble(null);
+  const bubble = newBubble(null, 'thought');
   bubble.text = 'Bonjour Lunaria';
   film.shots[0].bubbles.push(bubble);
   const second = newShot();
   second.name = 'Suite';
   film.shots.push(second);
-  await fs.writeFile(source, JSON.stringify(film));
+  const project = seedProject();
+  project.cinematics = [film];
+  await fs.writeFile(source, JSON.stringify(project));
   const env: NodeJS.ProcessEnv = { ...process.env, LUNARIA_E2E: '1', LUNARIA_TEST_USER_DATA: profile };
   delete env.LUNARIA_DEV_URL;
   let app: ElectronApplication | undefined;
@@ -37,7 +40,8 @@ test('exporte chaque plan en JPG dans son ordre, avec le titre et sans repères'
     const page = await app.firstWindow();
     await page.waitForURL('app://studio/index.html');
     await app.evaluate(({ dialog }, file) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] }); }, source);
-    await page.getByRole('button', { name: 'Importer un film' }).click();
+    await page.getByRole('button', { name: 'Actions du fichier projet' }).click();
+    await page.getByRole('button', { name: 'Ouvrir un projet…', exact: true }).click();
     await expect(page.getByLabel('Titre de la cinématique')).toHaveValue(film.title);
     await page.setViewportSize({ width: 1000, height: 800 });
     await expect(page.getByRole('button', { name: 'Exporter en JPG' })).toBeInViewport();

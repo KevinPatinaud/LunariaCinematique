@@ -363,48 +363,6 @@
   color: #8fa582;
 }
 
-/* Inline editable project title on Campaign header and Project Overview. */
-.gd-campaign-title-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.gd-shell .gd-campaign-title-row .gd-campaign-project-title {
-  width: auto;
-  min-width: 220px;
-  max-width: 440px;
-  flex: 0 1 340px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  color: #dce7ce;
-  background: #1a261d;
-  border: 1px solid #3e5238;
-  border-radius: 7px;
-  padding: 6px 11px;
-  margin: 0;
-}
-
-.gd-shell .gd-campaign-title-row .gd-campaign-project-title:hover,
-.gd-shell .gd-campaign-title-row .gd-campaign-project-title:focus {
-  border-color: #849a64;
-  background: #141e17;
-  outline: none;
-}
-
-.gd-campaign-project-path {
-  display: block;
-  margin-top: 4px;
-  font-size: 11px;
-  color: #8ea380;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 620px;
-}
-
 @media (max-width: 1260px) {
   .studio-modebar .studio-sections > button,
   .studio-modebar .studio-more-trigger {

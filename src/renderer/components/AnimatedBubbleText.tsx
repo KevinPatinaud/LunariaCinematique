@@ -5,10 +5,12 @@ import {bubbleTextUnits, glyphPose, fitGlyphPose} from '../../shared/textAnimati
 import {unitsForLines} from '../../shared/textSegments.js';
 /** Same full layout at every frame. Hidden letters keep their positions, never reflowing the bubble. */
 export function AnimatedBubbleText({bubble, elapsed, completed=false}: {bubble: Bubble; elapsed?: number; completed?: boolean}) {
-  const layout = useMemo(() => bubbleLayout(bubble), [bubble.text, bubble.width, bubble.fontSize, bubble.style, bubble.height, bubble.autoHeight]);
-  const clockUnits = useMemo(() => bubbleTextUnits(bubble), [bubble.text, bubble.width, bubble.fontSize, bubble.style, bubble.height, bubble.autoHeight]);
+  const layout = useMemo(() => bubbleLayout(bubble), [bubble.kind, bubble.text, bubble.width, bubble.fontSize, bubble.style, bubble.height, bubble.autoHeight]);
+  const clockUnits = useMemo(() => bubbleTextUnits(bubble), [bubble.kind, bubble.text, bubble.width, bubble.fontSize, bubble.style, bubble.height, bubble.autoHeight]);
   const width = Math.max(1, layout.width - 2 * layout.paddingX);
   const height = Math.max(1, layout.height - layout.paddingY * 2);
+  const centered = bubble.kind === 'thought';
+  const ink = centered ? '#23352b' : '#342e24';
   const metrics = useMemo(() => {
     const ctx = document.createElement('canvas').getContext('2d');
     const measure = (text: string, size: number) => ctx?.measureText(text).width ?? Array.from(text).reduce((n,c) => n + charWidth(c,size), 0);
@@ -43,7 +45,8 @@ export function AnimatedBubbleText({bubble, elapsed, completed=false}: {bubble: 
       const inkBottom = Math.max(...lineMetrics.map((m, index) => index * lineHeight + ((lines[index] ? m : blankMetrics)?.actualBoundingBoxDescent ?? fontSize * .2)));
       const textHeight = inkBottom - inkTop;
       const blockTop = Math.max(0, (height - textHeight) / 2), offsetY = blockTop - inkTop;
-      return {lines, units, glyphs, fontSize, lineHeight, insetX, offsetY, blockTop, textHeight,
+      const lineStarts = lines.map(line => centered ? Math.max(insetX, (width - measure(line, fontSize)) / 2) : insetX);
+      return {lines, units, glyphs, fontSize, lineHeight, lineStarts, offsetY, blockTop, textHeight,
         fits: measuredWidth <= width + 1e-7 && textHeight <= height + 1e-7};
     };
     // The authored size wins whenever it fits. Otherwise choose the largest
@@ -60,20 +63,20 @@ export function AnimatedBubbleText({bubble, elapsed, completed=false}: {bubble: 
       return clock ? {...unit, index: clock.index, word: clock.word} : unit;
     });
     return fitted;
-  }, [clockUnits, bubble.text, bubble.fontSize, width, height]);
-  if (elapsed === undefined || !bubble.textAnimation) return <text data-testid="bubble-text" fill="#342e24" fontSize={metrics.fontSize} fontFamily="Georgia, serif" textRendering="geometricPrecision">
-    {metrics.lines.map((line,index) => <tspan key={index} x={metrics.insetX} y={metrics.offsetY + index * metrics.lineHeight}>{line || ' '}</tspan>)}
+  }, [clockUnits, bubble.text, bubble.fontSize, width, height, centered]);
+  if (elapsed === undefined || !bubble.textAnimation) return <text data-testid="bubble-text" fill={ink} fontSize={metrics.fontSize} fontFamily="Georgia, serif" textRendering="geometricPrecision">
+    {metrics.lines.map((line,index) => <tspan key={index} x={metrics.lineStarts[index]} y={metrics.offsetY + index * metrics.lineHeight}>{line || ' '}</tspan>)}
   </text>;
   return <g data-testid="animated-text" aria-label={bubble.text}>
     {metrics.units.map((unit,index) => {
       if (/^\s+$/u.test(unit.text)) return null;
-      const m = metrics.glyphs[index], x = metrics.insetX + m.x, y = metrics.offsetY + m.y;
+      const m = metrics.glyphs[index], x = metrics.lineStarts[unit.line] + m.x, y = metrics.offsetY + m.y;
       const cx = x + (m.right - m.left) / 2, cy = y + (m.descent - m.ascent) / 2;
       const pose = fitGlyphPose(glyphPose(bubble,unit,elapsed,cx,cy - metrics.blockTop,width,metrics.textHeight,completed),
         cx, cy, m.left + m.right, m.ascent + m.descent, width, height);
       return <g key={index} data-text-unit={unit.index} data-visible={pose.opacity > 0 ? 'true' : 'false'}
         opacity={pose.opacity} transform={`translate(${cx + pose.dx},${cy + pose.dy}) rotate(${pose.rotation}) scale(${pose.scale}) translate(${-cx},${-cy})`}>
-        <text x={x} y={y} fill="#342e24" fontSize={metrics.fontSize} fontFamily="Georgia, serif" textRendering="geometricPrecision">{unit.text}</text>
+        <text x={x} y={y} fill={ink} fontSize={metrics.fontSize} fontFamily="Georgia, serif" textRendering="geometricPrecision">{unit.text}</text>
       </g>;
     })}
   </g>;

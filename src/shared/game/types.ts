@@ -45,7 +45,8 @@ export type ProgressionMilestoneKind = 'unlock_travel_book' | 'unlock_herbarium'
 export type CampaignStep = {id:string;kind:'level';levelId:string} | {id:string;kind:'cinematic';cinematicId:string;skippable:boolean} | {id:string;kind:'unlock_herbarium'} | {id:string;kind:'unlock_travel_book'} | {id:string;kind:'end'};
 export interface CampaignSequence {steps:CampaignStep[];cinematics:CampaignFilm[]}
 export interface CampaignCheck {films:number;assets:number;steps:number;levels:number;warnings:string[]}
-export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;lunas?:LunaEconomyConfig;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence}
+export interface ContentArchives {cinematics:string[];levels:string[]}
+export interface GameProject {schemaVersion:1|2|3|4;homeScreen?:HomeScreen;lunas?:LunaEconomyConfig;presentation?:PresentationCatalog;logic?:LogicCatalog;combat?:CombatCatalog;kind:'lunaria-game-project';id:string;title:string;balance:{plants:PlantDefinition[];enemies:EnemyDefinition[]};levels:LevelDefinition[];cinematics?:Cinematic[];campaign?:CampaignSequence;contentArchives?:ContentArchives}
 export interface GameFile {project:GameProject;path:string;token:string;migrated?:boolean;backup?:boolean;preserved?:string}
 export interface ProjectDiskConflict {path:string;revision:string;base:GameProject;remote:GameProject|null;error?:string}
 export interface GameRecent {path:string;title:string;updatedAt:string}

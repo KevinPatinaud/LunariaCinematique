@@ -29,7 +29,7 @@ test('browse, search and create films within the same project', async ({}, info)
     await page.locator('.top-actions').getByRole('button', { name: /Toutes les cinématiques/ }).click();
     let browser = page.getByRole('dialog', { name: 'Toutes les cinématiques' });
     await expect(browser).toContainText('Ce projet ne contient encore aucune cinématique.');
-    await browser.getByRole('button', { name: '+ Nouvelle cinématique' }).click();
+    await browser.getByRole('button', { name: 'Nouvelle cinématique' }).click();
     await expect(page.getByLabel('Titre de la cinématique')).toBeFocused();
     await page.getByLabel('Titre de la cinématique').fill('Le départ');
     await page.locator('.top-actions').getByRole('button', { name: 'Nouvelle cinématique' }).click();
@@ -54,7 +54,8 @@ test('browse, search and create films within the same project', async ({}, info)
     await expect.poll(async () => JSON.parse(await fs.readFile(file, 'utf8')).cinematics.map((film: { title: string }) => film.title)).toEqual(['Le départ', 'Le jardin', 'Le retour']);
     await expect(page.locator('.studio-save')).toBeEnabled();
 
-    await page.locator('.top-actions').getByRole('button', { name: 'Ouvrir le projet' }).click();
+    await page.getByRole('button', { name: 'Actions du fichier projet' }).click();
+    await page.getByRole('button', { name: 'Ouvrir un projet…', exact: true }).click();
     await page.locator('.top-actions').getByRole('button', { name: /Toutes les cinématiques/ }).click();
     browser = page.getByRole('dialog', { name: 'Toutes les cinématiques' });
     await expect(browser.locator('.cinematics-browser-film')).toHaveCount(3);

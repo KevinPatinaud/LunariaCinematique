@@ -48,7 +48,13 @@ export function useCinematicPlayback({ document: cinematic, project, library, co
   }));
   useLayoutEffect(() => {
     projectRef.current = project;
-    session.setContext({ key: contextKey, document: cinematic, assets: library?.assets ?? [], active });
+    session.setContext({
+      key: contextKey,
+      document: cinematic,
+      libraryRoot: library?.rootPath ?? null,
+      assets: library?.assets ?? [],
+      active,
+    });
   }, [session, contextKey, cinematic, project, library, active]);
   useEffect(() => () => session.stop(), [session]);
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot);

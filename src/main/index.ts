@@ -447,6 +447,15 @@ function setupIpc() {
   });
   handle('library:example', () => selectRoot(devUrl ? path.join(appRoot(), 'example-library') : rendererRoot()));
   handle('library:refresh', () => refresh());
+  handle('library:reveal-asset', async (ref, libraryRoot) => {
+    const activeRoot = root;
+    if (!activeRoot || activeRoot !== libraryRoot) throw new Error('La bibliothèque a changé.');
+    const asset = snapshot?.assets.find(asset => asset.ref === ref && asset.kind !== 'audio');
+    if (!asset) throw new Error('Cette image ne figure plus dans la bibliothèque.');
+    const file = await resolveAsset(activeRoot, asset.ref);
+    if (root !== activeRoot) throw new Error('La bibliothèque a changé.');
+    shell.showItemInFolder(file);
+  });
   handle('background-correction:prepare', ref => { if (!root) throw new Error('Connecte une bibliothèque avant d’adapter un décor.'); return backgroundCorrections.prepare(root, ref); });
   const imageProcessor = (kind: unknown) => {
     if (kind === 'animation') return animationGenerations;

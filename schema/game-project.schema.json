@@ -4736,6 +4736,7 @@
                         "type": "string",
                         "enum": [
                           "speech",
+                          "thought",
                           "narration"
                         ]
                       },
@@ -5115,6 +5116,26 @@
                   "type": "string",
                   "maxLength": 100,
                   "minLength": 1
+                },
+                "startTrigger": {
+                  "type": "string",
+                  "enum": [
+                    "shot_start",
+                    "first_enemy",
+                    "actor_entry"
+                  ]
+                },
+                "startTargetId": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "startDelay": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 300
+                },
+                "replacePrevious": {
+                  "type": "boolean"
                 }
               },
               "required": [

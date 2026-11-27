@@ -7,6 +7,7 @@ export type EntryPreset = 'none' | 'fade' | 'left' | 'right' | 'bottom' | 'top' 
 export type ExitPreset = 'none' | 'fade' | 'left' | 'right' | 'top' | 'bottom' | 'shrink' | 'spiral' | 'rise' | 'fall';
 export interface ExitAnimation { preset: ExitPreset; start: number; duration: number }
 export type BubbleStyle = 'parchment' | 'plain' | 'simple' | 'ornate';
+export const BUBBLE_KINDS = ['speech', 'thought', 'narration'] as const;
 export interface Box { x: number; y: number; width: number; height: number }
 export type MotionPreset = 'none' | 'float' | 'sway' | 'pulse' | 'spin' | 'shake' | 'bounce' | 'nod' | 'recoil' | 'heartbeat' | 'flutter' | 'orbit' | 'figure8' | 'zigzag' | 'tumble' | 'surprise' | 'jelly';
 export type Pivot = 'center' | 'top' | 'bottom';
@@ -43,7 +44,7 @@ export interface Bubble extends Box {
   textAnimation?: TextAnimation;
   /** Optional: older films use the same gentle pop as newly created bubbles. */
   bubbleEntry?: BubbleEntry;
-  id: string; kind: 'speech' | 'narration'; style: BubbleStyle; frameAsset: AssetRef | null;
+  id: string; kind: (typeof BUBBLE_KINDS)[number]; style: BubbleStyle; frameAsset: AssetRef | null;
   speakerId: string | null; text: string; fontSize: number; autoHeight: boolean;
   tail: { mode: 'auto' | 'manual' | 'none'; x: number; y: number };
   advance: { mode: 'click' | 'auto'; seconds: number };
@@ -53,8 +54,17 @@ export interface Bubble extends Box {
 export interface AudioSettings {
   asset: AssetRef; volume: number; loop: boolean; fadeIn: number; fadeOut: number;
 }
+export type MusicStartTrigger = 'shot_start' | 'first_enemy' | 'actor_entry';
 export interface MusicTrack extends AudioSettings {
   id: string; startShotId: string; endShotId: string;
+  /** Optional trigger inside startShotId. Omitted means start at shot_start (0s). */
+  startTrigger?: MusicStartTrigger;
+  /** Required when startTrigger is 'actor_entry': target actor ID inside startShotId. */
+  startTargetId?: string;
+  /** Optional delay in seconds after the start trigger. Defaults to 0. */
+  startDelay?: number;
+  /** When true, earlier playing music tracks fade out as soon as this track triggers. */
+  replacePrevious?: boolean;
 }
 export type SoundEvent = 'shot_start' | 'bubble_open' | 'actor_entry' | 'actor_movement' | 'actor_motion' | 'actor_exit' | 'actor_animation';
 export interface SoundCue extends AudioSettings {
@@ -95,6 +105,7 @@ export interface StudioAPI {
   chooseLibrary(): Promise<LibrarySnapshot | null>;
   exampleLibrary(): Promise<LibrarySnapshot>;
   refreshLibrary(): Promise<LibrarySnapshot | null>;
+  revealLibraryAsset(ref: AssetRef, libraryRoot: string): Promise<void>;
   prepareBackgroundCorrection(ref: AssetRef): Promise<BackgroundPreparation>;
   listImageTasks(): Promise<import('./imageTasks.js').ImageTask[]>;
   removeImageTask(kind: import('./imageTasks.js').ImageTaskKind, id: string): Promise<void>;
@@ -175,8 +186,8 @@ export function newActor(asset: Asset, ratio: number, x = 0.35, y = 0.42,
 }
 export function newBubble(speakerId: string | null = null, kind: Bubble['kind'] = 'speech'): Bubble {
   return { id: uid(), kind, style: 'parchment', frameAsset: null, speakerId,
-    text: kind === 'speech' ? 'Écris ta réplique ici.' : 'Écris la narration ici.',
-    x: 0.30, y: 0.12, width: 0.38, height: 0.16, fontSize: 28, autoHeight: true,
+    text: kind === 'thought' ? 'Écris la pensée ici.' : kind === 'narration' ? 'Écris la narration ici.' : 'Écris ta réplique ici.',
+    x: 0.30, y: 0.12, width: kind === 'thought' ? 0.31 : 0.38, height: 0.16, fontSize: 28, autoHeight: true,
     tail: { mode: kind === 'narration' ? 'none' : speakerId ? 'auto' : 'manual', x: 0.55, y: 0.52 },
     advance: { mode: 'click', seconds: 3.5 } };
 }
@@ -208,9 +219,15 @@ export function duplicateCinematic(source: Cinematic, existingTitles: readonly s
     return duplicate;
   });
   cinematic.musicTracks?.forEach(track => {
+    const startIndex = source.shots.findIndex(s => s.id === track.startShotId);
+    const endIndex = source.shots.findIndex(s => s.id === track.endShotId);
     track.id = uid();
-    track.startShotId = cinematic.shots[source.shots.findIndex(s => s.id === track.startShotId)]?.id ?? '';
-    track.endShotId = cinematic.shots[source.shots.findIndex(s => s.id === track.endShotId)]?.id ?? '';
+    track.startShotId = cinematic.shots[startIndex]?.id ?? '';
+    track.endShotId = cinematic.shots[endIndex]?.id ?? '';
+    if (track.startTrigger === 'actor_entry' && track.startTargetId && startIndex >= 0) {
+      const actorIndex = source.shots[startIndex].actors.findIndex(a => a.id === track.startTargetId);
+      track.startTargetId = actorIndex >= 0 ? cinematic.shots[startIndex].actors[actorIndex]?.id ?? '' : '';
+    }
   });
   return cinematic;
 }

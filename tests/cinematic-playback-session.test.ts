@@ -17,7 +17,7 @@ function fixture(preload: (document: Cinematic, index: number, assets: readonly 
   const voices: { stops: number; states: { paused: boolean; ready: boolean; shot: number }[] }[] = [];
   const doc = newCinematic(); doc.shots = [newShot(), newShot()];
   doc.shots.forEach(shot => { shot.duration = 1; });
-  const context: PlaybackContext = { key: 'project:1', document: doc, assets: [], active: true };
+  const context: PlaybackContext = { key: 'project:1', document: doc, libraryRoot: 'library', assets: [], active: true };
   const session = new CinematicPlaybackSession({
     preload,
     createAudio: () => {
@@ -60,12 +60,12 @@ test('a late failed decode after cancellation produces neither a toast nor a res
   assert.deepEqual(f.reports, []); assert.equal(f.session.isActive(), false);
 });
 
-test('film, same-ID document replacement, project, library and mode changes invalidate pending loads', async () => {
+test('film, same-ID document replacement, project, library root and mode changes invalidate pending loads', async () => {
   const changes: ((context: PlaybackContext) => PlaybackContext)[] = [
     context => ({ ...context, document: { ...structuredClone(context.document), id: 'another-film' } }),
     context => ({ ...context, document: structuredClone(context.document) }),
     context => ({ ...context, key: 'another-project' }),
-    context => ({ ...context, assets: [] }),
+    context => ({ ...context, libraryRoot: 'another-library' }),
     context => ({ ...context, active: false }),
   ];
   for (const change of changes) {
@@ -76,6 +76,29 @@ test('film, same-ID document replacement, project, library and mode changes inva
     assert.equal(await start, 'canceled');
     assert.equal(f.session.isActive(), false); assert.equal(f.voices.length, 0);
   }
+});
+
+test('refreshing the same library preserves a pending start and uses the new assets for the next shot', async () => {
+  const first = deferred();
+  const preloaded: (readonly Asset[])[] = [];
+  const f = fixture((_doc, index, assets) => {
+    preloaded.push(assets);
+    return index === 0 ? first.promise : Promise.resolve();
+  });
+  const start = f.session.start();
+  await settle();
+  const refreshedAssets: Asset[] = [];
+  f.session.setContext({ ...f.context, assets: refreshedAssets });
+  assert.equal(f.session.getSnapshot().loading, true);
+
+  first.resolve();
+  assert.equal(await start, 'started');
+  f.frame(1100);
+  await settle();
+  assert.equal(f.session.getSnapshot().readyShot, 1);
+  assert.equal(preloaded[0], f.context.assets);
+  assert.equal(preloaded[1], refreshedAssets);
+  assert.equal(f.voices[0].stops, 0);
 });
 
 test('an older start cannot overwrite a newer start or stop its audio', async () => {

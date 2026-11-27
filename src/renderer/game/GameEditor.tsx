@@ -534,6 +534,9 @@ export const GameEditor = forwardRef<GameEditorHandle, Props>(
             />
           ) : section === "campaign" ? (
             <CampaignEditor
+              key={epoch}
+              active={active}
+              assets={assets}
               showUnplaced={() => {
                 setLevelScope("outside");
                 setQuery("");

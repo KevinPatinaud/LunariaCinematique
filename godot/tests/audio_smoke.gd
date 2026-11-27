@@ -84,9 +84,50 @@ func run() -> void:
 	doc.musicTracks[0].endShotId = "missing"
 	check(not Validator.validate(doc, schema).is_empty(), "reject missing music endpoint")
 	check(absf(Audio.gain(settings, 1.0) - 0.4) < 0.001, "shared envelope formula")
+
+	# Synchronized enemy/actor music trigger + mid-shot handoff parity.
+	var img := Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.5, 0.2, 0.2, 1.0))
+	check(img.save_png("user://audio-test/enemy.png") == OK, "create isolated enemy fixture")
+	var enemy_a: Dictionary = {"id":"enemy_a","name":"Enemy A","role":"enemy","asset":"library://enemy.png","x":0.5,"y":0.5,"width":0.2,"height":0.2,"flipX":false,"opacity":1.0,"entry":{"preset":"pop","duration":0.8,"delay":4.2}}
+	var enemy_b: Dictionary = {"id":"enemy_b","name":"Enemy B","role":"enemy","asset":"library://enemy.png","x":0.6,"y":0.5,"width":0.2,"height":0.2,"flipX":false,"opacity":1.0,"entry":{"preset":"pop","duration":0.8,"delay":3.9}}
+	var sync_shot_0: Dictionary = shot("intro")
+	var sync_shot_1: Dictionary = shot("ambush")
+	sync_shot_1.duration = 7.0
+	sync_shot_1.actors = [enemy_a, enemy_b]
+	var sync_shot_2: Dictionary = shot("outro")
+	var calm_track: Dictionary = {"id":"calm","asset":"library://tone.wav","volume":0.8,"loop":true,"fadeIn":0.0,"fadeOut":1.0,"startShotId":"intro","endShotId":"ambush"}
+	var enemy_track: Dictionary = {"id":"danger","asset":"library://tone.wav","volume":0.8,"loop":true,"fadeIn":0.5,"fadeOut":0.8,"startShotId":"ambush","endShotId":"outro","startTrigger":"first_enemy","replacePrevious":true}
+	var sync_doc: Dictionary = {"schemaVersion":3,"id":"audio-sync-test","title":"Audio sync test","stage":{"width":1600,"height":900},"shots":[sync_shot_0, sync_shot_1, sync_shot_2],"musicTracks":[calm_track, enemy_track]}
+	check(is_equal_approx(Audio.music_start_time(sync_shot_1, enemy_track), 3.9), "first_enemy resolves earliest enemy delay")
+	check(is_equal_approx(Audio.music_handoff_time(sync_doc, 1, calm_track, 0), 3.9), "handoff time matches enemy arrival")
+	check(player.play_data(sync_doc), "player accepts triggered music tracks")
+	player.set_process(false)
+	player.advance_time(2.0) # enters ambush at elapsed=0
+	check(player._shot_index == 1 and player._film_audio.voices.has("calm") and not player._film_audio.voices.has("danger"), "enemy music waits until enemies appear")
+	player.advance_time(3.5) # elapsed=3.5 < 3.9
+	check(not player._film_audio.voices.has("danger") and absf(db_to_linear(player._film_audio.voices.calm.player.volume_db) - 0.8) < 0.001, "calm stays full before enemy entry")
+	player.advance_time(0.65) # elapsed=4.15 -> 0.25s after trigger
+	check(player._film_audio.voices.has("danger"), "enemy music starts right at first enemy appearance")
+	check(absf(db_to_linear(player._film_audio.voices.calm.player.volume_db) - 0.6) < 0.005, "calm track fades out smoothly during handoff")
+	check(absf(db_to_linear(player._film_audio.voices.danger.player.volume_db) - 0.4) < 0.005, "enemy track fades in from exact appearance time")
+	player.advance_time(0.85) # elapsed=5.0 -> calm finished fading at 4.9s
+	check(not player._film_audio.voices.has("calm") and player._film_audio.voices.has("danger"), "previous track retires once handoff fade finishes")
+	check(is_equal_approx(Audio.exit_duration(sync_doc, 1, 7.0, {}), 0.0), "already-handed-off track does not stall shot exit")
+	player.stop()
+	var actor_track: Dictionary = enemy_track.duplicate(true)
+	actor_track.startTrigger = "actor_entry"
+	actor_track.startTargetId = "missing_actor"
+	sync_doc.musicTracks = [calm_track, actor_track]
+	check(not Validator.validate(sync_doc, schema).is_empty(), "reject missing music trigger actor")
+	actor_track.startTargetId = "enemy_a"
+	check(is_equal_approx(Audio.music_start_time(sync_shot_1, actor_track), 4.2), "actor_entry resolves specific actor delay")
+	enemy_a.entry.preset = "none"
+	check(is_equal_approx(Audio.music_start_time(sync_shot_1, actor_track), 0.0), "actor_entry supports already-present actor at 0s")
 	player.queue_free()
 	await process_frame
 	await create_timer(1.5).timeout # Let the audio mixing thread release stopped streams.
+	DirAccess.remove_absolute("user://audio-test/enemy.png")
 	DirAccess.remove_absolute("user://audio-test/tone.wav")
 	DirAccess.remove_absolute("user://audio-test")
 	print("CINEMATIC_AUDIO checks=", checks, " failures=", failures)

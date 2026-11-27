@@ -26,8 +26,7 @@ test('the actual campaign opens all four replaced films and one ivy with its own
   await expect(page.locator('.gd-message')).toContainText('Projet ouvert.');
   await page.locator('.gd-message button').click();
   for(const title of ['08 - Un guide dans les ruines','09 - Les souvenirs de Lierre','10 - Le marché oublié','11 - La nurserie']){
-   await page.locator('.gd-step-card').filter({hasText:title}).click();
-   await page.getByRole('button',{name:'Ouvrir dans l’éditeur de cinématiques',exact:true}).click();
+   await page.getByRole('button',{name:`Modifier « ${title} »`,exact:true}).click();
    await expect(page.getByLabel('Titre de la cinématique',{exact:true})).toHaveValue(title);
    await page.screenshot({path:info.outputPath(title.slice(0,2)+'-studio.png')});
    await page.locator('.studio-sections').getByRole('button',{name:'Campagne',exact:true}).click();

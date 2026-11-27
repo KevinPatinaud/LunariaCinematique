@@ -33,6 +33,7 @@ import {
 } from "../components/BackgroundCorrection.js";
 import { Layers } from "../components/Layers.js";
 import { Icon } from "../components/Icon.js";
+import { isContentArchived } from "../../shared/game/contentArchives.js";
 import type { useCinematicPlayback } from "../hooks/useCinematicPlayback.js";
 import type { useMotionPreview } from "../hooks/useMotionPreview.js";
 import type { useLibraryLayout } from "../hooks/useLibraryLayout.js";
@@ -98,7 +99,7 @@ interface CinematicWorkspaceProps {
   notify: (message: string) => void;
   selectFilm: (id: string) => void;
   onChangeTitle: (title: string) => void;
-  onOpenAudioModal: () => void;
+  onOpenAudioModal: (options?: { tab?: "music" | "sounds"; linkActorId?: string }) => void;
   onCreateDocument: () => void;
   onOpenFilmsModal: () => void;
   onExportJpg: () => void;
@@ -292,7 +293,7 @@ export function CinematicWorkspace({
                 <option value="">Choisir un film</option>
                 {(presentationProject.cinematics ?? []).map((f) => (
                   <option key={f.id} value={f.id}>
-                    {f.title}
+                    {f.title}{isContentArchived(presentationProject, "cinematics", f.id) ? " · Archivé" : ""}
                   </option>
                 ))}
               </select>
@@ -311,7 +312,7 @@ export function CinematicWorkspace({
           <button
             className="button subtle"
             disabled={!!playback || locked}
-            onClick={onOpenAudioModal}
+            onClick={() => onOpenAudioModal()}
           >
             <Icon name="music" size={16} /> Son
           </button>
@@ -474,6 +475,15 @@ export function CinematicWorkspace({
                 onClick={() => onAddBubble()}
               >
                 <Icon name="bubble" size={16} /> Bulle
+              </button>
+              <button
+                className="button text"
+                aria-label="Ajouter une bulle de pensée"
+                title="Ajouter une bulle de pensée"
+                disabled={!!playback || locked}
+                onClick={() => onAddBubble("thought")}
+              >
+                <Icon name="thought" size={16} /> Pensée
               </button>
               <button
                 className="button text"

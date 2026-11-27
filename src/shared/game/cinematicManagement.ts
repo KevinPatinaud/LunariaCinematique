@@ -1,6 +1,21 @@
+import type { Cinematic } from '../model.js';
 import { newId, type GameProject } from './types.js';
 
 export type CinematicPlacement = 'before' | 'after';
+
+export function updateCinematicReferences(project: GameProject, previousId: string, film: Cinematic): void {
+  for (const ref of project.campaign?.cinematics ?? []) {
+    if (ref.documentId === previousId) {
+      ref.documentId = film.id;
+      ref.title = film.title;
+    }
+  }
+  if (previousId !== film.id && project.contentArchives) {
+    const ids = project.contentArchives.cinematics;
+    const index = ids.indexOf(previousId);
+    if (index >= 0) ids[index] = film.id;
+  }
+}
 
 /** Insert a film at a list boundary while preserving every other film's order. */
 export function moveCinematic(project: GameProject, id: string, targetId: string, placement: CinematicPlacement): void {

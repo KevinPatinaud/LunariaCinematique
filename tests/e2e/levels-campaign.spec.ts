@@ -176,6 +176,87 @@ async function reopen() {
   await page.locator(".gd-message button").click();
 }
 
+test("archive films and levels in place, filter them, and keep their campaign steps", async ({}, info) => {
+  await page.setViewportSize({ width: 1462, height: 900 });
+  const mode = page.locator(".studio-modebar");
+  const filterName = "Filtrer par statut d’archivage";
+  const rows = page.locator(".gd-level-items button");
+  const filmBrowser = page.getByRole("dialog", { name: "Toutes les cinématiques" });
+  const openFilmBrowser = () =>
+    page.locator(".top-actions").getByRole("button", { name: /Toutes les cinématiques/ }).click();
+  const filmRows = filmBrowser.locator(".cinematics-browser-row");
+
+  await levels("A");
+  await expect(rows).toHaveCount(3);
+  await page.screenshot({ path: info.outputPath("levels-before-archive.png") });
+  await page.getByRole("button", { name: "Archiver", exact: true }).click();
+  await expect(rows.first()).toContainText("Archivé");
+  await page.getByRole("button", { name: "Annuler", exact: true }).click();
+  await expect(rows.first()).not.toContainText("Archivé");
+  await page.getByRole("button", { name: "Rétablir", exact: true }).click();
+  await expect(rows.first()).toContainText("Archivé");
+  await levels("Réserve");
+  await page.getByRole("button", { name: "Archiver", exact: true }).click();
+  await page.getByLabel(filterName).selectOption("active");
+  await expect(rows).toHaveCount(1);
+  await expect(rows.first()).toContainText("B");
+  await page.getByLabel(filterName).selectOption("archived");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText("A");
+  await page.getByLabel(filterName).selectOption("all");
+  await page.screenshot({ path: info.outputPath("levels-after-archive.png") });
+
+  await mode.getByRole("button", { name: "Cinématiques", exact: true }).click();
+  await openFilmBrowser();
+  await expect(filmRows).toHaveCount(2);
+  await page.screenshot({ path: info.outputPath("films-before-archive.png") });
+  await filmBrowser.getByRole("button", { name: "Archiver Introduction", exact: true }).click();
+  await expect(filmRows.first()).toContainText("Archivé");
+  await expect(filmRows.first().getByRole("button", { name: "Supprimer Introduction" })).toBeEnabled();
+  await page.screenshot({ path: info.outputPath("films-after-archive.png") });
+  await page.setViewportSize({ width: 1000, height: 720 });
+  await expect(filmRows.first().getByRole("button", { name: "Désarchiver Introduction" })).toBeInViewport();
+  await page.screenshot({ path: info.outputPath("films-after-archive-1000.png") });
+  await page.setViewportSize({ width: 1462, height: 900 });
+  await filmBrowser.getByLabel(filterName).selectOption("active");
+  await expect(filmRows).toHaveCount(1);
+  await expect(filmRows.first()).toContainText("Intermède");
+  await filmBrowser.getByLabel(filterName).selectOption("archived");
+  await expect(filmRows).toHaveCount(1);
+  await filmRows.first().getByRole("button", { name: /^Ouvrir Introduction/ }).click();
+  await expect(page.getByLabel("Titre de la cinématique")).toHaveValue("Introduction");
+
+  await page.locator(".studio-sections").getByRole("button", { name: /^Campagne/ }).click();
+  const steps = page.locator(".gd-step-card");
+  await expect(steps).toHaveCount(4);
+  await expect(steps.nth(0)).toHaveAccessibleName("Étape 1 · Introduction · Archivé");
+  await expect(steps.nth(1)).toHaveAccessibleName("Étape 2 · A · Archivé");
+  await page.getByRole("tab", { name: "Niveaux", exact: true }).click();
+  await expect(page.getByRole("button", { name: /Sélectionner « Réserve ».*Archivé/ })).toBeVisible();
+  await page.screenshot({ path: info.outputPath("campaign-with-archives.png") });
+  const data = await save();
+  expect(data.campaign).toEqual(original.campaign);
+  expect(data.contentArchives).toEqual({
+    cinematics: [original.cinematics![0].id],
+    levels: [original.levels[2].id, original.levels[1].id],
+  });
+
+  await reopen();
+  await levels("A");
+  await expect(rows.first()).toContainText("Archivé");
+  await page.getByRole("button", { name: "Désarchiver", exact: true }).click();
+  await expect(rows.first()).not.toContainText("Archivé");
+  await levels("Réserve");
+  await page.getByRole("button", { name: "Supprimer", exact: true }).click();
+  await expect(rows).toHaveCount(2);
+  await mode.getByRole("button", { name: "Cinématiques", exact: true }).click();
+  await openFilmBrowser();
+  await filmBrowser.getByRole("button", { name: "Désarchiver Introduction", exact: true }).click();
+  await expect(filmRows.first()).not.toContainText("Archivé");
+  await filmBrowser.getByRole("button", { name: "Fermer", exact: true }).click();
+  expect((await save()).contentArchives).toBeUndefined();
+});
+
 test("duplicate directly in the campaign, undo atomically, redo, save and reopen without changing source waves", async () => {
   await levels();
   await expect(

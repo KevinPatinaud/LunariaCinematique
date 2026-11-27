@@ -6,6 +6,7 @@ import { advanceDialogue, beginPlayback, playbackStartIndex, tickPlayback, type 
 export interface PlaybackContext {
   key: string;
   document: Cinematic;
+  libraryRoot: string | null;
   assets: readonly Asset[];
   active: boolean;
 }
@@ -54,8 +55,9 @@ export class CinematicPlaybackSession {
 
   setContext(context: PlaybackContext): void {
     const previous = this.context;
+    // The watcher replaces the asset list without changing the active library.
     if (!previous || previous.key !== context.key || previous.document !== context.document
-      || previous.assets !== context.assets || previous.active !== context.active) this.stop();
+      || previous.libraryRoot !== context.libraryRoot || previous.active !== context.active) this.stop();
     this.context = context;
   }
 

@@ -9,7 +9,7 @@ import { safeMoviePath } from "./campaign.js";
 import { homeScreenIssues } from "./homeScreenValidation.js";
 import { lunaIssues } from "./lunasValidation.js";
 import { validationIssues as cinematicIssues } from "../schema.js";
-import { GAME_SCHEMA, type Rule } from "./schema.js";
+import { AUTHORING_GAME_SCHEMA, type Rule } from "./schema.js";
 import { ENEMY_FIRST_COLUMN } from "./boardPlacement.js";
 import { totalEnemies, type GameProject } from "./types.js";
 import {
@@ -98,7 +98,7 @@ export function walkRule(
 }
 export function gameIssues(input: unknown): GameIssue[] {
   const issues: GameIssue[] = [];
-  walkRule(GAME_SCHEMA, input, "projet", issues);
+  walkRule(AUTHORING_GAME_SCHEMA, input, "projet", issues);
   if (issues.length) return issues;
   const p = input as GameProject;
   const seen = new Set<string>();
@@ -499,7 +499,7 @@ export function parseGameProject(value: unknown): GameProject {
  * Keep structural integrity, bounded arrays, known fields and numeric limits.
  * This contract is never used for saving the final document or publishing.
  */
-const DRAFT_SCHEMA: Rule = structuredClone(GAME_SCHEMA);
+const DRAFT_SCHEMA: Rule = structuredClone(AUTHORING_GAME_SCHEMA);
 function relaxDraftText(rule: Rule): void {
   if (rule.type === "string" && !rule.pattern && !rule.enum) rule.minLength = 0;
   if (rule.items) relaxDraftText(rule.items);

@@ -1,0 +1,7 @@
+# Papier de la bulle de pensée
+
+Le [PNG source](../../godot/addons/lunaria_cinematics/ThoughtPaper.png) a été créé avec l’outil ImageGen intégré à partir de la planche des matières de la charte graphique de Lunaria. L’image transparente est utilisée dans les deux lecteurs. Le centre s’étire et le raccord gauche conserve la fougère. Le texte et les pastilles sont dessinés par le lecteur.
+
+## Prompt de génération
+
+> Use case: game UI material. Use the attached Lunaria materials board only as a palette and hand-painted botanical storybook reference. Create one standalone blank, very wide thought-bubble surface centered on real transparency. Shape: a single gently asymmetric tapered oval of warm ivory handmade paper, rounded like a small drifting cloud, about three times wider than tall. Make it feel painted into a lush, softly lit greenhouse. Fine paper fibres and a subtle cream wash, pale centre for editable dark text, softly feathered golden-beige edges. Add one tiny faded sage fern sprig painted into the left edge only, tucked into the curved end. The middle 80% is quiet, uniform pale paper with no decoration or significant shading, horizontally stretchable for long text. No lettering, no quotation marks, no shadow cast outside the silhouette, no hard dark outline, no thick frame, no gold metal, no extra droplets, no speech point, no second asset. Clean alpha outside the paper silhouette. Landscape canvas. Professional hand-painted illustrated UI sprite.

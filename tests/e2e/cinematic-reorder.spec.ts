@@ -36,7 +36,8 @@ async function openFixture(count = 4) {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [target] });
   }, file);
   await page.setViewportSize({ width: 1462, height: 1050 });
-  await page.locator('.top-actions').getByRole('button', { name: 'Ouvrir le projet' }).click();
+  await page.getByRole('button', { name: 'Actions du fichier projet' }).click();
+  await page.getByRole('button', { name: 'Ouvrir un projet…', exact: true }).click();
   await expect(page.getByLabel('Titre de la cinématique')).toHaveValue('Le départ');
   await page.locator('.top-actions').getByRole('button', { name: /Toutes les cinématiques/ }).click();
   return project;
@@ -54,7 +55,7 @@ async function drag(source: number, target: number, placement: 'before' | 'after
   const bounds = await browser().locator('.cinematics-browser-list').boundingBox();
   const box = await row(target).boundingBox();
   if (!start || !box || !bounds) throw new Error('Missing drag geometry');
-  const targetY = (box: { y: number; height: number }) => box.y + box.height * (placement === 'before' ? .2 : .65);
+  const targetY = (box: { y: number; height: number }) => box.y + box.height * (placement === 'before' ? .3 : .65);
   await page.mouse.move(start.x + 30, start.y + start.height / 2);
   await page.mouse.down();
   await page.mouse.move(start.x + 40, start.y + start.height / 2, { steps: 2 });
@@ -134,7 +135,8 @@ test('drag films before and after a distant target, cancel, filter, save and reo
   expect(saved.cinematics.map((film: { id: string }) => film.id)).toEqual(ids(1, 4, 2, 3));
   expect(saved.campaign).toEqual(original.campaign);
   for (const film of original.cinematics!) expect(saved.cinematics.find((item: { id: string }) => item.id === film.id)).toEqual(film);
-  await page.locator('.top-actions').getByRole('button', { name: 'Ouvrir le projet' }).click();
+  await page.getByRole('button', { name: 'Actions du fichier projet' }).click();
+  await page.getByRole('button', { name: 'Ouvrir un projet…', exact: true }).click();
   await page.locator('.top-actions').getByRole('button', { name: /Toutes les cinématiques/ }).click();
   await expect.poll(order).toEqual(ids(1, 4, 2, 3));
 });
@@ -142,7 +144,9 @@ test('drag films before and after a distant target, cancel, filter, save and reo
 test('a native drag scrolls a long list and can insert after the last film', async () => {
   test.setTimeout(60_000);
   await openFixture(12);
+  await page.setViewportSize({ width: 1462, height: 680 });
   const list = browser().locator('.cinematics-browser-list');
+  await expect.poll(() => list.evaluate(list => list.scrollHeight - list.clientHeight)).toBeGreaterThan(0);
   const source = await row(1).locator('.cinematics-browser-film').boundingBox();
   const bounds = await list.boundingBox();
   if (!source || !bounds) throw new Error('Missing list geometry');

@@ -1,6 +1,6 @@
 import { ACTOR_ANIMATION_SCHEMA,CATALOG_LINK_SCHEMA } from './presentation/schema.js';
 import { isImage, isAudio } from './assets.js';
-import { hasV2Features, hasV3Features, type Cinematic } from './model.js';
+import { BUBBLE_KINDS, hasV2Features, hasV3Features, type Cinematic } from './model.js';
 import { bubbleLayout } from './geometry.js';
 import { musicRange } from './cinematicAudio.js';
 type Rule = { type?: string | string[]; const?: unknown; enum?: unknown[]; minimum?: number; maximum?: number;
@@ -27,7 +27,7 @@ const actor = obj({ ...box, animation:ACTOR_ANIMATION_SCHEMA as Rule,id, name: s
   movement: obj({ enabled: bool, dx: num(-3, 3), dy: num(-3, 3), duration: num(0.1, 300), delay: num(0, 300),
     easing: en('smooth', 'linear'), repeat: en('once', 'pingpong'), bend: num(-1, 1) }, ['bend'])
 }, ['role', 'rotation', 'pivot', 'motion', 'movement', 'exit','animation']);
-const bubble = obj({ ...box, id, kind: en('speech', 'narration'), style: en('parchment', 'plain', 'simple', 'ornate'), frameAsset: nullableRef,
+const bubble = obj({ ...box, id, kind: en(...BUBBLE_KINDS), style: en('parchment', 'plain', 'simple', 'ornate'), frameAsset: nullableRef,
   speakerId: nullableId, text: str(1500), fontSize: num(18, 72), autoHeight: bool,
   tail: obj({ mode: en('auto', 'manual', 'none'), x: num(-1, 2), y: num(-1, 2) }),
   textAnimation: obj({ reveal: en('instant', 'typewriter', 'words', 'fade'), effect: en('none', 'shout', 'wave', 'shake', 'bounce'),
@@ -37,7 +37,9 @@ const bubble = obj({ ...box, id, kind: en('speech', 'narration'), style: en('par
 const audio: Rule = { ...obj({ asset: ref, volume: num(0, 1), loop: bool }), type: ['object', 'null'] };
 const audioSettings = { asset: ref, volume: num(0, 1), loop: bool, fadeIn: num(0, 30), fadeOut: num(0, 30) };
 const sound = obj({ ...audioSettings, id, event: en('shot_start','bubble_open','actor_entry','actor_movement','actor_motion','actor_exit','actor_animation'), targetId: str(100), delay: num(0, 300), duration: num(0, 600) });
-const music = obj({ ...audioSettings, id, startShotId: id, endShotId: id });
+const music = obj({ ...audioSettings, id, startShotId: id, endShotId: id,
+  startTrigger: en('shot_start', 'first_enemy', 'actor_entry'), startTargetId: str(100), startDelay: num(0, 300), replacePrevious: bool },
+  ['startTrigger', 'startTargetId', 'startDelay', 'replacePrevious']);
 const shot = obj({ id, name: str(180), duration: num(1, 300), endAdvance: en('auto', 'click'), background: obj({ asset: nullableRef, fit: en('cover', 'contain') }),
   camera: obj({ preset: en('fixed', 'zoom_in', 'zoom_out', 'pan_left', 'pan_right', 'pan_up', 'pan_down'), intensity: num(0, 1) }),
   transition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), exitTransition: obj({ type: en('cut', 'fade'), duration: num(0, 3) }), actors: arr(actor, 50), bubbles: arr(bubble, 100),
@@ -92,6 +94,14 @@ export function validationIssues(value: unknown): string[] {
     const [start, end] = musicRange(doc, track.startShotId, track.endShotId);
     if (start < 0 || end < start) issues.push('Musique : les plans de début et de fin doivent exister et être dans cet ordre.');
     if (!isAudio(track.asset)) issues.push('Musique : format audio non pris en charge.');
+    const trigger = track.startTrigger ?? 'shot_start';
+    if (trigger === 'actor_entry') {
+      const startShot = start >= 0 ? doc.shots[start] : undefined;
+      if (!track.startTargetId || !startShot?.actors.some(a => a.id === track.startTargetId))
+        issues.push('Musique : acteur déclencheur introuvable dans le plan de début.');
+    } else if (track.startTargetId) {
+      issues.push('Musique : cible d’acteur inutile pour ce déclencheur.');
+    }
   }
   for (const shot of doc.shots) {
     const imageRef = (value: string | null) => { if (value && !isImage(value)) issues.push(`${shot.name} : la source graphique n’est pas une image prise en charge.`); };
@@ -122,6 +132,14 @@ export function parseCinematic(value: unknown): Cinematic {
 /** Warnings do not prevent saving a work in progress. */
 export function contentWarnings(doc: Cinematic): string[] {
   const warnings: string[] = [];
+  for (const track of doc.musicTracks ?? []) {
+    if (track.startTrigger === 'first_enemy') {
+      const startIndex = doc.shots.findIndex(s => s.id === track.startShotId);
+      const startShot = startIndex >= 0 ? doc.shots[startIndex] : undefined;
+      if (startShot && !startShot.actors.some(a => a.role === 'enemy'))
+        warnings.push(`Plan ${startIndex + 1} : la musique « ${track.asset.split('/').pop()} » attend l’apparition d’un ennemi, mais aucun ennemi n’est présent dans ce plan.`);
+    }
+  }
   doc.shots.forEach((s, i) => {
     if (!s.background.asset) warnings.push(`Plan ${i + 1} : aucun décor.`);
     for (const a of s.actors) {

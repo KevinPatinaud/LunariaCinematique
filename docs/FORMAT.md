@@ -54,7 +54,9 @@ Audio : `null` ou `{asset, volume, loop}`. La piste commence à l'entrée du pla
 
 ## Bulle
 
-`kind` : `speech` ou `narration`. `style` : `parchment`, `plain`, `simple`, `ornate`.
+Le champ `kind` accepte `speech` pour le dialogue, `thought` pour la pensée et `narration` pour la narration. Le champ `style` accepte `parchment`, `plain`, `simple` et `ornate`.
+
+Une pensée reprend les réglages de texte et d’avance des autres bulles. Son raccord vers le personnage ou le point libre se dessine en trois pastilles. Le mode `none` masque les pastilles. Un film contenant `thought` nécessite un lecteur dont le schéma accepte cette valeur.
 
 `simple` et `ornate` nécessitent `frameAsset` vers l'un des deux cadres reconnus. Les autres styles sont dessinés sans texture. `speakerId` désigne l'ID d'une instance de personnage **dans le même plan**, pas un nom global tel que « rose ».
 

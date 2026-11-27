@@ -1,8 +1,8 @@
 import type { Asset, AudioSettings, Cinematic } from '../../shared/model.js';
 import type { Playback } from '../../shared/playback.js';
-import { audioGain, musicRange, soundTargetTime } from '../../shared/cinematicAudio.js';
+import { audioGain, musicHandoffFade, musicHandoffTime, musicRange, musicStartTime, soundTargetTime } from '../../shared/cinematicAudio.js';
 
-type Voice = { audio: HTMLAudioElement; settings: AudioSettings; duration: number; origin: number; kind: 'music'|'sound'; shotId: string; endShotId: string; failed: boolean; started: boolean; cleanup: () => void };
+type Voice = { audio: HTMLAudioElement; settings: AudioSettings; duration: number; origin: number; kind: 'music'|'sound'; shotId: string; endShotId: string; handoffClock?: number; handoffFade?: number; failed: boolean; started: boolean; cleanup: () => void };
 /** One instance for a whole preview: music is deliberately not owned by a Scene component. */
 export class CinematicAudioPlayer {
   private voices = new Map<string, Voice>();
@@ -50,10 +50,29 @@ export class CinematicAudioPlayer {
     for (const track of doc.musicTracks ?? []) {
       const [start, end] = musicRange(doc, track.startShotId, track.endShotId);
       if (start < 0 || state.shotIndex < start || state.shotIndex > end) continue;
+      let origin = clock - state.elapsed;
+      if (state.shotIndex === start) {
+        const at = musicStartTime(shot, track);
+        if (at === undefined || state.elapsed < at || (state.exitElapsed !== undefined && at >= state.elapsed - state.exitElapsed)) continue;
+        origin = clock - (state.elapsed - at);
+      }
       activeMusic.add(track.id);
-      this.add(track.id, track, assets, 'music', clock - state.elapsed, shot.id, track.endShotId);
+      this.add(track.id, track, assets, 'music', origin, shot.id, track.endShotId);
     }
-    for (const [id,v] of this.voices) if (v.kind === 'music' && !activeMusic.has(id)) this.remove(id);
+    for (const [id, v] of this.voices) {
+      if (v.kind !== 'music') continue;
+      if (!activeMusic.has(id)) { this.remove(id); continue; }
+      if (v.handoffClock === undefined) {
+        const track = doc.musicTracks?.find(t => t.id === id);
+        if (track) {
+          const handoffAt = musicHandoffTime(doc, state.shotIndex, track);
+          if (handoffAt !== undefined && state.elapsed >= handoffAt) {
+            v.handoffClock = clock - (state.elapsed - handoffAt);
+            v.handoffFade = musicHandoffFade(track);
+          }
+        }
+      }
+    }
     if (shot.audio) this.add('legacy:' + shot.id, {...shot.audio, fadeIn:0, fadeOut:0}, assets, 'sound', 0, shot.id, shot.id);
     const opened = { ...state.bubbleOpenedAt };
     const bubble = shot.bubbles[state.dialogueIndex];
@@ -68,9 +87,18 @@ export class CinematicAudioPlayer {
       const audio = voice.audio, age = Math.max(0, (voice.kind === 'music' ? clock : state.elapsed) - voice.origin);
       let remaining = voice.duration > 0 ? voice.duration - age : Infinity;
       if (!voice.settings.loop && Number.isFinite(audio.duration)) remaining = Math.min(remaining, audio.duration - age);
-      if (state.exitElapsed !== undefined && voice.endShotId === shot.id) remaining = Math.min(remaining, voice.settings.fadeOut - state.exitElapsed);
+      let fadeOut = voice.settings.fadeOut;
+      if (voice.handoffClock !== undefined) {
+        const handoffFade = voice.handoffFade ?? musicHandoffFade(voice.settings);
+        const handoffRemaining = handoffFade - (clock - voice.handoffClock);
+        if (handoffRemaining < remaining) { remaining = handoffRemaining; fadeOut = handoffFade; }
+      }
+      if (state.exitElapsed !== undefined && voice.endShotId === shot.id) {
+        const exitRemaining = voice.settings.fadeOut - state.exitElapsed;
+        if (exitRemaining < remaining) { remaining = exitRemaining; fadeOut = voice.settings.fadeOut; }
+      }
       if (voice.failed || audio.ended || remaining <= 0) { this.remove(id); continue; }
-      audio.volume = audioGain(voice.settings, age, remaining);
+      audio.volume = audioGain({ ...voice.settings, fadeOut }, age, remaining);
       if (state.paused) { audio.pause(); continue; }
       if (!voice.started && audio.readyState >= 1) {
         const position = voice.settings.loop && audio.duration > 0 ? age % audio.duration : age;

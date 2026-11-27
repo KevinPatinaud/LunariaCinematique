@@ -5,7 +5,7 @@ import {ActorBindingFields} from '../presentation/PresentationFields.js';
 import {cinematicWalkOptionsForActor, inferActorSpecies} from '../../shared/presentation/cinematicMotion.js';
 import {resolveAnimation} from '../../shared/presentation/runtime.js';
 import type { Actor, Asset, Bubble, Cinematic, EntryPreset, Shot } from '../../shared/model.js';
-import { STAGE } from '../../shared/model.js';
+import { BUBBLE_KINDS, STAGE } from '../../shared/model.js';
 import { TextAnimationInspector } from './TextAnimationInspector.js';
 import { ExitInspector } from './ExitInspector.js';
 import { MotionInspector } from './MotionInspector.js';
@@ -23,6 +23,7 @@ const entryDescriptions: Partial<Record<EntryPreset, string>> = {
   spiral: 'Apparaît en tournant et en grandissant jusqu’à sa taille normale.',
   rise: 'Émerge légèrement d’en bas en grandissant et en devenant visible.',
 };
+const bubbleKindLabels: Record<Bubble['kind'], string> = { speech: 'Dialogue', thought: 'Pensée', narration: 'Narration' };
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return <label className="field"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
 }
@@ -30,7 +31,7 @@ interface Props {
   generatePose?: () => void;
   openAnimationWorkshop?: (speciesId?: string, animationId?: string) => void;
   generateAnimation?: (speciesId?: string, historyOnly?: boolean) => void;
-  editAudio: () => void;
+  editAudio: (options?: { tab?: 'music' | 'sounds'; linkActorId?: string }) => void;
   presentationProject:GameProject;setCatalog:(value:CatalogLink)=>void;
   previewMotion: () => void; previewText: (id: string) => void;
   children?: React.ReactNode; multiCount?: number; objectLocked?: boolean; autoPlace?: () => void;
@@ -51,6 +52,7 @@ export function Inspector(p: Props) {
   const exhale = p.presentationProject.presentation?.animations.find(clip =>
     clip.id === elementAnimation?.animationId && clip.element?.preset === 'exhale')?.element;
   const bubble = (p.multiCount??0)<=1 && p.selection.kind === 'bubble' ? p.shot.bubbles.find(b => b.id === selectedId) : undefined;
+  const isThought = bubble?.kind === 'thought';
   const formKey = `${p.doc.id}:${p.shot.id}:${actor ? `actor:${actor.id}` : bubble ? `bubble:${bubble.id}` : (p.multiCount??0)>1 ? 'group' : 'shot'}`;
   React.useLayoutEffect(() => {
     if (pendingAnimationScroll.current !== null && scrollArea.current) {
@@ -69,6 +71,19 @@ export function Inspector(p: Props) {
     p.updateObject('actor', actor.id, patch, key);
   };
   const changeBubble = (patch: Partial<Bubble>, key = '') => bubble && p.updateObject('bubble', bubble.id, patch, key);
+  function changeBubbleKind(kind: Bubble['kind']) {
+    if (!bubble || bubble.kind === kind) return;
+    const tail = { ...bubble.tail };
+    if (kind === 'narration') tail.mode = 'none';
+    else if (bubble.kind === 'narration') tail.mode = bubble.speakerId ? 'auto' : 'manual';
+    const usesDefaultDialogueFrame = bubble.style === 'simple'
+      && bubble.frameAsset?.split('/').at(-1) === 'dialogue_panel_simple_v01.png';
+    if (kind === 'thought' && usesDefaultDialogueFrame) {
+      changeBubble({ kind, tail, style: 'parchment', frameAsset: null });
+    } else {
+      changeBubble({ kind, tail });
+    }
+  }
   const orientActor = (patch: Partial<Actor>, key = '') => {
     if (!actor || !exhale) return changeActor(patch, key);
     const { x, y } = exhale.pivot;
@@ -86,14 +101,14 @@ export function Inspector(p: Props) {
   }
   const textureExists = (s: string) => p.assets.some(a => a.path.endsWith(s));
   return <aside className="inspector panel">
-    <div className="audio-summary"><small>{p.shot.sounds?.length??0} son(s) sur ce plan · {p.doc.musicTracks?.length??0} musique(s) dans le film</small><button className="button subtle" disabled={p.disabled} onClick={p.editAudio}><Icon name="music" size={15}/> Configurer le son</button></div>
-    <div className="panel-heading"><span>{actor ? elementPlayback ? 'ÉLÉMENT ANIMÉ' : actor.role === 'enemy' ? 'ENNEMI' : actor.role === 'prop' ? 'OBJET DE DÉCORATION' : 'PERSONNAGE' : bubble ? 'BULLE DE DIALOGUE' : 'MISE EN SCÈNE'}</span><Icon name={actor ? elementPlayback ? 'motion' : actor.role === 'enemy' ? 'enemy' : actor.role === 'prop' ? 'prop' : 'actor' : bubble ? 'bubble' : 'camera'} size={16}/></div>
+    <div className="audio-summary"><small>{p.shot.sounds?.length??0} son(s) sur ce plan · {p.doc.musicTracks?.length??0} musique(s) dans le film</small><button className="button subtle" disabled={p.disabled} onClick={() => p.editAudio()}><Icon name="music" size={15}/> Configurer le son</button></div>
+    <div className="panel-heading"><span>{actor ? elementPlayback ? 'ÉLÉMENT ANIMÉ' : actor.role === 'enemy' ? 'ENNEMI' : actor.role === 'prop' ? 'OBJET DE DÉCORATION' : 'PERSONNAGE' : isThought ? 'BULLE DE PENSÉE' : bubble ? bubble.kind === 'narration' ? 'NARRATION' : 'BULLE DE DIALOGUE' : 'MISE EN SCÈNE'}</span><Icon name={actor ? elementPlayback ? 'motion' : actor.role === 'enemy' ? 'enemy' : actor.role === 'prop' ? 'prop' : 'actor' : isThought ? 'thought' : bubble ? 'bubble' : 'camera'} size={16}/></div>
     {p.children}
     {p.objectLocked && <p className="locked-note"><Icon name="lock" size={13}/> Calque verrouillé. Déverrouille-le dans la liste pour le modifier.</p>}
     <fieldset ref={scrollArea} disabled={p.disabled || p.objectLocked} className="inspector-content">
       {/* Local drafts and expanded controls belong to one element, even when values match. */}
       <React.Fragment key={formKey}>
-      <div className="inspector-title"><span className="overline">{actor ? 'DANS CE PLAN' : bubble ? `RÉPLIQUE ${p.shot.bubbles.indexOf(bubble) + 1}` : `PLAN ${String(p.doc.shots.indexOf(p.shot) + 1).padStart(2, '0')}`}</span><h2>{actor ? actor.name : bubble ? bubble.kind === 'narration' ? 'Narration' : 'Une voix dans la scène' : p.shot.name}</h2></div>
+      <div className="inspector-title"><span className="overline">{actor ? 'DANS CE PLAN' : bubble ? `${isThought ? 'BULLE' : 'RÉPLIQUE'} ${p.shot.bubbles.indexOf(bubble) + 1}` : `PLAN ${String(p.doc.shots.indexOf(p.shot) + 1).padStart(2, '0')}`}</span><h2>{actor ? actor.name : bubble ? bubble.kind === 'speech' ? 'Une voix dans la scène' : bubbleKindLabels[bubble.kind] : p.shot.name}</h2></div>
       {(p.multiCount??0)>1 && <div className="multi-selection-note"><h3>{p.multiCount} éléments sélectionnés</h3><p>Déplace le groupe directement dans la scène. Les commandes d’alignement sont au-dessus ; Dupliquer et Supprimer agissent sur toute la sélection.</p><small>Les calques verrouillés ne sont pas modifiés.</small></div>}
       {!actor && !bubble && (p.multiCount??0)<=1 && <>
         <Field label="Nom du plan"><input maxLength={180} value={p.shot.name} onChange={e => p.updateShot({ name: e.target.value }, 'shot-name')}/></Field>
@@ -239,6 +254,22 @@ export function Inspector(p: Props) {
         {entryDescriptions[actor.entry.preset] && <p className="field-hint">{entryDescriptions[actor.entry.preset]}</p>}
         {actor.entry.preset !== 'none' && <div className="field-row"><Field label="Durée (s)"><NumberInput label="Durée de l’apparition" min={0.1} max={10} value={actor.entry.duration} onCommit={duration => changeActor({ entry: { ...actor.entry, duration } }, 'entry-duration')}/></Field><Field label="Délai d’apparition (s)"><NumberInput label="Délai d’apparition" min={0} max={300} value={actor.entry.delay} onCommit={delay => changeActor({ entry: { ...actor.entry, delay } }, 'entry-delay')}/></Field></div>}
         <p className="field-hint">{actor.entry.preset === 'none' ? '« Déjà présent » affiche cet élément dès le début du plan. Choisis une autre entrée pour régler un délai.' : 'Le délai commence au début du plan. La composition garde l’élément visible pour le placer ; teste les animations ou lis le plan pour voir son apparition réelle.'}</p>
+        {(() => {
+          const linkedTracks = (p.doc.musicTracks ?? []).filter(t =>
+            t.startShotId === p.shot.id && (
+              (t.startTrigger === 'actor_entry' && t.startTargetId === actor.id)
+              || (t.startTrigger === 'first_enemy' && actor.role === 'enemy')
+            ),
+          );
+          return linkedTracks.length > 0 ? (
+            <>
+              <p className="field-hint">Musique synchronisée : {linkedTracks.map(t => t.asset.split('/').pop()).join(', ')}</p>
+              <button className="button subtle full" onClick={() => p.editAudio({ tab: 'music' })}><Icon name="music" size={15}/> Régler la musique liée</button>
+            </>
+          ) : (
+            <button className="button subtle full" onClick={() => p.editAudio({ tab: 'music', linkActorId: actor.id })}><Icon name="music" size={15}/> Lier une musique à son apparition</button>
+          );
+        })()}
         <ExitInspector actor={actor} change={changeActor} duration={p.shot.duration} preview={p.previewMotion}/>
         <p className="field-hint">Les effets animent le PNG entier, pas une marche articulée. Ils fonctionnent aussi pour les ennemis et les objets.</p>
         {!elementPlayback && <ActorBindingFields
@@ -251,13 +282,16 @@ export function Inspector(p: Props) {
         <div className="section-label">SOURCE PARTAGÉE</div><p className="asset-reference">{actor.asset}</p>
       </>}
       {bubble && <>
-        <div className="segmented"><button className={bubble.kind === 'speech' ? 'active' : ''} onClick={() => changeBubble({ kind: 'speech', tail: { ...bubble.tail, mode: bubble.speakerId ? 'auto' : 'manual' } })}>Dialogue</button><button className={bubble.kind === 'narration' ? 'active' : ''} onClick={() => changeBubble({ kind: 'narration', tail: { ...bubble.tail, mode: 'none' } })}>Narration</button></div>
-        {bubble.kind === 'speech' && <Field label="Qui parle ?"><select aria-label="Personnage de la bulle" value={bubble.speakerId ?? ''} onChange={e => changeBubble({ speakerId: e.target.value || null, tail: { ...bubble.tail, mode: e.target.value ? 'auto' : 'manual' } })}><option value="">Bulle libre</option>{p.shot.actors.map(a => <option key={a.id} value={a.id}>{a.name}{a.role === 'enemy' ? ' (ennemi)' : ''}</option>)}</select></Field>}
+        <div className="segmented" role="group" aria-label="Type de bulle">
+          {BUBBLE_KINDS.map(kind => <button key={kind} aria-pressed={bubble.kind === kind}
+            className={bubble.kind === kind ? 'active' : ''} onClick={() => changeBubbleKind(kind)}>{bubbleKindLabels[kind]}</button>)}
+        </div>
+        {bubble.kind !== 'narration' && <Field label={isThought ? 'Qui pense ?' : 'Qui parle ?'}><select aria-label="Personnage de la bulle" value={bubble.speakerId ?? ''} onChange={e => changeBubble({ speakerId: e.target.value || null, tail: { ...bubble.tail, mode: e.target.value ? 'auto' : 'manual' } })}><option value="">Bulle libre</option>{p.shot.actors.map(a => <option key={a.id} value={a.id}>{a.name}{a.role === 'enemy' ? ' (ennemi)' : ''}</option>)}</select></Field>}
         <button className="button subtle full" onClick={() => changeBubble(centeredObject({ ...bubble, height: bubbleLayout(bubble).height / 900 }))}>Recentrer la bulle</button><button className="button subtle full" onClick={p.autoPlace}><Icon name="wand" size={15}/> Placer automatiquement</button><Field label="Texte"><textarea aria-label="Texte de la bulle" value={bubble.text} maxLength={1500} rows={5} onChange={e => changeBubble({ text: e.target.value }, 'bubble-text')}/><small className="counter">{bubble.text.length} caractères</small></Field>
-        <Field label="Apparence"><select aria-label="Style de la bulle" value={bubble.style} onChange={e => setStyle(e.target.value as Bubble['style'])}><option value="parchment">Lunaria · parchemin</option><option value="plain">BD · fond clair</option><option value="simple" disabled={!textureExists('dialogue_panel_simple_v01.png')}>Ton cadre · organique</option><option value="ornate" disabled={!textureExists('tooltip_ornate_v01.png')}>Ton cadre · orné</option></select></Field>
+        <Field label="Apparence"><select aria-label="Style de la bulle" value={bubble.style} onChange={e => setStyle(e.target.value as Bubble['style'])}><option value="parchment">{isThought ? 'Lunaria · papier illustré' : 'Lunaria · parchemin'}</option><option value="plain">BD · fond clair</option><option value="simple" disabled={!textureExists('dialogue_panel_simple_v01.png')}>Ton cadre · organique</option><option value="ornate" disabled={!textureExists('tooltip_ornate_v01.png')}>Ton cadre · orné</option></select></Field>
         <label className="check-field"><input type="checkbox" checked={bubble.autoHeight} onChange={e => changeBubble({ autoHeight: e.target.checked, height: bubbleLayout(bubble).height / 900 })}/> Adapter la hauteur au texte</label>
         {bubbleLayout(bubble).overflow && <p className="inline-warning"><Icon name="warning" size={15}/> Le texte dépasse : agrandis la bulle.</p>}
-        {bubble.kind === 'speech' && <Field label="Queue de la bulle"><select value={bubble.tail.mode} onChange={e => changeBubble({ tail: { ...bubble.tail, mode: e.target.value as Bubble['tail']['mode'] } })}><option value="auto" disabled={!bubble.speakerId}>Reliée à celui qui parle</option><option value="manual">Point libre, à déplacer</option><option value="none">Sans queue</option></select><small>Déplace le point à l’extrémité de la queue pour l’orienter librement.</small></Field>}
+        {bubble.kind !== 'narration' && <Field label={isThought ? 'Pastilles de la pensée' : 'Queue de la bulle'}><select value={bubble.tail.mode} onChange={e => changeBubble({ tail: { ...bubble.tail, mode: e.target.value as Bubble['tail']['mode'] } })}><option value="auto" disabled={!bubble.speakerId}>{isThought ? 'Reliées au personnage' : 'Reliée à celui qui parle'}</option><option value="manual">Point libre, à déplacer</option><option value="none">{isThought ? 'Sans pastilles' : 'Sans queue'}</option></select><small>{isThought ? 'Déplace le point de la traînée pour orienter les pastilles.' : 'Déplace le point à l’extrémité de la queue pour l’orienter librement.'}</small></Field>}
         <div className="section-label"><Icon name="wand" size={15}/> ANIMATION DE LA BULLE</div>
         <Field label="Apparition"><select aria-label="Apparition de la bulle" value={effectiveBubbleEntry(bubble).preset} onChange={e => changeBubble({bubbleEntry: {...effectiveBubbleEntry(bubble), preset: e.target.value as NonNullable<Bubble['bubbleEntry']>['preset']}})}>{Object.entries(bubbleEntryLabels).map(([preset,label]) => <option key={preset} value={preset}>{label}</option>)}</select></Field>
         {effectiveBubbleEntry(bubble).preset !== 'none' && <Field label="Durée de l’apparition (s)"><NumberInput label="Durée de l’animation de la bulle" min={0.1} max={3} value={effectiveBubbleEntry(bubble).duration} onCommit={duration => changeBubble({bubbleEntry: {...effectiveBubbleEntry(bubble), duration}}, 'bubble-entry-duration')}/></Field>}

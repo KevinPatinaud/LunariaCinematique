@@ -56,7 +56,7 @@ function permitted(relative) {
   if (typeof relative !== 'string' || relative.includes('\\') || relative.split('/').some(p => !p || p === '.' || p === '..')) return false;
   return /^tools\/design\/shared\/.+\.js$/.test(relative)
     || /^tools\/design\/[^/]+\.js$/.test(relative)
-    || /^addons\/lunaria_cinematics\/[^/]+\.(gd|tscn|json)$/.test(relative)
+    || /^addons\/lunaria_cinematics\/[^/]+\.(gd|tscn|json|png)$/.test(relative)
     || schemaFiles.some(file => relative === 'content/design/' + file.target);
 }
 
@@ -92,7 +92,7 @@ async function prepare(studioRoot) {
     expected.set('content/design/' + file.target, contents);
   }
   const addon = (await list(studioRoot, 'godot/addons/lunaria_cinematics'))
-    .filter(file => /\.(gd|tscn|json)$/.test(file));
+    .filter(file => /\.(gd|tscn|json|png)$/.test(file));
   for (const required of ['CinematicPlayer.gd', 'CinematicOverlay.tscn', 'cinematic.schema.json']) {
     if (!addon.some(file => path.basename(file) === required)) throw Error('Lecteur source incomplet : ' + required);
   }
@@ -102,7 +102,7 @@ async function prepare(studioRoot) {
     expected.set(addonPrefix + path.basename(file), contents);
   }
   for (const [file, contents] of expected) {
-    if (!file.startsWith(addonPrefix)) continue;
+    if (!file.startsWith(addonPrefix) || file.endsWith('.png')) continue;
     const refs = [...contents.toString().matchAll(/preload\(\s*["']([^"']+)["']/g)].map(match => match[1]);
     refs.push(...[...contents.toString().matchAll(/res:\/\/addons\/lunaria_cinematics\/([^"'\s]+)["']/g)].map(match => 'res://' + addonPrefix + match[1]));
     for (const ref of refs) {

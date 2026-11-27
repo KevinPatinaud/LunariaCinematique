@@ -10,9 +10,11 @@ import { ensureCombat } from "./game/combatDefaults.js";
 import { ensureLogic } from "./game/logicDefaults.js";
 import { ensurePresentation } from "./presentation/defaults.js";
 import { ensureCampaign } from "./game/campaign.js";
+import { setContentArchived } from "./game/contentArchives.js";
 import {
   cinematicReferences,
   moveCinematic,
+  updateCinematicReferences,
   type CinematicPlacement,
 } from "./game/cinematicManagement.js";
 import {
@@ -240,11 +242,7 @@ export class ProjectSession {
           throw Error("Cet identifiant de cinématique existe déjà.");
         resultId = film.id;
         location.filmId = film.id;
-        for (const ref of p.campaign?.cinematics ?? [])
-          if (ref.documentId === id) {
-            ref.documentId = film.id;
-            ref.title = film.title;
-          }
+        updateCinematicReferences(p, id, film);
       },
       key,
       label,
@@ -263,11 +261,7 @@ export class ProjectSession {
         const i = films.findIndex((f) => f.id === previousId);
         if (i < 0) films.push(structuredClone(doc));
         else films[i] = structuredClone(doc);
-        for (const ref of p.campaign?.cinematics ?? [])
-          if (ref.documentId === previousId) {
-            ref.documentId = doc.id;
-            ref.title = doc.title;
-          }
+        updateCinematicReferences(p, previousId, doc);
       },
       "",
       label,
@@ -290,6 +284,7 @@ export class ProjectSession {
             "Cette cinématique est encore utilisée dans la campagne.",
           );
         p.cinematics = (p.cinematics ?? []).filter((f) => f.id !== id);
+        setContentArchived(p, "cinematics", id, false);
         if (p.campaign)
           p.campaign.cinematics = p.campaign.cinematics.filter(
             (f) => f.documentId !== id,

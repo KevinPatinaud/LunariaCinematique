@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lunaria.local/game-project.schema.json",
+  "$id": "https://lunaria.local/game-authoring.schema.json",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -4736,6 +4736,7 @@
                         "type": "string",
                         "enum": [
                           "speech",
+                          "thought",
                           "narration"
                         ]
                       },
@@ -5115,6 +5116,26 @@
                   "type": "string",
                   "maxLength": 100,
                   "minLength": 1
+                },
+                "startTrigger": {
+                  "type": "string",
+                  "enum": [
+                    "shot_start",
+                    "first_enemy",
+                    "actor_entry"
+                  ]
+                },
+                "startTargetId": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "startDelay": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 300
+                },
+                "replacePrevious": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -5700,6 +5721,37 @@
               "minimum": 0,
               "maximum": 1
             }
+          }
+        }
+      }
+    },
+    "contentArchives": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cinematics",
+        "levels"
+      ],
+      "properties": {
+        "cinematics": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 500,
+          "items": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          }
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 200,
+          "items": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$"
           }
         }
       }

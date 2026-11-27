@@ -17,7 +17,8 @@ import { resizeBox, resizeActor } from '../../shared/editing.js';
 import type { LibraryTab } from '../../shared/libraryBrowser.js';
 import { STAGE } from '../../shared/model.js';
 import { isPanoramicBackground } from '../../shared/backgroundCorrection.js';
-import { actorPose, bubbleLayout, bubbleTarget, cameraTransform, clamp, framePatches, tailPoints } from '../../shared/geometry.js';
+import { actorPose, bubbleLayout, bubbleTarget, cameraTransform, clamp, FRAME_SPECS, framePatches, tailPoints, thoughtTrail, type FrameStyle } from '../../shared/geometry.js';
+import thoughtPaperUrl from '../../../godot/addons/lunaria_cinematics/ThoughtPaper.png?url';
 export type Selection = { kind: 'shot' } | { kind: 'actor' | 'bubble'; id: string };
 interface Props {
   viewportWidth?: number;
@@ -32,12 +33,22 @@ interface Props {
   onDropAsset: (ref: string, as?: LibraryTab, position?: { x: number; y: number }) => void; guides: boolean;
 }
 interface Drag { kind: 'actor' | 'bubble' | 'marquee'; id: string; ids: string[]; mode: string; start: { x: number; y: number }; box: Box; changes: ObjectChange[]; additive?: boolean; moved?: boolean }
-function Frame({ asset, style, width, height }: { asset: Asset; style: 'simple' | 'ornate'; width: number; height: number }) {
-  return <g pointerEvents="none">{framePatches(style, width, height).map((p, index) => <svg key={index}
-    x={p.x} y={p.y} width={p.width + 0.35} height={p.height + 0.35}
-    viewBox={`${p.sx} ${p.sy} ${p.sw} ${p.sh}`} preserveAspectRatio="none" overflow="hidden">
-    <image href={asset.url} width="1536" height="1024"/>
-  </svg>)}</g>;
+function Frame({ url, style, width, height }: { url: string; style: FrameStyle; width: number; height: number }) {
+  const { imageWidth, imageHeight } = FRAME_SPECS[style];
+  return <g pointerEvents="none" data-testid={style === 'thought' ? 'thought-paper' : undefined}>
+    {framePatches(style, width, height).map((p, index) => {
+      const paper = style === 'thought';
+      // Overlap only the inner edges, continuing the same texture scale across the joint.
+      const bleedX = paper ? (index % 3 < 2 ? 2 : 0) : 0.35;
+      const bleedY = paper ? (index < 6 ? 2 : 0) : 0.35;
+      const sourceWidth = paper ? p.sw * (1 + bleedX / p.width) : p.sw;
+      const sourceHeight = paper ? p.sh * (1 + bleedY / p.height) : p.sh;
+      return <svg key={index} x={p.x} y={p.y} width={p.width + bleedX} height={p.height + bleedY}
+        viewBox={`${p.sx} ${p.sy} ${sourceWidth} ${sourceHeight}`} preserveAspectRatio="none" overflow="hidden">
+        <image href={url} width={imageWidth} height={imageHeight}/>
+      </svg>;
+    })}
+  </g>;
 }
 export function Scene(props: Props) {
   const { shot, assets, selection, onSelect, onUpdate, playing, elapsed, activeBubble, onAdvance } = props;
@@ -203,9 +214,17 @@ export function Scene(props: Props) {
           const geometry=cinematicSpriteGeometry(speaker,props.presentationProject,assets,animationTime);
           if(geometry){const local=geometry.point('head'),head=actorAnchor(speaker,animationTime,animated,local.x/geometry.w,local.y/geometry.h);target={x:head.x*camera.zoom+camera.x,y:head.y*camera.zoom+camera.y};}
         }
-        const tail = b.kind === 'speech' && b.tail.mode !== 'none' ? tailPoints({ x, y, width: l.width, height: l.height }, target) : null;
-        const frame = asset(b.frameAsset), textured = (b.style === 'simple' || b.style === 'ornate') && !!frame;
-        const fill = b.style === 'plain' ? '#fffdf6' : '#f0e1bf', stroke = b.style === 'plain' ? '#353b33' : '#ad8b4b';
+        const bounds = { x, y, width: l.width, height: l.height };
+        const tail = b.kind === 'speech' && b.tail.mode !== 'none' ? tailPoints(bounds, target) : null;
+        const dots = b.kind === 'thought' && b.tail.mode !== 'none' ? thoughtTrail(bounds, target) : [];
+        const radius = b.kind === 'thought' ? 40 : b.kind === 'narration' ? 10 : 26;
+        const innerRadius = b.kind === 'narration' ? 6 : 20;
+        const paper = b.kind === 'thought' && b.style === 'parchment';
+        const frameStyle = paper ? 'thought' : b.style === 'simple' || b.style === 'ornate' ? b.style : undefined;
+        const frameUrl = paper ? thoughtPaperUrl : asset(b.frameAsset)?.url;
+        const textured = !!frameStyle && !!frameUrl;
+        const plain = b.style === 'plain';
+        const fill = plain ? '#fffdf6' : '#f0e1bf', stroke = plain ? '#353b33' : '#ad8b4b';
         const bubbleTime = playing ? (props.dialogueElapsed ?? Math.max(0, elapsed - shot.dialogueStart)) : props.previewBubbleId === b.id ? props.motionTime : undefined;
         const entry = bubbleTime === undefined ? {dx: 0, dy: 0, scale: 1, rotation: 0, burst: 0} : bubbleEntryPose(b, bubbleTime, playing && props.textCompleted);
         const cx = x + l.width / 2, cy = y + l.height / 2;
@@ -220,10 +239,13 @@ export function Scene(props: Props) {
             })}
           </g>}
           {tail && <polygon points={tail.join(' ')} fill={fill} stroke={stroke} strokeWidth="4" strokeLinejoin="round" pointerEvents="none"/>}
+          {dots.length > 0 && <g data-testid="thought-trail" fill="#f5eedc" stroke="#b9914e" pointerEvents="none">
+            {dots.map(dot => <circle key={dot.radius} cx={dot.x} cy={dot.y} r={dot.radius} strokeWidth={Math.min(1.5, dot.radius / 2)}/>)}
+          </g>}
           <g transform={`translate(${x},${y})`} onPointerDown={e => begin(e, 'bubble', b.id)} className={playing ? '' : locked.has(b.id) ? 'object-locked' : 'movable'}>
-            <rect width={l.width} height={l.height} rx={b.kind === 'narration' ? 10 : 26} fill={textured ? "transparent" : fill} stroke={stroke} strokeWidth={textured ? 0 : 3}/>
-            {textured ? <Frame asset={frame!} style={b.style as 'simple' | 'ornate'} width={l.width} height={l.height}/>
-              : b.style !== 'plain' && <rect x="7" y="7" width={l.width - 14} height={l.height - 14} rx={b.kind === 'narration' ? 6 : 20} fill="none" stroke="#bba677" strokeWidth="1" pointerEvents="none"/>}
+            <rect width={l.width} height={l.height} rx={radius} fill={textured ? "transparent" : fill} stroke={stroke} strokeWidth={textured ? 0 : 3}/>
+            {textured ? <Frame url={frameUrl} style={frameStyle} width={l.width} height={l.height}/>
+              : !plain && <rect x="7" y="7" width={l.width - 14} height={l.height - 14} rx={innerRadius} fill="none" stroke="#bba677" strokeWidth="1" pointerEvents="none"/>}
             <svg x={l.paddingX} y={l.paddingY} width={Math.max(1, l.width - l.paddingX * 2)} height={Math.max(1, l.height - l.paddingY * 2)} pointerEvents="none" overflow="hidden">
               <AnimatedBubbleText bubble={b} elapsed={bubbleTime} completed={playing && props.textCompleted}/>
             </svg>
@@ -276,7 +298,7 @@ export function Scene(props: Props) {
           </g>
         </g>;
       })()}
-      {!animated && chosen.length===1 && selected && !locked.has(selected.id) && !hidden.has(selected.id) && selection.kind === 'bubble' && (selected as Bubble).kind === 'speech' && (selected as Bubble).tail.mode !== 'none' && (() => {
+      {!animated && chosen.length===1 && selected && !locked.has(selected.id) && !hidden.has(selected.id) && selection.kind === 'bubble' && (selected as Bubble).kind !== 'narration' && (selected as Bubble).tail.mode !== 'none' && (() => {
         const target = bubbleTarget(selected as Bubble, effectiveShot, elapsed, false);
         return <circle data-testid="tail-handle" cx={target.x} cy={target.y} r="13" fill="#cde0b4" stroke="#24362e" strokeWidth="3" className="tail-handle" onPointerDown={e => begin(e, 'bubble', selected.id, 'tail')}/>;
       })()}

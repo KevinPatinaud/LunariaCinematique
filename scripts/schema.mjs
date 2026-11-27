@@ -5,9 +5,9 @@ await writeFile('docs/cinematic.schema.json', json);
 await writeFile('godot/addons/lunaria_cinematics/cinematic.schema.json', json);
 console.log('Schema generated: docs/cinematic.schema.json');
 
-const { GAME_SCHEMA } = await import('../dist-tests/src/shared/game/schema.js');
+const { AUTHORING_GAME_SCHEMA, GAME_SCHEMA } = await import('../dist-tests/src/shared/game/schema.js');
 await writeFile('schema/game-project.schema.json', JSON.stringify(GAME_SCHEMA,null,2)+'\n');
-await writeFile('docs/game-project.schema.json', JSON.stringify(GAME_SCHEMA,null,2)+'\n');
+await writeFile('docs/game-project.schema.json', JSON.stringify(AUTHORING_GAME_SCHEMA,null,2)+'\n');
 const { defaultHomeScreen } = await import('../dist-tests/src/shared/game/homeScreen.js');
 await writeFile('schema/home-screen.defaults.json', JSON.stringify(defaultHomeScreen(),null,2)+'\n');
 console.log('Schema generated: schema/game-project.schema.json');

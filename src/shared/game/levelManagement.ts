@@ -11,6 +11,7 @@ import {
 import { campaignOf, ensureCampaign, moveCampaignStep } from "./campaign.js";
 import { objectiveText } from "./levelObjectives.js";
 import {groupForEnemy} from './enemyRules.js';
+import { setContentArchived } from "./contentArchives.js";
 
 export type LevelPlacement =
   | { kind: "outside" }
@@ -161,6 +162,7 @@ export function deleteProjectLevel(project: GameProject, id: string): void {
   const c = ensureCampaign(project);
   c.steps = c.steps.filter((s) => s.kind !== "level" || s.levelId !== id);
   project.levels.splice(i, 1);
+  setContentArchived(project, "levels", id, false);
 }
 export function patchProjectLevel(
   project: GameProject,

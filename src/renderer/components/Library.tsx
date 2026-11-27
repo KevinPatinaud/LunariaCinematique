@@ -4,6 +4,7 @@ import type { Asset, LibrarySnapshot } from '../../shared/model.js';
 import { assetMatchesTab, buildFolderTree, filterLibraryAssets, folderLabel, normalizeSearch, parentFolders,
   type FolderNode, type LibraryPreferences, type LibraryTab } from '../../shared/libraryBrowser.js';
 import { ASSET_MIME, ASSET_KIND_MIME, isImage } from '../../shared/assets.js';
+import { api } from '../browserBridge.js';
 import { Icon } from './Icon.js';
 import { LibraryResizeHandle } from './LibraryResizeHandle.js';
 import { AnimatedElementLibrary, type ElementLibraryActions } from '../presentation/AnimatedElementLibrary.js';
@@ -71,8 +72,9 @@ function AssetThumbnail({ asset }: { asset: Asset }) {
   </div>;
 }
 
-function AssetResults({ assets, selectedRef, chosenRefs, onPick, onUse, disabled, view, size, resetKey, expanded, tab, empty, favorites, toggleFavorite, actionLabel, picker }: {
+function AssetResults({ assets, selectedRef, chosenRefs, onPick, onUse, onReveal, disabled, view, size, resetKey, expanded, tab, empty, favorites, toggleFavorite, actionLabel, picker }: {
   assets: Asset[]; selectedRef: string | null; onPick: (ref: string) => void; onUse: (asset: Asset) => void;
+  onReveal?: (asset: Asset) => void;
   disabled: boolean; view: LibraryPreferences['view']; size: LibraryPreferences['size']; resetKey: string;
   expanded: boolean; tab: LibraryTab; empty: React.ReactNode; favorites: readonly string[]; toggleFavorite: (ref: Asset['ref']) => void;
   chosenRefs?: readonly string[]; actionLabel: string; picker: boolean;
@@ -101,8 +103,12 @@ function AssetResults({ assets, selectedRef, chosenRefs, onPick, onUse, disabled
         <span className="asset-copy"><span className="asset-name">{asset.name}</span><span className="asset-folder">{asset.folder.split('/').map(folderLabel).join(' / ') || 'Racine'}</span></span>
         {chosenRefs?.includes(asset.ref) && <span className="asset-picker-order" aria-label={`Image choisie ${chosenRefs.indexOf(asset.ref) + 1}`}>{chosenRefs.indexOf(asset.ref) + 1}</span>}
       </button>
-      <button className={`asset-favorite ${favorites.includes(asset.ref) ? 'active' : ''}`} title={favorites.includes(asset.ref) ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-label={`${favorites.includes(asset.ref) ? 'Retirer des favoris' : 'Ajouter aux favoris'} : ${asset.name}`} aria-pressed={favorites.includes(asset.ref)} disabled={disabled} onClick={()=>toggleFavorite(asset.ref)}><Icon name="star" size={13}/></button>
-      <button className="asset-quick-add" title={actionLabel} aria-label={`${actionLabel} : ${asset.name}`} disabled={disabled} onClick={() => onUse(asset)}><Icon name="plus" size={14}/></button>
+      <div className="asset-tile-actions">
+        <button className={`asset-favorite ${favorites.includes(asset.ref) ? 'active' : ''}`} title={favorites.includes(asset.ref) ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-label={`${favorites.includes(asset.ref) ? 'Retirer des favoris' : 'Ajouter aux favoris'} : ${asset.name}`} aria-pressed={favorites.includes(asset.ref)} disabled={disabled} onClick={()=>toggleFavorite(asset.ref)}><Icon name="star" size={13}/></button>
+        <button className="asset-quick-add" title={actionLabel} aria-label={`${actionLabel} : ${asset.name}`} disabled={disabled} onClick={() => onUse(asset)}><Icon name="plus" size={14}/></button>
+        {onReveal && asset.kind !== 'audio' && <button type="button" className="asset-reveal" title="Afficher dans l’Explorateur"
+          aria-label={`Afficher dans l’Explorateur : ${asset.name}`} disabled={disabled} onClick={() => onReveal(asset)}><Icon name="folder" size={14}/></button>}
+      </div>
     </div>)}</div>
     {!assets.length && empty}
     {!!assets.length && <div ref={sentinel} className="library-scroll-end">
@@ -126,10 +132,10 @@ export function Library(props: LibraryProps) {
   const dialogRef = useRef<HTMLDialogElement>(null), expandButton = useRef<HTMLButtonElement>(null);
   const disabled = props.disabled || props.busy || inserting;
   const insertLock = useRef(false);
-  const [insertError, setInsertError] = useState('');
+  const [actionError, setActionError] = useState('');
   useEffect(() => {
     setFolders({}); setPicked(null); setQuery(''); setFolderOpen(false);
-    setOpenPaths(new Set()); setScope('all');
+    setOpenPaths(new Set()); setScope('all'); setActionError('');
   }, [library?.rootPath]);
   useEffect(() => { setPicked(null); setFolderOpen(false); setQuery(''); }, [tab]);
   useEffect(() => { if (props.disabled) { setLarge(false); setFolderOpen(false); } }, [props.disabled]);
@@ -181,10 +187,16 @@ export function Library(props: LibraryProps) {
   async function useAsset(asset: Asset, as = tab) {
     if (disabled || insertLock.current) return;
     if (picker) { if (picker.multiple) picker.toggle(asset.ref); else picker.select([asset.ref]); return; }
-    insertLock.current = true; setInserting(true); setInsertError('');
-    try { const ok = await props.useAsset(asset, as); if (ok && large) setLarge(false); else if (!ok) setInsertError('La ressource n’a pas été ajoutée. Vérifie son type ou son intégrité.'); }
-    catch (error) { setInsertError(error instanceof Error ? error.message : String(error)); }
+    insertLock.current = true; setInserting(true); setActionError('');
+    try { const ok = await props.useAsset(asset, as); if (ok && large) setLarge(false); else if (!ok) setActionError('La ressource n’a pas été ajoutée. Vérifie son type ou son intégrité.'); }
+    catch (error) { setActionError(error instanceof Error ? error.message : String(error)); }
     finally { insertLock.current = false; setInserting(false); }
+  }
+  async function revealAsset(asset: Asset) {
+    if (!library) return;
+    setActionError('');
+    try { await api.revealLibraryAsset(asset.ref, library.rootPath); }
+    catch { setActionError(`Impossible d’afficher « ${asset.name} » dans l’Explorateur. Vérifie que le fichier est toujours dans la bibliothèque.`); }
   }
   const folderTree = () => <FolderTree nodes={nodes} folder={folder} select={selectFolder} openPaths={openPaths} toggle={toggleFolder} total={tabAssets.length} allLabel={allLabels[tab]}
     favorites={props.collections.favoriteFolders} toggleFavorite={props.collections.toggleFolder}/>;
@@ -233,6 +245,7 @@ export function Library(props: LibraryProps) {
     {!!folder && !!query && <button className="link-button" onClick={() => selectFolder('')}>Rechercher dans toute la catégorie</button>}
   </div>;
   const assetResults = (expanded: boolean) => <AssetResults assets={results} selectedRef={picked} chosenRefs={picker?.multiple ? picker.chosen : undefined} onPick={setPicked} onUse={asset => void useAsset(asset)} disabled={disabled}
+    onReveal={window.lunaria && !picker ? asset => void revealAsset(asset) : undefined}
     view={layout.preferences.view} size={layout.preferences.size} resetKey={`${library?.rootPath}|${tab}|${folder}|${query}|${scope}`} expanded={expanded} tab={tab} empty={empty} favorites={props.collections.favorites} toggleFavorite={props.collections.toggle} actionLabel={picker ? picker.multiple ? 'Choisir cette image' : 'Utiliser cette image' : actionLabels[tab]} picker={!!picker}/>;
 
   return <>
@@ -261,7 +274,7 @@ export function Library(props: LibraryProps) {
         <button className="icon-button" title="Voir l’aperçu en grand" aria-label="Voir l’aperçu en grand" onClick={() => setLarge(true)}><Icon name="expand" size={15}/></button>
         <button className="button primary" disabled={disabled} title={actionLabels[tab]} aria-label={actionLabels[tab]} onClick={() => void useAsset(selected)}><Icon name="plus" size={16}/></button>
       </div>}
-      {!!insertError && <p className="library-inline-error" role="alert">{insertError}</p>}
+      {!!actionError && <p className="library-inline-error" role="alert">{actionError}</p>}
       </>}
       {!!library?.warnings.length && <details className="library-warnings"><summary>{library.warnings.length} avertissement(s) bibliothèque</summary>{library.warnings.map((w,i) => <p key={i}>{w}</p>)}</details>}
       <div className="library-note"><span className="status-dot"/> Double-clic pour ajouter · Glisser vers la scène</div>
@@ -284,7 +297,7 @@ export function Library(props: LibraryProps) {
                {!picker && tab !== 'audio' && tab !== 'enemy' && <button className="link-button" disabled={disabled} onClick={() => void useAsset(selected, 'enemy')}>Ajouter comme ennemi</button>}
                {!picker && tab !== 'audio' && tab !== 'prop' && <button className="link-button" disabled={disabled} onClick={() => void useAsset(selected, 'prop')}>Ajouter comme objet de décoration</button>}
             </> : <div className="asset-preview-empty"><Icon name="image" size={32}/><p>Sélectionne une ressource pour l’examiner ici.</p><small>Un clic pour choisir.<br/>Double-clic pour l’utiliser.</small></div>}
-             {!!(picker?.error || insertError) && <p className="library-inline-error" role="alert">{picker?.error || insertError}</p>}<div className="asset-preview-note"><Icon name="leaf" size={16}/><span>Les images restent dans ta bibliothèque. Seul leur chemin est enregistré.</span></div>
+             {!!(picker?.error || actionError) && <p className="library-inline-error" role="alert">{picker?.error || actionError}</p>}<div className="asset-preview-note"><Icon name="leaf" size={16}/><span>Les images restent dans ta bibliothèque. Seul leur chemin est enregistré.</span></div>
            </aside>
         </div>}
         {picker?.multiple && <div className="asset-browser-picker-actions"><span>{picker.chosen.length} image{picker.chosen.length > 1 ? 's' : ''} choisie{picker.chosen.length > 1 ? 's' : ''}</span><button className="button primary" disabled={!picker.chosen.length} onClick={() => picker.select([...picker.chosen])}>Ajouter {picker.chosen.length} image{picker.chosen.length > 1 ? 's' : ''}</button></div>}

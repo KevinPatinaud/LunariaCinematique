@@ -1,0 +1,16 @@
+.archive-stamp {
+  display: inline-block;
+  width: fit-content;
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border: 1px solid #666e67;
+  border-radius: 4px;
+  background: #303530;
+  color: #d1d6d1;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

@@ -48,8 +48,10 @@ export function wrapText(text: string, maxWidth: number, fontSize: number,
 }
 export function bubbleLayout(bubble: Bubble) {
   const textured = bubble.style === 'simple' || bubble.style === 'ornate';
-  const paddingX = textured ? 58 : 28, paddingY = textured ? 48 : 22;
   const width = bubble.width * STAGE.width;
+  const paper = bubble.kind === 'thought' && bubble.style === 'parchment';
+  const paddingX = paper ? Math.min(62, width * 0.34) : textured ? 58 : 28;
+  const paddingY = textured ? 48 : 22;
   const contentWidth = width - paddingX * 2;
   const layoutAt = (fontSize: number) => {
     const lines = wrapText(bubble.text, Math.max(1, contentWidth), fontSize);
@@ -97,6 +99,23 @@ export function tailPoints(box: Box, target: { x: number; y: number }): number[]
   const bx = clamp(cx + dx * Math.abs((h / 2) / dy), x + 34, x + w - 34);
   return [bx - 17, by, target.x, target.y, bx + 17, by];
 }
+export function thoughtTrail(box: Box, target: { x: number; y: number }) {
+  const centerX = box.x + box.width / 2, centerY = box.y + box.height / 2;
+  const dx = target.x - centerX, dy = target.y - centerY;
+  const relativeDistance = 2 * Math.max(Math.abs(dx / box.width), Math.abs(dy / box.height));
+  if (relativeDistance <= 1) return [];
+
+  const distance = Math.hypot(dx, dy);
+  const edgeDistance = distance / relativeDistance;
+  const trailLength = Math.min(96, distance - edgeDistance);
+  if (trailLength < 18) return [];
+
+  const scale = Math.min(1, trailLength / 72);
+  return [[0.18, 10], [0.46, 6.5], [0.71, 4]].map(([fraction, radius]) => {
+    const progress = (edgeDistance + trailLength * fraction) / distance;
+    return { x: centerX + dx * progress, y: centerY + dy * progress, radius: radius * scale };
+  });
+}
 export function bubbleTarget(bubble: Bubble, shot: Shot, elapsed: number, playing: boolean, animateCamera = playing) {
   const actor = shot.actors.find(a => a.id === bubble.speakerId);
   if (bubble.tail.mode === 'auto' && actor) {
@@ -108,12 +127,15 @@ export function bubbleTarget(bubble: Bubble, shot: Shot, elapsed: number, playin
 }
 /** Source regions of the user's original PNGs. No modified image files are written. */
 export const FRAME_SPECS = {
-  simple: { x: 58, y: 170, width: 1420, height: 600, left: 190, right: 190, top: 120, bottom: 180, bottomX: 320, bottomWidth: 260 },
-  ornate: { x: 36, y: 131, width: 1482, height: 605, left: 235, right: 245, top: 155, bottom: 155, bottomX: 340, bottomWidth: 260 }
+  simple: { imageWidth: 1536, imageHeight: 1024, x: 58, y: 170, width: 1420, height: 600, left: 190, right: 190, top: 120, bottom: 180, bottomX: 320, bottomWidth: 260, scale: 0.35 },
+  ornate: { imageWidth: 1536, imageHeight: 1024, x: 36, y: 131, width: 1482, height: 605, left: 235, right: 245, top: 155, bottom: 155, bottomX: 340, bottomWidth: 260, scale: 0.35 },
+  // Keep the fern in the bottom-left patch. The plain paper above and beside it stretches.
+  thought: { imageWidth: 2172, imageHeight: 724, x: 18, y: 85, width: 2135, height: 566, left: 340, right: 315, top: 100, bottom: 390, bottomX: 358, bottomWidth: 1480, scale: 0.235 }
 } as const;
+export type FrameStyle = keyof typeof FRAME_SPECS;
 export interface Patch { sx: number; sy: number; sw: number; sh: number; x: number; y: number; width: number; height: number }
-export function framePatches(style: 'simple' | 'ornate', width: number, height: number): Patch[] {
-  const s = FRAME_SPECS[style], scale = Math.min(0.35, width / (s.left + s.right + 100), height / (s.top + s.bottom + 100));
+export function framePatches(style: FrameStyle, width: number, height: number): Patch[] {
+  const s = FRAME_SPECS[style], scale = Math.min(s.scale, width / (s.left + s.right + 100), height / (s.top + s.bottom + 100));
   const dx = [0, s.left * scale, width - s.right * scale, width];
   const dy = [0, s.top * scale, height - s.bottom * scale, height];
   const sx = [s.x, s.x + s.left, s.x + s.width - s.right, s.x + s.width];

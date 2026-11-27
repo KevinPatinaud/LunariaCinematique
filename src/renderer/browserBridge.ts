@@ -66,6 +66,7 @@ const browser: StudioAPI = {
     return library;
   },
   async refreshLibrary() { return library; },
+  async revealLibraryAsset() { throw new Error('L’Explorateur est accessible depuis l’application de bureau.'); },
   async importImages() { throw new Error('L’import d’images dans la bibliothèque est disponible dans l’application Electron.'); },
   async beginJpgExport() { return desktopOnly(); },
   async prepareBackgroundCorrection() { return desktopOnly(); },

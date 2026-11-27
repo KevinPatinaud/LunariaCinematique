@@ -63,3 +63,30 @@ test('an event sound waits for its clicked bubble, plays once, pauses and resume
   expect(await page.evaluate(()=>(window as unknown as {__audio:HTMLAudioElement[]}).__audio.length)).toBe(1);
   await page.getByRole('button',{name:'Quitter l’aperçu',exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as unknown as {__audio:HTMLAudioElement[]}).__audio[0].getAttribute('src'))).toBeNull();
 });
+
+test('music trigger can be linked to an enemy appearance from the inspector and persists cleanly',async()=>{
+  const enemyId='enemy-trigger-e2e';
+  doc.shots[0].actors.push({
+    id:enemyId,name:'Canette intruse',role:'enemy',asset:doc.shots[0].actors[0]?.asset??'library://backgrounds/greenhouse.png',
+    x:.6,y:.5,width:.2,height:.3,flipX:false,opacity:1,entry:{preset:'pop',duration:.8,delay:1.4},
+  });
+  doc.schemaVersion=3;
+  const project=JSON.parse(await fs.readFile(file,'utf8'));project.cinematics=[doc];await fs.writeFile(file,JSON.stringify(project));
+  await page.getByRole('button',{name:'Actions du fichier projet'}).click();await page.getByRole('button',{name:'Ouvrir un projet…',exact:true}).click();
+  await page.getByRole('button',{name:/Canette intruse/}).first().click();
+  await page.getByRole('button',{name:'Lier une musique à son apparition'}).click();
+  const dialog=page.getByRole('dialog',{name:'Son de la cinématique'});
+  await expect(dialog.getByText(/Liaison active/)).toBeVisible();
+  await dialog.getByLabel('Son à ajouter').selectOption('library://audio/ambiance.wav');
+  await dialog.getByRole('button',{name:'Ajouter une musique',exact:true}).click();
+  const music=dialog.getByRole('region',{name:'Musique 1'});
+  await expect(music.getByLabel('Déclencheur de départ')).toHaveValue('actor_entry');
+  await expect(music.getByLabel('Acteur déclencheur')).toHaveValue(enemyId);
+  await expect(music.getByText(/Synchronisé à 1,4 s/)).toBeVisible();
+  await music.getByLabel('Déclencheur de départ').selectOption('first_enemy');
+  await expect(music.getByText(/Synchronisé à 1,4 s/)).toBeVisible();
+  await dialog.getByRole('button',{name:'Retour au montage'}).click();
+  await page.locator('.studio-save').click();await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
+  const saved=JSON.parse(await fs.readFile(file,'utf8')).cinematics[0];
+  expect(saved.musicTracks[0]).toMatchObject({startShotId:doc.shots[0].id,startTrigger:'first_enemy',replacePrevious:true});
+});

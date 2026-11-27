@@ -6,6 +6,7 @@ const api: StudioAPI = {
   chooseLibrary: () => ipcRenderer.invoke('library:choose'),
   exampleLibrary: () => ipcRenderer.invoke('library:example'),
   refreshLibrary: () => ipcRenderer.invoke('library:refresh'),
+  revealLibraryAsset: (ref, libraryRoot) => ipcRenderer.invoke('library:reveal-asset', ref, libraryRoot),
   prepareBackgroundCorrection: ref => ipcRenderer.invoke('background-correction:prepare', ref),
   listImageTasks: () => ipcRenderer.invoke('image-tasks:list'),
   removeImageTask: (kind, id) => ipcRenderer.invoke('image-tasks:remove', kind, id),

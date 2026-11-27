@@ -33,13 +33,15 @@ var _visual_actors: Dictionary = {}
 const LOGICAL: Vector2 = Vector2(1600, 900)
 const Validator = preload("CinematicValidator.gd")
 const Layout = preload("CinematicLayout.gd")
+const ThoughtPaper = preload("ThoughtPaper.png")
 const Motion = preload("CinematicMotion.gd")
 const TextAnimation = preload("CinematicText.gd")
 const BubbleEntry = preload("CinematicBubbleEntry.gd")
 const EPS: float = 0.000000001
 const FRAME_SPECS: Dictionary = {
-	"simple": {"x":58.0,"y":170.0,"width":1420.0,"height":600.0,"left":190.0,"right":190.0,"top":120.0,"bottom":180.0,"bottomX":320.0,"bottomWidth":260.0},
-	"ornate": {"x":36.0,"y":131.0,"width":1482.0,"height":605.0,"left":235.0,"right":245.0,"top":155.0,"bottom":155.0,"bottomX":340.0,"bottomWidth":260.0}
+	"simple": {"x":58.0,"y":170.0,"width":1420.0,"height":600.0,"left":190.0,"right":190.0,"top":120.0,"bottom":180.0,"bottomX":320.0,"bottomWidth":260.0,"scale":0.35},
+	"ornate": {"x":36.0,"y":131.0,"width":1482.0,"height":605.0,"left":235.0,"right":245.0,"top":155.0,"bottom":155.0,"bottomX":340.0,"bottomWidth":260.0,"scale":0.35},
+	"thought": {"x":18.0,"y":85.0,"width":2135.0,"height":566.0,"left":340.0,"right":315.0,"top":100.0,"bottom":390.0,"bottomX":358.0,"bottomWidth":1480.0,"scale":0.235}
 }
 var _document: Dictionary = {}
 var _schema: Dictionary = {}
@@ -513,7 +515,7 @@ func _draw_background(shot: Dictionary, bounds: Rect2) -> void:
 
 func _draw_frame(style: String, texture: Texture2D, rect: Rect2) -> void:
 	var s: Dictionary = FRAME_SPECS[style]
-	var factor: float = minf(0.35, minf(rect.size.x / (s["left"] + s["right"] + 100.0), rect.size.y / (s["top"] + s["bottom"] + 100.0)))
+	var factor: float = minf(s["scale"], minf(rect.size.x / (s["left"] + s["right"] + 100.0), rect.size.y / (s["top"] + s["bottom"] + 100.0)))
 	var dx: Array = [0.0, s["left"] * factor, rect.size.x - s["right"] * factor, rect.size.x]
 	var dy: Array = [0.0, s["top"] * factor, rect.size.y - s["bottom"] * factor, rect.size.y]
 	var sx: Array = [s["x"], s["x"] + s["left"], s["x"] + s["width"] - s["right"], s["x"] + s["width"]]
@@ -522,8 +524,14 @@ func _draw_frame(style: String, texture: Texture2D, rect: Rect2) -> void:
 		for col: int in range(3):
 			var source_x: float = float(s["bottomX"]) if row == 2 and col == 1 else float(sx[col])
 			var source_width: float = float(s["bottomWidth"]) if row == 2 and col == 1 else float(sx[col + 1] - sx[col])
-			var target: Rect2 = Rect2(rect.position + Vector2(dx[col], dy[row]), Vector2(dx[col + 1] - dx[col] + 0.35, dy[row + 1] - dy[row] + 0.35))
-			var source: Rect2 = Rect2(source_x, sy[row], source_width, sy[row + 1] - sy[row])
+			var dimensions := Vector2(dx[col + 1] - dx[col], dy[row + 1] - dy[row])
+			var source_dimensions := Vector2(source_width, sy[row + 1] - sy[row])
+			var bleed := Vector2(0.35, 0.35)
+			if style == "thought":
+				bleed = Vector2(2.0 if col < 2 else 0.0, 2.0 if row < 2 else 0.0)
+				source_dimensions *= Vector2.ONE + bleed / dimensions
+			var target := Rect2(rect.position + Vector2(dx[col], dy[row]), dimensions + bleed)
+			var source := Rect2(Vector2(source_x, sy[row]), source_dimensions)
 			draw_texture_rect_region(texture, target, source)
 
 func _bubble_target(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> Vector2:
@@ -552,6 +560,26 @@ func _draw_tail(rect: Rect2, target: Vector2, fill: Color, border: Color) -> voi
 	points.append(points[0])
 	draw_polyline(points, border, 4.0, true)
 
+func _draw_thought_trail(rect: Rect2, target: Vector2) -> void:
+	var center := rect.get_center()
+	var delta := target - center
+	var relative_distance := 2.0 * maxf(absf(delta.x / rect.size.x), absf(delta.y / rect.size.y))
+	if relative_distance <= 1.0:
+		return
+	var distance := delta.length()
+	var edge_distance := distance / relative_distance
+	var trail_length := minf(96.0, distance - edge_distance)
+	if trail_length < 18.0:
+		return
+	var radius_scale := minf(1.0, trail_length / 72.0)
+	var fill := Color("f5eedc")
+	var border := Color("b9914e")
+	for dot: Vector2 in [Vector2(0.18, 10.0), Vector2(0.46, 6.5), Vector2(0.71, 4.0)]:
+		var dot_center := center + delta * (edge_distance + trail_length * dot.x) / distance
+		var radius := dot.y * radius_scale
+		draw_circle(dot_center, radius, fill, true, -1.0, true)
+		draw_arc(dot_center, radius, 0.0, TAU, 32, border, minf(1.5, radius / 2.0), true)
+
 func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> void:
 	var rect: Rect2 = Rect2(Vector2(float(bubble["x"]), float(bubble["y"])) * LOGICAL, Vector2(float(bubble["width"]), float(bubble["height"])) * LOGICAL)
 	var factor: float = minf(size.x / LOGICAL.x, size.y / LOGICAL.y)
@@ -566,12 +594,20 @@ func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> v
 	var fill: Color = Color("fffdf6") if plain else Color("f0e1bf")
 	var border: Color = Color("353b33") if plain else Color("ad8b4b")
 	var textured: bool = bubble["style"] in ["simple", "ornate"] and _textures.has(bubble["frameAsset"])
+	var kind: String = bubble["kind"]
+	var paper: bool = kind == "thought" and bubble["style"] == "parchment"
 	if float(entry["burst"]) > 0.0:
 		_draw_burst_rays(rect, float(entry["burst"]))
-	if bubble["kind"] == "speech" and bubble["tail"]["mode"] != "none":
-		_draw_tail(rect, _bubble_target(bubble, shot, camera), fill, border)
+	if kind != "narration" and bubble["tail"]["mode"] != "none":
+		var target := _bubble_target(bubble, shot, camera)
+		if kind == "thought":
+			_draw_thought_trail(rect, target)
+		else:
+			_draw_tail(rect, target, fill, border)
 	if textured:
 		_draw_frame(str(bubble["style"]), _textures[bubble["frameAsset"]], rect)
+	elif paper:
+		_draw_frame("thought", ThoughtPaper, rect)
 	else:
 		var box_key: String = str(bubble["style"]) + ":" + str(bubble["kind"])
 		if not _style_boxes.has(box_key):
@@ -580,7 +616,7 @@ func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> v
 		box.bg_color = fill
 		box.border_color = border
 		box.set_border_width_all(3)
-		box.set_corner_radius_all(10 if bubble["kind"] == "narration" else 26)
+		box.set_corner_radius_all(40 if kind == "thought" else (10 if kind == "narration" else 26))
 		draw_style_box(box, rect)
 		if not plain:
 			var inner_key: String = box_key + ":inner"
@@ -590,10 +626,10 @@ func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> v
 			inner.bg_color = Color.TRANSPARENT
 			inner.border_color = Color("bba677")
 			inner.set_border_width_all(1)
-			inner.set_corner_radius_all(6 if bubble["kind"] == "narration" else 20)
+			inner.set_corner_radius_all(6 if kind == "narration" else 20)
 			draw_style_box(inner, rect.grow(-7.0))
 	var font: Font = dialogue_font if dialogue_font != null else ThemeDB.fallback_font
-	var padding: Vector2 = Vector2(58, 48) if bubble["style"] in ["simple", "ornate"] else Vector2(28, 22)
+	var padding := Layout.bubble_padding(bubble, rect.size.x)
 	var text_layout: Dictionary = _text_layout(bubble, font, padding, rect.size)
 	var font_size: int = int(text_layout["font_size"])
 	var line_height: float = float(text_layout["line_height"])
@@ -606,12 +642,14 @@ func _draw_bubble(bubble: Dictionary, shot: Dictionary, camera: Dictionary) -> v
 		var baseline: float = padding.y + float(text_layout["baseline"]) + float(index) * line_height
 		if baseline > rect.size.y - padding.y + 7.0:
 			break
-		draw_string(font, rect.position + Vector2(padding.x, baseline), str(lines[index]), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - padding.x * 2.0, font_size, Color("342e24"))
+		var line_start: float = float(text_layout["line_starts"][index])
+		draw_string(font, rect.position + Vector2(padding.x + line_start, baseline), str(lines[index]), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - padding.x * 2.0 - line_start, font_size, text_layout["ink"])
 	draw_set_transform(origin, 0.0, Vector2.ONE * factor)
 
 func _text_layout(bubble: Dictionary, font: Font, padding: Vector2, dimensions: Vector2) -> Dictionary:
 	var font_size: int = maxi(1, int(bubble["fontSize"]))
-	var key: String = str(font.get_instance_id()) + ":" + str(font_size) + ":" + str(dimensions) + ":" + str(padding) + ":" + str(bubble["text"])
+	var centered: bool = bubble["kind"] == "thought"
+	var key: String = str(font.get_instance_id()) + ":" + str(font_size) + ":" + str(dimensions) + ":" + str(padding) + ":" + str(centered) + ":" + str(bubble["text"])
 	if bubble.get("_rendered_text_key", "") == key:
 		return bubble["_rendered_text_layout"]
 	var available: Vector2 = dimensions - padding * 2.0
@@ -641,8 +679,15 @@ func _text_layout(bubble: Dictionary, font: Font, padding: Vector2, dimensions: 
 			unit["index"] = reading_units[reading_index]["index"]
 			unit["word"] = reading_units[reading_index]["word"]
 		reading_index += 1
+	var line_starts := PackedFloat32Array()
+	for line: String in lines:
+		var start := 0.0
+		if centered:
+			start = maxf(0.0, (available.x - font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x) / 2.0)
+		line_starts.append(start)
 	var result: Dictionary = {"font_size":font_size, "line_height":float(font_size) * 1.32, "lines":lines,
-		"height":text_height, "offset_y":offset_y, "baseline":offset_y + font.get_ascent(font_size), "units":render_units}
+		"height":text_height, "offset_y":offset_y, "baseline":offset_y + font.get_ascent(font_size), "units":render_units,
+		"line_starts":line_starts, "ink":Color("23352b") if centered else Color("342e24")}
 	bubble["_rendered_text_key"] = key
 	bubble["_rendered_text_layout"] = result
 	return result
@@ -669,7 +714,7 @@ func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, text_layou
 	var origin: Vector2 = (size - LOGICAL * factor) / 2.0
 	var dimensions: Vector2 = Vector2(maxf(1.0, rect.size.x - padding.x * 2.0), maxf(1.0, rect.size.y - padding.y * 2.0))
 	var metrics: Array = bubble.get("_text_metrics", [])
-	var font_key: String = str(font.get_instance_id()) + ":" + str(font_size) + ":" + str(text_layout["baseline"]) + ":" + str(text_layout["lines"])
+	var font_key: String = str(font.get_instance_id()) + ":" + str(font_size) + ":" + str(text_layout["baseline"]) + ":" + str(text_layout["lines"]) + ":" + str(text_layout["line_starts"])
 	if metrics.size() != text_units.size() or bubble.get("_font_key", "") != font_key:
 		metrics = []
 		var prefix: String = ""
@@ -680,7 +725,7 @@ func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, text_layou
 				prefix = ""
 			var width: float = font.get_string_size(str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
 			var end: float = font.get_string_size(prefix + str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size).x
-			metrics.append({"x":end - width, "width":width, "y":float(text_layout["baseline"]) + float(row) * line_height})
+			metrics.append({"x":float(text_layout["line_starts"][row]) + end - width, "width":width, "y":float(text_layout["baseline"]) + float(row) * line_height})
 			prefix += str(unit["text"])
 		bubble["_text_metrics"] = metrics
 		bubble["_font_key"] = font_key
@@ -700,7 +745,9 @@ func _draw_animated_text(bubble: Dictionary, rect: Rect2, font: Font, text_layou
 		var glyph_origin: Vector2 = rect.position + padding + point
 		var animated_origin: Vector2 = bubble_center + entry_offset + ((glyph_origin - bubble_center) * entry_scale).rotated(entry_rotation)
 		draw_set_transform(origin + animated_origin * factor, entry_rotation + deg_to_rad(float(pose["rotation"])), Vector2.ONE * factor * entry_scale * float(pose["scale"]))
-		draw_string(font, Vector2(-float(m["width"]) / 2.0, float(font_size) * 0.35), str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, Color(0.204, 0.18, 0.141, float(pose["opacity"])))
+		var ink: Color = text_layout["ink"]
+		ink.a = float(pose["opacity"])
+		draw_string(font, Vector2(-float(m["width"]) / 2.0, float(font_size) * 0.35), str(unit["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, ink)
 	draw_set_transform(origin, 0.0, Vector2.ONE * factor)
 
 func _draw() -> void:
