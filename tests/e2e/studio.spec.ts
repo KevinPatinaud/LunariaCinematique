@@ -189,12 +189,24 @@ test('continuer un plan et générer le modèle dialogue à deux',async()=>{
   await page.getByRole('button',{name:'Ajouter un plan',exact:true}).click();await page.getByRole('button',{name:'Dialogue à deux',exact:false}).click();await page.getByRole('button',{name:'Créer le plan',exact:true}).click();const result=await saveCurrent();expect(result.shots[2].bubbles).toHaveLength(2);
   expect(result.shots[2].bubbles[0].speakerId).not.toBe(result.shots[2].bubbles[1].speakerId);
 });
-test('restauration d’un point de repère : écritures réelles, original non écrasé',async()=>{
-  await openFixture();await saveCurrent();await page.getByRole('button',{name:'Versions locales',exact:true}).first().click();await page.getByLabel('Nom du point de repère').fill('Avant les changements');await page.getByRole('button',{name:'Créer un repère',exact:true}).click();await expect(page.getByText('Avant les changements',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Fermer',exact:true}).last().click();
-  await page.getByLabel('Nom du plan',{exact:true}).fill('Modification sauvegardée');await saveCurrent();const diskBefore=await fs.readFile(target,'utf8');
-  await page.getByRole('button',{name:'Versions locales',exact:true}).first().click();await page.getByRole('listitem').filter({hasText:'Avant les changements'}).click();await page.getByRole('button',{name:'Restaurer cette version',exact:true}).click();await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Plan de test');
-  expect(await fs.readFile(target,'utf8')).toBe(diskBefore);await page.keyboard.press('Control+z');await expect(page.getByLabel('Nom du plan',{exact:true})).toHaveValue('Modification sauvegardée');
-  expect((await fs.readdir(path.join(temp,'profile','versions'))).length).toBeGreaterThan(0);
+test('l’historique annule une modification enregistrée sans réécrire le fichier', async () => {
+  await openFixture();
+  const shotName = page.getByLabel('Nom du plan', {exact:true});
+  await shotName.fill('Modification sauvegardée');
+  await saveCurrent();
+  const diskBefore = await fs.readFile(target, 'utf8');
+
+  const historyButton = page.getByRole('button', {name:'Historique', exact:true});
+  const history = page.getByRole('dialog', {name:'Historique du projet'});
+  await historyButton.click();
+  await expect(history.getByText('Dernière action', {exact:true})).toBeVisible();
+  await history.getByRole('button', {name:'Annuler la dernière action'}).click();
+  await expect(shotName).toHaveValue('Plan de test');
+  expect(await fs.readFile(target, 'utf8')).toBe(diskBefore);
+
+  await historyButton.click();
+  await history.getByRole('button', {name:'Rétablir l’action suivante'}).click();
+  await expect(shotName).toHaveValue('Modification sauvegardée');
 });
 test('diagnostic d’asset absent et correction ciblée hors écran',async()=>{
   const doc=fixture();doc.shots[0].actors[0].asset='library://missing.png';doc.shots[0].actors[1].x=1.5;await openFixture(doc);
@@ -402,85 +414,76 @@ test('ennemi : convertir un personnage existant et annuler sans perdre ses régl
   expect(saved.schemaVersion).toBe(1);expect(saved.shots[0].actors[0]).toEqual(doc.shots[0].actors[0]);
 });
 
-// V1.4.3: native bridge / filesystem regression scenarios. Native dialogs are
-// replaced by deterministic selections; use only this test's temporary profile.
+const fileActions = () => page.getByRole('button', {name:'Actions du fichier projet'});
 async function openRecentDialog() {
-  await page.getByRole('button', { name: 'Projets récents', exact: true }).click();
+  await fileActions().click();
+  await page.getByRole('button', { name: 'Projets récents…', exact: true }).click();
   const popup = page.getByRole('dialog', { name: 'Projets récents', exact: true });
   await expect(popup).toBeVisible();
-  await expect(popup.getByRole('button', { name: 'Actualiser les projets récents', exact: true })).toBeEnabled();
   return popup;
 }
-test('récents : ouverture, enregistrement sous, métadonnées seules et épinglage persistant', async () => {
+test('récents : les deux fichiers et leurs métadonnées survivent au rechargement', async () => {
   await openFixture(); await saveCurrent();
+  await page.reload();
+  await expect(page.locator('.studio-project-state')).toContainText('saved.json');
   const popup = await openRecentDialog();
-  await expect(popup.locator('.recent-project-card')).toHaveCount(2);
-  await popup.locator('.recent-project-card.current').getByRole('button', { name: 'Épingler Test Electron', exact: true }).click();
-  await expect(popup.locator('.recent-project-card.current').getByRole('button', { name: 'Détacher Test Electron', exact: true })).toBeEnabled();
-  const index = JSON.parse(await fs.readFile(path.join(temp, 'profile', 'recent-projects.json'), 'utf8'));
-  expect(index.projects).toHaveLength(2);
-  const saved = index.projects.find((p: {path: string}) => p.path === target);
-  expect(saved.pinned).toBe(true); expect(saved.title).toBe('Test Electron');
-  expect(saved.cinematic).toBeUndefined(); expect(saved.shots).toBe(1);
-  expect(JSON.stringify(index)).not.toContain('data:image');
-  await page.keyboard.press('Escape');
-  await page.reload(); await expect(page.getByRole('navigation',{name:'Navigation du Studio'})).toBeVisible();
-  await expect.poll(() => page.getByRole('button', {name:'Projets récents',exact:true}).isEnabled()).toBe(true);
-  const again = await openRecentDialog();
-  await expect(again.getByRole('button', {name:'Détacher Test Electron', exact:true})).toBeVisible();
+  await expect(popup.getByRole('button', {name:/Test Electron/})).toHaveCount(2);
+  await expect(popup.getByRole('button', {name:/Projet ouvert.*saved\.json/})).toBeVisible();
+  const index = JSON.parse(await fs.readFile(path.join(temp, 'profile', 'game-recents.json'), 'utf8'));
+  const files = await Promise.all([target, path.join(temp,'source.json')].map(file => fs.realpath(file)));
+  expect(index).toEqual(files.map(file => ({
+    path:file, title:'Test Electron', updatedAt:expect.any(String),
+  })));
 });
 test('récents : retour au document courant et annulation avant de changer', async () => {
   await openFixture(); await saveCurrent();
   await page.getByLabel('Titre de la cinématique', {exact:true}).fill('Brouillon protégé');
   let popup = await openRecentDialog();
-  await popup.getByRole('button', {name:'Revenir à Test Electron',exact:true}).click();
+  await popup.getByRole('button', {name:/Projet ouvert.*saved\.json/}).click();
+  await expect(popup).not.toBeVisible();
   await expect(page.getByLabel('Titre de la cinématique', {exact:true})).toHaveValue('Brouillon protégé');
   popup = await openRecentDialog();
   await app.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response:2,checkboxChecked:false}); });
-  await popup.getByRole('button', {name:'Ouvrir Test Electron',exact:true}).click();
-  await expect(popup.getByRole('button', {name:'Ouvrir Test Electron',exact:true})).toBeEnabled();
+  const source = popup.getByRole('button', {name:/Test Electron.*source\.json/});
+  await source.click();
+  await expect(source).toBeEnabled();
   await expect(page.getByLabel('Titre de la cinématique', {exact:true})).toHaveValue('Brouillon protégé');
   expect(JSON.parse(await fs.readFile(target,'utf8')).title).toBe('Test Electron');
   await app.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response:1,checkboxChecked:false}); });
+  await source.click();
+  await expect(popup).not.toBeVisible();
+  await expect(page.getByLabel('Titre de la cinématique', {exact:true})).toHaveValue('Test Electron');
 });
-test('récents : retrouver un fichier déplacé sans dupliquer son entrée', async () => {
+test('récents : un fichier déplacé peut être rouvert par son nouvel emplacement', async () => {
   await openFixture(); await saveCurrent();
   const source = path.join(temp,'source.json'), moved = path.join(temp,'source-deplace.json');
   await fs.rename(source, moved);
   const popup = await openRecentDialog();
-  await expect(popup.getByRole('button', {name:'Ouvrir Test Electron',exact:true})).toBeDisabled();
+  await popup.getByRole('button', {name:/Test Electron.*source\.json/}).click();
+  await expect(popup.getByRole('alert')).toBeVisible();
   await app.evaluate(({dialog},file) => { dialog.showOpenDialog = async () => ({canceled:false,filePaths:[file]}); }, moved);
-  await popup.getByRole('button', {name:'Retrouver le fichier',exact:true}).click();
+  await popup.getByRole('button', {name:'Ouvrir un autre fichier',exact:true}).click();
   await expect(popup).not.toBeVisible();
-  const again = await openRecentDialog(); await expect(again.locator('.recent-project-card')).toHaveCount(2);
-  const index = JSON.parse(await fs.readFile(path.join(temp,'profile','recent-projects.json'),'utf8'));
-  expect(index.projects.some((p:{path:string}) => p.path===source)).toBe(false);
-  expect(index.projects.some((p:{path:string}) => p.path===moved)).toBe(true);
-});
-test('récents : effacer la liste ne supprime aucun JSON', async () => {
-  await openFixture(); await saveCurrent(); const popup = await openRecentDialog();
-  await popup.getByRole('button', {name:'Effacer la liste non épinglée',exact:true}).click();
-  await popup.getByRole('button', {name:'Effacer les non-épinglés',exact:true}).click();
-  await expect(popup.locator('.recent-project-card')).toHaveCount(0);
-  expect((await fs.stat(target)).isFile()).toBe(true);
-  expect((await fs.stat(path.join(temp,'source.json'))).isFile()).toBe(true);
+  await expect(page.locator('.studio-project-state')).toHaveAttribute('title', await fs.realpath(moved));
+  const again = await openRecentDialog();
+  await expect(again.getByRole('button', {name:/Projet ouvert.*source-deplace\.json/})).toHaveCount(1);
 });
 test('récents : recherche, raccourci et restitution du focus', async () => {
-  await openFixture(); const trigger = page.getByRole('button', {name:'Projets récents',exact:true});
+  await openFixture(); await saveCurrent(); const trigger = fileActions();
   await trigger.focus(); await page.keyboard.press('Control+Shift+o');
   const popup = page.getByRole('dialog', {name:'Projets récents',exact:true});
-  await expect(popup.getByRole('button',{name:'Actualiser les projets récents',exact:true})).toBeEnabled();
-  await expect(page.getByLabel('Rechercher un projet récent')).toBeFocused();
-  await page.getByLabel('Rechercher un projet récent').fill('source');
-  await expect(popup.locator('.recent-project-card')).toHaveCount(1);
+  const search = popup.getByRole('searchbox', {name:'Rechercher un projet récent'});
+  await expect(search).toBeFocused();
+  await search.fill('source.json');
+  await expect(popup.getByRole('button', {name:/Test Electron/})).toHaveCount(1);
+  await expect(popup.getByRole('button', {name:/Test Electron.*source\.json/})).toBeVisible();
   await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
 });
-test('récents : le preload refuse un chemin arbitraire en guise d’identifiant', async () => {
-  const message = await page.evaluate(async () => {
-    try { await window.lunaria!.openRecentProject('C:/Windows/system.ini'); return 'accepted'; }
-    catch (error) { return String(error); }
-  });
-  expect(message).toContain('invalide');
+test('récents : le pont natif refuse un projet absent de la liste', async () => {
+  const unlisted = path.join(temp, 'unlisted.game.json');
+  await fs.writeFile(unlisted, JSON.stringify(seedProject()));
+  await expect(page.evaluate(file => window.lunariaGame!.openRecent(file), unlisted))
+    .rejects.toThrow('Projet récent inconnu');
 });
 
 

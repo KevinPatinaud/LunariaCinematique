@@ -48,7 +48,7 @@ test('returning the actor in shot 18 to a static image allows validation, playba
   await page.keyboard.press('Control+Shift+z');
   await expect(source).toHaveValue('static');
   await page.getByRole('button',{name:'Enregistrer le projet',exact:true}).click();
-  await expect(page.locator('.save-state')).toContainText('Projet enregistré');
+  await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
   const saved=JSON.parse(await fs.readFile(projectFile,'utf8'));
   expect(saved.cinematics[0].shots[17].actors[0]).toEqual(actor);
   await page.getByTestId('play-from-current').click();

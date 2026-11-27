@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useProjectSession } from "./ProjectSessionContext.js";
 import { StudioDialog } from "../components/StudioDialog.js";
 import { Icon } from "../components/Icon.js";
@@ -65,14 +65,15 @@ export function ProjectControls({
         return;
       e.preventDefault();
       if (locked) return;
+      if (key === "o" && e.shiftKey) {
+        setFilesOpen(true);
+        void session.refreshRecent().catch((e) => session.report(e));
+        return;
+      }
       flush();
       if (key === "s") void session.save(e.shiftKey);
-      else if (key === "o") {
-        if (e.shiftKey) {
-          setFilesOpen(true);
-          void session.refreshRecent().catch((e) => session.report(e));
-        } else void session.open();
-      } else
+      else if (key === "o") void session.open();
+      else
         session.action({ type: key === "y" || e.shiftKey ? "redo" : "undo" });
     };
     window.addEventListener("keydown", key, true);
@@ -303,8 +304,13 @@ export function ProjectRecovery() {
 }
 export function ProjectFilesDialog({ onClose }: { onClose: () => void }) {
   const { session, recent, path, busy } = useProjectSession();
+  const searchField = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState(""),
     [error, setError] = useState("");
+  useEffect(() => {
+    searchField.current?.focus();
+  }, []);
+
   async function open(file?: string) {
     setError("");
     const opened = await session.open(file);
@@ -325,7 +331,7 @@ export function ProjectFilesDialog({ onClose }: { onClose: () => void }) {
       <input
         className="project-file-search"
         type="search"
-        autoFocus
+        ref={searchField}
         aria-label="Rechercher un projet récent"
         placeholder="Titre ou emplacement…"
         value={query}

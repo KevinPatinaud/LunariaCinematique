@@ -77,7 +77,7 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   await expect(page.getByLabel('Cinématique du projet').locator('option')).toHaveCount(3);
   await page.locator('.studio-modebar').getByRole('button',{name:'Campagne',exact:true}).click();
   await expect(page.getByLabel('Titre du projet')).toHaveValue(saved.title);
-  await expect(page.locator('.gd-campaign-project-path')).toContainText(file);
+  await expect(page.locator('.studio-project-state')).toHaveAttribute('title',await fs.realpath(file));
   await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
   await expect(page.locator('.gd-level-items button')).toHaveCount(1);
   await app.evaluate(({dialog})=>{dialog.showSaveDialog=async()=>{throw new Error('Le projet rouvert doit garder son fichier.');};});
@@ -104,7 +104,7 @@ test('levels and complete films save and reopen in one JSON',async({},info)=>{
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();
   await page.getByRole('button',{name:'Enregistrer sous…',exact:true}).click();
   await expect.poll(async()=>{try{return JSON.parse(await fs.readFile(copyFile,'utf8')).title;}catch{return '';}}).toBe('Brouillon local du même projet');
-  await expect(page.locator('.gd-campaign-project-path')).toContainText(copyFile);
+  await expect(page.locator('.studio-project-state')).toHaveAttribute('title',await fs.realpath(copyFile));
   await expect(page.locator('.studio-project-state')).toContainText('Projet enregistré');
   await page.screenshot({path:info.outputPath('studio-niveaux-simplifie.png')});
   await page.getByRole('button',{name:'Actions du fichier projet'}).click();

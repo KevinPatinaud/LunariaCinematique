@@ -63,7 +63,7 @@ test.afterEach(async ({}, info) => {
 });
 async function nav(name: RegExp) {
   await page
-    .getByRole("navigation", { name: "Sections du mode Niveaux" })
+    .getByRole("navigation", { name: "Navigation du Studio" })
     .getByRole("button", { name })
     .click();
 }
@@ -78,7 +78,8 @@ async function save() {
   return JSON.parse(await fs.readFile(target, "utf8"));
 }
 test("create priority behavior and retain it in schema 4", async () => {
-  await nav(/^Comportements/);
+  await nav(/^Plus de sections/);
+  await nav(/^Modèles de comportements/);
   await page.getByText("Créer un modèle", { exact: true }).click();
   await page
     .getByRole("button", { name: "+ Comportement", exact: true })
@@ -118,7 +119,7 @@ test("bounded recurring event persists authored reinforcements", async () => {
   await nav(/^Niveaux/);
   await page.getByRole("button", { name: "+ Créer un niveau" }).first().click();
   await page
-    .getByRole("button", { name: "Événements & dialogue", exact: true })
+    .getByRole("button", { name: "Événements", exact: true })
     .click();
   await page.getByRole("button", { name: "+ Événement", exact: true }).click();
   await page
@@ -132,10 +133,8 @@ test("bounded recurring event persists authored reinforcements", async () => {
   expect(doc.levels[0].events[0].once).toBe(false);
 });
 test("new project keeps global rules without adding default missions", async () => {
-  await page
-    .locator(".gd-toolbar")
-    .getByRole("button", { name: "Nouveau", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Actions du fichier projet" }).click();
+  await page.getByRole("button", { name: "Nouveau projet", exact: true }).click();
   const doc = await save();
   expect(doc.levels).toHaveLength(0);
   expect(doc.campaign.steps).toHaveLength(0);

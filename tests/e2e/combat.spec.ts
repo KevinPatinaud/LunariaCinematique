@@ -9,13 +9,12 @@ test.beforeEach(async()=>{
  app=await _electron.launch({args:[ROOT],env:{...env,LUNARIA_E2E:'1',LUNARIA_TEST_USER_DATA:path.join(dir,'profile')}});
  page=await app.firstWindow();await page.waitForURL('app://studio/index.html');
  await app.evaluate(({dialog},target)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:target});dialog.showMessageBox=async()=>({response:1,checkboxChecked:false});},target);
- await page.locator('.studio-modebar').getByRole('button',{name:/^Niveaux/}).click();
- const navigation=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
- await expect(navigation.getByRole('button',{name:/^Bibliothèque/})).toBeVisible();
+ const navigation=page.getByRole('navigation',{name:'Navigation du Studio'});
  await expect(navigation.getByRole('button',{name:'Capacités',exact:true})).toHaveCount(0);
  await expect(navigation.getByRole('button',{name:'Effets',exact:true})).toHaveCount(0);
  await expect(navigation.getByRole('button',{name:'Projectiles',exact:true})).toHaveCount(0);
- await navigation.getByRole('button',{name:/^Bibliothèque/}).click();
+ await navigation.getByRole('button',{name:'Plus de sections et options avancées'}).click();
+ await navigation.getByRole('button',{name:/^Modèles de capacités/}).click();
 });
 test.afterEach(async({},info)=>{if(page&&!page.isClosed()&&info.status!==info.expectedStatus)await info.attach('combat',{body:await page.screenshot(),contentType:'image/png'});if(app){const child=app.process();try{await app.evaluate(({app})=>{setTimeout(()=>app.exit(0),0);});}catch{}await Promise.race([app.close().catch(()=>{}),new Promise<void>(resolve=>setTimeout(resolve,5000))]);if(child.exitCode===null)child.kill();}await fs.rm(dir,{recursive:true,force:true,maxRetries:15,retryDelay:200});});
 async function save(){await page.locator('.studio-modebar').getByRole('button',{name:'Enregistrer le projet'}).click();await expect(page.locator('.gd-message')).toContainText('enregistrés');return JSON.parse(await fs.readFile(target,'utf8'));}
@@ -35,12 +34,12 @@ test('empty effect chain remains recoverable as a draft',async()=>{
  await page.getByLabel('Ajouter un effet',{exact:true}).selectOption('damage');const doc=await save();const effect=doc.combat.effects.find((e:any)=>e.id===doc.combat.abilities[0].effects[0]);expect(effect.kind).toBe('damage');
 });
 test('same ability can be assigned to an enemy without copying its definition',async()=>{
- await page.getByRole('navigation',{name:'Sections du mode Niveaux'}).getByRole('button',{name:/^Ennemis/}).click();
+ await page.getByRole('navigation',{name:'Navigation du Studio'}).getByRole('button',{name:'Ennemis',exact:true}).click();
  await page.getByRole('button',{name:'Capacités',exact:true}).click();await page.getByText('+ Ajouter une capacité',{exact:true}).click();await page.getByLabel('Réutiliser une capacité existante').selectOption('ab_basic_shot');await page.getByLabel('Partager les réglages avec le modèle commun').check();await page.getByRole('button',{name:'Ajouter le modèle partagé'}).click();
  const doc=await save();expect(doc.balance.enemies[0].ability_ids).toContain('ab_basic_shot');expect(doc.combat.abilities.filter((a:{id:string})=>a.id==='ab_basic_shot')).toHaveLength(1);
 });
 test('an enemy can be archived and restored without losing its level use',async()=>{
- const navigation=page.getByRole('navigation',{name:'Sections du mode Niveaux'});
+ const navigation=page.getByRole('navigation',{name:'Navigation du Studio'});
  await navigation.getByRole('button',{name:/^Niveaux/}).click();
  await page.locator('.gd-level-list').getByRole('button',{name:'+ Créer un niveau'}).click();
  await page.getByRole('button',{name:'Vagues & ennemis'}).click();
